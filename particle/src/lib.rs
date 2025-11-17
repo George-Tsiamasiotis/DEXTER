@@ -2,6 +2,8 @@
 
 mod error;
 mod evolution;
+mod frequencies;
+mod henon;
 mod mapping;
 mod particle;
 mod rkf45;
@@ -9,11 +11,12 @@ mod state;
 
 pub use error::ParticleError;
 pub use evolution::Evolution;
+pub use frequencies::*;
 pub use mapping::*;
 pub use particle::{InitialConditions, IntegrationStatus, Particle};
 pub use state::State;
 
-pub(crate) use rkf45::Solver;
+pub(crate) use rkf45::Stepper;
 
 pub type Result<T> = std::result::Result<T, ParticleError>;
 

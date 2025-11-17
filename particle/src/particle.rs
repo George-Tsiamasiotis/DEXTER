@@ -5,8 +5,10 @@ use config::*;
 use derive_is_enum_variant::is_enum_variant;
 use equilibrium::{Bfield, Currents, Perturbation, Qfactor};
 
+use crate::Frequencies;
+use crate::close_theta_period;
 use crate::state::Display;
-use crate::{Evolution, MappingParameters, PoincareSection, Solver, State};
+use crate::{Evolution, MappingParameters, PoincareSection, State, Stepper};
 use crate::{check_accuracy, map_integrate};
 
 use crate::MagneticMoment;
@@ -39,6 +41,8 @@ pub enum IntegrationStatus {
     Integrated,
     /// Reached the end of the mapping successfully.
     Mapped,
+    /// Integrated for 1 period of `θ-ψp`.
+    SingePeriodIntegrated,
     /// Escaped / Hit the wall.
     Escaped,
     /// Timed out after [`config::MAX_STEPS`]
@@ -61,6 +65,8 @@ pub struct Particle {
     pub evolution: Evolution,
     /// Status of the particle's integration.
     pub status: IntegrationStatus,
+    /// The particle's `ωθ`, `ωζ` and `qkinetic`.
+    pub frequencies: Frequencies,
 }
 
 impl Particle {
@@ -71,10 +77,11 @@ impl Particle {
         evolution.push_state(&initial_state);
 
         Self {
+            evolution,
             initial_state,
             final_state: State::default(),
             status: IntegrationStatus::default(),
-            evolution,
+            frequencies: Frequencies::default(),
         }
     }
 
@@ -111,9 +118,9 @@ impl Particle {
                 })?;
 
             // Perform a step
-            let mut solver = Solver::default();
-            solver.init(&state);
-            match solver.start(dt, qfactor, bfield, currents, perturbation) {
+            let mut stepper = Stepper::default();
+            stepper.init(&state);
+            match stepper.start(dt, qfactor, bfield, currents, perturbation) {
                 Err(ParticleError::EqError(..)) => {
                     self.status = IntegrationStatus::Escaped;
                     break;
@@ -130,8 +137,8 @@ impl Particle {
                 break;
             }
 
-            dt = solver.calculate_optimal_step(dt)?;
-            state = solver.next_state(dt);
+            dt = stepper.calculate_optimal_step(dt)?;
+            state = stepper.next_state(dt);
         }
 
         self.evolution.duration = start.elapsed();
@@ -183,6 +190,39 @@ impl Particle {
         // Final state is set up in map_integrate, to keep the Accelerators and Cache
         Ok(())
     }
+
+    /// Integrates the particle for 1 `θ-ψp` period,  calculating its `ωθ` frequency.
+    pub fn calculate_omega_theta(
+        &mut self,
+        qfactor: &Qfactor,
+        bfield: &Bfield,
+        currents: &Currents,
+        perturbation: &Perturbation,
+    ) -> Result<()> {
+        self.evolution = Evolution::default(); // Reset it
+        self.initial_state
+            .evaluate(qfactor, currents, bfield, perturbation)?;
+        self.status = IntegrationStatus::SingePeriodIntegrated; // Will be overwritten in case of failure.
+        let start = Instant::now();
+
+        use ParticleError::*;
+        match close_theta_period(self, qfactor, bfield, currents, perturbation) {
+            Err(EqError(..) | SolverNan) => {
+                self.status = IntegrationStatus::Escaped;
+            }
+            Err(TimedOut(..)) => {
+                self.status = IntegrationStatus::TimedOut(start.elapsed());
+            }
+            Err(err) => {
+                self.status = IntegrationStatus::Failed(format!("{:?}", err).into());
+            }
+            Ok(_) => (),
+        }
+
+        self.evolution.duration = start.elapsed();
+        self.evolution.finish();
+        Ok(())
+    }
 }
 
 impl std::fmt::Debug for Particle {
@@ -204,6 +244,7 @@ impl std::fmt::Debug for Particle {
             .field("Final energy  ", &self.final_state.energy())
             .field("Status", &self.status)
             .field("Evolution", &self.evolution)
+            .field("Frequencies", &self.frequencies)
             .finish()
     }
 }

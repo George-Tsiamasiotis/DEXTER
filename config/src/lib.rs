@@ -15,7 +15,7 @@ pub const MAX_STEPS: usize = 1_000_000;
 
 /// The initial time step for the RKF45 adaptive step method. Should be small enough to account
 /// for fast particles. The value is empirical.
-pub const RKF45_FIRST_STEP: f64 = 1e-3;
+pub const RKF45_FIRST_STEP: f64 = 1e-1;
 
 /// The safety factor of the solver. Should be less than 1.0
 pub const SAFETY_FACTOR: f64 = 0.9;

@@ -50,7 +50,7 @@ mod tableau {
     pub(super) const A65: f64 = -11.0 / 40.0;
 }
 
-pub(crate) struct Solver {
+pub(crate) struct Stepper {
     pub(crate) k1: [f64; 4],
     pub(crate) k2: [f64; 4],
     pub(crate) k3: [f64; 4],
@@ -67,7 +67,7 @@ pub(crate) struct Solver {
     pub(crate) state6: State,
 }
 
-impl Solver {
+impl Stepper {
     pub(crate) fn init(&mut self, state: &State) {
         self.state1 = state.clone();
     }
@@ -320,7 +320,7 @@ impl Solver {
         Ok(SAFETY_FACTOR * h * (ENERGY_REL_TOL / energy_diff).powf(exp))
     }
 
-    /// Adjust the error by calculating the relative difference
+    /// Adjust the error by calculating the local truncation error.
     ///
     /// Source:
     /// https://www.uni-muenster.de/imperia/md/content/physik_tp/lectures/ss2017/numerische_Methoden_fuer_komplexe_Systeme_II/rkm-1.pdf
@@ -364,7 +364,7 @@ impl Solver {
     }
 }
 
-impl Default for Solver {
+impl Default for Stepper {
     fn default() -> Self {
         Self {
             k1: [f64::NAN; 4],

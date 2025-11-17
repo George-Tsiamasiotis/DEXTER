@@ -25,7 +25,10 @@ def orbit_plot(particle: Particle, percentage: float = 100, downsample: bool = T
         if oom > target_oom:
             step = 10 ** (oom - target_oom)
 
-    points = int(np.floor(particle.evolution.time.shape[0] * percentage / 100) - 1)
+    points = min(
+        int(np.floor(particle.evolution.time.shape[0] * percentage / 100)),
+        len(particle.evolution.time),
+    )
 
     time = particle.evolution.time[:points][::step]
     theta = particle.evolution.theta[:points][::step]
