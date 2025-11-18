@@ -36,3 +36,24 @@ def test_particle_mapping(
         params=params,
     )
     assert particle.status == "Mapped"
+
+
+def test_particle_omega_theta(
+    qfactor: Qfactor,
+    currents: Currents,
+    bfield: Bfield,
+    perturbation: Perturbation,
+    particle: Particle,
+):
+    assert particle.status == "Initialized"
+    particle.calculate_omega_theta(
+        qfactor=qfactor,
+        currents=currents,
+        bfield=bfield,
+        perturbation=perturbation,
+    )
+    assert particle.status == "SinglePeriodIntegrated"
+
+    assert isinstance(particle.omega_theta, float)
+    assert hasattr(particle, "omega_zeta")
+    assert hasattr(particle, "qkinetic")

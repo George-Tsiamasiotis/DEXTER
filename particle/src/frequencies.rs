@@ -2,7 +2,7 @@ use config::{MAX_STEPS, RKF45_FIRST_STEP};
 use equilibrium::{Bfield, Currents, Perturbation, Qfactor};
 use safe_unwrap::safe_unwrap;
 
-use crate::Omega::OmegaTheta;
+use crate::Omega::{OmegaTheta, OmegaZeta};
 use crate::PoincareSection;
 use crate::Result;
 use crate::{MappingParameters, Particle, State, Stepper};
@@ -49,6 +49,18 @@ impl Frequencies {
             None
         }
     }
+
+    pub fn omega_theta(&self) -> Option<f64> {
+        self.omega_theta
+    }
+
+    pub fn omega_zeta(&self) -> Option<f64> {
+        self.omega_zeta
+    }
+
+    pub fn qkinetic(&self) -> Option<f64> {
+        self.qkinetic
+    }
 }
 
 // ===============================================================================================
@@ -67,6 +79,7 @@ pub(crate) fn close_theta_period(
 
     let theta0 = particle.initial_state.theta;
     let psip0 = particle.initial_state.psip;
+    let zeta0 = particle.initial_state.zeta;
     let time0 = particle.initial_state.time;
 
     let mut dt = RKF45_FIRST_STEP;
@@ -94,43 +107,39 @@ pub(crate) fn close_theta_period(
         let new_theta = state2.theta;
         let old_psip = state1.psip;
         let new_psip = state2.psip;
-        // Use `intersected` rathet than `is_close` checks to avoid stopping the particles
+        // Use `intersected` rather than `is_close` checks to avoid stopping the particles
         // immediately and hardcoding tolerances
-        if intersected(old_psip, new_psip, psip0) {
-            if intersected(old_theta, new_theta, theta0) {
-                // Hénon's trick.
-                // If the particle intersected the `θ0-Pθ0` point, go back to `state1` and find
-                // the exact time step needed to complete the period. This step brings `θ` to
-                // its initial value *exactly*, but not `ψp`, although the difference is negligible
-                let params = MappingParameters {
-                    section: PoincareSection::ConstTheta,
-                    alpha: theta0,
-                    intersections: 1,
-                };
-                let mod_state1 = calculate_mod_state1(&state1, &params.section);
-                let dtau = calculate_mod_step(&state1, &state2, &params);
-                let mod_state2 = calculate_mod_state2(
-                    qfactor,
-                    bfield,
-                    currents,
-                    perturbation,
-                    mod_state1,
-                    dtau,
-                )?;
-                let intersection_state = calculate_intersection_state(
-                    qfactor,
-                    bfield,
-                    currents,
-                    perturbation,
-                    &params,
-                    mod_state2,
-                )?;
-                particle.evolution.push_state(&intersection_state);
-                let d_angle = intersection_state.theta - theta0;
-                let dt = intersection_state.time - time0;
-                particle.frequencies.update(&OmegaTheta, d_angle / dt);
-                break;
-            }
+        // Intersected() for the flux might be unnecessary here, but its safe.
+        if intersected(old_psip, new_psip, psip0) && intersected(old_theta, new_theta, theta0) {
+            // Hénon's trick.
+            // If the particle intersected the `θ0-Pθ0` point, go back to `state1` and find
+            // the exact time step needed to complete the period. This step brings `θ` to
+            // its initial value *exactly*, but not `ψp`, although the difference is negligible
+            let params = MappingParameters {
+                section: PoincareSection::ConstTheta,
+                alpha: theta0,
+                intersections: 1,
+            };
+            let mod_state1 = calculate_mod_state1(&state1, &params.section);
+            let dtau = calculate_mod_step(&state1, &state2, &params);
+            let mod_state2 =
+                calculate_mod_state2(qfactor, bfield, currents, perturbation, mod_state1, dtau)?;
+            let intersection_state = calculate_intersection_state(
+                qfactor,
+                bfield,
+                currents,
+                perturbation,
+                &params,
+                mod_state2,
+            )?;
+            particle.evolution.push_state(&intersection_state);
+            // WARN: Unsure about the 2π factor
+            let d_theta = intersection_state.theta - theta0;
+            let d_zeta = intersection_state.zeta - zeta0;
+            let dt = intersection_state.time - time0;
+            particle.frequencies.update(&OmegaTheta, d_theta / dt);
+            particle.frequencies.update(&OmegaZeta, d_zeta / dt);
+            break;
         }
         // Keep going if not close to a period.
         state1 = state2;

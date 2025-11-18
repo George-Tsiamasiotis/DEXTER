@@ -42,7 +42,7 @@ pub enum IntegrationStatus {
     /// Reached the end of the mapping successfully.
     Mapped,
     /// Integrated for 1 period of `θ-ψp`.
-    SingePeriodIntegrated,
+    SinglePeriodIntegrated,
     /// Escaped / Hit the wall.
     Escaped,
     /// Timed out after [`config::MAX_STEPS`]
@@ -192,7 +192,7 @@ impl Particle {
     }
 
     /// Integrates the particle for 1 `θ-ψp` period,  calculating its `ωθ` frequency.
-    pub fn calculate_omega_theta(
+    pub fn calculate_frequencies(
         &mut self,
         qfactor: &Qfactor,
         bfield: &Bfield,
@@ -202,7 +202,7 @@ impl Particle {
         self.evolution = Evolution::default(); // Reset it
         self.initial_state
             .evaluate(qfactor, currents, bfield, perturbation)?;
-        self.status = IntegrationStatus::SingePeriodIntegrated; // Will be overwritten in case of failure.
+        self.status = IntegrationStatus::SinglePeriodIntegrated; // Will be overwritten in case of failure.
         let start = Instant::now();
 
         use ParticleError::*;

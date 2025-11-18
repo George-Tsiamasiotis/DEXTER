@@ -1029,7 +1029,7 @@ dependencies = [
 
 [[package]]
 name = "particle"
-version = "0.1.1-pre.2"
+version = "0.1.2"
 dependencies = [
  "config",
  "criterion",
@@ -1142,7 +1142,7 @@ dependencies = [
 
 [[package]]
 name = "pyncare"
-version = "0.1.1-pre.1"
+version = "0.1.2"
 dependencies = [
  "config",
  "equilibrium",

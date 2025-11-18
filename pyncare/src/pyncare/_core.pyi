@@ -315,6 +315,9 @@ class Particle:
 
     evolution: Evolution
     status: str
+    omega_theta: float | None
+    omega_zeta: float | None
+    qkinetic: float | None
 
     def __init__(self, initial: InitialConditions):
         """Creates a Particle from an `InitialConditions` set.
@@ -372,6 +375,29 @@ class Particle:
             The equilibrium's perturbation.
         params: MappingParameters
             The parameters of the Poincare mapping.
+        """
+
+    def calculate_omega_theta(
+        self,
+        qfactor: Qfactor,
+        bfield: Bfield,
+        currents: Currents,
+        perturbation: Perturbation,
+    ):
+        """Calculates the particle's `ωθ` frequency.
+
+        The frequency is calculated by integrating the particle for a single θ-ψp period.
+
+        Parameters
+        ----------
+        qfactor: Qfactor
+            The equilibrium's qfactor.
+        currents: Currents
+            The equilibrium's plasma current.
+        bfield: Bfield
+            The equilibrium's magnetic field.
+        per: Perturbation
+            The equilibrium's perturbation.
         """
 
 class Evolution:

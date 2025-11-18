@@ -71,6 +71,18 @@ impl PyParticle {
         )?)
     }
 
+    pub fn calculate_omega_theta(
+        &mut self,
+        qfactor: &PyQfactor,
+        bfield: &PyBfield,
+        currents: &PyCurrents,
+        perturbation: &PyPerturbation,
+    ) -> Result<(), PyParticleError> {
+        Ok(self
+            .0
+            .calculate_frequencies(&qfactor.0, &bfield.0, &currents.0, &perturbation.0)?)
+    }
+
     #[getter]
     pub fn get_evolution(&self) -> PyEvolution {
         PyEvolution::from_evolution(&self.0.evolution)
@@ -79,6 +91,21 @@ impl PyParticle {
     #[getter]
     pub fn get_status(&self) -> String {
         format!("{:?}", self.0.status)
+    }
+
+    #[getter]
+    pub fn get_omega_theta(&self) -> Option<f64> {
+        self.0.frequencies.omega_theta()
+    }
+
+    #[getter]
+    pub fn get_omega_zeta(&self) -> Option<f64> {
+        self.0.frequencies.omega_zeta()
+    }
+
+    #[getter]
+    pub fn get_qkinetic(&self) -> Option<f64> {
+        self.0.frequencies.qkinetic()
     }
 }
 

@@ -1,6 +1,8 @@
 from warnings import warn
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.axes import Axes
+from matplotlib.ticker import StrMethodFormatter
 from math import floor, log10
 from pyncare import Particle
 
@@ -10,6 +12,7 @@ s = 0.3
 c = "blue"
 dpi = 120
 figsize = (9, 6)
+labelpad = 10
 target_points = 50_000
 
 
@@ -43,30 +46,34 @@ def orbit_plot(particle: Particle, percentage: float = 100, downsample: bool = T
         warn("Downsampling did not work..")
 
     fig = plt.figure(figsize=figsize, layout="constrained", dpi=dpi)
-    ax = fig.subplots(7, 1, sharex=True)
-    ax[0].scatter(time, theta, s, c)
-    ax[1].scatter(time, psip, s, c)
-    ax[2].scatter(time, rho, s, c)
-    ax[3].scatter(time, zeta, s, c)
-    ax[4].scatter(time, ptheta, s, c)
-    ax[5].scatter(time, pzeta, s, c)
-    ax[6].scatter(time, energy, s, c)
+    axes: list[Axes] = fig.subplots(7, 1, sharex=True)
+    for ax in axes:
+        ax.yaxis.set_ticks_position("left")
+        ax.yaxis.set_label_position("right")
+
+    axes[0].scatter(time, theta, s, c)
+    axes[1].scatter(time, psip, s, c)
+    axes[2].scatter(time, rho, s, c)
+    axes[3].scatter(time, zeta, s, c)
+    axes[4].scatter(time, ptheta, s, c)
+    axes[5].scatter(time, pzeta, s, c)
+    axes[6].scatter(time, energy, s, c)
     # Zoom out Pzeta plot
     if abs(np.std(pzeta)) < 1e-6:
-        current_ylim = np.array(ax[5].get_ylim())
-        ax[5].set_ylim(np.sort([current_ylim[0] / 3, current_ylim[1] * 3]))
+        current_ylim = np.array(axes[5].get_ylim())
+        axes[5].set_ylim(np.sort([current_ylim[0] / 3, current_ylim[1] * 3]).tolist())
     # Zoom out Energy plot
     if abs(np.std(energy)) < 1e-6:
-        current_ylim = np.array(ax[6].get_ylim())
-        ax[6].set_ylim(np.sort([current_ylim[0] / 2, current_ylim[1] * 2]))
+        current_ylim = np.array(axes[6].get_ylim())
+        axes[6].set_ylim(np.sort([current_ylim[0] / 2, current_ylim[1] * 2]).tolist())
 
-    ax[0].set_xlabel(r"$\theta$")
-    ax[1].set_xlabel(r"$\psi_p$")
-    ax[2].set_xlabel(r"$\rho_{||}$")
-    ax[3].set_xlabel(r"$\zeta$")
-    ax[4].set_xlabel(r"$P_\theta$")
-    ax[5].set_xlabel(r"$P_\zeta$")
-    ax[6].set_xlabel(r"Energy")
+    axes[0].set_ylabel(r"$\theta$", rotation=0, labelpad=labelpad)
+    axes[1].set_ylabel(r"$\psi_p$", rotation=0, labelpad=labelpad)
+    axes[2].set_ylabel(r"$\rho_{||}$", rotation=0, labelpad=labelpad)
+    axes[3].set_ylabel(r"$\zeta$", rotation=0, labelpad=labelpad)
+    axes[4].set_ylabel(r"$P_\theta$", rotation=0, labelpad=labelpad)
+    axes[5].set_ylabel(r"$P_\zeta$", rotation=0, labelpad=labelpad)
+    axes[6].set_ylabel(r"$E$", rotation=0, labelpad=labelpad)
 
     plt.show()
     plt.close()
