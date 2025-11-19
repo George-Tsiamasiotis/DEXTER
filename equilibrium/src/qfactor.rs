@@ -46,8 +46,12 @@ impl Qfactor {
         let path = std::path::absolute(path)?;
         let f = open(&path)?;
 
-        let psip_data = extract_1d_array(&f, PSIP)?.as_standard_layout().to_owned();
-        let psi_data = extract_1d_array(&f, PSI)?.as_standard_layout().to_owned();
+        let psip_data = extract_1d_array(&f, PSIP_NORM)?
+            .as_standard_layout()
+            .to_owned();
+        let psi_data = extract_1d_array(&f, PSI_NORM)?
+            .as_standard_layout()
+            .to_owned();
         let q_data = extract_1d_array(&f, Q)?.as_standard_layout().to_owned();
 
         let q_spline = make_spline(

@@ -1,8 +1,8 @@
 from warnings import warn
+from matplotlib.figure import Figure
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
-from matplotlib.ticker import StrMethodFormatter
 from math import floor, log10
 from pyncare import Particle
 
@@ -16,7 +16,12 @@ labelpad = 10
 target_points = 50_000
 
 
-def orbit_plot(particle: Particle, percentage: float = 100, downsample: bool = True):
+def orbit_plot(
+    fig: Figure,
+    particle: Particle,
+    percentage: float = 100,
+    downsample: bool = True,
+):
     if percentage < 0 or percentage > 100:
         raise ValueError("Percentage must be between 0 and 100.")
 
@@ -45,7 +50,6 @@ def orbit_plot(particle: Particle, percentage: float = 100, downsample: bool = T
     if downsample and len(time) > target_points * 10:
         warn("Downsampling did not work..")
 
-    fig = plt.figure(figsize=figsize, layout="constrained", dpi=dpi)
     axes: list[Axes] = fig.subplots(7, 1, sharex=True)
     for ax in axes:
         ax.yaxis.set_ticks_position("left")

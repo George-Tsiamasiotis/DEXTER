@@ -8,6 +8,7 @@
 # ///
 import matplotlib
 import pyncare as pc
+import matplotlib.pyplot as plt
 
 matplotlib.use("gtk3agg")
 
@@ -24,14 +25,20 @@ perturbation = pc.Perturbation(
 initial = pc.InitialConditions(
     time0=0,
     theta0=3.14,
-    psip0=0.28 * qfactor.psip_wall,
-    rho0=0.01,
+    psip0=0.8 * qfactor.psip_wall,
+    rho0=0.001,
     zeta0=0.0,
     mu=0,
 )
 
 particle = pc.Particle(initial)
 
+particle.calculate_omega_theta(
+    qfactor=qfactor,
+    currents=currents,
+    bfield=bfield,
+    perturbation=perturbation,
+)
 particle.integrate(
     qfactor=qfactor,
     currents=currents,
@@ -41,4 +48,5 @@ particle.integrate(
 )
 print(particle)
 
-pc.orbit_plot(particle)
+fig = plt.figure(figsize=(9, 6), layout="constrained", dpi=120)
+pc.orbit_plot(fig, particle)

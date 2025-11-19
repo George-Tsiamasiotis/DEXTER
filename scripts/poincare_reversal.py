@@ -23,19 +23,32 @@ perturbation = pc.Perturbation(
     ]
 )
 
-num = 50
-psip_lo = 0.93 * qfactor.psip_wall
+num = 200
+psip_lo = 0.093
+psip_mi = 0.094
 psip_hi = qfactor.psip_wall
 
 "Phase Average"
 init = pc.PoincareInit(
     thetas=np.zeros(num),
-    psips=np.linspace(psip_lo, psip_hi, num),
+    psips=np.concat(
+        (
+            psip_lo * np.ones(50),
+            psip_mi * np.ones(50),
+            psip_hi * np.ones(100),
+        )
+    ),
     rhos=0.001 * np.ones(num),
-    zetas=-1.3 * np.ones(num),
+    zetas=np.concat(
+        (
+            np.linspace(-np.pi, np.pi, 50),
+            np.linspace(-np.pi, np.pi, 50),
+            np.linspace(-np.pi, np.pi, 100),
+        )
+    ),
     mus=np.zeros(num),
 )
-params = pc.MappingParameters(section="theta", alpha=np.pi, intersections=3000)
+params = pc.MappingParameters(section="theta", alpha=np.pi, intersections=1000)
 
 poincare = pc.Poincare(init=init, params=params)
 poincare.run(

@@ -8,6 +8,7 @@
 # ///
 import matplotlib
 import pyncare as pc
+import matplotlib.pyplot as plt
 from math import pi
 
 matplotlib.use("gtk3agg")
@@ -43,4 +44,5 @@ print(
 print(f"ψp-span = [{particle.evolution.psip[0]}, {particle.evolution.psip[-1]}]")
 print(f"Pθ-span = [{particle.evolution.ptheta[0]}, {particle.evolution.ptheta[-1]}]")
 
-pc.orbit_plot(particle)
+fig = plt.figure(figsize=(9, 6), layout="constrained", dpi=120)
+pc.orbit_plot(fig, particle)

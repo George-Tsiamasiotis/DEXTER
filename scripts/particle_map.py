@@ -8,6 +8,7 @@
 # ///
 import matplotlib
 import pyncare as pc
+import matplotlib.pyplot as plt
 
 matplotlib.use("gtk3agg")
 
@@ -43,4 +44,5 @@ particle.map(
 )
 print(particle)
 
-pc.orbit_plot(particle)
+fig = plt.figure(figsize=(9, 6), layout="constrained", dpi=120)
+pc.orbit_plot(fig, particle)

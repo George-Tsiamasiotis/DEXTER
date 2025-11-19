@@ -315,8 +315,8 @@ mod test {
         let f = open_test_file();
 
         extract_1d_array::<f64>(&f, THETA).unwrap();
-        extract_1d_array::<f64>(&f, PSIP).unwrap();
-        extract_1d_array::<f64>(&f, PSI).unwrap();
+        extract_1d_array::<f64>(&f, PSIP_NORM).unwrap();
+        extract_1d_array::<f64>(&f, PSI_NORM).unwrap();
         extract_1d_array::<i64>(&f, M).unwrap();
         extract_1d_array::<i64>(&f, N).unwrap();
 

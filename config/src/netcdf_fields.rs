@@ -14,9 +14,9 @@ pub const RAXIS: &str = "raxis";
 /// The boozer toroidal angle `θ` **in \[rads\]**.
 pub const THETA: &str = "theta";
 /// The poloidal flux `ψp` **in Normalized Units**.
-pub const PSIP: &str = "psip";
+pub const PSIP_NORM: &str = "psip_norm";
 /// The toroidal flux `ψ` **in Normalized Units**.
-pub const PSI: &str = "psi";
+pub const PSI_NORM: &str = "psi_norm";
 /// The poloidal mode numbers `m`.
 pub const M: &str = "m";
 /// The toroidal mode numbers `n`.

@@ -46,9 +46,15 @@ impl Currents {
         let path = std::path::absolute(path)?;
         let f = open(&path)?;
 
-        let psip_data = extract_1d_array(&f, PSIP)?.as_standard_layout().to_owned();
-        let g_data = extract_1d_array(&f, G)?.as_standard_layout().to_owned();
-        let i_data = extract_1d_array(&f, I)?.as_standard_layout().to_owned();
+        let psip_data = extract_1d_array(&f, PSIP_NORM)?
+            .as_standard_layout()
+            .to_owned();
+        let g_data = extract_1d_array(&f, G_NORM)?
+            .as_standard_layout()
+            .to_owned();
+        let i_data = extract_1d_array(&f, I_NORM)?
+            .as_standard_layout()
+            .to_owned();
 
         let g_spline = make_spline(
             typ,

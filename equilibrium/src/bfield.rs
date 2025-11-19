@@ -52,10 +52,12 @@ impl Bfield {
         let path = std::path::absolute(path)?;
         let f = open(&path)?;
 
-        let psip_data = extract_1d_array(&f, PSIP)?.as_standard_layout().to_owned();
+        let psip_data = extract_1d_array(&f, PSIP_NORM)?
+            .as_standard_layout()
+            .to_owned();
         let theta_data = extract_1d_array(&f, THETA)?.as_standard_layout().to_owned();
 
-        let b_data = extract_2d_array(&f, B)?;
+        let b_data = extract_2d_array(&f, B_NORM)?;
         let r_data = extract_2d_array(&f, R)?;
         let z_data = extract_2d_array(&f, Z)?;
         let baxis = extract_scalar(&f, BAXIS)?;

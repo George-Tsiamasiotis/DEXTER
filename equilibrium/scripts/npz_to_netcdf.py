@@ -11,10 +11,10 @@
 """Converts a `npz` file to a netcdf4 file, with the expected fields and variable names."""
 
 import sys
-from numpy._typing import _128Bit
 import xarray as xr
 import numpy as np
 from pathlib import Path
+from datetime import datetime
 from warnings import warn
 
 xr.set_options(
@@ -59,13 +59,8 @@ phases = npz.get("phases", default_array).astype("f8")
 print("Exctracted all variables from npz file")
 
 # Normalize
-mp = 1.672621923e-27
-qp = 1.602176634e-19
-
-w0 = qp / mp * baxis  # s^-1
-
-psip_norm = psip * mp * w0 * raxis**2 / qp
-psi_norm = psi * mp * w0 * raxis**2 / qp
+psip_norm = psip / (baxis * raxis**2)
+psi_norm = psi / (baxis * raxis**2)
 g_norm = g / (baxis * raxis)
 i_norm = i / (baxis * raxis)
 b_norm = b / baxis
@@ -78,19 +73,13 @@ alphas_norm = alphas / raxis
 baxis_var = xr.Variable(
     data=baxis,
     dims=[],
-    attrs=dict(
-        description="The magnetic field strength on the axis `B0`",
-        units="[T]",
-    ),
+    attrs=dict(description="The magnetic field strength on the axis `B0`", units="[T]"),
 )
 
 raxis_var = xr.Variable(
     data=raxis,
     dims=[],
-    attrs=dict(
-        description="The major radius `R`",
-        units="[m]",
-    ),
+    attrs=dict(description="The major radius `R`", units="[m]"),
 )
 
 
@@ -106,16 +95,16 @@ theta_coord = xr.Variable(
     attrs=dict(description="Boozer theta coordinate", units="[rads]"),
 )
 
-psip_coord = xr.Variable(
+psip_norm_coord = xr.Variable(
     data=psip_norm,
-    dims=["psip"],
-    attrs=dict(description="Poloidal flux coordinate", units=["Normalized"]),
+    dims=["psip_norm"],
+    attrs=dict(description="Poloidal flux coordinate", units="Normalized"),
 )
 
-psi_coord = xr.Variable(
+psi_norm_coord = xr.Variable(
     data=psi_norm,
-    dims=["psi"],
-    attrs=dict(description="Toroidal flux coordinate", units=["Normalized"]),
+    dims=["psi_norm"],
+    attrs=dict(description="Toroidal flux coordinate", units="Normalized"),
 )
 
 m_coord = xr.Variable(
@@ -133,40 +122,51 @@ n_coord = xr.Variable(
 
 # ======================= SI Variables
 
+psip_var = xr.Variable(
+    data=psip,
+    dims=["psip_norm"],
+    attrs=dict(description="Poloidal flux coordinate", units="[Tm]"),
+)
+
+psi_var = xr.Variable(
+    data=psi,
+    dims=["psi_norm"],
+    attrs=dict(description="Toroidal flux coordinate", units="[Tm]"),
+)
 
 q_var = xr.Variable(
     data=q,
-    dims=["psip"],
+    dims=["psip_norm"],
     attrs=dict(description="Magnetic q-factor", units="dimensionless"),
 )
 
 g_var = xr.Variable(
     data=g,
-    dims=["psip"],
+    dims=["psip_norm"],
     attrs=dict(description="Toroidal current", units="[Tm]"),
 )
 
 i_var = xr.Variable(
     data=i,
-    dims=["psip"],
+    dims=["psip_norm"],
     attrs=dict(description="Poloidal current", units="[Tm]"),
 )
 
 b_var = xr.Variable(
     data=b,
-    dims=["psip", "theta"],
+    dims=["psip_norm", "theta"],
     attrs=dict(description="Magnetic field strength", units="[T]"),
 )
 
 r_var = xr.Variable(
     data=r,
-    dims=["psip", "theta"],
+    dims=["psip_norm", "theta"],
     attrs=dict(description="Lab horizontal coordinate", units="[m]"),
 )
 
 z_var = xr.Variable(
     data=z,
-    dims=["psip", "theta"],
+    dims=["psip_norm", "theta"],
     attrs=dict(description="Lab vertical coordinate", units="[m]"),
 )
 
@@ -176,19 +176,19 @@ z_var = xr.Variable(
 
 g_norm_var = xr.Variable(
     data=g_norm,
-    dims=["psip"],
+    dims=["psip_norm"],
     attrs=dict(description="Toroidal current normalized", units="Normalized"),
 )
 
 i_norm_var = xr.Variable(
     data=i_norm,
-    dims=["psip"],
+    dims=["psip_norm"],
     attrs=dict(description="Poloidal current normalized", units="Normalized"),
 )
 
 b_norm_var = xr.Variable(
     data=b_norm,
-    dims=["psip", "theta"],
+    dims=["psip_norm", "theta"],
     attrs=dict(description="Magnetic field strength", units="Normalized"),
 )
 
@@ -198,19 +198,19 @@ b_norm_var = xr.Variable(
 
 alphas_var = xr.Variable(
     data=alphas,
-    dims=["m", "n", "psip"],
+    dims=["m", "n", "psip_norm"],
     attrs=dict(description="Mode amplitudes α{m,n}(ψp)", units="[m]"),
 )
 
 phases_var = xr.Variable(
     data=phases,
-    dims=["m", "n", "psip"],
+    dims=["m", "n", "psip_norm"],
     attrs=dict(description="Mode phases φ{m,n}(ψp)", units="[rads]"),
 )
 
 alphas_norm_var = xr.Variable(
     data=alphas_norm,
-    dims=["m", "n", "psip"],
+    dims=["m", "n", "psip_norm"],
     attrs=dict(description="Mode amplitudes α{m,n}(ψp)", units="Normalized"),
 )
 
@@ -224,16 +224,18 @@ np.nan_to_num(alphas_norm_var.to_numpy(), nan=0, posinf=0, neginf=0, copy=False)
 
 
 COORDS = {
-    "psip": psip_coord,
+    "psip_norm": psip_norm_coord,
     "theta": theta_coord,
     "m": m_coord,
     "n": n_coord,
-    "psi": psi_coord,
+    "psi_norm": psi_norm_coord,
 }
 
 VARIABLES = {
     "baxis": baxis_var,
     "raxis": raxis_var,
+    "psip": psip_var,
+    "psi": psi_var,
     "q": q_var,
     "g": g_var,
     "i": i_var,
@@ -262,6 +264,16 @@ dataset = dataset.drop_vars(
     ]
 )
 
+# Useful metadata to avoid confusion
+dataset = dataset.assign_attrs(
+    {
+        "input file": str(INPUT),
+        "output file": str(OUTPUT),
+        "date": str(datetime.now().astimezone().replace(microsecond=0).isoformat()),
+        "script": str(Path(__file__).stem),
+    }
+)
+
 print("Created dataset")
 
 # makes `ncdump -h` cleaner
@@ -273,6 +285,7 @@ for item in dataset.coords | dataset.data_vars:
     if not np.all(np.isfinite(dataset[item].to_numpy())):
         warn(f"NaN or inf found in `{dataset[item].name}`")
 
+dataset.close()
 dataset.to_netcdf(OUTPUT)
 
 print(f"Stored dataset at '{OUTPUT.absolute()}'")

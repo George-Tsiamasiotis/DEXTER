@@ -146,7 +146,9 @@ impl Harmonic {
         let path = std::path::absolute(path)?;
         let f = open(&path)?;
 
-        let psip_data = extract_1d_array(&f, PSIP)?.as_standard_layout().to_owned();
+        let psip_data = extract_1d_array(&f, PSIP_NORM)?
+            .as_standard_layout()
+            .to_owned();
         let (a_data, phase_data) = extract_harmonic_arrays(&f, m, n)?;
 
         let a_spline = make_spline(
