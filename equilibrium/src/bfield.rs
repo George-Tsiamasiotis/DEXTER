@@ -20,9 +20,9 @@ pub struct Bfield {
     /// Spline over the magnetic field strength data, as a function of ψp, θ.
     pub b_spline: DynSpline2d<f64>,
     /// Spline over the R coordinate, as a function of ψp, θ.
-    pub r_spline: DynSpline2d<f64>,
+    pub rlab_spline: DynSpline2d<f64>,
     /// Spline over the Z coordinate, as a function of ψp, θ.
-    pub z_spline: DynSpline2d<f64>,
+    pub zlab_spline: DynSpline2d<f64>,
     /// Magnetic field strength on the axis **in \[T\]**.
     pub baxis: f64,
     /// The tokamak's major radius **in \[m\]**.
@@ -58,16 +58,16 @@ impl Bfield {
         let theta_data = extract_1d_array(&f, THETA)?.as_standard_layout().to_owned();
 
         let b_data = extract_2d_array(&f, B_NORM)?;
-        let r_data = extract_2d_array(&f, R)?;
-        let z_data = extract_2d_array(&f, Z)?;
+        let rlab_data = extract_2d_array(&f, RLAB)?;
+        let zlab_data = extract_2d_array(&f, ZLAB)?;
         let baxis = extract_scalar(&f, BAXIS)?;
         let raxis = extract_scalar(&f, RAXIS)?;
 
         // `Spline.za` is in Fortran order.
         let order = ndarray::Order::ColumnMajor;
         let b_data_flat = b_data.flatten_with_order(order).to_owned();
-        let r_data_flat = r_data.flatten_with_order(order).to_owned();
-        let z_data_flat = z_data.flatten_with_order(order).to_owned();
+        let rlab_data_flat = rlab_data.flatten_with_order(order).to_owned();
+        let zlab_data_flat = zlab_data.flatten_with_order(order).to_owned();
 
         let b_spline = make_spline2d(
             typ,
@@ -75,25 +75,25 @@ impl Bfield {
             safe_unwrap!("array is non-empty", theta_data.as_slice()),
             safe_unwrap!("array is non-empty", b_data_flat.as_slice()),
         )?;
-        let r_spline = make_spline2d(
+        let rlab_spline = make_spline2d(
             typ,
             safe_unwrap!("array is non-empty", psip_data.as_slice()),
             safe_unwrap!("array is non-empty", theta_data.as_slice()),
-            safe_unwrap!("array is non-empty", r_data_flat.as_slice()),
+            safe_unwrap!("array is non-empty", rlab_data_flat.as_slice()),
         )?;
-        let z_spline = make_spline2d(
+        let zlab_spline = make_spline2d(
             typ,
             safe_unwrap!("array is non-empty", psip_data.as_slice()),
             safe_unwrap!("array is non-empty", theta_data.as_slice()),
-            safe_unwrap!("array is non-empty", z_data_flat.as_slice()),
+            safe_unwrap!("array is non-empty", zlab_data_flat.as_slice()),
         )?;
 
         Ok(Self {
             path: path.to_owned(),
             typ: typ.into(),
             b_spline,
-            r_spline,
-            z_spline,
+            rlab_spline,
+            zlab_spline,
             baxis,
             raxis,
         })
@@ -334,6 +334,76 @@ impl Bfield {
             .b_spline
             .eval_deriv_xy(psip, mod2pi(theta), xacc, yacc, cache)?)
     }
+
+    /// Calculates `R(ψp, θ)`,
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use equilibrium::*;
+    /// # use std::path::PathBuf;
+    /// # use rsl_interpolation::*;
+    /// # use std::f64::consts::PI;
+    /// #
+    /// # fn main() -> Result<()> {
+    /// let path = PathBuf::from("../data/stub_netcdf.nc");
+    /// let bfield = Bfield::from_dataset(&path, "bicubic")?;
+    ///
+    /// let mut psi_acc = Accelerator::new();
+    /// let mut theta_acc = Accelerator::new();
+    /// let mut cache = Cache::new();
+    ///
+    /// let rlab =  bfield.rlab(0.015, 2.0*PI, &mut psi_acc, &mut theta_acc, &mut cache)?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn rlab(
+        &self,
+        psip: Flux,
+        theta: Radians,
+        xacc: &mut Accelerator,
+        yacc: &mut Accelerator,
+        cache: &mut Cache<f64>,
+    ) -> Result<f64> {
+        Ok(self
+            .rlab_spline
+            .eval(psip, mod2pi(theta), xacc, yacc, cache)?)
+    }
+
+    /// Calculates `Z(ψp, θ)`,
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use equilibrium::*;
+    /// # use std::path::PathBuf;
+    /// # use rsl_interpolation::*;
+    /// # use std::f64::consts::PI;
+    /// #
+    /// # fn main() -> Result<()> {
+    /// let path = PathBuf::from("../data/stub_netcdf.nc");
+    /// let bfield = Bfield::from_dataset(&path, "bicubic")?;
+    ///
+    /// let mut psi_acc = Accelerator::new();
+    /// let mut theta_acc = Accelerator::new();
+    /// let mut cache = Cache::new();
+    ///
+    /// let zlab =  bfield.zlab(0.015, 2.0*PI, &mut psi_acc, &mut theta_acc, &mut cache)?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn zlab(
+        &self,
+        psip: Flux,
+        theta: Radians,
+        xacc: &mut Accelerator,
+        yacc: &mut Accelerator,
+        cache: &mut Cache<f64>,
+    ) -> Result<f64> {
+        Ok(self
+            .zlab_spline
+            .eval(psip, mod2pi(theta), xacc, yacc, cache)?)
+    }
 }
 
 /// Generates getters that return [T] fields to Array1<T>.
@@ -360,8 +430,8 @@ impl Bfield {
     array1D_getter_impl!(psip_data, b_spline.xa, Flux);
     array1D_getter_impl!(theta_data, b_spline.ya, Flux);
     array2D_getter_impl!(b_data, b_spline);
-    array2D_getter_impl!(r_data, r_spline);
-    array2D_getter_impl!(z_data, z_spline);
+    array2D_getter_impl!(rlab_data, rlab_spline);
+    array2D_getter_impl!(zlab_data, zlab_spline);
 
     /// Returns the `𝜕B(ψp, θ) /𝜕ψp` data as a 2D array.
     ///
@@ -477,8 +547,8 @@ mod test {
 
         assert_eq!(b.psip_data().ndim(), 1);
         assert_eq!(b.theta_data().ndim(), 1);
-        assert_eq!(b.r_data().ndim(), 2);
-        assert_eq!(b.z_data().ndim(), 2);
+        assert_eq!(b.rlab_data().ndim(), 2);
+        assert_eq!(b.zlab_data().ndim(), 2);
         assert_eq!(b.b_data().ndim(), 2);
         assert_eq!(b.db_dpsip_data().unwrap().ndim(), 2);
         assert_eq!(b.db_dtheta_data().unwrap().ndim(), 2);
@@ -503,6 +573,10 @@ mod test {
         b.d2b_dtheta2(psip, theta, &mut xacc, &mut yacc, &mut cache)
             .unwrap();
         b.d2b_dpsip_dtheta(psip, theta, &mut xacc, &mut yacc, &mut cache)
+            .unwrap();
+        b.rlab(psip, theta, &mut xacc, &mut yacc, &mut cache)
+            .unwrap();
+        b.zlab(psip, theta, &mut xacc, &mut yacc, &mut cache)
             .unwrap();
     }
 }

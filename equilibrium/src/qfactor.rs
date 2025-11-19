@@ -19,6 +19,8 @@ pub struct Qfactor {
     pub typ: String,
     /// Spline over the q-factor data, as a function of ψp.
     pub q_spline: DynSpline<f64>,
+    /// Spline over the (non-normalized) radial coordinate `r`, as a function of ψp.
+    pub r_spline: DynSpline<f64>,
     /// Spline over the toroidal flux data, as a function of ψp.
     pub psi_spline: DynSpline<f64>,
 }
@@ -52,6 +54,8 @@ impl Qfactor {
         let psi_data = extract_1d_array(&f, PSI_NORM)?
             .as_standard_layout()
             .to_owned();
+        // R_NORM isn't really useful at the moment
+        let r_data = extract_1d_array(&f, R)?.as_standard_layout().to_owned();
         let q_data = extract_1d_array(&f, Q)?.as_standard_layout().to_owned();
 
         let q_spline = make_spline(
@@ -64,12 +68,18 @@ impl Qfactor {
             safe_unwrap!("array is non-empty", psip_data.as_slice()),
             safe_unwrap!("array is non-empty", psi_data.as_slice()),
         )?;
+        let r_spline = make_spline(
+            typ,
+            safe_unwrap!("array is non-empty", psip_data.as_slice()),
+            safe_unwrap!("array is non-empty", r_data.as_slice()),
+        )?;
 
         Ok(Self {
             path: path.to_owned(),
             typ: typ.into(),
             q_spline,
             psi_spline,
+            r_spline,
         })
     }
 }
@@ -90,7 +100,7 @@ impl Qfactor {
     /// let qfactor = Qfactor::from_dataset(&path, "cubic")?;
     ///
     /// let mut acc = Accelerator::new();
-    /// let q =  qfactor.q(0.015, &mut acc)?;
+    /// let q = qfactor.q(0.015, &mut acc)?;
     /// # Ok(())
     /// # }
     /// ```
@@ -112,12 +122,34 @@ impl Qfactor {
     /// let qfactor = Qfactor::from_dataset(&path, "cubic")?;
     ///
     /// let mut acc = Accelerator::new();
-    /// let psi =  qfactor.psi(0.015, &mut acc)?;
+    /// let psi = qfactor.psi(0.015, &mut acc)?;
     /// # Ok(())
     /// # }
     /// ```
     pub fn psi(&self, psip: Flux, acc: &mut Accelerator) -> Result<Flux> {
         Ok(self.psi_spline.eval(psip, acc)?)
+    }
+
+    /// Calculates the radial coordinate `r(ψp)` **in [m]**.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use equilibrium::*;
+    /// # use std::path::PathBuf;
+    /// # use rsl_interpolation::*;
+    /// #
+    /// # fn main() -> Result<()> {
+    /// let path = PathBuf::from("../data/stub_netcdf.nc");
+    /// let qfactor = Qfactor::from_dataset(&path, "cubic")?;
+    ///
+    /// let mut acc = Accelerator::new();
+    /// let r = qfactor.r(0.015, &mut acc)?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn r(&self, psip: Flux, acc: &mut Accelerator) -> Result<Flux> {
+        Ok(self.r_spline.eval(psip, acc)?)
     }
 }
 
@@ -126,6 +158,7 @@ impl Qfactor {
     array1D_getter_impl!(psip_data, q_spline.xa, Flux);
     array1D_getter_impl!(psi_data, psi_spline.ya, Flux);
     array1D_getter_impl!(q_data, q_spline.ya, f64);
+    array1D_getter_impl!(r_data, r_spline.ya, f64);
 
     /// Returns the `q` data calculated from `dψ/dψp` as a 1D array.
     pub fn q_data_derived(&self) -> Result<Array1<f64>> {
@@ -185,6 +218,7 @@ mod test {
         assert_eq!(q.psip_data().ndim(), 1);
         assert_eq!(q.q_data().ndim(), 1);
         assert_eq!(q.psi_data().ndim(), 1);
+        assert_eq!(q.r_data().ndim(), 1);
         assert_eq!(q.q_data_derived().unwrap().ndim(), 1);
     }
 
@@ -196,5 +230,6 @@ mod test {
         let psip = 0.015;
         q.q(psip, &mut acc).unwrap();
         q.psi(psip, &mut acc).unwrap();
+        q.r(psip, &mut acc).unwrap();
     }
 }

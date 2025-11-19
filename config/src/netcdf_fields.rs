@@ -17,10 +17,18 @@ pub const THETA: &str = "theta";
 pub const PSIP_NORM: &str = "psip_norm";
 /// The toroidal flux `ψ` **in Normalized Units**.
 pub const PSI_NORM: &str = "psi_norm";
+/// The radial coordinate `r` **in Normalized Units**.
+pub const R_NORM: &str = "r_norm";
 /// The poloidal mode numbers `m`.
 pub const M: &str = "m";
 /// The toroidal mode numbers `n`.
 pub const N: &str = "n";
+/// The poloidal flux `ψp` **in \[Tm\]**.
+pub const PSIP: &str = "psip";
+/// The toroidal flux `ψ` **in \[Tm\]**.
+pub const PSI: &str = "psi";
+/// The radial coordinate r **in [m]**.
+pub const R: &str = "r";
 
 // ================ 1D Variables ================
 
@@ -42,9 +50,9 @@ pub const B: &str = "b";
 /// B(ψp, θ): The magnetic field strength in **in Normalized Units**.
 pub const B_NORM: &str = "b_norm";
 /// R(ψp, θ): The `R` coordinate with respect to boozer coordinates **in \[m\]**.
-pub const R: &str = "R";
+pub const RLAB: &str = "rlab";
 /// Z(ψp, θ): The `Z` coordinate with respect to boozer coordinates **in \[m\]**.
-pub const Z: &str = "Z";
+pub const ZLAB: &str = "zlab";
 
 // ================ 3D Variables ================
 

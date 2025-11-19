@@ -40,12 +40,13 @@ raxis = npz.get("Rmaj").astype("f8")  # [meters]
 psip = npz.get("psipol").astype("f8") / (2 * np.pi)
 psi = npz.get("psitor").astype("f8") / (2 * np.pi)
 theta = npz.get("theta").astype("f8")
+r = npz.get("r").astype("f8")
 i = npz.get("I").astype("f8")
 g = npz.get("g").astype("f8")
 q = npz.get("q").astype("f8")
 b = npz.get("BB").astype("f8")
-r = npz.get("RR").astype("f8")
-z = npz.get("ZZ").astype("f8")
+rlab = npz.get("RR").astype("f8")
+zlab = npz.get("ZZ").astype("f8")
 
 # If no perturbations are found in the npz file, this will create empty
 # Variables, which we can drop at the end.
@@ -61,6 +62,7 @@ print("Exctracted all variables from npz file")
 # Normalize
 psip_norm = psip / (baxis * raxis**2)
 psi_norm = psi / (baxis * raxis**2)
+r_norm = r / raxis
 g_norm = g / (baxis * raxis)
 i_norm = i / (baxis * raxis)
 b_norm = b / baxis
@@ -119,6 +121,12 @@ n_coord = xr.Variable(
     attrs=dict(description="Toroidal mode number"),
 )
 
+r_norm_coord = xr.Variable(
+    data=r_norm,
+    dims=["r_norm"],
+    attrs=dict(description="Radial coordinate", units="Normalized"),
+)
+
 
 # ======================= SI Variables
 
@@ -132,6 +140,12 @@ psi_var = xr.Variable(
     data=psi,
     dims=["psi_norm"],
     attrs=dict(description="Toroidal flux coordinate", units="[Tm]"),
+)
+
+r_var = xr.Variable(
+    data=r,
+    dims=["r_norm"],
+    attrs=dict(description="Radial coordinate", units="[m]"),
 )
 
 q_var = xr.Variable(
@@ -158,14 +172,14 @@ b_var = xr.Variable(
     attrs=dict(description="Magnetic field strength", units="[T]"),
 )
 
-r_var = xr.Variable(
-    data=r,
+rlab_var = xr.Variable(
+    data=rlab,
     dims=["psip_norm", "theta"],
     attrs=dict(description="Lab horizontal coordinate", units="[m]"),
 )
 
-z_var = xr.Variable(
-    data=z,
+zlab_var = xr.Variable(
+    data=zlab,
     dims=["psip_norm", "theta"],
     attrs=dict(description="Lab vertical coordinate", units="[m]"),
 )
@@ -229,6 +243,7 @@ COORDS = {
     "m": m_coord,
     "n": n_coord,
     "psi_norm": psi_norm_coord,
+    "r_norm": r_norm,
 }
 
 VARIABLES = {
@@ -236,12 +251,13 @@ VARIABLES = {
     "raxis": raxis_var,
     "psip": psip_var,
     "psi": psi_var,
+    "r": r_var,
     "q": q_var,
     "g": g_var,
     "i": i_var,
     "b": b_var,
-    "R": r_var,
-    "Z": z_var,
+    "rlab": rlab_var,
+    "zlab": zlab_var,
     "alphas": alphas_var,
     "phases": phases_var,
     "g_norm": g_norm_var,

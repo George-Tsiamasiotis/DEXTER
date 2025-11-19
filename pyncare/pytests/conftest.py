@@ -1,3 +1,4 @@
+from matplotlib.path import Path
 import pyncare as pc
 import pytest
 import numpy as np
@@ -5,34 +6,37 @@ import numpy as np
 from pyncare._core import Particle
 
 
+netcdf_path = "./data.nc"
+
+
 @pytest.fixture(scope="session")
 def qfactor():
-    """Creates a Qfactor object from "./data.nc" netCDF file."""
-    return pc.Qfactor("./data.nc", "akima")
+    """Creates a Qfactor object from a netCDF file."""
+    return pc.Qfactor(netcdf_path, "akima")
 
 
 @pytest.fixture(scope="session")
 def currents():
-    """Creates a Current object from "./data.nc" netCDF file."""
-    return pc.Currents("./data.nc", "akima")
+    """Creates a Current object from a netCDF file."""
+    return pc.Currents(netcdf_path, "akima")
 
 
 @pytest.fixture(scope="session")
 def bfield():
-    """Creates a Bfield object from "./data.nc" netCDF file."""
-    return pc.Bfield("./data.nc", "bicubic")
+    """Creates a Bfield object from a netCDF file."""
+    return pc.Bfield(netcdf_path, "bicubic")
 
 
 @pytest.fixture(scope="session")
 def harmonic1():
-    """Creates a Harmonic object from "./data.nc" netCDF file."""
-    return pc.Harmonic("./data.nc", "akima", m=1, n=2)
+    """Creates a Harmonic object from a netCDF file."""
+    return pc.Harmonic(netcdf_path, "akima", m=1, n=2)
 
 
 @pytest.fixture(scope="session")
 def harmonic2():
-    """Creates a Harmonic object from "./data.nc" netCDF file."""
-    return pc.Harmonic("./data.nc", "akima", m=1, n=3)
+    """Creates a Harmonic object from a netCDF file."""
+    return pc.Harmonic(netcdf_path, "akima", m=1, n=3)
 
 
 @pytest.fixture(scope="session")

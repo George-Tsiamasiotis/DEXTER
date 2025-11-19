@@ -19,14 +19,16 @@ def test_pybfield_eval(bfield: Bfield):
     assert isinstance(bfield.d2b_dpsip2(psip, theta), float)
     assert isinstance(bfield.d2b_dtheta2(psip, theta), float)
     assert isinstance(bfield.d2b_dpsip_dtheta(psip, theta), float)
+    assert isinstance(bfield.rlab(psip, theta), float)
+    assert isinstance(bfield.zlab(psip, theta), float)
 
 
 def test_data_extraction(bfield: Bfield):
     assert bfield.psip_data.ndim == 1
     assert bfield.theta_data.ndim == 1
     assert bfield.b_data.ndim == 2
-    assert bfield.r_data.ndim == 2
-    assert bfield.z_data.ndim == 2
+    assert bfield.rlab_data.ndim == 2
+    assert bfield.zlab_data.ndim == 2
     assert bfield.db_dpsip_data.ndim == 2
     assert bfield.db_dtheta_data.ndim == 2
 

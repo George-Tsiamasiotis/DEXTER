@@ -30,6 +30,7 @@ class Qfactor:
     psip_data: np.ndarray
     q_data: np.ndarray
     psi_data: np.ndarray
+    r_data: np.ndarray
     q_data_derived: np.ndarray
 
     def __init__(self, path: str, typ: str) -> None:
@@ -46,6 +47,9 @@ class Qfactor:
 
     def q(self, psip: float) -> float:
         """The q value evaluated at ψp"""
+
+    def r(self, psip: float) -> float:
+        """The r(ψp) value in [m]."""
 
     def psi(self, psip: float) -> float:
         """The ψ value evaluated at ψp"""
@@ -139,8 +143,8 @@ class Bfield:
     psip_data: np.ndarray
     theta_data: np.ndarray
     b_data: np.ndarray
-    r_data: np.ndarray
-    z_data: np.ndarray
+    rlab_data: np.ndarray
+    zlab_data: np.ndarray
     db_dpsip_data: np.ndarray
     db_dtheta_data: np.ndarray
 
@@ -172,6 +176,12 @@ class Bfield:
 
     def d2b_dpsip_dtheta(self, psip: float, theta: float) -> float:
         """The d2b/dψpdθ value evaluated at (ψp, θ)"""
+
+    def rlab(self, psip: float, theta: float) -> float:
+        """The R value evaluated at (ψp, θ)"""
+
+    def zlab(self, psip: float, theta: float) -> float:
+        """The Z value evaluated at (ψp, θ)"""
 
 class Harmonic:
     """A single perturbation harmonic.

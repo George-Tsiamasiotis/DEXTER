@@ -22,6 +22,7 @@ Rmaj = 2
 theta = np.linspace(0, np.pi, 200)
 psipol = np.linspace(0, 3, 100)
 psitor = np.linspace(0, 1, 100)
+r = np.linspace(0, 1, 100)
 I = np.linspace(0, 2, 100)
 g = np.linspace(2, 0, 100)
 q = np.linspace(1, 2, 100)
@@ -49,6 +50,7 @@ np.savez(
     theta=theta,
     psipol=psipol,
     psitor=psitor,
+    r=r,
     I=I,
     g=g,
     q=q,

@@ -317,8 +317,12 @@ mod test {
         extract_1d_array::<f64>(&f, THETA).unwrap();
         extract_1d_array::<f64>(&f, PSIP_NORM).unwrap();
         extract_1d_array::<f64>(&f, PSI_NORM).unwrap();
+        extract_1d_array::<f64>(&f, R_NORM).unwrap();
         extract_1d_array::<i64>(&f, M).unwrap();
         extract_1d_array::<i64>(&f, N).unwrap();
+        extract_1d_array::<f64>(&f, PSIP).unwrap();
+        extract_1d_array::<f64>(&f, PSI).unwrap();
+        extract_1d_array::<f64>(&f, R).unwrap();
 
         extract_1d_array::<f64>(&f, Q).unwrap();
         extract_1d_array::<f64>(&f, G).unwrap();
@@ -333,8 +337,8 @@ mod test {
 
         extract_2d_array::<f64>(&f, B).unwrap();
         extract_2d_array::<f64>(&f, B_NORM).unwrap();
-        extract_2d_array::<f64>(&f, R).unwrap();
-        extract_2d_array::<f64>(&f, Z).unwrap();
+        extract_2d_array::<f64>(&f, RLAB).unwrap();
+        extract_2d_array::<f64>(&f, ZLAB).unwrap();
     }
 
     #[test]
