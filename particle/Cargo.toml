@@ -1,11 +1,16 @@
 [package]
 name = "particle"
 version = "0.1.2"
-edition = "2024"
+license.workspace = true
+edition.workspace = true
 authors.workspace = true
+homepage.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+documentation.workspace = true
+description = "Single particle simulation in toroidal fusion devices"
 
 [dependencies]
-serde = { workspace = true }
 ndarray= {workspace = true}
 thiserror = {workspace = true}
 criterion = {workspace = true}

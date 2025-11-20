@@ -1,7 +1,11 @@
 [package]
 name = "utils"
 version = "0.1.1"
-edition = "2024"
+license.workspace = true
+edition.workspace = true
 authors.workspace = true
-
-[dependencies]
+homepage.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+documentation.workspace = true
+description = "Common utilities across many packages"

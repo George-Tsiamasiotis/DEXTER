@@ -1,8 +1,13 @@
 [package]
 name = "equilibrium"
 version = "0.1.1-pre.1"
-edition = "2024"
-authors = {workspace = true}
+license.workspace = true
+edition.workspace = true
+authors.workspace = true
+homepage.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+documentation.workspace = true
 description = "Representation of Tokamak Equilibria from experimental data."
 
 [dependencies]
