@@ -43,4 +43,4 @@ print(poincare)
 
 fig = plt.figure(figsize=(10, 5), layout="constrained", dpi=120)
 ax = fig.add_subplot()
-pc.poincare_plot(ax, poincare, wall=qfactor.psip_wall)
+pc.poincare_plot(ax, poincare, qfactor, radial=True, color=False, wall=True)

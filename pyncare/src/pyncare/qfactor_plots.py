@@ -5,21 +5,28 @@ from pyncare import Qfactor
 plt.rcParams["text.usetex"] = True
 
 
-def q_plot(ax: Axes, qfactor: Qfactor):
+def q_plot(ax: Axes, qfactor: Qfactor, radial: bool = True):
     """Plots the q factor extraced and derived data, as a function of ψp."""
-    psip_data = qfactor.psip_data
+    xs = qfactor.psip_data
     q_data = qfactor.q_data
     q_data_derived = qfactor.q_data_derived
-
-    ax.scatter(psip_data, q_data, c="k", s=2, zorder=2, alpha=0.8, label="data points")
-    ax.plot(psip_data, q_data, c="b", label=r"$q(\psi_p)$")
-    ax.plot(psip_data, q_data_derived, c="r", label=r"$d\psi / d\psi_p$")
 
     ax.set_xlabel(r"$\psi_p$")
     ax.set_ylabel(r"$q(\psi_p)$")
     ax.set_title(r"$q(\psi_p)$")
     ax.grid(True)
     ax.margins(0)
+
+    if radial:
+        ax.set_xlabel(r"$r(\psi_p)$")
+        ax.set_ylabel(r"$q(r)$")
+        ax.set_title(r"$q(r)$")
+        for i in range(len(xs)):
+            xs[i] = qfactor.r(xs[i])
+
+    ax.scatter(xs, q_data, c="k", s=2, zorder=2, alpha=0.8, label="data points")
+    ax.plot(xs, q_data, c="b", label=r"$q(\psi_p)$")
+    ax.plot(xs, q_data_derived, c="r", label=r"$d\psi / d\psi_p$")
     ax.legend()
 
 

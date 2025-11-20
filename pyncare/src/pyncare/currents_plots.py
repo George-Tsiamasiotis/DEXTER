@@ -20,7 +20,8 @@ def g_plot(ax: Axes, current: Currents):
     dax = ax.twinx()
     ax.scatter(psip_data, g_data, c="k", s=2, zorder=2, alpha=0.8, label="data points")
     ax.plot(psips, g, c="b", label=r"$g(\psi_p)$")
-    dax.plot(psips, dg_dpsip, c="r", label=r"$\partial g(\psi_p)\partial \psi_p$")
+    ax.plot([], [], c="r", label=r"$\partial g(\psi_p)/\partial \psi_p$")
+    dax.plot(psips, dg_dpsip, c="r")
 
     ax.set_xlabel(r"$\psi_p$")
     ax.set_ylabel(r"$g(\psi_p)$")
@@ -44,7 +45,8 @@ def i_plot(ax: Axes, current: Currents):
     dax = ax.twinx()
     ax.scatter(psip_data, i_data, c="k", s=2, zorder=2, alpha=0.8, label="data points")
     ax.plot(psips, i, c="b", label=r"$I(\psi_p)$")
-    dax.plot(psips, di_dpsip, c="r", label=r"$\partial I(\psi_p)\partial \psi_p$")
+    ax.plot([], [], c="r", label=r"$\partial I(\psi_p)/\partial \psi_p$")
+    dax.plot(psips, di_dpsip, c="r")
 
     ax.set_ylabel(r"$I(\psi_p)$")
     dax.set_ylabel(r"$\partial I(\psi_p)/\partial \psi_p$")

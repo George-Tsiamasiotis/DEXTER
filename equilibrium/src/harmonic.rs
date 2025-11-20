@@ -349,6 +349,78 @@ impl Harmonic {
         // Time-independent perturbations at the moment.
         Ok(0.0)
     }
+
+    /// Calculates the harmonic's *amplitude* `α(ψp)`.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use equilibrium::*;
+    /// # use std::path::PathBuf;
+    /// # use rsl_interpolation::*;
+    /// # use std::f64::consts::PI;
+    /// #
+    /// # fn main() -> Result<()> {
+    /// let path = PathBuf::from("../data/stub_netcdf.nc");
+    /// let harmonic = Harmonic::from_dataset(&path, "akima", 3, 2)?;
+    ///
+    /// let mut acc = Accelerator::new();
+    /// let mut hcache = HarmonicCache::new();
+    /// let a = harmonic.a(0.015, &mut acc)?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn a(&self, psip: Flux, acc: &mut Accelerator) -> Result<f64> {
+        Ok(self.a_spline.eval(psip, acc)?)
+    }
+
+    /// Calculates the harmonic's *amplitude* derivative `dα(ψp)/dψp`.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use equilibrium::*;
+    /// # use std::path::PathBuf;
+    /// # use rsl_interpolation::*;
+    /// # use std::f64::consts::PI;
+    /// #
+    /// # fn main() -> Result<()> {
+    /// let path = PathBuf::from("../data/stub_netcdf.nc");
+    /// let harmonic = Harmonic::from_dataset(&path, "akima", 3, 2)?;
+    ///
+    /// let mut acc = Accelerator::new();
+    /// let mut hcache = HarmonicCache::new();
+    /// let da_dpsip = harmonic.da_dpsip(0.015, &mut acc)?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn da_dpsip(&self, psip: Flux, acc: &mut Accelerator) -> Result<f64> {
+        Ok(self.a_spline.eval_deriv(psip, acc)?)
+    }
+
+    /// Calculates the harmonic's *phase* `φ(ψp)`.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use equilibrium::*;
+    /// # use std::path::PathBuf;
+    /// # use rsl_interpolation::*;
+    /// # use std::f64::consts::PI;
+    /// #
+    /// # fn main() -> Result<()> {
+    /// let path = PathBuf::from("../data/stub_netcdf.nc");
+    /// let harmonic = Harmonic::from_dataset(&path, "akima", 3, 2)?;
+    ///
+    /// let mut acc = Accelerator::new();
+    /// let mut hcache = HarmonicCache::new();
+    /// let phase = harmonic.phase(0.015, &mut acc)?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn phase(&self, psip: Flux, acc: &mut Accelerator) -> Result<f64> {
+        Ok(self.phase_spline.eval(psip, acc)?)
+    }
 }
 
 // Data extraction
@@ -435,6 +507,7 @@ mod test {
 
         assert_eq!(harmonic.psip_data().ndim(), 1);
         assert_eq!(harmonic.a_data().ndim(), 1);
+        assert_eq!(harmonic.phase_data().ndim(), 1);
     }
 
     #[test]
@@ -477,6 +550,18 @@ mod test {
             .unwrap();
         assert_eq!(cache.misses, 2);
         assert_eq!(cache.hits, 6);
+    }
+
+    #[test]
+    fn test_spline_evals() {
+        let path = get_test_dataset_path();
+        let harmonic = Harmonic::from_dataset(&path, "akima", 3, 2).unwrap();
+        let mut acc = Accelerator::new();
+
+        let psip = 0.015;
+        harmonic.a(psip, &mut acc).unwrap();
+        harmonic.da_dpsip(psip, &mut acc).unwrap();
+        harmonic.phase(psip, &mut acc).unwrap();
     }
 
     #[test]

@@ -20,11 +20,15 @@ def test_pyharmonic1_eval(harmonic1: Harmonic):
     assert isinstance(harmonic1.dh_dtheta(psip, theta, zeta), float)
     assert isinstance(harmonic1.dh_dzeta(psip, theta, zeta), float)
     assert isinstance(harmonic1.dh_dt(psip, theta, zeta), float)
+    assert isinstance(harmonic1.a(psip), float)
+    assert isinstance(harmonic1.da_dpsip(psip), float)
+    assert isinstance(harmonic1.phase(psip), float)
 
 
 def test_data_extraction(harmonic1: Harmonic):
     assert harmonic1.psip_data.ndim == 1
     assert harmonic1.a_data.ndim == 1
+    assert harmonic1.phase_data.ndim == 1
 
 
 def test_immutability(harmonic1: Harmonic):

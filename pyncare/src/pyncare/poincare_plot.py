@@ -1,3 +1,4 @@
+from cycler import cycler
 from matplotlib.axes import Axes
 import pyncare as pc
 import numpy as np
@@ -9,27 +10,51 @@ matplotlib.use("gtk3agg")
 
 
 s = 0.3
-c = "blue"
 marker = "o"
 
 
-def poincare_plot(ax: Axes, p: pc.Poincare, wall: float = np.nan):
-    # TODO: add walls
+def poincare_plot(
+    ax: Axes,
+    p: pc.Poincare,
+    qfactor: pc.Qfactor,
+    radial: bool = False,
+    color: bool = False,
+    wall: bool = True,
+):
 
-    angles = p.angles
-    fluxes = p.fluxes
+    xs = p.angles
+    ys = p.fluxes
 
-    for i in range(len(angles)):
-        ax.scatter(pi_mod(angles[i]), fluxes[i], s, c, marker=marker)
+    if not color:
+        c = "blue"
+    else:
+        c = None  # default
+        ax.set_prop_cycle(cycler(color="bgrcmyk"))
 
     if p.section == "ConstTheta":
+        _wall = qfactor.psip_wall
         ax.set_xlabel(r"$\zeta$")
         ax.set_ylabel(r"$\psi_p$", rotation=0)
         ax.set_title(rf"$\zeta-\psi_p,$ cross section at $\theta={p.alpha:.4g}$")
-    elif p.section == "ConstZeta":
+    else:
+        _wall = qfactor.psi_wall
         ax.set_xlabel(r"$\theta$")
         ax.set_ylabel(r"$\psi$", rotation=0)
         ax.set_title(rf"$\theta-\psi,$ cross section at $\zeta={p.alpha:.4g}$")
+
+    if radial:  # ψp -> r(ψp)
+        _wall = qfactor.r(_wall)
+        ax.set_ylabel(r"$r(\psi_p)[m]$", rotation=90)
+        for i in range(ys.shape[0]):
+            for j in range(ys.shape[1]):
+                ys[i, j] = (
+                    qfactor.r(float(p.psips[i, j]))
+                    if not np.isnan(ys[i, j])
+                    else np.nan
+                )
+
+    for i in range(len(xs)):
+        ax.scatter(pi_mod(xs[i]), ys[i], s, c, marker=marker)
 
     ax.set_xlim(-np.pi, np.pi)
     ax.set_xticks(
@@ -37,9 +62,8 @@ def poincare_plot(ax: Axes, p: pc.Poincare, wall: float = np.nan):
         [r"$-\pi$", r"$-\pi/2$", r"$0$", r"$\pi/2$", r"$\pi$"],
     )
 
-    if not np.isnan(wall):
-        ax.axhline(y=wall, c="r")
-
+    if wall:
+        ax.axhline(y=_wall, c="r")
     ax.set_ylim(np.clip(ax.get_ylim(), a_min=0, a_max=None).tolist())
 
     plt.show()

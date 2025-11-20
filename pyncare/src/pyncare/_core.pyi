@@ -216,6 +216,7 @@ class Harmonic:
     phase_average: float
     psip_data: np.ndarray
     a_data: np.ndarray
+    phase_data: np.ndarray
 
     def __init__(self, path: str, typ: str, m: int, n: int):
         """Creates a single perturbation harmonic.
@@ -247,6 +248,15 @@ class Harmonic:
 
     def dh_dt(self, psip: float, theta: float, zeta: float) -> float:
         """The dh/dt value evaluated at (ψp, θ, ζ)."""
+
+    def a(self, psip: float) -> float:
+        """The `α(ψp) value (value of the harmonic's amplitude only)."""
+
+    def da_dpsip(self, psip: float) -> float:
+        """The `dα(ψp)/da_dpsip value (value of the harmonic's amplitude's derivative only)."""
+
+    def phase(self, psip: float) -> float:
+        """The `φ(ψp) value (value of the harmonic's phase only)."""
 
 class Perturbation:
     """A sum of different perturbation harmonics."""

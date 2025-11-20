@@ -23,30 +23,28 @@ perturbation = pc.Perturbation(
     ]
 )
 
-num = 200
-psip_lo = 0.093
-psip_mi = 0.094
+psip_lo = 0.084
 psip_hi = qfactor.psip_wall
 
-"Phase Average"
+psips = np.concat(
+    (
+        np.linspace(psip_lo, psip_hi, 50),
+        psip_hi * np.ones(50),
+    )
+)
+zetas = np.concat(
+    (
+        -np.pi * np.ones(50),
+        np.linspace(-np.pi, np.pi, 50),
+    )
+)
+
 init = pc.PoincareInit(
-    thetas=np.zeros(num),
-    psips=np.concat(
-        (
-            psip_lo * np.ones(50),
-            psip_mi * np.ones(50),
-            psip_hi * np.ones(100),
-        )
-    ),
-    rhos=0.001 * np.ones(num),
-    zetas=np.concat(
-        (
-            np.linspace(-np.pi, np.pi, 50),
-            np.linspace(-np.pi, np.pi, 50),
-            np.linspace(-np.pi, np.pi, 100),
-        )
-    ),
-    mus=np.zeros(num),
+    psips=psips,
+    zetas=zetas,
+    thetas=np.zeros(len(psips)),
+    rhos=0.001 * np.ones(len(psips)),
+    mus=np.zeros(len(psips)),
 )
 params = pc.MappingParameters(section="theta", alpha=np.pi, intersections=1000)
 
@@ -61,4 +59,4 @@ print(poincare)
 
 fig = plt.figure(figsize=(10, 5), layout="constrained", dpi=120)
 ax = fig.add_subplot()
-pc.poincare_plot(ax, poincare, wall=qfactor.psip_wall)
+pc.poincare_plot(ax, poincare, qfactor, radial=True, color=True)
