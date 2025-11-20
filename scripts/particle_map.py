@@ -17,7 +17,6 @@ currents = pc.Currents("./data.nc", "akima")
 bfield = pc.Bfield("./data.nc", "bicubic")
 perturbation = pc.Perturbation(
     [
-        pc.Harmonic("./data.nc", "akima", m=1, n=7),
         pc.Harmonic("./data.nc", "akima", m=1, n=9),
     ]
 )
@@ -25,13 +24,13 @@ perturbation = pc.Perturbation(
 initial = pc.InitialConditions(
     time0=0,
     theta0=3.14,
-    psip0=0.5 * qfactor.psip_wall,
+    psip0=0.2 * qfactor.psip_wall,
     rho0=0.001,
     zeta0=0.0,
     mu=0,
 )
 
-params = pc.MappingParameters(section="theta", alpha=3.14, intersections=100)
+params = pc.MappingParameters(section="theta", alpha=3.14, intersections=150)
 
 particle = pc.Particle(initial)
 

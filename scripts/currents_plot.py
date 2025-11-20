@@ -6,6 +6,7 @@
 #     "pyncare",
 # ]
 # ///
+import sys
 import matplotlib
 import matplotlib.pyplot as plt
 from pyncare import Currents, g_plot, i_plot
@@ -13,7 +14,11 @@ from pyncare import Currents, g_plot, i_plot
 
 matplotlib.use("gtk3agg")
 
-currents = Currents("./data.nc", "steffen")
+typ = "cubic"  # default
+if len(sys.argv) == 2:  # like C
+    typ = str(sys.argv[1])
+
+currents = Currents("./data.nc", typ)
 
 fig = plt.figure(figsize=(15, 5), layout="constrained")
 fig.suptitle("Plasma Currents")

@@ -19,7 +19,7 @@ currents = pc.Currents("./data.nc", "akima")
 bfield = pc.Bfield("./data.nc", "bicubic")
 perturbation = pc.Perturbation(
     [
-        pc.Harmonic("./data.nc", "akima", m=0, n=1),
+        pc.Harmonic("./data.nc", "steffen", m=0, n=1),
     ]
 )
 
@@ -59,4 +59,4 @@ print(poincare)
 
 fig = plt.figure(figsize=(10, 5), layout="constrained", dpi=120)
 ax = fig.add_subplot()
-pc.poincare_plot(ax, poincare, qfactor, radial=True, color=True)
+pc.poincare_plot(ax, poincare, qfactor, radial=True, color=False)

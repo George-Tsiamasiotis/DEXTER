@@ -6,6 +6,7 @@
 #     "pyncare",
 # ]
 # ///
+import sys
 import matplotlib
 import matplotlib.pyplot as plt
 from pyncare import Harmonic, alpha_plot, phase_plot
@@ -13,10 +14,19 @@ from pyncare import Harmonic, alpha_plot, phase_plot
 
 matplotlib.use("gtk3agg")
 
-harmonic = Harmonic("./data.nc", "cubic", m=0, n=1)
+(m, n) = (0, 1)  # default
+typ = "steffen"
+if len(sys.argv) > 2:  # like C
+    m = int(sys.argv[1])
+    n = int(sys.argv[2])
+if len(sys.argv) > 3:
+    typ = str(sys.argv[3])
+
+
+harmonic = Harmonic("./data.nc", typ=typ, m=m, n=n)
 
 fig = plt.figure(figsize=(15, 5), layout="constrained")
-fig.suptitle("Plasma Currents")
+fig.suptitle(f"$m={m}$, $n={n}$ $Harmonic$")
 
 ax = fig.subplots(1, 2)
 alpha_plot(ax[0], harmonic)

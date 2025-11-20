@@ -24,7 +24,7 @@ def q_plot(ax: Axes, qfactor: Qfactor, radial: bool = True):
         for i in range(len(xs)):
             xs[i] = qfactor.r(xs[i])
 
-    ax.scatter(xs, q_data, c="k", s=2, zorder=2, alpha=0.8, label="data points")
+    ax.scatter(xs, q_data, c="k", s=2, zorder=2, alpha=0.8, label=r"$data$ $points$")
     ax.plot(xs, q_data, c="b", label=r"$q(\psi_p)$")
     ax.plot(xs, q_data_derived, c="r", label=r"$d\psi / d\psi_p$")
     ax.legend()
@@ -36,7 +36,7 @@ def psi_plot(ax: Axes, qfactor: Qfactor):
     psi_data = qfactor.psi_data
 
     ax.scatter(
-        psip_data, psi_data, c="k", s=2, zorder=2, alpha=0.8, label="data points"
+        psip_data, psi_data, c="k", s=2, zorder=2, alpha=0.8, label=r"$data$ $points$"
     )
     ax.plot(psip_data, psi_data, c="b", label=r"$\psi(\psi_p)$")
 

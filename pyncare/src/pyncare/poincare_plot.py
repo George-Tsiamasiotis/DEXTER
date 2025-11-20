@@ -35,12 +35,12 @@ def poincare_plot(
         _wall = qfactor.psip_wall
         ax.set_xlabel(r"$\zeta$")
         ax.set_ylabel(r"$\psi_p$", rotation=0)
-        ax.set_title(rf"$\zeta-\psi_p,$ cross section at $\theta={p.alpha:.4g}$")
+        ax.set_title(rf"$\zeta-\psi_p,$ $cross$ $section$ $at$ $\theta={p.alpha:.4g}$")
     else:
         _wall = qfactor.psi_wall
         ax.set_xlabel(r"$\theta$")
         ax.set_ylabel(r"$\psi$", rotation=0)
-        ax.set_title(rf"$\theta-\psi,$ cross section at $\zeta={p.alpha:.4g}$")
+        ax.set_title(rf"$\theta-\psi,$ $cross$ $section$ $at$ $\zeta={p.alpha:.4g}$")
 
     if radial:  # ψp -> r(ψp)
         _wall = qfactor.r(_wall)

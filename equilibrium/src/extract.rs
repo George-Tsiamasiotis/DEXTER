@@ -280,7 +280,7 @@ fn get_logical_index(f: &File, mode: i64, field: &str) -> Result<usize> {
 
     pair.first()
         .ok_or(NcError::HarmonicModeNotFound {
-            which: "field".to_lowercase(),
+            which: field.to_lowercase(),
             mode,
         })
         .copied()
