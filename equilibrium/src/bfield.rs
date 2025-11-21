@@ -495,7 +495,7 @@ impl Bfield {
 
     /// Returns the value of the magnetic field strength B0 at the axis **in \[T\]**.
     pub fn baxis(&self) -> f64 {
-        safe_unwrap!("ya is non-empty", self.b_spline.ya.last().copied())
+        self.baxis
     }
 
     /// Returns the value of the major radius R **in \[m\]**.

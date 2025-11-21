@@ -1,0 +1,293 @@
+"""This file mirrors all the definitions made in the dexter-python Rust API."""
+
+import numpy as np
+
+class Qfactor:
+    """q-factor reconstructed from a NetCDF file.
+
+    Attributes
+    ----------
+    path: str
+        The path to the NetCDF file.
+    typ: str
+        The type of Interpolation.
+    psip_wall: float
+        The value of the poloidal flux ψp at the wall.
+    psi_wall: float
+        The value of the toroidal flux ψ at the wall.
+    psip_data: np.ndarray
+        The NetCDF ψp data used to construct the q(ψp) and ψ(ψp) splines.
+    q_data: np.ndarray
+        The NetCDF q data used to construct the q(ψp) spline.
+    psi_data: np.ndarray
+        The NetCDF ψp data used to construct the ψ(ψp) spline.
+    q_data_derived: np.ndarray
+        The q values, as calculated from dψ/dψp, at the ψp data.
+    """
+
+    path: str
+    typ: str
+    psip_wall: float
+    psi_wall: float
+    psip_data: np.ndarray
+    q_data: np.ndarray
+    psi_data: np.ndarray
+    r_data: np.ndarray
+    q_data_derived: np.ndarray
+
+    def __init__(self, path: str, typ: str) -> None:
+        """q-factor reconstructed from a NetCDF file.
+
+        Parameters
+        ----------
+        path: str
+            The path to the NetCDF file.
+        typ: str
+            The type of Interpolation. Available types: "Linear", "Cubic", "Akima", "AkimaPeriodic",
+            "Steffen".
+        """
+
+    def q(self, psip: float) -> float:
+        """The q value evaluated at ψp"""
+
+    def r(self, psip: float) -> float:
+        """The r(ψp) value in [m]."""
+
+    def psi(self, psip: float) -> float:
+        """The ψ value evaluated at ψp"""
+
+class Currents:
+    """Plasma current reconstructed from a NetCDF file.
+
+    Attributes
+    ----------
+    path: str
+        The path to the NetCDF file.
+    typ: str
+        The type of Interpolation.
+    psip_wall: float
+        The value of the poloidal flux ψp at the wall.
+    psip_data: np.ndarray
+        The NetCDF ψp data used to construct the g(ψp) and I(ψp) splines.
+    g_data: np.ndarray
+        The NetCDF g data used to construct the g(ψp) spline.
+    i_data: np.ndarray
+        The NetCDF I data used to construct the I(ψp) spline.
+    """
+
+    path: str
+    typ: str
+    psip_wall: float
+    psip_data: np.ndarray
+    g_data: np.ndarray
+    i_data: np.ndarray
+
+    def __init__(self, path: str, typ: str):
+        """Plasma current reconstructed from a NetCDF file.
+
+        Parameters
+        ----------
+        path: str
+            The path to the NetCDF file.
+        typ: str
+            The type of Interpolation. Available types: "Linear", "Cubic", "Akima", "AkimaPeriodic",
+            "Steffen".
+        """
+
+    def g(self, psip: float) -> float:
+        """The g value evaluated at ψp"""
+
+    def i(self, psip: float) -> float:
+        """The I value evaluated at ψp"""
+
+    def dg_dpsip(self, psip: float) -> float:
+        """The dg/dψp value evaluated at ψp"""
+
+    def di_dpsip(self, psip: float) -> float:
+        """The dI/dψp value evaluated at ψp"""
+
+class Bfield:
+    """Magnetic field reconstructed from a NetCDF file.
+
+    Attributes
+    ----------
+    path: str
+        The path to the NetCDF file.
+    typ: str
+        The type of Interpolation.
+    baxis: float
+        The magnetic field strength on the axis in [T].
+    raxis: float
+        The major radius in [m].
+    psip_wall: float
+        The value of the poloidal flux ψp at the wall.
+    psip_data: np.ndarray
+        The NetCDF ψp data used to construct the b(ψp, θ) spline.
+    theta_data: np.ndarray
+        The NetCDF θ data used to construct the b(ψp, θ) spline.
+    b_data: np.ndarray
+        The NetCDF b data used to construct the b(ψp, θ) spline.
+    r_data: np.ndarray
+        The NetCDF R data used to construct the R(ψp, θ) spline.
+    z_data: np.ndarray
+        The NetCDF Z data used to construct the Z(ψp, θ) spline.
+    db_dpsip_data: np.ndarray
+        The db/dψp values evaluated at the (ψp, θ) data, through interpolation.
+    db_dtheta_data: np.ndarray
+        The db/dψp values evaluated at the (ψp, θ) data, through interpolation.
+    """
+
+    path: str
+    typ: str
+    baxis: float
+    raxis: float
+    psip_wall: float
+    psip_data: np.ndarray
+    theta_data: np.ndarray
+    b_data: np.ndarray
+    rlab_data: np.ndarray
+    zlab_data: np.ndarray
+    db_dpsip_data: np.ndarray
+    db_dtheta_data: np.ndarray
+
+    def __init__(self, path: str, typ: str):
+        """Magnetic field reconstructed from a NetCDF file.
+
+        Parameters
+        ----------
+        path: str
+            The path to the NetCDF file.
+        typ: str
+            The type of Interpolation. Available types: "Bilinear", "Bicubic".
+        """
+
+    def b(self, psip: float, theta: float) -> float:
+        """The b value evaluated at (ψp, θ)"""
+
+    def db_dpsip(self, psip: float, theta: float) -> float:
+        """The db/dψp value evaluated at (ψp, θ)"""
+
+    def db_dtheta(self, psip: float, theta: float) -> float:
+        """The db/dθ value evaluated at (ψp, θ)"""
+
+    def d2b_dpsip2(self, psip: float, theta: float) -> float:
+        """The d2b/dψp2 value evaluated at (ψp, θ)"""
+
+    def d2b_dtheta2(self, psip: float, theta: float) -> float:
+        """The d2b/dθ2 value evaluated at (ψp, θ)"""
+
+    def d2b_dpsip_dtheta(self, psip: float, theta: float) -> float:
+        """The d2b/dψpdθ value evaluated at (ψp, θ)"""
+
+    def rlab(self, psip: float, theta: float) -> float:
+        """The R value evaluated at (ψp, θ)"""
+
+    def zlab(self, psip: float, theta: float) -> float:
+        """The Z value evaluated at (ψp, θ)"""
+
+class Harmonic:
+    """A single perturbation harmonic.
+
+    Attributes
+    ----------
+    path: str
+        The path to the NetCDF file.
+    typ: str
+        The type of Interpolation.
+    psip_wall: float
+        The value of the poloidal flux ψp at the wall.
+    m: int
+        The `θ` frequency number.
+    n: int
+        The `ζ` frequency number.
+    phase_average: float
+        The average_value of the phase data array.
+    psip_data: float
+        The NetCDF ψp data used to construct the a(ψp) spline.
+    a_data: float
+        The NetCDF a data used to construct the α(ψp) spline.
+    phase_data: np.ndarray
+        The NetCDF a data used to construct the φ(ψp) spline.
+    """
+
+    path: str
+    typ: str
+    m: int
+    n: int
+    psip_wall: float
+    phase_average: float
+    psip_data: np.ndarray
+    a_data: np.ndarray
+    phase_data: np.ndarray
+
+    def __init__(self, path: str, typ: str, m: int, n: int):
+        """Creates a single perturbation harmonic.
+
+        Parameters
+        ----------
+        path: str
+            The path to the NetCDF file.
+        typ: str
+            The type of Interpolation. Available types: "Linear", "Cubic", "Akima", "AkimaPeriodic",
+            "Steffen".
+        m: int
+            The `θ` frequency number.
+        n: int
+            The `ζ` frequency number.
+        """
+
+    def h(self, psip: float, theta: float, zeta: float) -> float:
+        """The h value (value of the whole harmonic) evaluated at (ψp, θ, ζ)."""
+
+    def dh_dpsip(self, psip: float, theta: float, zeta: float) -> float:
+        """The dh/dψp value evaluated at (ψp, θ, ζ)."""
+
+    def dh_dtheta(self, psip: float, theta: float, zeta: float) -> float:
+        """The dh/dθ value evaluated at (ψp, θ, ζ)."""
+
+    def dh_dzeta(self, psip: float, theta: float, zeta: float) -> float:
+        """The dh/dζ value evaluated at (ψp, θ, ζ)."""
+
+    def dh_dt(self, psip: float, theta: float, zeta: float) -> float:
+        """The dh/dt value evaluated at (ψp, θ, ζ)."""
+
+    def a(self, psip: float) -> float:
+        """The `α(ψp) value (value of the harmonic's amplitude only)."""
+
+    def da_dpsip(self, psip: float) -> float:
+        """The `dα(ψp)/da_dpsip value (value of the harmonic's amplitude's derivative only)."""
+
+    def phase(self, psip: float) -> float:
+        """The `φ(ψp) value (value of the harmonic's phase only)."""
+
+class Perturbation:
+    """A sum of different perturbation harmonics."""
+
+    harmonics: list[Harmonic]
+
+    def __init__(self, harmonics: list[Harmonic]):
+        """Creates a Perturbation.
+
+        Parameters
+        ----------
+        harmonics: list[Harmonics]
+            The list of harmonics that appear in the perturbation.
+        """
+
+    def __getitem__(self, n: int) -> Harmonic:
+        """Returns the n-th harmonic"""
+
+    def p(self, psip: float, theta: float, zeta: float) -> float:
+        """The p value (value of the whole harmonic) evaluated at (ψp, θ, ζ)."""
+
+    def dp_dpsip(self, psip: float, theta: float, zeta: float) -> float:
+        """The dp/dψp value evaluated at (ψp, θ, ζ)."""
+
+    def dp_dtheta(self, psip: float, theta: float, zeta: float) -> float:
+        """The dp/dθ value evaluated at (ψp, θ, ζ)."""
+
+    def dp_dzeta(self, psip: float, theta: float, zeta: float) -> float:
+        """The dp/dζ value evaluated at (ψp, θ, ζ)."""
+
+    def dp_dt(self, psip: float, theta: float, zeta: float) -> float:
+        """The dp/dt value evaluated at (ψp, θ, ζ)."""

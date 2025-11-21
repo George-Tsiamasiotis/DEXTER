@@ -3,13 +3,14 @@
 # requires-python = ">=3.14"
 # dependencies = [
 #     "matplotlib",
-#     "pyncare",
+#     "dexter",
 # ]
 # ///
 import sys
 import matplotlib
 import matplotlib.pyplot as plt
-from pyncare import Harmonic, alpha_plot, phase_plot
+from dexter import Harmonic
+from dexter.plot import alpha_plot, phase_plot
 
 
 matplotlib.use("gtk3agg")

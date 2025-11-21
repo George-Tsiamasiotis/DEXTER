@@ -3,12 +3,13 @@
 # requires-python = ">=3.14"
 # dependencies = [
 #     "matplotlib",
-#     "pyncare",
+#     "dexter",
 # ]
 # ///
 import matplotlib
 import matplotlib.pyplot as plt
-from pyncare import Bfield, b_plot, db_plot
+from dexter import Bfield
+from dexter.plot import b_plot, db_plot
 
 
 matplotlib.use("gtk3agg")

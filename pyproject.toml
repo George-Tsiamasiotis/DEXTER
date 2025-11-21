@@ -1,7 +1,7 @@
 [project]
-name = "pyncare"
+name = "dexter"
 version = "0.1.0"
-description = "Python wrappers around the 'poincare' crate."
+description = "Calculations and simulations in reconstructed equilibria of toroidal fusion devices."
 readme = "README.md"
 authors = [
     { name = "George-Tsiamasiotis", email = "gt.develop@protonmail.com" }
@@ -13,10 +13,10 @@ dependencies = [
 ]
 
 [tool.maturin]
-module-name = "pyncare._core"
-python-packages = ["pyncare"]
-python-source = "./pyncare/src"
-manifest-path="./pyncare/Cargo.toml"
+module-name = "dexter._core"
+python-packages = ["dexter"]
+python-source = "./dexter-python/"
+manifest-path="./dexter-python/Cargo.toml"
 # This also seems to solver maturin's and rust-analyzer's cache invalidation problem which forces 
 # pyo3 and rust-numpy to recompile every time
 profile = "release" 
@@ -39,5 +39,5 @@ dev = [
 ]
 
 [tool.pytest.ini_options]
-testpaths = "./pyncare/pytests" # Run from workspace root
+testpaths = "./dexter-python/pytests" # Run from workspace root
 addopts = "--durations 2"

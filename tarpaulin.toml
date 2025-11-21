@@ -1,5 +1,5 @@
 [test]
-name = "poincare-maps"
+name = "DEXTER"
 manifest-path = "./Cargo.toml"
 force-clean = false
 skip-clean = true
@@ -7,4 +7,3 @@ output-dir = "./htmlcov/"
 no-fail-fast = true
 fail-immediately = true
 color = "Always"
-engine = "Llvm" # needed for pyo3

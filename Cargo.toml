@@ -1,6 +1,13 @@
 [workspace]
 resolver = "3"
-members = [ "config","equilibrium", "particle", "poincare", "pyncare", "utils"]
+members = [
+    "config",
+    "utils",
+    "equilibrium",
+    "particle",
+    "poincare",
+    "dexter-python"
+]
 
 [workspace.dependencies]
 ndarray = "0.16.1"

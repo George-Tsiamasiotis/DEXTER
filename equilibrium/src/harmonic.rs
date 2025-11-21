@@ -58,7 +58,7 @@ pub struct HarmonicCache {
     pub theta: Radians,
     pub zeta: Radians,
     pub alpha: f64,
-    pub phase: f64,
+    pub phase: Radians,
     pub dalpha: f64,
     pub sin: f64,
     pub cos: f64,
