@@ -1,6 +1,6 @@
 [project]
 name = "dexter"
-version = "0.1.0"
+version = "0.1.1"
 description = "Calculations and simulations in reconstructed equilibria of toroidal fusion devices."
 readme = "README.md"
 authors = [
@@ -17,10 +17,10 @@ module-name = "dexter._core"
 python-packages = ["dexter"]
 python-source = "./dexter-python/"
 manifest-path="./dexter-python/Cargo.toml"
-# This also seems to solver maturin's and rust-analyzer's cache invalidation problem which forces 
-# pyo3 and rust-numpy to recompile every time
-profile = "release" 
-editable-profile = "release" 
+# This also seems to solver maturin's and rust-analyzer's cache invalidation
+# problem which forces pyo3 and rust-numpy to recompile every time
+profile = "release"
+editable-profile = "release"
 
 [build-system]
 requires = ["maturin>=1.0,<2.0"]
@@ -41,3 +41,13 @@ dev = [
 [tool.pytest.ini_options]
 testpaths = "./dexter-python/pytests" # Run from workspace root
 addopts = "--durations 2"
+
+[project.scripts]
+# NetCDF handling
+npz_to_netcdf = "dexter.scripts:npz_to_netcdf"
+stub_npz = "dexter.scripts:stub_npz"
+# Plots
+qfactor_plot = "dexter.scripts:qfactor_plot"
+currents_plot = "dexter.scripts:currents_plot "
+bfield_plot = "dexter.scripts:bfield_plot "
+harmonic_plot = "dexter.scripts:harmonic_plot"

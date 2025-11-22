@@ -11,7 +11,33 @@ The bulk computations are implemented in *[Rust](https://rust-lang.org/)*. The R
 The Python interface directly exposes all underlying objects and routines in the form of a single python package:
 
 ``` python
-import dexter
+>>> import dexter as dx
+>>>
+>>> qfactor = dx.Qfactor(path="./data.nc", typ="cubic")
 ```
 
 while also providing plotting methods and scripts for handling and converting netCDF files.
+
+###  NetCDF handling
+
+A stub `netCDF` file can be created with the `stub_npz` project script:
+
+``` sh
+$ stub_npz ./data/stub_npz.npz
+```
+
+An `npz` file can be converted to a `netCDF` file with the `npz_to_netcdf` project script:
+
+``` sh
+$ npz_to_netcdf ./data/data.npz ./data.nc
+```
+
+### Plots
+
+Plotting scripts are installed with the `dexter` python package as project scripts:
+
+```sh
+$ qfactor_plot ./data.nc
+$ harmonic_plot .data.nc 0 1 -t steffen
+$ bfield_plot --help # print help message
+```

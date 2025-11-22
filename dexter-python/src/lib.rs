@@ -1,9 +1,4 @@
 //! Module and sub-module final exports
-//!
-//! # Notes
-//!
-//! - Use _<module-name>() to avoid ambiguity and overwrite the name with
-//!   `#[pymodule(name = "<module-name>")]`.
 
 mod pylibrium;
 
