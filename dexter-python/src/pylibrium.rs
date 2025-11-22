@@ -1,4 +1,4 @@
-//! Equilibrium objects Python wrappers.
+//! Equilibrium objects' Python wrappers.
 
 use numpy::{IntoPyArray, PyArray1, PyArray2};
 use pyo3::prelude::*;
@@ -12,7 +12,7 @@ use utils::*;
 use super::pyerrors::PyEqError;
 
 #[pyclass(frozen, name = "Qfactor")]
-pub struct PyQfactor(pub Qfactor);
+pub struct PyQfactor(Qfactor);
 
 #[pymethods]
 impl PyQfactor {
@@ -28,8 +28,8 @@ py_debug_impl!(PyQfactor);
 py_repr_impl!(PyQfactor);
 py_get_path!(PyQfactor);
 py_get_typ!(PyQfactor);
-py_get_float!(PyQfactor, psip_wall);
-py_get_float!(PyQfactor, psi_wall);
+py_export_getter!(PyQfactor, psip_wall, f64);
+py_export_getter!(PyQfactor, psi_wall, f64);
 py_eval1D!(PyQfactor, q);
 py_eval1D!(PyQfactor, r);
 py_eval1D!(PyQfactor, psi);
@@ -42,7 +42,7 @@ py_get_numpy1D_fallible!(PyQfactor, q_data_derived);
 // ===============================================================================================
 
 #[pyclass(frozen, name = "Currents")]
-pub struct PyCurrents(pub Currents);
+pub struct PyCurrents(Currents);
 
 #[pymethods]
 impl PyCurrents {
@@ -58,7 +58,7 @@ py_debug_impl!(PyCurrents);
 py_repr_impl!(PyCurrents);
 py_get_typ!(PyCurrents);
 py_get_path!(PyCurrents);
-py_get_float!(PyCurrents, psip_wall);
+py_export_getter!(PyCurrents, psip_wall, f64);
 py_eval1D!(PyCurrents, g);
 py_eval1D!(PyCurrents, i);
 py_eval1D!(PyCurrents, dg_dpsip);
@@ -70,7 +70,7 @@ py_get_numpy1D!(PyCurrents, i_data);
 // ===============================================================================================
 
 #[pyclass(frozen, name = "Bfield")]
-pub struct PyBfield(pub Bfield);
+pub struct PyBfield(Bfield);
 
 #[pymethods]
 impl PyBfield {
@@ -86,9 +86,9 @@ py_debug_impl!(PyBfield);
 py_repr_impl!(PyBfield);
 py_get_typ!(PyBfield);
 py_get_path!(PyBfield);
-py_get_float!(PyBfield, psip_wall);
-py_get_float!(PyBfield, baxis);
-py_get_float!(PyBfield, raxis);
+py_export_getter!(PyBfield, psip_wall, f64);
+py_get_primitive_field!(PyBfield, baxis, f64);
+py_get_primitive_field!(PyBfield, raxis, f64);
 py_eval2D!(PyBfield, b);
 py_eval2D!(PyBfield, db_dtheta);
 py_eval2D!(PyBfield, db_dpsip);
@@ -109,7 +109,7 @@ py_get_numpy2D_fallible!(PyBfield, db_dtheta_data);
 
 #[derive(Clone)]
 #[pyclass(frozen, name = "Harmonic")]
-pub struct PyHarmonic(pub Harmonic);
+pub struct PyHarmonic(Harmonic);
 
 #[pymethods]
 impl PyHarmonic {
@@ -139,10 +139,10 @@ py_debug_impl!(PyHarmonic);
 py_repr_impl!(PyHarmonic);
 py_get_typ!(PyHarmonic);
 py_get_path!(PyHarmonic);
-py_get_float!(PyHarmonic, psip_wall);
-py_get_float!(PyHarmonic, phase_average);
-py_get_int!(PyHarmonic, m);
-py_get_int!(PyHarmonic, n);
+py_get_primitive_field!(PyHarmonic, phase_average, f64);
+py_get_primitive_field!(PyHarmonic, m, i64);
+py_get_primitive_field!(PyHarmonic, n, i64);
+py_export_getter!(PyHarmonic, psip_wall, f64);
 py_get_numpy1D!(PyHarmonic, psip_data);
 py_get_numpy1D!(PyHarmonic, a_data);
 py_get_numpy1D!(PyHarmonic, phase_data);
@@ -158,7 +158,7 @@ py_eval1D!(PyHarmonic, phase);
 // ===============================================================================================
 
 #[pyclass(frozen, name = "Perturbation")]
-pub struct PyPerturbation(pub Perturbation);
+pub struct PyPerturbation(Perturbation);
 
 #[pymethods]
 impl PyPerturbation {

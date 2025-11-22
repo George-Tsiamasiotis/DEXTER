@@ -2,13 +2,13 @@ import pytest
 from dexter import Currents
 
 
-def test_pycurrent_derived_fields(currents: Currents):
+def test_derived_fields(currents: Currents):
     assert isinstance(currents.path, str)
     assert isinstance(currents.typ, str)
     assert isinstance(currents.psip_wall, float)
 
 
-def test_pycurrent_eval(currents: Currents):
+def test_eval(currents: Currents):
     psip = 0.015
     assert isinstance(currents.g(psip), float)
     assert isinstance(currents.i(psip), float)

@@ -11,11 +11,11 @@ documentation.workspace = true
 description = "Single particle simulation in toroidal fusion devices"
 
 [dependencies]
-ndarray= {workspace = true}
-thiserror = {workspace = true}
-criterion = {workspace = true}
-safe_unwrap = {workspace = true}
-rsl-interpolation = {workspace = true}
+ndarray.workspace = true
+thiserror.workspace = true
+criterion.workspace = true
+safe_unwrap.workspace = true
+rsl-interpolation.workspace = true
 utils= {path = "../utils"}
 config = {path = "../config"}
 equilibrium = {path = "../equilibrium"}

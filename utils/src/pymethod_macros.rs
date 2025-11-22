@@ -3,7 +3,7 @@
 //! It is necessary to create a new `#[pymethods]` impl block every time, since `#[pymethods]` does not
 //! allow macros to be used inside it.
 
-/// Generates a impl Debug block, using the innet type's Debug representation.
+/// Generates a impl Debug block, using the inner type's Debug representation.
 #[macro_export]
 macro_rules! py_debug_impl {
     ($py_object:ident) => {
@@ -28,33 +28,29 @@ macro_rules! py_repr_impl {
     };
 }
 
-/// Generates a getter method for a float.
-///
-/// The float should be returned by the wrapped type as `py_object.0.<field_name>()`.
+/// Generates a python getter method for a primitive type, which is expected to be a pub field
 #[macro_export]
-macro_rules! py_get_float {
-    ($py_object:ident, $getter:ident) => {
+macro_rules! py_get_primitive_field {
+    ($py_object:ident, $field:ident, $typ:ident) => {
         #[pymethods]
         impl $py_object {
             #[getter]
-            pub fn $getter(&self) -> f64 {
-                self.0.$getter()
+            pub fn $field(&self) -> $typ {
+                self.0.$field as $typ
             }
         }
     };
 }
 
-/// Generates a getter method for an integer.
-///
-/// The integer should be returned by the wrapped type as `py_object.0.<field_name>()`.
+/// Exports a getter method on the exposed python wrapper
 #[macro_export]
-macro_rules! py_get_int {
-    ($py_object:ident, $getter:ident) => {
+macro_rules! py_export_getter {
+    ($py_object:ident, $getter:ident, $typ:ident) => {
         #[pymethods]
         impl $py_object {
             #[getter]
-            pub fn $getter(&self) -> i64 {
-                self.0.$getter()
+            pub fn $getter(&self) -> $typ {
+                self.0.$getter() as $typ
             }
         }
     };

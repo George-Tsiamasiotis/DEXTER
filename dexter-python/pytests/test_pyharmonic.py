@@ -2,7 +2,7 @@ import pytest
 from dexter import Harmonic
 
 
-def test_pyharmonic_derived_fields(harmonic1: Harmonic):
+def test_derived_fields(harmonic1: Harmonic):
     assert isinstance(harmonic1.path, str)
     assert isinstance(harmonic1.typ, str)
     assert isinstance(harmonic1.psip_wall, float)
@@ -11,7 +11,7 @@ def test_pyharmonic_derived_fields(harmonic1: Harmonic):
     assert isinstance(harmonic1.n, int)
 
 
-def test_pyharmonic_eval(harmonic1: Harmonic):
+def test_eval(harmonic1: Harmonic):
     (psip, theta, zeta) = 0.015, 3.14, 0
     assert isinstance(harmonic1.h(psip, theta, zeta), float)
     assert isinstance(harmonic1.dh_dpsip(psip, theta, zeta), float)

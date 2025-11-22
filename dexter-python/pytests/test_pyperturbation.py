@@ -2,7 +2,7 @@ import pytest
 from dexter import Harmonic, Perturbation
 
 
-def test_pypertyrbation_eval(perturbation: Perturbation):
+def test_eval(perturbation: Perturbation):
     psip = 0.015
     theta = 1
     zeta = 2
@@ -13,7 +13,7 @@ def test_pypertyrbation_eval(perturbation: Perturbation):
     assert isinstance(perturbation.dp_dt(psip, theta, zeta), float)
 
 
-def test_perturbation_getitem(perturbation: Perturbation):
+def test_titem(perturbation: Perturbation):
     assert isinstance(perturbation[0], Harmonic)
     assert isinstance(perturbation[1], Harmonic)
 

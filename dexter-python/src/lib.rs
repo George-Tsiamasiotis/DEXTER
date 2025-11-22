@@ -1,6 +1,7 @@
 //! Module and sub-module final exports
 
 mod pylibrium;
+mod pyparticle;
 
 mod pyerrors;
 
@@ -15,5 +16,7 @@ fn _core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<pylibrium::PyBfield>()?;
     m.add_class::<pylibrium::PyHarmonic>()?;
     m.add_class::<pylibrium::PyPerturbation>()?;
+    // Particle
+    m.add_class::<pyparticle::PyInitialConditions>()?;
     Ok(())
 }

@@ -1,6 +1,6 @@
 [package]
 name = "equilibrium"
-version = "0.1.1-pre.1"
+version = "0.1.1-pre.2"
 license.workspace = true
 edition.workspace = true
 authors.workspace = true
@@ -11,10 +11,10 @@ documentation.workspace = true
 description = "Representation of Tokamak Equilibria from experimental data."
 
 [dependencies]
-ndarray = {workspace = true}
-thiserror = {workspace = true}
-safe_unwrap = {workspace = true}
-rsl-interpolation = {workspace = true}
+ndarray.workspace = true
+thiserror.workspace = true
+safe_unwrap.workspace = true
+rsl-interpolation.workspace = true
 config = {path = "../config"}
 utils = {path = "../utils"}
 netcdf = { version = "0.11.1", features = ["ndarray"] }

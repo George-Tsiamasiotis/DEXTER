@@ -492,16 +492,6 @@ impl Bfield {
     pub fn psip_wall(&self) -> Flux {
         safe_unwrap!("ya is non-empty", self.b_spline.xa.last().copied())
     }
-
-    /// Returns the value of the magnetic field strength B0 at the axis **in \[T\]**.
-    pub fn baxis(&self) -> f64 {
-        self.baxis
-    }
-
-    /// Returns the value of the major radius R **in \[m\]**.
-    pub fn raxis(&self) -> f64 {
-        self.raxis
-    }
 }
 
 /// Returns θ % 2π.
@@ -542,8 +532,6 @@ mod test {
     fn test_extraction_methods() {
         let b = create_bfield();
         let _ = format!("{b:?}");
-        let _: f64 = b.baxis();
-        let _: f64 = b.raxis();
 
         assert_eq!(b.psip_data().ndim(), 1);
         assert_eq!(b.theta_data().ndim(), 1);

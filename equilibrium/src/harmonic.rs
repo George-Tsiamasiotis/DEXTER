@@ -433,21 +433,6 @@ impl Harmonic {
     pub fn psip_wall(&self) -> Flux {
         safe_unwrap!("ya is non-empty", self.a_spline.xa.last().copied())
     }
-
-    /// Returns the value of the `m` mode number.
-    pub fn m(&self) -> i64 {
-        self.m
-    }
-
-    /// Returns the value of the `n` mode number.
-    pub fn n(&self) -> i64 {
-        self.n
-    }
-
-    /// Returns the value of the phase average.
-    pub fn phase_average(&self) -> f64 {
-        self.phase_average
-    }
 }
 
 impl Clone for Harmonic {
@@ -476,7 +461,7 @@ impl std::fmt::Debug for Harmonic {
             .field("ψp_wall", &format!("{:.7}", self.psip_wall()))
             .field("m", &self.m)
             .field("n", &self.n)
-            .field("phase_average", &format!("{:.7}", self.phase_average()))
+            .field("phase_average", &format!("{:.7}", self.phase_average))
             .finish()
     }
 }
@@ -502,8 +487,6 @@ mod test {
     fn test_data_extraction() {
         let path = get_test_dataset_path();
         let harmonic = Harmonic::from_dataset(&path, "akima", 3, 2).unwrap();
-        let _: i64 = harmonic.m();
-        let _: i64 = harmonic.n();
 
         assert_eq!(harmonic.psip_data().ndim(), 1);
         assert_eq!(harmonic.a_data().ndim(), 1);

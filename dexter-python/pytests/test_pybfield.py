@@ -2,15 +2,15 @@ import pytest
 from dexter import Bfield
 
 
-def test_pybfield_derived_fields(bfield: Bfield):
+def test_fields(bfield: Bfield):
     assert isinstance(bfield.path, str)
     assert isinstance(bfield.typ, str)
     assert isinstance(bfield.baxis, float)
-    # assert isinstance(bfield.raxis, float)
+    assert isinstance(bfield.raxis, float)
     assert isinstance(bfield.psip_wall, float)
 
 
-def test_pybfield_eval(bfield: Bfield):
+def test_eval(bfield: Bfield):
     psip = 0.015
     theta = 1
     assert isinstance(bfield.b(psip, theta), float)

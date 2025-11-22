@@ -11,14 +11,14 @@ documentation.workspace = true
 description = "Poincare maps calculation for toroidal fusion devices"
 
 [dependencies]
-ndarray = {workspace = true}
-thiserror = {workspace = true}
-safe_unwrap = {workspace = true}
+ndarray.workspace = true
+thiserror.workspace = true
+safe_unwrap.workspace = true
 config = {path = "../config"}
 utils = {path = "../utils"}
 equilibrium = {path = "../equilibrium"}
 particle = {path = "../particle"}
-indicatif = { version = "0.18.2", features = ["rayon"] }
+indicatif = { version = "0.18.3", features = ["rayon"] }
 rayon = "1.11.0"
 
 [features]

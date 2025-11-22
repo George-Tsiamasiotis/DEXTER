@@ -2,14 +2,14 @@ import pytest
 from dexter import Qfactor
 
 
-def test_pyqfactor_derived_fields(qfactor: Qfactor):
+def test_derived_fields(qfactor: Qfactor):
     assert isinstance(qfactor.path, str)
     assert isinstance(qfactor.typ, str)
     assert isinstance(qfactor.psip_wall, float)
     assert isinstance(qfactor.psi_wall, float)
 
 
-def test_pyqfactor_eval(qfactor: Qfactor):
+def test_eval(qfactor: Qfactor):
     psip = 0.015
     assert isinstance(qfactor.q(psip), float)
     assert isinstance(qfactor.r(psip), float)
