@@ -16,7 +16,6 @@ pub struct PyQfactor(Qfactor);
 
 #[pymethods]
 impl PyQfactor {
-    /// Creates a new PyQFactor wrapper object.
     #[new]
     pub fn new(path: &str, typ: &str) -> Result<Self, PyEqError> {
         let path = std::path::PathBuf::from(path);
@@ -46,7 +45,6 @@ pub struct PyCurrents(Currents);
 
 #[pymethods]
 impl PyCurrents {
-    /// Creates a new PyCurrents wrapper object.
     #[new]
     pub fn new(path: &str, typ: &str) -> Result<Self, PyEqError> {
         let path = std::path::PathBuf::from(path);
@@ -74,7 +72,6 @@ pub struct PyBfield(Bfield);
 
 #[pymethods]
 impl PyBfield {
-    /// Creates a new PyBfield wrapper object.
     #[new]
     pub fn new(path: &str, typ: &str) -> Result<Self, PyEqError> {
         let path = std::path::PathBuf::from(path);
@@ -113,7 +110,6 @@ pub struct PyHarmonic(Harmonic);
 
 #[pymethods]
 impl PyHarmonic {
-    /// Creates a new PyHarmonic wrapper object.
     #[new]
     pub fn new(path: &str, typ: &str, m: i64, n: i64) -> Result<Self, PyEqError> {
         let path = std::path::PathBuf::from(path);
@@ -162,7 +158,6 @@ pub struct PyPerturbation(Perturbation);
 
 #[pymethods]
 impl PyPerturbation {
-    /// Creates a new PyPerturbation wrapper object.
     #[new]
     pub fn new_py<'py>(harmonics: Bound<'py, PyList>) -> Result<Self, PyEqError> {
         let pyharmonics_vec: Vec<PyHarmonic> = harmonics

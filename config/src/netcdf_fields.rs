@@ -27,7 +27,7 @@ pub const N: &str = "n";
 pub const PSIP: &str = "psip";
 /// The toroidal flux `ψ` **in \[Tm\]**.
 pub const PSI: &str = "psi";
-/// The radial coordinate r **in [m]**.
+/// The radial coordinate r **in \[m\]**.
 pub const R: &str = "r";
 
 // ================ 1D Variables ================

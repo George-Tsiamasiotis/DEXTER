@@ -18,5 +18,7 @@ fn _core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<pylibrium::PyPerturbation>()?;
     // Particle
     m.add_class::<pyparticle::PyInitialConditions>()?;
+    m.add_class::<pyparticle::PyEvolution>()?;
+    m.add_class::<pyparticle::PyFrequencies>()?;
     Ok(())
 }

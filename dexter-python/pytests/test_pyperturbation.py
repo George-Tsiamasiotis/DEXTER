@@ -13,7 +13,7 @@ def test_eval(perturbation: Perturbation):
     assert isinstance(perturbation.dp_dt(psip, theta, zeta), float)
 
 
-def test_titem(perturbation: Perturbation):
+def test_getitem(perturbation: Perturbation):
     assert isinstance(perturbation[0], Harmonic)
     assert isinstance(perturbation[1], Harmonic)
 

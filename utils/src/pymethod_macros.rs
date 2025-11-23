@@ -31,12 +31,12 @@ macro_rules! py_repr_impl {
 /// Generates a python getter method for a primitive type, which is expected to be a pub field
 #[macro_export]
 macro_rules! py_get_primitive_field {
-    ($py_object:ident, $field:ident, $typ:ident) => {
+    ($py_object:ident, $field:ident, $T:ident) => {
         #[pymethods]
         impl $py_object {
             #[getter]
-            pub fn $field(&self) -> $typ {
-                self.0.$field as $typ
+            pub fn $field(&self) -> $T {
+                self.0.$field as $T
             }
         }
     };
@@ -45,12 +45,23 @@ macro_rules! py_get_primitive_field {
 /// Exports a getter method on the exposed python wrapper
 #[macro_export]
 macro_rules! py_export_getter {
-    ($py_object:ident, $getter:ident, $typ:ident) => {
+    ($py_object:ident, $getter:ident, $T:ident) => {
         #[pymethods]
         impl $py_object {
             #[getter]
-            pub fn $getter(&self) -> $typ {
-                self.0.$getter() as $typ
+            pub fn $getter(&self) -> $T {
+                self.0.$getter() as $T
+            }
+        }
+    };
+    // In python, this translates to `Optional[T]`, which is equivalent to
+    // `None | T`
+    ($py_object:ident, $getter:ident, Option<$T:ident>) => {
+        #[pymethods]
+        impl $py_object {
+            #[getter]
+            pub fn $getter(&self) -> Option<$T> {
+                self.0.$getter() as Option<$T>
             }
         }
     };
