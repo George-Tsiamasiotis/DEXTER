@@ -26,13 +26,10 @@ args = parser.parse_args()
 # ==========================================================================
 
 
-import matplotlib
 import matplotlib.pyplot as plt
 from dexter import Currents
 from dexter.plot import g_plot, i_plot
 
-
-matplotlib.use("gtk3agg")
 
 currents = Currents(args.nc_file, args.typ)
 

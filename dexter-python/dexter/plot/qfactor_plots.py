@@ -1,10 +1,7 @@
 """Plotting functions for a Qfactors's q(ψp), dψ/dψp, and ψ(ψp)."""
 
-import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
 from dexter import Qfactor
-
-plt.rcParams["text.usetex"] = True
 
 
 def q_plot(ax: Axes, qfactor: Qfactor, radial: bool = True):

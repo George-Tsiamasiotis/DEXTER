@@ -1,11 +1,8 @@
 """Plotting functions for a Harmonic's amplitude α and phase φ."""
 
 import numpy as np
-import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
 from dexter import Harmonic
-
-plt.rcParams["text.usetex"] = True
 
 
 def alpha_plot(ax: Axes, harmonic: Harmonic):

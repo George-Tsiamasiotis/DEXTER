@@ -26,13 +26,10 @@ args = parser.parse_args()
 # ==========================================================================
 
 
-import matplotlib
 import matplotlib.pyplot as plt
 from dexter import Bfield
 from dexter.plot import b_plot, db_plot
 
-
-matplotlib.use("gtk3agg")
 
 bfield = Bfield(args.nc_file, args.typ)
 

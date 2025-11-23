@@ -12,7 +12,7 @@ use utils::*;
 use super::pyerrors::PyEqError;
 
 #[pyclass(frozen, name = "Qfactor")]
-pub struct PyQfactor(Qfactor);
+pub struct PyQfactor(pub Qfactor);
 
 #[pymethods]
 impl PyQfactor {
@@ -41,7 +41,7 @@ py_get_numpy1D_fallible!(PyQfactor, q_data_derived);
 // ===============================================================================================
 
 #[pyclass(frozen, name = "Currents")]
-pub struct PyCurrents(Currents);
+pub struct PyCurrents(pub Currents);
 
 #[pymethods]
 impl PyCurrents {
@@ -68,7 +68,7 @@ py_get_numpy1D!(PyCurrents, i_data);
 // ===============================================================================================
 
 #[pyclass(frozen, name = "Bfield")]
-pub struct PyBfield(Bfield);
+pub struct PyBfield(pub Bfield);
 
 #[pymethods]
 impl PyBfield {
@@ -106,7 +106,7 @@ py_get_numpy2D_fallible!(PyBfield, db_dtheta_data);
 
 #[derive(Clone)]
 #[pyclass(frozen, name = "Harmonic")]
-pub struct PyHarmonic(Harmonic);
+pub struct PyHarmonic(pub Harmonic);
 
 #[pymethods]
 impl PyHarmonic {
@@ -154,7 +154,7 @@ py_eval1D!(PyHarmonic, phase);
 // ===============================================================================================
 
 #[pyclass(frozen, name = "Perturbation")]
-pub struct PyPerturbation(Perturbation);
+pub struct PyPerturbation(pub Perturbation);
 
 #[pymethods]
 impl PyPerturbation {

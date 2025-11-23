@@ -2,12 +2,18 @@
 
 use numpy::{IntoPyArray, PyArray1};
 use pyo3::prelude::*;
+use pyo3::types::PyTuple;
+use safe_unwrap::safe_unwrap;
 
-use particle::{Evolution, Frequencies, InitialConditions};
+use particle::{Evolution, Frequencies, InitialConditions, Particle};
 use utils::{
     py_debug_impl, py_export_getter, py_get_numpy1D, py_get_primitive_field, py_repr_impl,
 };
 
+use crate::pyerrors::PyParticleError;
+use crate::pylibrium::{PyBfield, PyCurrents, PyPerturbation, PyQfactor};
+
+#[derive(Clone)]
 #[pyclass(frozen, name = "InitialConditions")]
 pub struct PyInitialConditions(InitialConditions);
 
@@ -65,3 +71,68 @@ py_repr_impl!(PyFrequencies);
 py_export_getter!(PyFrequencies, omega_theta, Option<f64>);
 py_export_getter!(PyFrequencies, omega_zeta, Option<f64>);
 py_export_getter!(PyFrequencies, qkinetic, Option<f64>);
+
+// ===============================================================================================
+
+#[pyclass(name = "Particle")]
+pub struct PyParticle(Particle);
+
+#[pymethods]
+impl PyParticle {
+    #[new]
+    pub fn new_py(initial: PyInitialConditions) -> Self {
+        Self(Particle::new(&initial.0))
+    }
+
+    #[getter]
+    pub fn get_initial_conditions(&self) -> PyInitialConditions {
+        PyInitialConditions(self.0.initial_conditions.clone())
+    }
+
+    #[getter]
+    pub fn get_evolution(&self) -> PyEvolution {
+        PyEvolution(self.0.evolution.clone())
+    }
+
+    #[getter]
+    pub fn get_status(&self) -> String {
+        format!("{:?}", self.0.status)
+    }
+
+    #[getter]
+    pub fn get_frequencies(&self) -> PyFrequencies {
+        PyFrequencies(self.0.frequencies.clone())
+    }
+
+    pub fn integrate<'py>(
+        &mut self,
+        qfactor: &PyQfactor,
+        currents: &PyCurrents,
+        bfield: &PyBfield,
+        perturbation: &PyPerturbation,
+        t_eval: Bound<'py, PyTuple>,
+    ) -> Result<(), PyParticleError> {
+        match t_eval.len() {
+            2 => (),
+            _ => panic!("`t_eval` must be of the form (t0, tf)"),
+        };
+        let t_eval: Vec<f64> = t_eval
+            .iter()
+            .map(|any| {
+                any.extract::<f64>()
+                    .expect("t_eval elements must be floats")
+            })
+            .collect();
+        let t_eval = (
+            safe_unwrap!("len already checked", t_eval.first().copied()),
+            safe_unwrap!("len already checked", t_eval.last().copied()),
+        );
+
+        Ok(self
+            .0
+            .integrate(&qfactor.0, &bfield.0, &currents.0, &perturbation.0, t_eval)?)
+    }
+}
+
+py_debug_impl!(PyParticle);
+py_repr_impl!(PyParticle);

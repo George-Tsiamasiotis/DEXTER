@@ -20,5 +20,6 @@ fn _core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<pyparticle::PyInitialConditions>()?;
     m.add_class::<pyparticle::PyEvolution>()?;
     m.add_class::<pyparticle::PyFrequencies>()?;
+    m.add_class::<pyparticle::PyParticle>()?;
     Ok(())
 }

@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
 from dexter import Bfield
 
-plt.rcParams["text.usetex"] = True
 
 levels = 30
 cmap = "managua"

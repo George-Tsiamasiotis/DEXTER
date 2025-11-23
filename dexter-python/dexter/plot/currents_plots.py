@@ -1,11 +1,8 @@
 """Plotting functions for a Currents' g(ψp), dg/dψp, I(ψp) and dI/dψp."""
 
 import numpy as np
-import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
 from dexter import Currents
-
-plt.rcParams["text.usetex"] = True
 
 
 def g_plot(ax: Axes, current: Currents):

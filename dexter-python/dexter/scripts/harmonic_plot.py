@@ -36,13 +36,10 @@ args = parser.parse_args()
 # ==========================================================================
 
 
-import matplotlib
 import matplotlib.pyplot as plt
 from dexter import Harmonic
 from dexter.plot import alpha_plot, phase_plot
 
-
-matplotlib.use("gtk3agg")
 
 harmonic = Harmonic(args.nc_file, args.typ, args.m, args.n)
 

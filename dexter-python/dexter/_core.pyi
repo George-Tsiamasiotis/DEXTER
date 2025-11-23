@@ -360,3 +360,56 @@ class Frequencies:
     omega_theta: Optional[float]
     omega_zeta: Optional[float]
     qkinetic: Optional[float]
+
+class Particle:
+    """A particle.
+
+    Attributes
+    ----------
+    initial_conditions: InitialConditions
+        The initial conditions set.
+    evolution: Evolution
+        The evolution time series of the particle's integration.
+    status: str
+        The particle's integration status.
+    frequencies: Frequencies
+        The particle's calculated frequencies.
+    """
+
+    initial_conditions: InitialConditions
+    evolution: Evolution
+    status: str
+    frequencies: Frequencies
+
+    def __init__(self, initial_conditions: InitialConditions):
+        """Creates a Particle from an `InitialConditions` set.
+
+        Parameters
+        ----------
+        initial_conditions: InitialConditions
+            The initial conditions set.
+        """
+
+    def integrate(
+        self,
+        qfactor: Qfactor,
+        bfield: Bfield,
+        currents: Currents,
+        perturbation: Perturbation,
+        t_eval: tuple[float, float],
+    ):
+        """Integrates the particle, storing its evolution.
+
+        Parameters
+        ----------
+        qfactor: Qfactor
+            The equilibrium's qfactor.
+        currents: Currents
+            The equilibrium's plasma current.
+        bfield: Bfield
+            The equilibrium's magnetic field.
+        per: Perturbation
+            The equilibrium's perturbation.
+        t_eval: tuple[float, float]
+            The time span (t0, tf) in which to integrate the particle [Normalized].
+        """

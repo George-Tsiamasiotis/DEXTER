@@ -57,6 +57,8 @@ pub enum IntegrationStatus {
 /// Representation of a particle.
 #[derive(Clone)]
 pub struct Particle {
+    /// The [`InitialConditions`] set of the particle.
+    pub initial_conditions: InitialConditions,
     /// The initial [`State`] of the particle.
     pub initial_state: State,
     /// The final [`State`] of the particle.
@@ -71,12 +73,13 @@ pub struct Particle {
 
 impl Particle {
     /// Creates a new [`Particle`] from the initial conditions.
-    pub fn new(initial: &InitialConditions) -> Self {
-        let initial_state = State::from_initial(initial);
+    pub fn new(initial_conditions: &InitialConditions) -> Self {
+        let initial_state = State::from_initial(initial_conditions);
         let mut evolution = Evolution::with_capacity(EVOLUTION_INIT_CAPACITY);
         evolution.push_state(&initial_state);
 
         Self {
+            initial_conditions: initial_conditions.to_owned(),
             evolution,
             initial_state,
             final_state: State::default(),
