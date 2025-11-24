@@ -1,7 +1,7 @@
 """This file mirrors all the definitions made in the dexter-python Rust API."""
 
 import numpy as np
-from typing import Optional, TypeAlias
+from typing import Literal, Optional, TypeAlias
 
 NDArray1D: TypeAlias = np.ndarray[tuple[int], np.dtype[np.float64]]
 NDArray2D: TypeAlias = np.ndarray[tuple[int, int], np.dtype[np.float64]]
@@ -335,31 +335,40 @@ class InitialConditions:
             The magnetic moment `μ`.
         """
 
-class Evolution:
-    """Time series of the particle's orbit.
+class MappingParameters:
+    """Defines all the necessary parameters of a Mapping.
 
-    Not meant to be constructed. It is stored as a particle's attribute.
+    Attributes
+    ----------
+    section: Literal["ConstTheta", "ConstZeta"]
+        The surface of section Σ, defined by an equation xᵢ= α, where xᵢ= θ or ζ.
+    alpha: float
+        The constant that defines the surface of section (modulo 2π).
+    intersections: int
+        The number of interections to calculate.
     """
 
-    time: NDArray1D
-    theta: NDArray1D
-    psip: NDArray1D
-    rho: NDArray1D
-    zeta: NDArray1D
-    psi: NDArray1D
-    ptheta: NDArray1D
-    pzeta: NDArray1D
-    energy: NDArray1D
-    energy_std: float
-    steps_taken: int
-    steps_stored: int
+    section: Literal["ConstTheta", "ConstZeta"]
+    alpha: float
+    intersections: int
 
-class Frequencies:
-    """Stores the Particle's calculated ωθ, ωζ and qkinetic."""
+    def __init__(
+        self,
+        section: Literal["ConstTheta", "ConstZeta"],
+        alpha: float,
+        intersections: int,
+    ):
+        """Defines all the necessary parameters of a Poincare Map.
 
-    omega_theta: Optional[float]
-    omega_zeta: Optional[float]
-    qkinetic: Optional[float]
+        Parameters
+        ----------
+        section: Literal["ConstTheta", "ConstZeta"]
+            The surface of section Σ, defined by an equation xᵢ= α, where xᵢ= θ or ζ.
+        alpha: float
+            The constant that defines the surface of section (modulo 2π).
+        intersections: int
+            The number of interections to calculate.
+        """
 
 class Particle:
     """A particle.
@@ -413,3 +422,75 @@ class Particle:
         t_eval: tuple[float, float]
             The time span (t0, tf) in which to integrate the particle [Normalized].
         """
+
+    def map(
+        self,
+        qfactor: Qfactor,
+        currents: Currents,
+        bfield: Bfield,
+        perturbation: Perturbation,
+        params: MappingParameters,
+    ):
+        """Integrates the particle, storing its intersections with the Poincare
+        surface defined by `MappingParameters`.
+
+        Parameters
+        ----------
+        qfactor: Qfactor
+            The equilibrium's qfactor.
+        currents: Currents
+            The equilibrium's plasma current.
+        bfield: Bfield
+            The equilibrium's magnetic field.
+        per: Perturbation
+            The equilibrium's perturbation.
+        params: MappingParameters
+            The parameters of the Poincare mapping.
+        """
+
+    def calculate_frequencies(
+        self,
+        qfactor: Qfactor,
+        currents: Currents,
+        bfield: Bfield,
+        perturbation: Perturbation,
+    ):
+        """Integrates the particle for 1 period, calculating ωθ, ωζ and qkinetic.
+
+        Parameters
+        ----------
+        qfactor: Qfactor
+            The equilibrium's qfactor.
+        currents: Currents
+            The equilibrium's plasma current.
+        bfield: Bfield
+            The equilibrium's magnetic field.
+        per: Perturbation
+            The equilibrium's perturbation.
+        """
+
+class Evolution:
+    """Time series of the particle's orbit.
+
+    Not meant to be constructed. It is stored as a particle's attribute.
+    """
+
+    time: NDArray1D
+    theta: NDArray1D
+    psip: NDArray1D
+    rho: NDArray1D
+    zeta: NDArray1D
+    psi: NDArray1D
+    ptheta: NDArray1D
+    pzeta: NDArray1D
+    energy: NDArray1D
+    energy_std: float
+    steps_taken: int
+    steps_stored: int
+
+class Frequencies:
+    """Stores the Particle's calculated ωθ, ωζ and qkinetic."""
+
+    omega_theta: Optional[float]
+    omega_zeta: Optional[float]
+    qkinetic: Optional[float]

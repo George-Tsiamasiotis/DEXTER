@@ -1,3 +1,5 @@
+use std::f64::consts::PI;
+
 use config::{MAX_STEPS, RKF45_FIRST_STEP};
 use equilibrium::{Bfield, Currents, Perturbation, Qfactor};
 use safe_unwrap::safe_unwrap;
@@ -131,21 +133,30 @@ pub(crate) fn close_theta_period(
                 perturbation,
                 &params,
                 mod_state2,
-            )?;
+            )?
+            .into_evaluated(qfactor, currents, bfield, perturbation)?;
             particle.evolution.push_state(&intersection_state);
-            // WARN: Unsure about the 2π factor
-            let d_theta = intersection_state.theta - theta0;
-            let d_zeta = intersection_state.zeta - zeta0;
-            let dt = intersection_state.time - time0;
-            particle.frequencies.update(&OmegaTheta, d_theta / dt);
-            particle.frequencies.update(&OmegaZeta, d_zeta / dt);
+
+            #[allow(non_snake_case)]
+            let Tomega = intersection_state.time - time0;
+            let omega_theta = 2.0 * PI / Tomega;
+
+            // NOTE:
+            // >>> The orbit frequency ωζ corresponds to the bounce/transit averaged rate of
+            // >>> toroidal precession Δζ/Tω.
+            let dzeta = intersection_state.zeta - zeta0;
+            let omega_zeta = dzeta / Tomega;
+
+            particle.frequencies.update(&OmegaTheta, omega_theta);
+            particle.frequencies.update(&OmegaZeta, omega_zeta);
+            particle.final_state = intersection_state;
+            particle.status = crate::IntegrationStatus::SinglePeriodIntegrated;
             break;
         }
         // Keep going if not close to a period.
         state1 = state2;
     }
 
-    particle.final_state = state1.into_evaluated(qfactor, currents, bfield, perturbation)?;
     Ok(())
 }
 

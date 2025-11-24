@@ -205,7 +205,6 @@ impl Particle {
         self.evolution = Evolution::default(); // Reset it
         self.initial_state
             .evaluate(qfactor, currents, bfield, perturbation)?;
-        self.status = IntegrationStatus::SinglePeriodIntegrated; // Will be overwritten in case of failure.
         let start = Instant::now();
 
         use ParticleError::*;

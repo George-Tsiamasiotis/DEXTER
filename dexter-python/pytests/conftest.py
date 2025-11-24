@@ -52,7 +52,7 @@ def initial_conditions(qfactor: Qfactor) -> InitialConditions:
     return InitialConditions(
         time0=0,
         theta0=0,
-        psip0=qfactor.psip_wall,
+        psip0=0.5 * qfactor.psip_wall,
         rho0=1e-3,
         zeta0=0,
         mu=0,

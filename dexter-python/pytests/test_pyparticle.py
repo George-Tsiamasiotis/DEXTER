@@ -1,5 +1,15 @@
+import pytest
 import numpy as np
-from dexter import Evolution, InitialConditions, Particle
+from dexter import (
+    Bfield,
+    Currents,
+    Evolution,
+    InitialConditions,
+    Particle,
+    MappingParameters,
+    Perturbation,
+    Qfactor,
+)
 
 
 def test_initialization(initial_conditions: InitialConditions):
@@ -16,6 +26,38 @@ def test_initial_condtions(initial_conditions: InitialConditions):
     assert isinstance(
         Particle(initial_conditions).initial_conditions, InitialConditions
     )
+
+
+def test_immutability(initial_conditions: InitialConditions):
+    with pytest.raises(AttributeError):
+        initial_conditions.time0 *= 2
+    with pytest.raises(AttributeError):
+        initial_conditions.theta0 *= 2
+    with pytest.raises(AttributeError):
+        initial_conditions.psip0 *= 2
+    with pytest.raises(AttributeError):
+        initial_conditions.rho0 *= 2
+    with pytest.raises(AttributeError):
+        initial_conditions.zeta0 *= 2
+    with pytest.raises(AttributeError):
+        initial_conditions.mu *= 2
+
+
+# ==========================================================================
+
+
+def test_mapping_parameters():
+    params = MappingParameters("ConstTheta", alpha=3.1415, intersections=10)
+    assert params.section == "ConstTheta"
+    assert params.alpha == 3.1415
+    assert params.intersections == 10
+    params = MappingParameters("ConstZeta", alpha=1, intersections=100)
+    assert params.section == "ConstZeta"
+    assert params.alpha == 1
+    assert params.intersections == 100
+
+
+# ==========================================================================
 
 
 def test_initial_evolution(initial_conditions: InitialConditions):
@@ -43,9 +85,15 @@ def test_initial_evolution(initial_conditions: InitialConditions):
         assert array.shape == (1,)
 
 
+# ==========================================================================
+
+
 def test_initial_status(initial_conditions: InitialConditions):
     particle = Particle(initial_conditions)
     assert particle.status == "Initialized"
+
+
+# ==========================================================================
 
 
 def test_initial_frequencies(initial_conditions: InitialConditions):
@@ -53,3 +101,83 @@ def test_initial_frequencies(initial_conditions: InitialConditions):
     assert particle.frequencies.omega_theta is None
     assert particle.frequencies.omega_zeta is None
     assert particle.frequencies.qkinetic is None
+
+
+# ==========================================================================
+# ==========================================================================
+
+
+def test_particle_integrate(
+    initial_conditions: InitialConditions,
+    qfactor: Qfactor,
+    currents: Currents,
+    bfield: Bfield,
+    perturbation: Perturbation,
+):
+    particle = Particle(initial_conditions)
+
+    assert particle.status == "Initialized"
+    particle.integrate(
+        qfactor=qfactor,
+        currents=currents,
+        bfield=bfield,
+        perturbation=perturbation,
+        t_eval=(0, 100),
+    )
+    assert particle.status == "Integrated"
+    assert particle.evolution.steps_taken > 2
+    assert particle.evolution.steps_stored > 2
+
+    str(particle)  # Inlcudes all nested fields
+
+
+def test_particle_map(
+    initial_conditions: InitialConditions,
+    qfactor: Qfactor,
+    currents: Currents,
+    bfield: Bfield,
+    perturbation: Perturbation,
+):
+    params = MappingParameters(section="ConstTheta", alpha=3.14, intersections=5)
+
+    particle = Particle(initial_conditions)
+
+    assert particle.status == "Initialized"
+    particle.map(
+        qfactor=qfactor,
+        currents=currents,
+        bfield=bfield,
+        perturbation=perturbation,
+        params=params,
+    )
+    assert particle.status == "Mapped"
+    assert particle.evolution.steps_taken > 6
+    assert particle.evolution.steps_stored == 6  # + initial point
+
+
+def test_particle_calculate_frequencies(
+    initial_conditions: InitialConditions,
+    qfactor: Qfactor,
+    currents: Currents,
+    bfield: Bfield,
+):
+    particle = Particle(initial_conditions)
+
+    assert particle.status == "Initialized"
+    assert particle.frequencies.omega_theta is None
+    assert particle.frequencies.omega_zeta is None
+    assert particle.frequencies.qkinetic is None
+
+    particle.calculate_frequencies(
+        qfactor=qfactor,
+        currents=currents,
+        bfield=bfield,
+        perturbation=Perturbation([]),  # Unperturbed system for frequencies
+    )
+    assert particle.status == "SinglePeriodIntegrated"
+    assert particle.evolution.steps_taken > 2
+    assert particle.evolution.steps_stored > 2
+
+    assert particle.frequencies.omega_theta is not None
+    assert particle.frequencies.omega_zeta is not None
+    assert particle.frequencies.qkinetic is not None

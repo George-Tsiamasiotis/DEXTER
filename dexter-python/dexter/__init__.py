@@ -1,5 +1,11 @@
 from dexter._core import Qfactor, Currents, Bfield, Harmonic, Perturbation
-from dexter._core import InitialConditions, Evolution, Frequencies, Particle
+from dexter._core import (
+    InitialConditions,
+    MappingParameters,
+    Evolution,
+    Frequencies,
+    Particle,
+)
 
 __all__ = [
     "Qfactor",
@@ -8,6 +14,7 @@ __all__ = [
     "Harmonic",
     "Perturbation",
     "InitialConditions",
+    "MappingParameters",
     "Evolution",
     "Frequencies",
     "Particle",

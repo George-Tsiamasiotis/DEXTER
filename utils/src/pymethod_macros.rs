@@ -28,6 +28,20 @@ macro_rules! py_repr_impl {
     };
 }
 
+/// Generates a python getter that returns the debug String ("{:?}") of an enum
+#[macro_export]
+macro_rules! py_get_enum_string {
+    ($py_object:ident, $enum:ident) => {
+        #[pymethods]
+        impl $py_object {
+            #[getter]
+            pub fn $enum(&self) -> String {
+                format!("{:?}", self.0.$enum)
+            }
+        }
+    };
+}
+
 /// Generates a python getter method for a primitive type, which is expected to be a pub field
 #[macro_export]
 macro_rules! py_get_primitive_field {
