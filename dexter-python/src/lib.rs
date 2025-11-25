@@ -1,5 +1,6 @@
 //! Module and sub-module final exports
 
+mod pyheap;
 mod pylibrium;
 mod pyparticle;
 
@@ -22,5 +23,7 @@ fn _core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<pyparticle::PyEvolution>()?;
     m.add_class::<pyparticle::PyFrequencies>()?;
     m.add_class::<pyparticle::PyParticle>()?;
+    // Heap
+    m.add_class::<pyheap::PyHeapInitialConditions>()?;
     Ok(())
 }

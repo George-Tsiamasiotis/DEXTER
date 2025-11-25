@@ -494,3 +494,41 @@ class Frequencies:
     omega_theta: Optional[float]
     omega_zeta: Optional[float]
     qkinetic: Optional[float]
+
+# ==========================================================================
+
+class HeapInitialConditions:
+    """Sets up the initial conditions for a poincare map."""
+
+    thetas: NDArray1D
+    psips: NDArray1D
+    rhos: NDArray1D
+    zetas: NDArray1D
+    mus: NDArray1D
+
+    def __init__(
+        self,
+        thetas: NDArray1D,
+        psips: NDArray1D,
+        rhos: NDArray1D,
+        zetas: NDArray1D,
+        mus: NDArray1D,
+    ):
+        """Constructs a HeapInitialConditions.
+
+        Parameters
+        ----------
+        thetas: NDArray1D
+            The initial `θ` angles.
+        psips: NDArray1D
+            The initial poloidal magnetic fluxes `ψp`.
+        rhos: NDArray1D
+            The initial parallel gyro radii `ρ`.
+        zetas: NDArray1D
+            The initial `ζ` angles.
+        mus: NDArray1D
+            The magnetic moments `μ`.
+        """
+
+    def __len__(self):
+        """Implements the built-in function 'len()'."""

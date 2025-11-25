@@ -1,0 +1,43 @@
+//! Heap objects' Python wrappers.
+
+use numpy::{IntoPyArray, PyArray1};
+use pyo3::prelude::*;
+
+use heap::HeapInitialConditions;
+use utils::{py_debug_impl, py_export_getter, py_get_numpy1D, py_repr_impl};
+
+use crate::pyerrors::PyHeapError;
+
+#[pyclass(frozen, name = "HeapInitialConditions")]
+pub struct PyHeapInitialConditions(pub HeapInitialConditions);
+
+#[pymethods]
+impl PyHeapInitialConditions {
+    #[new]
+    // Use Vec<f64> and let pyo3 do the rest.
+    pub fn new_py(
+        thetas: Vec<f64>,
+        psips: Vec<f64>,
+        rhos: Vec<f64>,
+        zetas: Vec<f64>,
+        mus: Vec<f64>,
+    ) -> Result<Self, PyHeapError> {
+        Ok(Self(HeapInitialConditions::build(
+            &thetas, &psips, &rhos, &zetas, &mus,
+        )?))
+    }
+
+    pub fn __len__(&self) -> usize {
+        self.0.len()
+    }
+}
+
+py_debug_impl!(PyHeapInitialConditions);
+py_repr_impl!(PyHeapInitialConditions);
+py_get_numpy1D!(PyHeapInitialConditions, thetas);
+py_get_numpy1D!(PyHeapInitialConditions, psips);
+py_get_numpy1D!(PyHeapInitialConditions, rhos);
+py_get_numpy1D!(PyHeapInitialConditions, zetas);
+py_get_numpy1D!(PyHeapInitialConditions, mus);
+py_export_getter!(PyHeapInitialConditions, len, usize);
+py_export_getter!(PyHeapInitialConditions, is_empty, bool);

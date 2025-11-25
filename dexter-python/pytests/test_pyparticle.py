@@ -108,13 +108,20 @@ def test_initial_frequencies(initial_conditions: InitialConditions):
 
 
 def test_particle_integrate(
-    initial_conditions: InitialConditions,
     qfactor: Qfactor,
     currents: Currents,
     bfield: Bfield,
     perturbation: Perturbation,
 ):
-    particle = Particle(initial_conditions)
+    init = InitialConditions(
+        time0=0,
+        theta0=0,
+        psip0=0.5 * qfactor.psip_wall,
+        rho0=1e-3,
+        zeta0=0,
+        mu=0,
+    )
+    particle = Particle(init)
 
     assert particle.status == "Initialized"
     particle.integrate(
@@ -132,15 +139,22 @@ def test_particle_integrate(
 
 
 def test_particle_map(
-    initial_conditions: InitialConditions,
     qfactor: Qfactor,
     currents: Currents,
     bfield: Bfield,
     perturbation: Perturbation,
 ):
+    init = InitialConditions(
+        time0=0,
+        theta0=0,
+        psip0=0.5 * qfactor.psip_wall,
+        rho0=1e-3,
+        zeta0=0,
+        mu=0,
+    )
     params = MappingParameters(section="ConstTheta", alpha=3.14, intersections=5)
 
-    particle = Particle(initial_conditions)
+    particle = Particle(init)
 
     assert particle.status == "Initialized"
     particle.map(
@@ -156,12 +170,19 @@ def test_particle_map(
 
 
 def test_particle_calculate_frequencies(
-    initial_conditions: InitialConditions,
     qfactor: Qfactor,
     currents: Currents,
     bfield: Bfield,
 ):
-    particle = Particle(initial_conditions)
+    init = InitialConditions(
+        time0=0,
+        theta0=2,
+        psip0=0.5 * qfactor.psip_wall,
+        rho0=0.000008,
+        zeta0=0.0,
+        mu=0,
+    )
+    particle = Particle(init)
 
     assert particle.status == "Initialized"
     assert particle.frequencies.omega_theta is None

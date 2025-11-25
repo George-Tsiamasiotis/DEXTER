@@ -83,7 +83,7 @@ default_coord = np.array([])
 default_array = np.full((0, 0, len(psip)), np.nan)
 m = npz.get("m", default_coord).astype("i8")
 n = npz.get("n", default_coord).astype("i8")
-alphas = npz.get("alphas", default_array).astype("f8")
+alphas = npz.get("alphas", default_array).astype("f8") / (2 * np.pi) ** 2
 phases = npz.get("phases", default_array).astype("f8")
 
 print("Exctracted all variables from npz file")

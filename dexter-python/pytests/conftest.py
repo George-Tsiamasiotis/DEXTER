@@ -48,7 +48,7 @@ def perturbation(harmonic1: Harmonic, harmonic2: Harmonic) -> Perturbation:
 
 @pytest.fixture(scope="session")
 def initial_conditions(qfactor: Qfactor) -> InitialConditions:
-    """Creates an InitialConditions set."""
+    """Creates an InitialConditions set. Do not use for integrations"""
     return InitialConditions(
         time0=0,
         theta0=0,

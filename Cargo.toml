@@ -5,7 +5,7 @@ members = [
     "utils",
     "equilibrium",
     "particle",
-    "poincare",
+    "heap",
     "dexter-python"
 ]
 

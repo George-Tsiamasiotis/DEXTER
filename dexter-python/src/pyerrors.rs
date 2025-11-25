@@ -1,8 +1,8 @@
 use equilibrium::EqError;
+use heap::HeapError;
 use particle::ParticleError;
-use poincare::PoincareError;
-use pyo3::exceptions::PyException;
 use pyo3::PyErr;
+use pyo3::exceptions::PyException;
 
 /// Creates newtype wrappers around the foreign error types, to allow conversion to [`PyErr`] and
 /// use of the `?` operator.
@@ -30,4 +30,4 @@ macro_rules! to_pyerr_impl {
 
 to_pyerr_impl!(EqError, PyEqError);
 to_pyerr_impl!(ParticleError, PyParticleError);
-to_pyerr_impl!(PoincareError, PyPoincareError);
+to_pyerr_impl!(HeapError, PyHeapError);

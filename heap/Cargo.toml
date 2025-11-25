@@ -1,0 +1,19 @@
+[package]
+name = "heap"
+version = "0.1.0"
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+homepage.workspace = true
+repository.workspace = true
+documentation.workspace = true
+description = "A collection (heap) of many particles."
+
+[dependencies]
+ndarray.workspace = true
+thiserror.workspace = true
+utils= {path = "../utils"}
+config = {path = "../config"}
+equilibrium = {path = "../equilibrium"}
+particle = {path = "../particle"}
