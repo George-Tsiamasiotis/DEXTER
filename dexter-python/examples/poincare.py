@@ -34,5 +34,6 @@ heap = dx.Heap(initials)
 params = dx.MappingParameters("ConstTheta", 3.14, 1000)
 
 heap.poincare(qfactor, currents, bfield, perturbation, params)
+print(heap)
 
 fig = plt.figure(figsize=(9, 6), layout="constrained", dpi=120)

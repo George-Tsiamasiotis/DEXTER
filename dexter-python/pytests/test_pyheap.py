@@ -30,3 +30,4 @@ def test_heap_initialization():
     heap = Heap(initials)
     assert len(heap) == 5
     assert isinstance(heap[2], Particle)
+    str(heap)

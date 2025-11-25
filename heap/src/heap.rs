@@ -6,11 +6,14 @@ use equilibrium::{Bfield, Currents, Perturbation, Qfactor};
 use particle::{MappingParameters, Particle, PoincareSection};
 
 use crate::progress_bars::PoincarePbar;
-use crate::{HeapInitialConditions, Result};
+use crate::{HeapInitialConditions, HeapStats, Result};
 
 /// Describes the Routine by which the Heap's particle's where integrated.
 #[non_exhaustive]
+#[derive(Default, Clone, Debug)]
 pub enum Routine {
+    #[default]
+    None,
     Integration,
     Poincare(PoincareSection),
     SinglePeriod,
@@ -23,7 +26,9 @@ pub struct Heap {
     /// Tracked [`Particle`]s.
     pub particles: Vec<Particle>,
     /// Describes the Routine by which the Heap's particle's where integrated.
-    pub routine: Option<Routine>,
+    pub routine: Routine,
+    /// Calculation results
+    pub stats: HeapStats,
 }
 
 impl Heap {
@@ -33,7 +38,8 @@ impl Heap {
         Self {
             initials: initials.clone(),
             particles,
-            routine: None,
+            routine: Routine::default(),
+            stats: HeapStats::new(initials),
         }
     }
 
@@ -57,7 +63,8 @@ impl Heap {
         })?;
         pbar.finish();
 
-        self.routine = Some(Routine::Poincare(params.section));
+        self.routine = Routine::Poincare(params.section);
+        self.stats = HeapStats::from_heap(self);
         Ok(())
     }
 
@@ -67,5 +74,11 @@ impl Heap {
 
     pub fn is_empty(&self) -> bool {
         self.len() == 0
+    }
+}
+
+impl std::fmt::Debug for Heap {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.stats.fmt(f)
     }
 }

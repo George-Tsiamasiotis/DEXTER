@@ -82,3 +82,6 @@ impl PyHeap {
         self.0.len()
     }
 }
+
+py_debug_impl!(PyHeap);
+py_repr_impl!(PyHeap);
