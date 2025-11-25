@@ -1,10 +1,13 @@
 //! Heap objects' Python wrappers.
 
-use numpy::{IntoPyArray, PyArray1};
+use numpy::{IntoPyArray, PyArray1, PyArray2};
 use pyo3::prelude::*;
 
 use heap::{Heap, HeapInitialConditions};
-use utils::{py_debug_impl, py_export_getter, py_get_numpy1D, py_repr_impl};
+use utils::{
+    py_debug_impl, py_export_getter, py_get_enum_string, py_get_numpy1D, py_get_numpy2D,
+    py_repr_impl,
+};
 
 use crate::pyerrors::PyHeapError;
 use crate::pylibrium::{PyBfield, PyCurrents, PyPerturbation, PyQfactor};
@@ -85,3 +88,8 @@ impl PyHeap {
 
 py_debug_impl!(PyHeap);
 py_repr_impl!(PyHeap);
+py_get_enum_string!(PyHeap, routine);
+py_get_numpy2D!(PyHeap, zetas);
+py_get_numpy2D!(PyHeap, psips);
+py_get_numpy2D!(PyHeap, thetas);
+py_get_numpy2D!(PyHeap, psis);

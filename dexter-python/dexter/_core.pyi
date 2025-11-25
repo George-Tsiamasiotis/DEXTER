@@ -536,6 +536,12 @@ class HeapInitialConditions:
 class Heap:
     """A collection of multiple Particles constructed from sets of Initial Conditions."""
 
+    zetas: NDArray2D
+    psips: NDArray2D
+    thetas: NDArray2D
+    psis: NDArray2D
+    routine: str
+
     def __init__(self, initial: HeapInitialConditions):
         """Constructs a Heap.
 

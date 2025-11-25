@@ -20,7 +20,7 @@ pub struct HeapStats {
     fastest: MapDuration,
 }
 impl HeapStats {
-    /// Creates a new [`HeapResults`], only containing information about the initial conditions.
+    /// Creates a new [`HeapStats`], only containing information about the initial conditions.
     pub fn new(initial: &HeapInitialConditions) -> Self {
         Self {
             total_particles: initial.len(),
@@ -84,7 +84,7 @@ impl HeapStats {
 
 impl std::fmt::Debug for HeapStats {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("HeapStats")
+        f.debug_struct("Heap") // Propagated to Heap
             .field("routine", &self.routine)
             .field("total_particles", &self.total_particles)
             .field("mapped", &self.mapped)

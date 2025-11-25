@@ -10,7 +10,7 @@ use crate::{HeapError, Result};
 
 /// Stores the initial conditions arrays.
 #[non_exhaustive]
-#[derive(Clone)]
+#[derive(Default, Clone)]
 pub struct HeapInitialConditions {
     thetas: Array1<Radians>,
     psips: Array1<Flux>,
