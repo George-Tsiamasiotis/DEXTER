@@ -25,5 +25,6 @@ fn _core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<pyparticle::PyParticle>()?;
     // Heap
     m.add_class::<pyheap::PyHeapInitialConditions>()?;
+    m.add_class::<pyheap::PyHeap>()?;
     Ok(())
 }

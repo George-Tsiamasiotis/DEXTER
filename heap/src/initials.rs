@@ -10,6 +10,7 @@ use crate::{HeapError, Result};
 
 /// Stores the initial conditions arrays.
 #[non_exhaustive]
+#[derive(Clone)]
 pub struct HeapInitialConditions {
     thetas: Array1<Radians>,
     psips: Array1<Flux>,
@@ -78,7 +79,7 @@ impl HeapInitialConditions {
     }
 
     /// Creates a [`Particle`] set from the values at the position `index` of the arrays.
-    pub(crate) fn particle_from_index(&self, index: usize) -> Particle {
+    pub fn particle_from_index(&self, index: usize) -> Particle {
         Particle::new(&self.initial_from_index(index))
     }
 

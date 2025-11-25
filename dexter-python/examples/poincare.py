@@ -2,11 +2,12 @@
 # requires-python = ">=3.14"
 # dependencies = [
 #     "matplotlib",
+#     "numpy",
 # ]
 # ///
 import matplotlib.pyplot as plt
+import numpy as np
 import dexter as dx
-from dexter.plot import evolution_plot
 
 
 qfactor = dx.Qfactor("./data.nc", "steffen")
@@ -19,27 +20,19 @@ perturbation = dx.Perturbation(
     ]
 )
 
-initial = dx.InitialConditions(
-    time0=0,
-    theta0=0,
-    psip0=0.4 * qfactor.psip_wall,
-    rho0=0.01,
-    zeta0=0.0,
-    mu=0,
+num = 20
+initials = dx.HeapInitialConditions(
+    thetas=np.zeros(num),
+    psips=0.0944 * np.ones(num),
+    rhos=0.001 * np.ones(num),
+    zetas=np.linspace(-np.pi, np.pi, num),
+    mus=np.zeros(num),
 )
 
-particle = dx.Particle(initial)
+heap = dx.Heap(initials)
 
-params = dx.MappingParameters("ConstTheta", 3.14, 100)
+params = dx.MappingParameters("ConstTheta", 3.14, 1000)
 
-particle.map(
-    qfactor=qfactor,
-    currents=currents,
-    bfield=bfield,
-    perturbation=perturbation,
-    params=params,
-)
-print(particle)
+heap.poincare(qfactor, currents, bfield, perturbation, params)
 
 fig = plt.figure(figsize=(9, 6), layout="constrained", dpi=120)
-evolution_plot(fig, particle)

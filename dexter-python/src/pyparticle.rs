@@ -100,7 +100,7 @@ py_export_getter!(PyFrequencies, qkinetic, Option<f64>);
 // ===============================================================================================
 
 #[pyclass(name = "Particle")]
-pub struct PyParticle(Particle);
+pub struct PyParticle(pub Particle);
 
 #[pymethods]
 impl PyParticle {

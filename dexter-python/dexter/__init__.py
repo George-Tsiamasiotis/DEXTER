@@ -6,7 +6,7 @@ from dexter._core import (
     Frequencies,
     Particle,
 )
-from dexter._core import HeapInitialConditions
+from dexter._core import HeapInitialConditions, Heap
 
 __all__ = [
     "Qfactor",
@@ -20,4 +20,5 @@ __all__ = [
     "Frequencies",
     "Particle",
     "HeapInitialConditions",
+    "Heap",
 ]

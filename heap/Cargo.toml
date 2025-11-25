@@ -1,6 +1,6 @@
 [package]
 name = "heap"
-version = "0.1.0"
+version = "0.1.0-pre.1"
 authors.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -17,3 +17,5 @@ utils= {path = "../utils"}
 config = {path = "../config"}
 equilibrium = {path = "../equilibrium"}
 particle = {path = "../particle"}
+indicatif = { version = "0.18.3", features = ["rayon"] }
+rayon = "1.11.0"

@@ -531,4 +531,46 @@ class HeapInitialConditions:
         """
 
     def __len__(self):
-        """Implements the built-in function 'len()'."""
+        """Returns the number of InitialConditions sets."""
+
+class Heap:
+    """A collection of multiple Particles constructed from sets of Initial Conditions."""
+
+    def __init__(self, initial: HeapInitialConditions):
+        """Constructs a Heap.
+
+        Parameters
+        ----------
+        initials: HeapInitialConditions
+            The Particles' initial conditions sets.
+        """
+
+    def poincare(
+        self,
+        qfactor: Qfactor,
+        currents: Currents,
+        bfield: Bfield,
+        perturbation: Perturbation,
+        params: MappingParameters,
+    ):
+        """Calculates the Poincare map.
+
+        Parameters
+        ----------
+        qfactor: Qfactor
+            The equilibrium's qfactor.
+        currents: Currents
+            The equilibrium's plasma current.
+        bfield: Bfield
+            The equilibrium's magnetic field.
+        per: Perturbation
+            The equilibrium's perturbation.
+        params: MappingParameters
+            The parameters of the Poincare mapping.
+        """
+
+    def __getitem__(self, n: int) -> Harmonic:
+        """Returns the n-th particle."""
+
+    def __len__(self):
+        """Returns the number of particles."""
