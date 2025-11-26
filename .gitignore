@@ -4,6 +4,9 @@
 *.nc
 *.so
 
+# Docs
+book
+
 # Python
 .venv/
 *.py[cod]

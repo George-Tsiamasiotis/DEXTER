@@ -1,6 +1,6 @@
 [project]
 name = "dexter"
-version = "0.1.1"
+version = "0.1.1-pre.2"
 description = "Calculations and simulations in reconstructed equilibria of toroidal fusion devices."
 readme = "README.md"
 authors = [
@@ -36,11 +36,12 @@ dev = [
     "mypy>=1.18.2",
     "xarray>=2025.10.1",
     "netcdf4>=1.7.3",
+    "semver>=3.0.4",
 ]
 
 [tool.pytest.ini_options]
-testpaths = "./dexter-python/pytests" # Run from workspace root
-addopts = "--durations 2"
+testpaths = ["./dexter-python/pytests", "./docs/src/"] # Run from workspace root
+addopts = "--durations 2 --doctest-glob='*.md'"
 
 [project.scripts]
 # NetCDF handling

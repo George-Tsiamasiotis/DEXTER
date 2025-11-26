@@ -1,0 +1,15 @@
+[book]
+title = "DEXTER Documentation"
+authors = ["George-Tsiamasiotis"]
+language = "en"
+
+[output.html]
+preferred-dark-theme = "rust"
+mathjax-support = true
+git-repository-url = "https://github.com/George-Tsiamasiotis/DEXTER.git"
+git-repository-icon = "fas-code-branch"
+
+[output.html.code.hidelines]
+# Terrible: use an extra space to tell mdbook to hide the line, since doctest expects a `>>> ` 
+# for lines with not output
+python = ">>>  "

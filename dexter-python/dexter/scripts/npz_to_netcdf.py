@@ -4,12 +4,17 @@
 #   "xarray",
 #   "netcdf4",
 #   "numpy",
+#   "semver"
 # ]
 # ///
 
 """Converts a `npz` file to a `netcdf` file, with the expected
 fields and variable names.
 """
+
+import semver
+
+VERSION = semver.Version.parse("0.1.0-alpha.1")
 
 import argparse
 
@@ -316,6 +321,7 @@ dataset = dataset.assign_attrs(
         "output file": str(OUTPUT),
         "date": str(datetime.now().astimezone().replace(microsecond=0).isoformat()),
         "script": str(Path(__file__).stem),
+        "convention version": str(VERSION),
     }
 )
 
