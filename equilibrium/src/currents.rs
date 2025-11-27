@@ -12,15 +12,15 @@ use safe_unwrap::safe_unwrap;
 /// Plasma current reconstructed from a netCDF file.
 pub struct Currents {
     /// Path to the netCDF file.
-    pub path: PathBuf,
+    path: PathBuf,
     /// 1D [`Interpolation type`], in case-insensitive string format.
     ///
     /// [`Interpolation type`]: ../rsl_interpolation/trait.InterpType.html#implementors
-    pub typ: String,
+    typ: String,
     /// Spline over the g-current data, as a function of ψp.
-    pub g_spline: DynSpline<f64>,
+    g_spline: DynSpline<f64>,
     /// Spline over the I-current data, as a function of ψp.
-    pub i_spline: DynSpline<f64>,
+    i_spline: DynSpline<f64>,
 }
 
 /// Creation
@@ -163,25 +163,41 @@ impl Currents {
     }
 }
 
-// Data extraction
+// Getters
 impl Currents {
+    /// Returns the netCDF file's path.
+    pub fn path(&self) -> PathBuf {
+        self.path.clone()
+    }
+
+    /// Returns the interpolation type.
+    pub fn typ(&self) -> String {
+        self.typ.clone()
+    }
+
+    /// Returns the number of data points.
+    #[allow(clippy::len_without_is_empty)]
+    pub fn len(&self) -> usize {
+        self.g_spline.xa.len()
+    }
+
+    /// Returns the poloidal flux's value at the wall `ψp_wall` **in Normalized Units**.
+    pub fn psip_wall(&self) -> f64 {
+        safe_unwrap!("array is non-empty", self.g_spline.xa.last().copied())
+    }
+
     array1D_getter_impl!(psip_data, g_spline.xa, Flux);
     array1D_getter_impl!(g_data, g_spline.ya, f64);
     array1D_getter_impl!(i_data, i_spline.ya, f64);
-
-    /// Returns the value of the poloidal angle ψp at the wall.
-    pub fn psip_wall(&self) -> Flux {
-        safe_unwrap!("ya is non-empty", self.g_spline.xa.last().copied())
-    }
 }
 
 impl std::fmt::Debug for Currents {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Current")
-            .field("path", &self.path)
-            .field("typ", &self.typ)
+            .field("path", &self.path())
+            .field("typ", &self.typ())
             .field("ψp_wall", &format!("{:.7}", self.psip_wall()))
-            .field("len", &self.g_spline.xa.len())
+            .field("len", &self.len())
             .finish()
     }
 }
@@ -198,18 +214,25 @@ mod test {
 
     #[test]
     fn test_current_creation() {
-        create_current();
+        let c = create_current();
+        let _ = format!("{c:?}");
     }
 
     #[test]
-    fn test_extraction_methods() {
+    fn test_getters() {
         let c = create_current();
-        let _ = format!("{c:?}");
+        c.path();
+        c.typ();
+        c.psip_wall();
+        c.len();
 
         assert_eq!(c.psip_data().ndim(), 1);
         assert_eq!(c.g_data().ndim(), 1);
         assert_eq!(c.i_data().ndim(), 1);
     }
+
+    #[test]
+    fn test_extraction_methods() {}
 
     #[test]
     fn test_spline_evaluation() {

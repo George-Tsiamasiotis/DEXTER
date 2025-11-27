@@ -12,17 +12,17 @@ use safe_unwrap::safe_unwrap;
 /// q-factor reconstructed from a netCDF file.
 pub struct Qfactor {
     /// Path to the netCDF file.
-    pub path: PathBuf,
+    path: PathBuf,
     /// 1D [`Interpolation type`], in case-insensitive string format.
     ///
     /// [`Interpolation type`]: ../rsl_interpolation/trait.InterpType.html#implementors
-    pub typ: String,
+    typ: String,
     /// Spline over the q-factor data, as a function of ψp.
-    pub q_spline: DynSpline<f64>,
+    q_spline: DynSpline<f64>,
     /// Spline over the (non-normalized) radial coordinate `r`, as a function of ψp.
-    pub r_spline: DynSpline<f64>,
+    r_spline: DynSpline<f64>,
     /// Spline over the toroidal flux data, as a function of ψp.
-    pub psi_spline: DynSpline<f64>,
+    psi_spline: DynSpline<f64>,
 }
 
 // Creation
@@ -129,37 +129,9 @@ impl Qfactor {
     pub fn psi(&self, psip: Flux, acc: &mut Accelerator) -> Result<Flux> {
         Ok(self.psi_spline.eval(psip, acc)?)
     }
-
-    /// Calculates the radial coordinate `r(ψp)` **in [m]**.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// # use equilibrium::*;
-    /// # use std::path::PathBuf;
-    /// # use rsl_interpolation::*;
-    /// #
-    /// # fn main() -> Result<()> {
-    /// let path = PathBuf::from("../data/stub_netcdf.nc");
-    /// let qfactor = Qfactor::from_dataset(&path, "cubic")?;
-    ///
-    /// let mut acc = Accelerator::new();
-    /// let r = qfactor.r(0.015, &mut acc)?;
-    /// # Ok(())
-    /// # }
-    /// ```
-    pub fn r(&self, psip: Flux, acc: &mut Accelerator) -> Result<Flux> {
-        Ok(self.r_spline.eval(psip, acc)?)
-    }
 }
 
-// Data extraction
 impl Qfactor {
-    array1D_getter_impl!(psip_data, q_spline.xa, Flux);
-    array1D_getter_impl!(psi_data, psi_spline.ya, Flux);
-    array1D_getter_impl!(q_data, q_spline.ya, f64);
-    array1D_getter_impl!(r_data, r_spline.ya, f64);
-
     /// Returns the `q` data calculated from `dψ/dψp` as a 1D array.
     pub fn q_data_derived(&self) -> Result<Array1<f64>> {
         let mut acc = Accelerator::new();
@@ -171,26 +143,50 @@ impl Qfactor {
 
         Ok(q_data)
     }
+}
 
-    /// Returns the value of the poloidal angle ψp at the wall.
-    pub fn psip_wall(&self) -> Flux {
-        safe_unwrap!("ya is non-empty", self.q_spline.xa.last().copied())
+// Getters
+impl Qfactor {
+    /// Returns the netCDF file's path.
+    pub fn path(&self) -> PathBuf {
+        self.path.clone()
     }
 
-    /// Returns the value of the toroidal angle ψ at the wall.
-    pub fn psi_wall(&self) -> Flux {
-        safe_unwrap!("xa is non-empty", self.psi_spline.ya.last().copied())
+    /// Returns the interpolation type.
+    pub fn typ(&self) -> String {
+        self.typ.clone()
     }
+
+    /// Returns the number of data points.
+    #[allow(clippy::len_without_is_empty)]
+    pub fn len(&self) -> usize {
+        self.q_spline.xa.len()
+    }
+
+    /// Returns the poloidal flux's value at the wall `ψp_wall` **in Normalized Units**.
+    pub fn psip_wall(&self) -> f64 {
+        safe_unwrap!("array is non-empty", self.q_spline.xa.last().copied())
+    }
+
+    /// Returns the toroidal flux's value at the wall `ψ_wall` **in Normalized Units**.
+    pub fn psi_wall(&self) -> f64 {
+        safe_unwrap!("array is non-empty", self.psi_spline.ya.last().copied())
+    }
+
+    array1D_getter_impl!(psip_data, q_spline.xa, Flux);
+    array1D_getter_impl!(psi_data, psi_spline.ya, Flux);
+    array1D_getter_impl!(q_data, q_spline.ya, f64);
+    array1D_getter_impl!(r_data, r_spline.ya, f64);
 }
 
 impl std::fmt::Debug for Qfactor {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Qfactor")
-            .field("path", &self.path)
-            .field("typ", &self.typ)
+            .field("path", &self.path())
+            .field("typ", &self.typ())
             .field("ψp_wall", &format!("{:.7}", self.psip_wall()))
             .field("ψ_wall", &format!("{:.7}", self.psi_wall()))
-            .field("len", &self.q_spline.xa.len())
+            .field("len", &self.len())
             .finish()
     }
 }
@@ -207,13 +203,18 @@ mod test {
 
     #[test]
     fn test_qfactor_creation() {
-        create_qfactor();
+        let q = create_qfactor();
+        let _ = format!("{q:?}");
     }
 
     #[test]
-    fn test_extraction_methods() {
+    fn test_getters() {
         let q = create_qfactor();
-        let _ = format!("{q:?}");
+        q.path();
+        q.typ();
+        q.psip_wall();
+        q.psi_wall();
+        q.len();
 
         assert_eq!(q.psip_data().ndim(), 1);
         assert_eq!(q.q_data().ndim(), 1);
@@ -230,6 +231,5 @@ mod test {
         let psip = 0.015;
         q.q(psip, &mut acc).unwrap();
         q.psi(psip, &mut acc).unwrap();
-        q.r(psip, &mut acc).unwrap();
     }
 }

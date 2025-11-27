@@ -224,7 +224,7 @@ impl State {
         // This is necessary, since we can't know the number of harmonics from the start. The
         // hcache vec should be cloned in each solver state.
         if self.hcache.is_empty() {
-            self.hcache = vec![HarmonicCache::default(); perturbation.harmonics.len()];
+            self.hcache = vec![HarmonicCache::default(); perturbation.len()];
         }
 
         self.p = perturbation.p(

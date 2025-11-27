@@ -280,12 +280,17 @@ impl Geometry {
 
     /// Returns the 1D interpolation type.
     pub fn typ1d(&self) -> String {
-        self.typ1d.clone().into()
+        self.typ1d.clone()
     }
 
     /// Returns the 2D interpolation type.
     pub fn typ2d(&self) -> String {
-        self.typ2d.clone().into()
+        self.typ2d.clone()
+    }
+
+    /// Returns the shape of the `b` array.
+    pub fn shape(&self) -> (usize, usize) {
+        (self.psip_data.len(), self.theta_data.len())
     }
 
     /// Returns the magnetic field strength on the axis `B0` **in \[T\]**.
@@ -322,15 +327,15 @@ impl Geometry {
 impl std::fmt::Debug for Geometry {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Geometry")
-            .field("path", &self.path)
-            .field("typ 1D", &self.typ1d)
-            .field("typ 2D", &self.typ2d)
-            .field("Baxis [T]", &format!("{:.7}", self.baxis))
-            .field("Raxis [m]", &format!("{:.7}", self.raxis))
+            .field("path", &self.path())
+            .field("typ 1D", &self.typ1d())
+            .field("typ 2D", &self.typ2d())
+            .field("Baxis [T]", &format!("{:.7}", self.baxis()))
+            .field("Raxis [m]", &format!("{:.7}", self.raxis()))
             .field("ψp_wall", &format!("{:.7}", self.psip_wall()))
             .field("ψ_wall", &format!("{:.7}", self.psi_wall()))
             .field("r_wall", &format!("{:.7}", self.r_wall()))
-            .field("shape", &(self.psip_data.len(), self.theta_data.len()))
+            .field("shape", &self.shape())
             .finish()
     }
 }
@@ -362,6 +367,7 @@ mod test {
         g.psip_wall();
         g.psi_wall();
         g.r_wall();
+        g.shape();
 
         assert_eq!(g.psip_data().ndim(), 1);
         assert_eq!(g.psi_data().ndim(), 1);

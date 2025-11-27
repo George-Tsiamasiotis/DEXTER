@@ -16,25 +16,25 @@ use safe_unwrap::safe_unwrap;
 /// interpolation over numerical data.
 pub struct Harmonic {
     /// Path to the netCDF file.
-    pub path: PathBuf,
+    path: PathBuf,
     /// 1D [`Interpolation type`], in case-insensitive string format.
     ///
     /// [`Interpolation type`]: ../rsl_interpolation/trait.InterpType.html#implementors
-    pub typ: String,
+    typ: String,
     /// Spline over the perturbation amplitude `α` data, as a function of ψp.
-    pub a_spline: DynSpline<f64>,
+    a_spline: DynSpline<f64>,
     /// Spline over the perturbation amplitude `φ` data, as a function of ψp.
-    pub phase_spline: DynSpline<f64>,
+    phase_spline: DynSpline<f64>,
     /// The mean value of the phase data array.
     ///
     /// This value is used when the [`phase-interpolation`] feature is enabled.
     ///
     /// [`phase-interpolation`]: index.html#features
-    pub phase_average: Radians,
+    phase_average: Radians,
     /// The `θ` frequency number.
-    pub m: i64,
+    m: i64,
     /// The `ζ` frequency number.
-    pub n: i64,
+    n: i64,
 
     // Used in the actual calculations
     _m: f64,
@@ -52,16 +52,16 @@ pub struct Harmonic {
 /// The cache should be cloned in each new state calculated from the Solver.
 #[derive(Clone, Default)]
 pub struct HarmonicCache {
-    pub hits: usize,
-    pub misses: usize,
-    pub psip: Flux,
-    pub theta: Radians,
-    pub zeta: Radians,
-    pub alpha: f64,
-    pub phase: Radians,
-    pub dalpha: f64,
-    pub sin: f64,
-    pub cos: f64,
+    hits: usize,
+    misses: usize,
+    psip: Flux,
+    theta: Radians,
+    zeta: Radians,
+    pub(crate) alpha: f64,
+    pub(crate) phase: Radians,
+    pub(crate) dalpha: f64,
+    pub(crate) sin: f64,
+    pub(crate) cos: f64,
 }
 
 impl HarmonicCache {
@@ -69,11 +69,19 @@ impl HarmonicCache {
         Self::default()
     }
 
+    pub fn hits(&self) -> usize {
+        self.hits
+    }
+
+    pub fn misses(&self) -> usize {
+        self.misses
+    }
+
     /// Checks if the cache's fields are valid.
     ///
     /// Comparing floats is OK here since they are simply copied between every call, and we want
     /// the check to fail with the slightest difference.
-    pub fn is_updated(&mut self, psip: Flux, theta: Radians, zeta: Radians) -> bool {
+    pub(crate) fn is_updated(&mut self, psip: Flux, theta: Radians, zeta: Radians) -> bool {
         if (self.psip == psip) & (self.theta == theta) & (self.zeta == zeta) {
             self.hits += 1;
             true
@@ -84,7 +92,7 @@ impl HarmonicCache {
     }
 
     /// Updates the cache's fields.
-    pub fn update(
+    pub(crate) fn update(
         &mut self,
         h: &Harmonic,
         psip: Flux,
@@ -423,16 +431,47 @@ impl Harmonic {
     }
 }
 
-// Data extraction
+/// Getters
 impl Harmonic {
+    /// Returns the netCDF file's path.
+    pub fn path(&self) -> PathBuf {
+        self.path.clone()
+    }
+
+    /// Returns the interpolation type.
+    pub fn typ(&self) -> String {
+        self.typ.clone()
+    }
+
+    /// Returns the number of data points.
+    #[allow(clippy::len_without_is_empty)]
+    pub fn len(&self) -> usize {
+        self.a_spline.xa.len()
+    }
+
+    /// Returns the poloidal flux's value at the wall `ψp_wall` **in Normalized Units**.
+    pub fn psip_wall(&self) -> f64 {
+        safe_unwrap!("array is non-empty", self.a_spline.xa.last().copied())
+    }
+
+    /// Returns the poloidal mode number `m`.
+    pub fn m(&self) -> i64 {
+        self.m
+    }
+
+    /// Returns the poloidal mode number `m`.
+    pub fn n(&self) -> i64 {
+        self.n
+    }
+
+    /// Returns the phase average.
+    pub fn phase_average(&self) -> f64 {
+        self.phase_average
+    }
+
     array1D_getter_impl!(psip_data, a_spline.xa, Flux);
     array1D_getter_impl!(a_data, a_spline.ya, Length);
     array1D_getter_impl!(phase_data, phase_spline.ya, Radians);
-
-    /// Returns the value of the poloidal angle ψp at the wall.
-    pub fn psip_wall(&self) -> Flux {
-        safe_unwrap!("ya is non-empty", self.a_spline.xa.last().copied())
-    }
 }
 
 impl Clone for Harmonic {
@@ -456,12 +495,12 @@ impl Clone for Harmonic {
 impl std::fmt::Debug for Harmonic {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Harmonic")
-            .field("path", &self.path)
-            .field("typ", &self.typ)
+            .field("path", &self.path())
+            .field("typ", &self.typ())
             .field("ψp_wall", &format!("{:.7}", self.psip_wall()))
-            .field("m", &self.m)
-            .field("n", &self.n)
-            .field("phase_average", &format!("{:.7}", self.phase_average))
+            .field("m", &self.m())
+            .field("n", &self.n())
+            .field("phase_average", &format!("{:.7}", self.phase_average()))
             .finish()
     }
 }
@@ -479,79 +518,78 @@ mod test {
     use super::*;
     use config::STUB_NETCDF_PATH;
 
-    fn get_test_dataset_path() -> PathBuf {
-        PathBuf::from(STUB_NETCDF_PATH)
+    fn create_harmonic() -> Harmonic {
+        let path = PathBuf::from(STUB_NETCDF_PATH);
+        Harmonic::from_dataset(&path, "steffen", 0, 1).unwrap()
+    }
+
+    #[test]
+    fn test_creation() {
+        let h = create_harmonic();
+        let _ = h.clone();
+        let _ = format!("{h:?}");
+    }
+
+    #[test]
+    fn test_getters() {
+        let h = create_harmonic();
+        h.path();
+        h.typ();
+        h.psip_wall();
+        h.m();
+        h.n();
+        h.phase_average();
+        h.len();
+
+        assert_eq!(h.psip_data().ndim(), 1);
+        assert_eq!(h.a_data().ndim(), 1);
+        assert_eq!(h.phase_data().ndim(), 1);
     }
 
     #[test]
     fn test_data_extraction() {
-        let path = get_test_dataset_path();
-        let harmonic = Harmonic::from_dataset(&path, "akima", 3, 2).unwrap();
+        let h = create_harmonic();
 
-        assert_eq!(harmonic.psip_data().ndim(), 1);
-        assert_eq!(harmonic.a_data().ndim(), 1);
-        assert_eq!(harmonic.phase_data().ndim(), 1);
+        assert_eq!(h.psip_data().ndim(), 1);
+        assert_eq!(h.a_data().ndim(), 1);
+        assert_eq!(h.phase_data().ndim(), 1);
     }
 
     #[test]
     fn test_cache_update() {
-        let path = get_test_dataset_path();
-        let harmonic = Harmonic::from_dataset(&path, "akima", 3, 2).unwrap();
+        let h = create_harmonic();
         let mut acc = Accelerator::new();
         let mut cache = HarmonicCache::new();
 
         // dh_dt does not update the cache
         let (psip, theta, zeta) = (0.015, 0.0, 3.14);
-        harmonic.h(psip, theta, zeta, &mut cache, &mut acc).unwrap();
-        harmonic
-            .dh_dpsip(psip, theta, zeta, &mut cache, &mut acc)
+        h.h(psip, theta, zeta, &mut cache, &mut acc).unwrap();
+        h.dh_dpsip(psip, theta, zeta, &mut cache, &mut acc).unwrap();
+        h.dh_dtheta(psip, theta, zeta, &mut cache, &mut acc)
             .unwrap();
-        harmonic
-            .dh_dtheta(psip, theta, zeta, &mut cache, &mut acc)
-            .unwrap();
-        harmonic
-            .dh_dzeta(psip, theta, zeta, &mut cache, &mut acc)
-            .unwrap();
-        harmonic
-            .dh_dt(psip, theta, zeta, &mut cache, &mut acc)
-            .unwrap();
+        h.dh_dzeta(psip, theta, zeta, &mut cache, &mut acc).unwrap();
+        h.dh_dt(psip, theta, zeta, &mut cache, &mut acc).unwrap();
         assert_eq!(cache.misses, 1);
         assert_eq!(cache.hits, 3);
         let (psip, theta, zeta) = (0.01, 0.01, 3.15);
-        harmonic.h(psip, theta, zeta, &mut cache, &mut acc).unwrap();
-        harmonic
-            .dh_dpsip(psip, theta, zeta, &mut cache, &mut acc)
+        h.h(psip, theta, zeta, &mut cache, &mut acc).unwrap();
+        h.dh_dpsip(psip, theta, zeta, &mut cache, &mut acc).unwrap();
+        h.dh_dtheta(psip, theta, zeta, &mut cache, &mut acc)
             .unwrap();
-        harmonic
-            .dh_dtheta(psip, theta, zeta, &mut cache, &mut acc)
-            .unwrap();
-        harmonic
-            .dh_dzeta(psip, theta, zeta, &mut cache, &mut acc)
-            .unwrap();
-        harmonic
-            .dh_dt(psip, theta, zeta, &mut cache, &mut acc)
-            .unwrap();
+        h.dh_dzeta(psip, theta, zeta, &mut cache, &mut acc).unwrap();
+        h.dh_dt(psip, theta, zeta, &mut cache, &mut acc).unwrap();
         assert_eq!(cache.misses, 2);
         assert_eq!(cache.hits, 6);
     }
 
     #[test]
     fn test_spline_evals() {
-        let path = get_test_dataset_path();
-        let harmonic = Harmonic::from_dataset(&path, "akima", 3, 2).unwrap();
+        let h = create_harmonic();
         let mut acc = Accelerator::new();
 
         let psip = 0.015;
-        harmonic.a(psip, &mut acc).unwrap();
-        harmonic.da_dpsip(psip, &mut acc).unwrap();
-        harmonic.phase(psip, &mut acc).unwrap();
-    }
-
-    #[test]
-    fn test_harmonic_misc() {
-        let path = get_test_dataset_path();
-        let harmonic = Harmonic::from_dataset(&path, "akima", 3, 2).unwrap();
-        let _ = harmonic.clone();
-        let _ = format!("{harmonic:?}");
+        h.a(psip, &mut acc).unwrap();
+        h.da_dpsip(psip, &mut acc).unwrap();
+        h.phase(psip, &mut acc).unwrap();
     }
 }

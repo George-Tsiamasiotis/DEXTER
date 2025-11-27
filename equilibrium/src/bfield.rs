@@ -6,27 +6,19 @@ use utils::array1D_getter_impl;
 use crate::Result;
 use crate::{Flux, Radians};
 
-use ndarray::{Array1, Array2};
+use ndarray::{Array1, Array2, meshgrid};
 use safe_unwrap::safe_unwrap;
 
 /// Magnetic field reconstructed from a netCDF file.
 pub struct Bfield {
     /// Path to the netCDF file.
-    pub path: PathBuf,
+    path: PathBuf,
     /// 2D [`Interpolation type`], in case-insensitive string format.
     ///
     /// [`Interpolation type`]: ../rsl_interpolation/trait.Interp2dType.html#implementors
-    pub typ: String,
+    typ: String,
     /// Spline over the magnetic field strength data, as a function of ψp, θ.
-    pub b_spline: DynSpline2d<f64>,
-    /// Spline over the R coordinate, as a function of ψp, θ.
-    pub rlab_spline: DynSpline2d<f64>,
-    /// Spline over the Z coordinate, as a function of ψp, θ.
-    pub zlab_spline: DynSpline2d<f64>,
-    /// Magnetic field strength on the axis **in \[T\]**.
-    pub baxis: f64,
-    /// The tokamak's major radius **in \[m\]**.
-    pub raxis: f64,
+    b_spline: DynSpline2d<f64>,
 }
 
 // Creation
@@ -58,16 +50,10 @@ impl Bfield {
         let theta_data = extract_1d_array(&f, THETA)?.as_standard_layout().to_owned();
 
         let b_data = extract_2d_array(&f, B_NORM)?;
-        let rlab_data = extract_2d_array(&f, RLAB)?;
-        let zlab_data = extract_2d_array(&f, ZLAB)?;
-        let baxis = extract_scalar(&f, BAXIS)?;
-        let raxis = extract_scalar(&f, RAXIS)?;
 
         // `Spline.za` is in Fortran order.
         let order = ndarray::Order::ColumnMajor;
         let b_data_flat = b_data.flatten_with_order(order).to_owned();
-        let rlab_data_flat = rlab_data.flatten_with_order(order).to_owned();
-        let zlab_data_flat = zlab_data.flatten_with_order(order).to_owned();
 
         let b_spline = make_spline2d(
             typ,
@@ -75,27 +61,11 @@ impl Bfield {
             safe_unwrap!("array is non-empty", theta_data.as_slice()),
             safe_unwrap!("array is non-empty", b_data_flat.as_slice()),
         )?;
-        let rlab_spline = make_spline2d(
-            typ,
-            safe_unwrap!("array is non-empty", psip_data.as_slice()),
-            safe_unwrap!("array is non-empty", theta_data.as_slice()),
-            safe_unwrap!("array is non-empty", rlab_data_flat.as_slice()),
-        )?;
-        let zlab_spline = make_spline2d(
-            typ,
-            safe_unwrap!("array is non-empty", psip_data.as_slice()),
-            safe_unwrap!("array is non-empty", theta_data.as_slice()),
-            safe_unwrap!("array is non-empty", zlab_data_flat.as_slice()),
-        )?;
 
         Ok(Self {
             path: path.to_owned(),
             typ: typ.into(),
             b_spline,
-            rlab_spline,
-            zlab_spline,
-            baxis,
-            raxis,
         })
     }
 }
@@ -334,104 +304,17 @@ impl Bfield {
             .b_spline
             .eval_deriv_xy(psip, mod2pi(theta), xacc, yacc, cache)?)
     }
-
-    /// Calculates `R(ψp, θ)`,
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// # use equilibrium::*;
-    /// # use std::path::PathBuf;
-    /// # use rsl_interpolation::*;
-    /// # use std::f64::consts::PI;
-    /// #
-    /// # fn main() -> Result<()> {
-    /// let path = PathBuf::from("../data/stub_netcdf.nc");
-    /// let bfield = Bfield::from_dataset(&path, "bicubic")?;
-    ///
-    /// let mut psi_acc = Accelerator::new();
-    /// let mut theta_acc = Accelerator::new();
-    /// let mut cache = Cache::new();
-    ///
-    /// let rlab =  bfield.rlab(0.015, 2.0*PI, &mut psi_acc, &mut theta_acc, &mut cache)?;
-    /// # Ok(())
-    /// # }
-    /// ```
-    pub fn rlab(
-        &self,
-        psip: Flux,
-        theta: Radians,
-        xacc: &mut Accelerator,
-        yacc: &mut Accelerator,
-        cache: &mut Cache<f64>,
-    ) -> Result<f64> {
-        Ok(self
-            .rlab_spline
-            .eval(psip, mod2pi(theta), xacc, yacc, cache)?)
-    }
-
-    /// Calculates `Z(ψp, θ)`,
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// # use equilibrium::*;
-    /// # use std::path::PathBuf;
-    /// # use rsl_interpolation::*;
-    /// # use std::f64::consts::PI;
-    /// #
-    /// # fn main() -> Result<()> {
-    /// let path = PathBuf::from("../data/stub_netcdf.nc");
-    /// let bfield = Bfield::from_dataset(&path, "bicubic")?;
-    ///
-    /// let mut psi_acc = Accelerator::new();
-    /// let mut theta_acc = Accelerator::new();
-    /// let mut cache = Cache::new();
-    ///
-    /// let zlab =  bfield.zlab(0.015, 2.0*PI, &mut psi_acc, &mut theta_acc, &mut cache)?;
-    /// # Ok(())
-    /// # }
-    /// ```
-    pub fn zlab(
-        &self,
-        psip: Flux,
-        theta: Radians,
-        xacc: &mut Accelerator,
-        yacc: &mut Accelerator,
-        cache: &mut Cache<f64>,
-    ) -> Result<f64> {
-        Ok(self
-            .zlab_spline
-            .eval(psip, mod2pi(theta), xacc, yacc, cache)?)
-    }
 }
 
-/// Generates getters that return [T] fields to Array1<T>.
-///
-/// Since the data is internally stored as a Vec in Fortran order, we need a specialized macro.
-///
-/// This is needed for implementing python getter wrappers.
-macro_rules! array2D_getter_impl {
-    ($fun_name:ident, $spline:ident) => {
-        pub fn $fun_name(&self) -> Array2<f64> {
-            // `Spline.za` is in Fortran order.
-            let shape = (self.$spline.ya.len(), self.$spline.xa.len());
-            safe_unwrap!(
-                "checked by spline",
-                Array2::from_shape_vec(shape, self.$spline.za.to_vec())
-            )
-            .reversed_axes()
-        }
-    };
-}
-
-// Data Extraction
+/// Getters
 impl Bfield {
-    array1D_getter_impl!(psip_data, b_spline.xa, Flux);
-    array1D_getter_impl!(theta_data, b_spline.ya, Flux);
-    array2D_getter_impl!(b_data, b_spline);
-    array2D_getter_impl!(rlab_data, rlab_spline);
-    array2D_getter_impl!(zlab_data, zlab_spline);
+    /// Returns the `R(ψp, θ)` data as a 2D array.
+    pub fn b_data(&self) -> Array2<f64> {
+        safe_unwrap!(
+            "shape is correct by definition",
+            Array2::from_shape_vec(self.shape(), self.b_spline.za.to_vec())
+        )
+    }
 
     /// Returns the `𝜕B(ψp, θ) /𝜕ψp` data as a 2D array.
     ///
@@ -439,26 +322,27 @@ impl Bfield {
     ///
     /// The data are calculated by evaluating the bfield spline's derivative, rather than
     /// extracting the data arrays from the netCDF file.
-    pub fn db_dpsip_data(&self) -> Result<Array2<f64>> {
-        // `Spline.za` is in Fortran order.
+    pub fn db_dpsip_data(&self) -> Array2<f64> {
+        let psip_data = self.psip_data();
+        let theta_data = self.theta_data();
+        let grid = meshgrid((&psip_data, &theta_data), ndarray::MeshIndex::IJ);
+
         let mut xacc = Accelerator::new();
         let mut yacc = Accelerator::new();
         let mut cache = Cache::new();
-
-        let shape = (self.b_spline.ya.len(), self.b_spline.xa.len());
-
-        let mut db_dpsip_vec = Vec::<f64>::with_capacity(shape.0 * shape.1);
-        for j in 0..shape.0 {
-            for i in 0..shape.1 {
-                let psip = self.b_spline.xa[i];
-                let theta = self.b_spline.ya[j];
-                let db_dtheta = self.db_dpsip(psip, theta, &mut xacc, &mut yacc, &mut cache)?;
-                db_dpsip_vec.push(db_dtheta);
-            }
-        }
-
-        let db_dpsip_grid = Array2::from_shape_vec(shape, db_dpsip_vec)?;
-        Ok(db_dpsip_grid.reversed_axes())
+        Array2::from_shape_fn(self.shape(), |(i, j)| {
+            safe_unwrap!(
+                "If this fails, there is something wrong with the data",
+                self.db_dpsip(
+                    grid.0[[i, j]],
+                    grid.1[[i, j]],
+                    &mut xacc,
+                    &mut yacc,
+                    &mut cache,
+                )
+            )
+        })
+        .reversed_axes()
     }
 
     /// Returns the `𝜕B(ψp, θ) /𝜕𝜃` data as a 2D array.
@@ -467,31 +351,51 @@ impl Bfield {
     ///
     /// The data are calculated by evaluating the bfield spline's derivative, rather than
     /// extracting the data arrays from the netCDF file.
-    pub fn db_dtheta_data(&self) -> Result<Array2<f64>> {
-        // `Spline.za` is in Fortran order.
+    pub fn db_dtheta_data(&self) -> Array2<f64> {
+        let psip_data = self.psip_data();
+        let theta_data = self.theta_data();
+        let grid = meshgrid((&psip_data, &theta_data), ndarray::MeshIndex::IJ);
+
         let mut xacc = Accelerator::new();
         let mut yacc = Accelerator::new();
         let mut cache = Cache::new();
-        let shape = (self.b_spline.ya.len(), self.b_spline.xa.len());
-
-        let mut db_dtheta_vec = Vec::<f64>::with_capacity(shape.0 * shape.1);
-        for j in 0..shape.0 {
-            for i in 0..shape.1 {
-                let psip = self.b_spline.xa[i];
-                let theta = self.b_spline.ya[j];
-                let db_dtheta = self.db_dtheta(psip, theta, &mut xacc, &mut yacc, &mut cache)?;
-                db_dtheta_vec.push(db_dtheta);
-            }
-        }
-
-        let db_dtheta_grid = Array2::from_shape_vec(shape, db_dtheta_vec)?;
-        Ok(db_dtheta_grid.reversed_axes())
+        Array2::from_shape_fn(self.shape(), |(i, j)| {
+            safe_unwrap!(
+                "If this fails, there is something wrong with the data",
+                self.db_dtheta(
+                    grid.0[[i, j]],
+                    grid.1[[i, j]],
+                    &mut xacc,
+                    &mut yacc,
+                    &mut cache,
+                )
+            )
+        })
+        .reversed_axes()
     }
 
-    /// Returns the value of the poloidal angle ψp at the wall.
-    pub fn psip_wall(&self) -> Flux {
-        safe_unwrap!("ya is non-empty", self.b_spline.xa.last().copied())
+    /// Returns the netCDF file's path.
+    pub fn path(&self) -> PathBuf {
+        self.path.clone()
     }
+
+    /// Returns the interpolation type.
+    pub fn typ(&self) -> String {
+        self.typ.clone()
+    }
+
+    /// Returns the shape of the `b` array.
+    pub fn shape(&self) -> (usize, usize) {
+        (self.b_spline.xa.len(), self.b_spline.ya.len())
+    }
+
+    /// Returns the poloidal flux's value at the wall `ψp_wall` **in Normalized Units**.
+    pub fn psip_wall(&self) -> f64 {
+        safe_unwrap!("array is non-empty", self.b_spline.xa.last().copied())
+    }
+
+    array1D_getter_impl!(psip_data, b_spline.xa, Flux);
+    array1D_getter_impl!(theta_data, b_spline.ya, Flux);
 }
 
 /// Returns θ % 2π.
@@ -503,12 +407,10 @@ fn mod2pi(theta: f64) -> f64 {
 impl std::fmt::Debug for Bfield {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Bfield")
-            .field("path", &self.path)
-            .field("typ", &self.typ)
-            .field("Baxis [T]", &format!("{:.7}", self.baxis))
-            .field("Raxis [m]", &format!("{:.7}", self.raxis))
+            .field("path", &self.path())
+            .field("typ", &self.typ())
             .field("ψp_wall", &format!("{:.7}", self.psip_wall()))
-            .field("shape", &(self.b_spline.xa.len(), self.b_spline.ya.len()))
+            .field("shape", &self.shape())
             .finish()
     }
 }
@@ -525,21 +427,23 @@ mod test {
 
     #[test]
     fn test_bfield_creation() {
-        create_bfield();
+        let b = create_bfield();
+        let _ = format!("{b:?}");
     }
 
     #[test]
-    fn test_extraction_methods() {
+    fn test_getters() {
         let b = create_bfield();
-        let _ = format!("{b:?}");
+        b.path();
+        b.typ();
+        b.psip_wall();
+        b.shape();
 
         assert_eq!(b.psip_data().ndim(), 1);
         assert_eq!(b.theta_data().ndim(), 1);
-        assert_eq!(b.rlab_data().ndim(), 2);
-        assert_eq!(b.zlab_data().ndim(), 2);
         assert_eq!(b.b_data().ndim(), 2);
-        assert_eq!(b.db_dpsip_data().unwrap().ndim(), 2);
-        assert_eq!(b.db_dtheta_data().unwrap().ndim(), 2);
+        assert_eq!(b.db_dpsip_data().ndim(), 2);
+        assert_eq!(b.db_dtheta_data().ndim(), 2);
     }
 
     #[test]
@@ -561,10 +465,6 @@ mod test {
         b.d2b_dtheta2(psip, theta, &mut xacc, &mut yacc, &mut cache)
             .unwrap();
         b.d2b_dpsip_dtheta(psip, theta, &mut xacc, &mut yacc, &mut cache)
-            .unwrap();
-        b.rlab(psip, theta, &mut xacc, &mut yacc, &mut cache)
-            .unwrap();
-        b.zlab(psip, theta, &mut xacc, &mut yacc, &mut cache)
             .unwrap();
     }
 }

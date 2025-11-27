@@ -8,7 +8,7 @@ use rsl_interpolation::Accelerator;
 
 /// A sum of different perturbation harmonics.
 pub struct Perturbation {
-    pub harmonics: Vec<Harmonic>,
+    harmonics: Vec<Harmonic>,
 }
 
 // Creation and data extraction
@@ -225,6 +225,15 @@ impl Perturbation {
                 .dh_dt(psip, theta, zeta, &mut cache[index], acc)
                 .map(|v| p + v)
         })
+    }
+}
+
+/// Getters
+impl Perturbation {
+    /// Returns the number of harmonics.
+    #[allow(clippy::len_without_is_empty)]
+    pub fn len(&self) -> usize {
+        self.harmonics.len()
     }
 }
 
