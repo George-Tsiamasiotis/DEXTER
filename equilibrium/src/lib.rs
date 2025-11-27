@@ -3,6 +3,7 @@
 mod bfield;
 mod currents;
 mod error;
+mod geometry;
 mod harmonic;
 mod perturbation;
 mod qfactor;
@@ -12,6 +13,7 @@ pub mod extract;
 pub use bfield::Bfield;
 pub use currents::Currents;
 pub use error::{EqError, NcError};
+pub use geometry::Geometry;
 pub use harmonic::{Harmonic, HarmonicCache};
 pub use perturbation::Perturbation;
 pub use qfactor::Qfactor;
