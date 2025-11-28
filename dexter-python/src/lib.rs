@@ -11,6 +11,7 @@ use pyo3::prelude::*;
 #[pymodule]
 fn _core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     // Equilibrium
+    m.add_class::<pylibrium::PyGeometry>()?;
     m.add_class::<pylibrium::PyQfactor>()?;
     m.add_class::<pylibrium::PyQfactor>()?;
     m.add_class::<pylibrium::PyCurrents>()?;

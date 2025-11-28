@@ -28,6 +28,19 @@ macro_rules! py_repr_impl {
     };
 }
 
+/// Generates a `__len__` method, corresponding to the inner type's `len()` method.
+#[macro_export]
+macro_rules! py_len_impl {
+    ($py_object:ident) => {
+        #[pymethods]
+        impl $py_object {
+            pub fn __len__(&self) -> usize {
+                self.0.len()
+            }
+        }
+    };
+}
+
 /// Generates a python getter that returns the debug String ("{:?}") of an enum
 #[macro_export]
 macro_rules! py_get_enum_string {
@@ -91,7 +104,7 @@ macro_rules! py_get_path {
             pub fn path(&self) -> String {
                 String::from(safe_unwrap!(
                     "file already opened",
-                    self.0.path.clone().into_os_string().into_string()
+                    self.0.path().clone().into_os_string().into_string()
                 ))
             }
         }

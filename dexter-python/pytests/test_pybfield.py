@@ -1,13 +1,19 @@
-import pytest
 from dexter import Bfield
 
 
 def test_fields(bfield: Bfield):
     assert isinstance(bfield.path, str)
     assert isinstance(bfield.typ, str)
-    assert isinstance(bfield.baxis, float)
-    assert isinstance(bfield.raxis, float)
     assert isinstance(bfield.psip_wall, float)
+
+    assert bfield.psip_data.ndim == 1
+    assert bfield.theta_data.ndim == 1
+    assert bfield.b_data.ndim == 2
+    assert bfield.db_dpsip_data.ndim == 2
+    assert bfield.db_dtheta_data.ndim == 2
+
+    assert bfield.shape == (len(bfield.psip_data), len(bfield.theta_data))
+    assert bfield.shape == bfield.b_data.shape
 
 
 def test_eval(bfield: Bfield):
@@ -19,46 +25,8 @@ def test_eval(bfield: Bfield):
     assert isinstance(bfield.d2b_dpsip2(psip, theta), float)
     assert isinstance(bfield.d2b_dtheta2(psip, theta), float)
     assert isinstance(bfield.d2b_dpsip_dtheta(psip, theta), float)
-    assert isinstance(bfield.rlab(psip, theta), float)
-    assert isinstance(bfield.zlab(psip, theta), float)
 
 
-def test_data_extraction(bfield: Bfield):
-    assert bfield.psip_data.ndim == 1
-    assert bfield.theta_data.ndim == 1
-    assert bfield.b_data.ndim == 2
-    assert bfield.rlab_data.ndim == 2
-    assert bfield.zlab_data.ndim == 2
-    assert bfield.db_dpsip_data.ndim == 2
-    assert bfield.db_dtheta_data.ndim == 2
-
-
-def test_immutability(bfield: Bfield):
-    with pytest.raises(AttributeError):
-        bfield.psip_data *= 2
-    with pytest.raises(AttributeError):
-        bfield.theta_data *= 2
-    with pytest.raises(AttributeError):
-        bfield.b_data *= 2
-    with pytest.raises(AttributeError):
-        bfield.rlab_data *= 2
-    with pytest.raises(AttributeError):
-        bfield.zlab_data *= 2
-    with pytest.raises(AttributeError):
-        bfield.db_dpsip_data *= 2
-    with pytest.raises(AttributeError):
-        bfield.db_dtheta_data *= 2
-    with pytest.raises(AttributeError):
-        bfield.psip_wall += 1
-    with pytest.raises(AttributeError):
-        bfield.baxis += 1
-    with pytest.raises(AttributeError):
-        bfield.raxis += 1
-    with pytest.raises(AttributeError):
-        bfield.path = ""
-    with pytest.raises(AttributeError):
-        bfield.typ = ""
-
-
-def test_repr(bfield: Bfield):
-    str(bfield)
+def test_magic(bfield: Bfield):
+    assert isinstance(bfield.__str__(), str)
+    assert isinstance(bfield.__repr__(), str)

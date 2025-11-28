@@ -16,12 +16,12 @@ def test_eval(perturbation: Perturbation):
 def test_getitem(perturbation: Perturbation):
     assert isinstance(perturbation[0], Harmonic)
     assert isinstance(perturbation[1], Harmonic)
+    assert len(perturbation) == 2
+    with pytest.raises(match="Harmonic index out of bounds"):
+        perturbation[20]
 
 
-def test_immutability(perturbation: Perturbation):
-    with pytest.raises(AttributeError):
-        perturbation.harmonics += [perturbation[0]]
-
-
-def test_repr(perturbation: Perturbation):
-    str(perturbation)
+def test_magic(perturbation: Perturbation):
+    assert len(perturbation) == 2
+    assert isinstance(perturbation.__str__(), str)
+    assert isinstance(perturbation.__repr__(), str)

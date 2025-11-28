@@ -328,7 +328,7 @@ dependencies = [
 
 [[package]]
 name = "dexter"
-version = "0.1.2-pre.4"
+version = "0.1.2-pre.5"
 dependencies = [
  "config",
  "equilibrium",
@@ -1671,7 +1671,7 @@ checksum = "09cc8ee72d2a9becf2f2febe0205bbed8fc6615b7cb429ad062dc7b7ddd036a9"
 
 [[package]]
 name = "utils"
-version = "0.1.1-pre.1"
+version = "0.1.1-pre.2"
 
 [[package]]
 name = "vcpkg"

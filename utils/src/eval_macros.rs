@@ -20,6 +20,14 @@ macro_rules! py_eval1D {
             }
         }
     };
+    ($py_object:ident, $eval_method:ident, "no-acc") => {
+        #[pymethods]
+        impl $py_object {
+            pub fn $eval_method(&self, psip: f64) -> Result<f64, PyEqError> {
+                Ok(self.0.$eval_method(psip)?)
+            }
+        }
+    };
 }
 
 /// Generates a 2D eval method from the wrapped Rust object.
@@ -35,6 +43,14 @@ macro_rules! py_eval2D {
                 Ok(self
                     .0
                     .$eval_method(psip, theta, &mut xacc, &mut yacc, &mut cache)?)
+            }
+        }
+    };
+    ($py_object:ident, $eval_method:ident, "no-acc") => {
+        #[pymethods]
+        impl $py_object {
+            pub fn $eval_method(&self, psip: f64, theta: f64) -> Result<f64, PyEqError> {
+                Ok(self.0.$eval_method(psip, theta)?)
             }
         }
     };
@@ -65,7 +81,7 @@ macro_rules! py_eval_perturbation {
         impl $py_object {
             pub fn $eval_method(&self, psip: f64, theta: f64, zeta: f64) -> Result<f64, PyEqError> {
                 let mut acc = Accelerator::new();
-                let mut cache = vec![HarmonicCache::new(); self.0.harmonics.len()];
+                let mut cache = vec![HarmonicCache::new(); self.0.len()];
                 Ok(self
                     .0
                     .$eval_method(psip, theta, zeta, &mut cache, &mut acc)?)

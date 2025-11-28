@@ -1,4 +1,4 @@
-from dexter._core import Qfactor, Currents, Bfield, Harmonic, Perturbation
+from dexter._core import Geometry, Qfactor, Currents, Bfield, Harmonic, Perturbation
 from dexter._core import (
     InitialConditions,
     MappingParameters,
@@ -9,6 +9,7 @@ from dexter._core import (
 from dexter._core import HeapInitialConditions, Heap
 
 __all__ = [
+    "Geometry",
     "Qfactor",
     "Currents",
     "Bfield",

@@ -1,10 +1,16 @@
 import pytest
 
-from dexter import Qfactor, Currents, Bfield, Harmonic, Perturbation
+from dexter import Geometry, Qfactor, Currents, Bfield, Harmonic, Perturbation
 from dexter import InitialConditions
 
 
 netcdf_path = "./data.nc"
+
+
+@pytest.fixture(scope="session")
+def geometry() -> Geometry:
+    """Creates a Geometry object from a netCDF file."""
+    return Geometry(netcdf_path, "steffen", "bicubic")
 
 
 @pytest.fixture(scope="session")
