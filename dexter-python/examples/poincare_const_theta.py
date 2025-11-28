@@ -6,10 +6,12 @@ import dexter as dx
 from dexter.plot import poincare_plot
 
 
+geometry = dx.Geometry("./data.nc", "steffen", "bicubic")
 qfactor = dx.Qfactor("./data.nc", "steffen")
 currents = dx.Currents("./data.nc", "steffen")
 bfield = dx.Bfield("./data.nc", "bicubic")
-harmonics = [dx.Harmonic("./data.nc", "steffen", m=0, n=n) for n in range(1, 24)]
+
+harmonics = [dx.Harmonic("./data.nc", "steffen", m=1, n=n) for n in range(1, 24)]
 harmonics.pop(6)
 perturbation = dx.Perturbation(harmonics)
 
@@ -47,4 +49,13 @@ print(heap)
 
 fig = plt.figure(figsize=(9, 6), layout="constrained", dpi=120)
 ax = fig.add_subplot()
-poincare_plot(ax, heap, params, qfactor, radial=False, color=False, wall=True)
+poincare_plot(
+    ax,
+    heap,
+    params,
+    geometry,
+    radial=False,
+    lab=False,
+    color=True,
+    wall=True,
+)
