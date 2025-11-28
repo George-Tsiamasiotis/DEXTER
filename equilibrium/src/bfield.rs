@@ -310,10 +310,13 @@ impl Bfield {
 impl Bfield {
     /// Returns the `R(ψp, θ)` data as a 2D array.
     pub fn b_data(&self) -> Array2<f64> {
+        // Array is in Fortran order.
+        let shape = (self.b_spline.ya.len(), self.b_spline.xa.len());
         safe_unwrap!(
             "shape is correct by definition",
-            Array2::from_shape_vec(self.shape(), self.b_spline.za.to_vec())
+            Array2::from_shape_vec(shape, self.b_spline.za.to_vec())
         )
+        .reversed_axes()
     }
 
     /// Returns the `𝜕B(ψp, θ) /𝜕ψp` data as a 2D array.
@@ -342,7 +345,6 @@ impl Bfield {
                 )
             )
         })
-        .reversed_axes()
     }
 
     /// Returns the `𝜕B(ψp, θ) /𝜕𝜃` data as a 2D array.
@@ -371,7 +373,6 @@ impl Bfield {
                 )
             )
         })
-        .reversed_axes()
     }
 
     /// Returns the netCDF file's path.

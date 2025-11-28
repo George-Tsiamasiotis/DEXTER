@@ -44,9 +44,8 @@ phases = np.random.random((len(m), len(n), len(psipol)))
 # Inject the (2, 3) mode with specific values to test that the extraction
 # is done correctly. If either the indexes or the values change, the test
 # must be updated accordingly.
-alpha_factor = (2 * np.pi) ** 2
-alphas[2, 3, 0] = 1111 * alpha_factor
-alphas[2, 3, -1] = 11111 * alpha_factor
+alphas[2, 3, 0] = 1111
+alphas[2, 3, -1] = 11111
 phases[2, 3, 0] = 9999
 phases[2, 3, -1] = 99999
 

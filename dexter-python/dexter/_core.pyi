@@ -85,7 +85,6 @@ class Qfactor:
     q_data: NDArray1D
     psi_data: NDArray1D
     r_data: NDArray1D
-    q_data_derived: NDArray1D
 
     def __init__(self, path: str, typ: Interp1DType) -> None:
         """q-factor reconstructed from a NetCDF file.
@@ -103,6 +102,12 @@ class Qfactor:
 
     def psi(self, psip: float) -> float:
         """The ψ value evaluated at ψp"""
+
+    def dpsi_dpsip(self, psip: float) -> float:
+        """The dψ/dψp value evaluated at ψp.
+
+        This value should always equal `q(ψp)`.
+        """
 
     def __len__(self) -> int:
         """Returns the number of ψp data points."""

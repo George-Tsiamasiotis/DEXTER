@@ -77,9 +77,9 @@ py_get_numpy1D!(PyQfactor, psip_data);
 py_get_numpy1D!(PyQfactor, q_data);
 py_get_numpy1D!(PyQfactor, r_data);
 py_get_numpy1D!(PyQfactor, psi_data);
-py_get_numpy1D_fallible!(PyQfactor, q_data_derived);
 py_eval1D!(PyQfactor, q);
 py_eval1D!(PyQfactor, psi);
+py_eval1D!(PyQfactor, dpsi_dpsip);
 
 // ===============================================================================================
 

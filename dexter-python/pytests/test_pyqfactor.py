@@ -10,13 +10,13 @@ def test_fields(qfactor: Qfactor):
     assert qfactor.q_data.ndim == 1
     assert qfactor.r_data.ndim == 1
     assert qfactor.psi_data.ndim == 1
-    assert qfactor.q_data_derived.ndim == 1
 
 
 def test_eval(qfactor: Qfactor):
     psip = 0.015
     assert isinstance(qfactor.q(psip), float)
     assert isinstance(qfactor.psi(psip), float)
+    assert isinstance(qfactor.dpsi_dpsip(psip), float)
 
 
 def test_magic(qfactor: Qfactor):

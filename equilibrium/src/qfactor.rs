@@ -129,19 +129,29 @@ impl Qfactor {
     pub fn psi(&self, psip: Flux, acc: &mut Accelerator) -> Result<Flux> {
         Ok(self.psi_spline.eval(psip, acc)?)
     }
-}
 
-impl Qfactor {
-    /// Returns the `q` data calculated from `dψ/dψp` as a 1D array.
-    pub fn q_data_derived(&self) -> Result<Array1<f64>> {
-        let mut acc = Accelerator::new();
-        let mut q_data = Array1::from_elem(self.q_spline.xa.len(), f64::NAN);
-
-        for (i, psip) in self.psip_data().iter().enumerate() {
-            q_data[[i]] = self.psi_spline.eval_deriv(*psip, &mut acc)?;
-        }
-
-        Ok(q_data)
+    /// Calculates the derivative `dψ/dψp`.
+    ///
+    /// This value should always equal `q(ψp)`.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use equilibrium::*;
+    /// # use std::path::PathBuf;
+    /// # use rsl_interpolation::*;
+    /// #
+    /// # fn main() -> Result<()> {
+    /// let path = PathBuf::from("../data/stub_netcdf.nc");
+    /// let qfactor = Qfactor::from_dataset(&path, "cubic")?;
+    ///
+    /// let mut acc = Accelerator::new();
+    /// let dpsi_dpsip = qfactor.dpsi_dpsip(0.015, &mut acc)?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn dpsi_dpsip(&self, psip: Flux, acc: &mut Accelerator) -> Result<f64> {
+        Ok(self.psi_spline.eval_deriv(psip, acc)?)
     }
 }
 
@@ -220,7 +230,6 @@ mod test {
         assert_eq!(q.q_data().ndim(), 1);
         assert_eq!(q.psi_data().ndim(), 1);
         assert_eq!(q.r_data().ndim(), 1);
-        assert_eq!(q.q_data_derived().unwrap().ndim(), 1);
     }
 
     #[test]

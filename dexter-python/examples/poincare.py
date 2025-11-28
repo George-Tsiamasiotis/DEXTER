@@ -1,10 +1,5 @@
-# /// script
-# requires-python = ">=3.14"
-# dependencies = [
-#     "matplotlib",
-#     "numpy",
-# ]
-# ///
+"""Calculates the Poincare map of a Heap of Particles."""
+
 import matplotlib.pyplot as plt
 import numpy as np
 import dexter as dx

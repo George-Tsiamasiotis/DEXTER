@@ -1,9 +1,5 @@
-# /// script
-# requires-python = ">=3.14"
-# dependencies = [
-#     "matplotlib",
-# ]
-# ///
+"""Integrates a Particle for a single θ-ψp period to calculate ωθ, ωζ and qkinetic."""
+
 import matplotlib.pyplot as plt
 import dexter as dx
 from dexter.plot import evolution_plot

@@ -257,20 +257,24 @@ impl Geometry {
 impl Geometry {
     /// Returns the `R(ψp, θ)` data as a 2D array.
     pub fn rlab_data(&self) -> Array2<f64> {
-        let shape = (self.psip_data.len(), self.theta_data.len());
+        // Array is in Fortran order.
+        let shape = (self.theta_data.len(), self.psip_data.len());
         safe_unwrap!(
             "shape is correct by definition",
             Array2::from_shape_vec(shape, self.rlab_flat_data.clone())
         )
+        .reversed_axes()
     }
 
     /// Returns the `Z(ψp, θ)` data as a 2D array.
     pub fn zlab_data(&self) -> Array2<f64> {
-        let shape = (self.psip_data.len(), self.theta_data.len());
+        // Array is in Fortran order.
+        let shape = (self.theta_data.len(), self.psip_data.len());
         safe_unwrap!(
             "shape is correct by definition",
             Array2::from_shape_vec(shape, self.zlab_flat_data.clone())
         )
+        .reversed_axes()
     }
 
     /// Returns the netCDF file's path.
