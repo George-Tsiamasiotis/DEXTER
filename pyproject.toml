@@ -1,6 +1,6 @@
 [project]
 name = "dexter"
-version = "0.1.1-pre.6"
+version = "0.1.2"
 description = "Calculations and simulations in reconstructed equilibria of toroidal fusion devices."
 readme = "README.md"
 authors = [
@@ -38,9 +38,13 @@ dev = [
     "netcdf4>=1.7.3",
     "semver>=3.0.4",
 ]
+docs = [
+    "mkdocs>=1.6.1",
+    "mkdocs-material>=9.7.0",
+]
 
 [tool.pytest.ini_options]
-testpaths = ["./dexter-python/pytests", "./docs/src/"] # Run from workspace root
+testpaths = ["./dexter-python/pytests", "./docs/docs/"] # Run from workspace root
 addopts = "--durations 2 --doctest-glob='*.md'"
 
 [project.scripts]
