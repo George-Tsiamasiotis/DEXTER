@@ -8,7 +8,6 @@ def test_fields(qfactor: Qfactor):
     assert isinstance(qfactor.psi_wall, float)
     assert qfactor.psip_data.ndim == 1
     assert qfactor.q_data.ndim == 1
-    assert qfactor.r_data.ndim == 1
     assert qfactor.psi_data.ndim == 1
 
 

@@ -75,7 +75,6 @@ py_export_getter!(PyQfactor, psip_wall, f64);
 py_export_getter!(PyQfactor, psi_wall, f64);
 py_get_numpy1D!(PyQfactor, psip_data);
 py_get_numpy1D!(PyQfactor, q_data);
-py_get_numpy1D!(PyQfactor, r_data);
 py_get_numpy1D!(PyQfactor, psi_data);
 py_eval1D!(PyQfactor, q);
 py_eval1D!(PyQfactor, psi);

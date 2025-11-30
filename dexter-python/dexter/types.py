@@ -1,5 +1,28 @@
+r"""Type Aliases used thoughout the package.
+
+Type aliases
+------------
+Interp1DType
+    Availiable 1D Interpolation types (case-insensitive).
+Interp2DType
+    Availiable 2D Interpolation types (case-insensitive).
+NDArrayShape
+    Shape of a numpy array.
+NDArray1D
+    1D numpy array.
+NDArray2D
+    2D numpy array.
+PoincareSection
+    The $\theta=const$ or $\zeta=const$ section on which to calculate orbit
+    intersections.
+CalculatedFrequency
+    Possibly missing value for a particle's calculated $\omega_\theta$, $\omega_\zeta$
+    or $q_{kinetic}$.
+
+"""
+
 import numpy as np
-from typing import Literal, TypeAlias, Union
+from typing import Literal, TypeAlias
 
 
 Interp1DType: TypeAlias = Literal[
@@ -13,4 +36,4 @@ NDArray2D: TypeAlias = np.ndarray[tuple[int, int], np.dtype[np.float64]]
 
 PoincareSection: TypeAlias = Literal["ConstTheta", "ConstZeta"]
 
-CalculatedFrequency: TypeAlias = Union[float, None]
+CalculatedFrequency: TypeAlias = float | None

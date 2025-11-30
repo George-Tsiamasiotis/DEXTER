@@ -30,7 +30,16 @@ jobs:
           path: ~/.cache
           restore-keys: |
             mkdocs-material-
-      - run: pip install mkdocs-material
+      - name: Install mkdocs deps
+        run: |
+          pip install mkdocs-material
+          pip install mkdocstrings[python]
+      - name: Install libnetcdf
+        run: sudo apt install -y libnetcdf-dev
+      - name: Install openblas
+        run: sudo apt install -y libopenblas-dev
+      - name: Install DEXTER locally.
+        run: pip install .
       - name: Build documentation
         run: mkdocs build --clean -f docs/mkdocs.yml
       - name: Upload artifact
