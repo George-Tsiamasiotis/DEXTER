@@ -4,6 +4,7 @@ repo_name: DEXTER
 site_author: George Tsiamasiotis
 docs_dir: docs
 plugins:
+- search:
 - mkdocstrings:
     handlers:
       python:
@@ -69,6 +70,9 @@ markdown_extensions:
   - pymdownx.snippets
   - pymdownx.superfences
   - admonition
+  - abbr
+  - attr_list
+  - footnotes
 
 extra_javascript:
   - javascripts/mathjax.js
@@ -80,3 +84,4 @@ nav:
   - API Reference: 
     - Types: reference/types.md
     - Equilibirum: reference/equilibrium.md
+    - Particle: reference/particle.md

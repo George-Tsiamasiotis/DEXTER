@@ -396,7 +396,7 @@ class Harmonic:
     A Harmonic has the form:
 
     $$
-    h_{m,n} = \alpha_{m,n}(\psi_p) \cdot \cos\big( n\zeta - m\theta + \phi_{m,n}(\psi_p) \big)
+    h_{m,n} = \alpha_{m,n}(\psi_p) \cdot \cos\big( m\theta - n\zeta + \phi_{m,n}(\psi_p) \big)
     $$
 
     where $m, n$ are integers.
@@ -410,9 +410,9 @@ class Harmonic:
     psip_wall
         The poloidal flux value at the wall $\psi_{p,wall}$ in Normalized Units.
     m
-        The `θ` frequency mode number.
+        The $\theta$ frequency mode number.
     n
-        The `ζ` frequency mode number.
+        The $\zeta$ frequency mode number.
     phase_average
         The average_value of the phase data array.
     psip_data
@@ -651,7 +651,11 @@ class Perturbation:
 # ==========================================================================
 
 class InitialConditions:
-    """A set of initial conditions."""
+    r"""A set of initial conditions.
+
+    The initial conditions are defined on the
+    $(t, \theta, \psi_p, \rho, \zeta, \mu)$ space.
+    """
 
     time0: float
     theta0: float
@@ -669,36 +673,25 @@ class InitialConditions:
         zeta0: float,
         mu: float,
     ) -> None:
-        """Creates a set of initial conditions.
-
+        r"""
         Parameters
         ----------
-        time0: float
+        time0
             The initial time.
-        theta0: float
-            The initial `θ` angle.
-        psip0: float
-            The initial poloidal magnetic flux `ψp`.
-        rho0: float
-            The initial parallel gyro radius `ρ`.
-        zeta0: float
-            The initial `ζ` angle.
-        mu: float
-            The magnetic moment `μ`.
+        theta0
+            The initial $\theta$ angle.
+        psip0
+            The initial poloidal magnetic flux $\psi_p$.
+        rho0
+            The initial parallel gyro radius $\rho$.
+        zeta0
+            The initial $\zeta$ angle.
+        mu
+            The magnetic moment $\mu$.
         """
 
 class MappingParameters:
-    """Defines all the necessary parameters of a Mapping.
-
-    Attributes
-    ----------
-    section: Literal["ConstTheta", "ConstZeta"]
-        The surface of section Σ, defined by an equation xᵢ= α, where xᵢ= θ or ζ.
-    alpha: float
-        The constant that defines the surface of section (modulo 2π).
-    intersections: int
-        The number of interections to calculate.
-    """
+    """Defines all the necessary parameters of a Mapping."""
 
     section: PoincareSection
     alpha: float
@@ -710,30 +703,33 @@ class MappingParameters:
         alpha: float,
         intersections: int,
     ) -> None:
-        """Defines all the necessary parameters of a Poincare Map.
-
+        r"""
         Parameters
         ----------
-        section: Literal["ConstTheta", "ConstZeta"]
-            The surface of section Σ, defined by an equation xᵢ= α, where xᵢ= θ or ζ.
-        alpha: float
-            The constant that defines the surface of section (modulo 2π).
-        intersections: int
+        section
+            The surface of section $\Sigma$, defined by an equation $x_i = \alpha$,
+            where $x_i = \theta$ or $\zeta$.
+        alpha
+            The constant that defines the surface of section (modulo $2π$).
+        intersections
             The number of interections to calculate.
         """
 
 class Particle:
-    """A particle.
+    r"""A Particle.
+
+    By taking $\mu = 0$ and $\rho \rightarrow 0$, the particle traces magnetic field
+    lines.
 
     Attributes
     ----------
-    initial_conditions: InitialConditions
+    initial_conditions
         The initial conditions set.
-    evolution: Evolution
+    evolution
         The evolution time series of the particle's integration.
-    status: str
+    status
         The particle's integration status.
-    frequencies: Frequencies
+    frequencies
         The particle's calculated frequencies.
     """
 
@@ -743,8 +739,7 @@ class Particle:
     frequencies: Frequencies
 
     def __init__(self, initial_conditions: InitialConditions) -> None:
-        """Creates a Particle from an `InitialConditions` set.
-
+        """
         Parameters
         ----------
         initial_conditions: InitialConditions
@@ -763,16 +758,16 @@ class Particle:
 
         Parameters
         ----------
-        qfactor: Qfactor
+        qfactor
             The equilibrium's qfactor.
-        currents: Currents
+        currents
             The equilibrium's plasma current.
-        bfield: Bfield
+        bfield
             The equilibrium's magnetic field.
-        per: Perturbation
+        perturbation
             The equilibrium's perturbation.
         t_eval: tuple[float, float]
-            The time span (t0, tf) in which to integrate the particle [Normalized].
+            The time span $(t_0, t_f)$ in which to integrate the particle, in Normalized Units.
         """
 
     def map(
@@ -784,19 +779,19 @@ class Particle:
         params: MappingParameters,
     ) -> None:
         """Integrates the particle, storing its intersections with the Poincare
-        surface defined by `MappingParameters`.
+        surface defined by `params`.
 
         Parameters
         ----------
-        qfactor: Qfactor
+        qfactor
             The equilibrium's qfactor.
-        currents: Currents
+        currents
             The equilibrium's plasma current.
-        bfield: Bfield
+        bfield
             The equilibrium's magnetic field.
-        per: Perturbation
+        perturbation
             The equilibrium's perturbation.
-        params: MappingParameters
+        params
             The parameters of the Poincare mapping.
         """
 
@@ -807,24 +802,53 @@ class Particle:
         bfield: Bfield,
         perturbation: Perturbation,
     ) -> None:
-        """Integrates the particle for 1 period, calculating ωθ, ωζ and qkinetic.
+        r"""Integrates the particle for 1 period, calculating $\omega_\theta$,
+        $\omega_\zeta$ and $q_{kinetic}$.
 
         Parameters
         ----------
-        qfactor: Qfactor
+        qfactor
             The equilibrium's qfactor.
-        currents: Currents
+        currents
             The equilibrium's plasma current.
-        bfield: Bfield
+        bfield
             The equilibrium's magnetic field.
-        per: Perturbation
+        perturbation: Perturbation
             The equilibrium's perturbation.
         """
 
 class Evolution:
-    """Time series of the particle's orbit.
+    r"""Stores the time series of the particle's orbit.
 
     Not meant to be constructed. It is stored as a particle's attribute.
+
+    Attributes
+    ----------
+    time
+        The time evolution
+    theta
+        The $\theta$ time series.
+    psip
+        The $\psi_p$ time series.
+    rho
+        The $\rho_{||}$ time series.
+    zeta
+        The $\zeta$ time series.
+    psi
+        The $\psi$ time series.
+    ptheta
+        The $P_\theta$ time series.
+    pzeta
+        The $P_\zeta$ time series.
+    energy
+        The energy time series.
+    energy_std
+        The relative standard deviation ($\sigma/\mu$) of the energy time series.
+    steps_taken
+        The total number of steps taken to complete the integration.
+    steps_stored
+        The number of points stored. This can different from the `steps_taken` attribute,
+        for example when `mapping` a particle, in which case only the intersections are stored.
     """
 
     time: NDArray1D
@@ -841,7 +865,13 @@ class Evolution:
     steps_stored: int
 
 class Frequencies:
-    """Stores the Particle's calculated ωθ, ωζ and qkinetic."""
+    r"""Stores the Particle's calculated $\omega_\theta$, $\omega_\zeta$
+    and $q_{kinetic}$.
+
+
+    The values are calculated from `Particle.calculate_frequencies` since they
+    must be calculated in a specific order. Itherwise they are absent.
+    """
 
     omega_theta: CalculatedFrequency
     omega_zeta: CalculatedFrequency
