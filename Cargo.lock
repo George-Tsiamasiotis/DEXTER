@@ -1051,7 +1051,7 @@ dependencies = [
 
 [[package]]
 name = "particle"
-version = "0.1.2-pre.2.1"
+version = "0.1.2-pre.3"
 dependencies = [
  "config",
  "criterion",

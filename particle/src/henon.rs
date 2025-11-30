@@ -1,6 +1,6 @@
 //! Functions for calculating Poincare intersection States and period closures.
 
-use std::f64::consts::TAU;
+use std::f64::consts::{PI, TAU};
 
 use equilibrium::{Bfield, Currents, Perturbation, Qfactor};
 
@@ -57,15 +57,17 @@ pub(crate) fn calculate_mod_step(
     state2: &State,
     params: &MappingParameters,
 ) -> f64 {
-    // TODO: find a way to move the pole when the intersection angle is 0.
+    // WARN: This is needed to move the %2π pole when α happens to be a multiple of 2π. It seems to
+    // work for most cases, but lets keep an eye on it.
+    let pole = if params.alpha.abs() < 1e-2 { PI } else { 0.0 };
     match params.section {
         PoincareSection::ConstTheta => {
             let direction = (state2.theta - state1.theta).signum();
-            direction * (params.alpha - state1.theta % TAU)
+            direction * (params.alpha - (state1.theta + pole) % TAU + pole)
         }
         PoincareSection::ConstZeta => {
             let direction = (state2.zeta - state1.zeta).signum();
-            direction * (params.alpha - state1.zeta % TAU)
+            direction * (params.alpha - (state1.zeta + pole) % TAU + pole)
         }
     }
 }

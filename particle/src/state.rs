@@ -372,7 +372,7 @@ impl Display {
             psip: state.psip,
             rho: state.rho,
             zeta: state.zeta,
-            mu: state.zeta,
+            mu: state.mu,
         }
     }
 }

@@ -86,8 +86,8 @@ def poincare_plot(
         ax.set_title(rf"$Cross$ $section$ $at$ $\zeta={params.alpha:.4g}$")
 
         # Cursor
-        def format_coord(x, y):  # FIXME: why doesn't this work?
-            r = np.sqrt((geometry.raxis + x) ** 2 + (y) ** 2)
+        def format_coord(x, y):
+            r = np.sqrt((geometry.raxis - x) ** 2 + (y) ** 2)
             return f"(R, Z) = ({x:.5g}, {y:.5g}), r={r:.5g} "
 
         ax.format_coord = format_coord  # type: ignore
