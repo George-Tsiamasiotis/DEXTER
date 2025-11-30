@@ -21,8 +21,6 @@ manifest-path="./dexter-python/Cargo.toml"
 # problem which forces pyo3 and rust-numpy to recompile every time
 profile = "release"
 editable-profile = "release"
-# NOTE: Enable this when building wheels
-features = ["netcdf-static", "openblas-static"]
 
 [build-system]
 requires = ["maturin>=1.0,<2.0"]
