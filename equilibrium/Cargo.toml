@@ -1,6 +1,6 @@
 [package]
 name = "equilibrium"
-version = "0.1.2"
+version = "0.1.2-pre.1"
 license.workspace = true
 edition.workspace = true
 authors.workspace = true

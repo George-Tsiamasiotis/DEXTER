@@ -19,8 +19,6 @@ pub struct Qfactor {
     typ: String,
     /// Spline over the q-factor data, as a function of ψp.
     q_spline: DynSpline<f64>,
-    /// Spline over the (non-normalized) radial coordinate `r`, as a function of ψp.
-    r_spline: DynSpline<f64>,
     /// Spline over the toroidal flux data, as a function of ψp.
     psi_spline: DynSpline<f64>,
 }
@@ -55,7 +53,6 @@ impl Qfactor {
             .as_standard_layout()
             .to_owned();
         // R_NORM isn't really useful at the moment
-        let r_data = extract_1d_array(&f, R)?.as_standard_layout().to_owned();
         let q_data = extract_1d_array(&f, Q)?.as_standard_layout().to_owned();
 
         let q_spline = make_spline(
@@ -68,18 +65,12 @@ impl Qfactor {
             safe_unwrap!("array is non-empty", psip_data.as_slice()),
             safe_unwrap!("array is non-empty", psi_data.as_slice()),
         )?;
-        let r_spline = make_spline(
-            typ,
-            safe_unwrap!("array is non-empty", psip_data.as_slice()),
-            safe_unwrap!("array is non-empty", r_data.as_slice()),
-        )?;
 
         Ok(Self {
             path: path.to_owned(),
             typ: typ.into(),
             q_spline,
             psi_spline,
-            r_spline,
         })
     }
 }
@@ -186,7 +177,6 @@ impl Qfactor {
     array1D_getter_impl!(psip_data, q_spline.xa, Flux);
     array1D_getter_impl!(psi_data, psi_spline.ya, Flux);
     array1D_getter_impl!(q_data, q_spline.ya, f64);
-    array1D_getter_impl!(r_data, r_spline.ya, f64);
 }
 
 impl std::fmt::Debug for Qfactor {
@@ -229,7 +219,6 @@ mod test {
         assert_eq!(q.psip_data().ndim(), 1);
         assert_eq!(q.q_data().ndim(), 1);
         assert_eq!(q.psi_data().ndim(), 1);
-        assert_eq!(q.r_data().ndim(), 1);
     }
 
     #[test]
