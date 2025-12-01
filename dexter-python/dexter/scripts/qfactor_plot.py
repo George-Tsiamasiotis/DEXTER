@@ -44,6 +44,7 @@ from dexter import Geometry, Qfactor
 
 qfactor = Qfactor(args.nc_file, args.typ)
 geometry = Geometry(args.nc_file, args.typ, "bilinear")
+print(qfactor)
 
 fig = plt.figure(figsize=(11, 5), layout="constrained")
 fig.suptitle("$q-factor$ $Profile$")

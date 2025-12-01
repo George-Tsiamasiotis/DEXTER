@@ -13,6 +13,7 @@ pub struct HeapStats {
     mapped: usize,
     escaped: usize,
     timedout: usize,
+    invalid: usize,
     failed: usize,
     /// Duration of the slowest particle.
     slowest: MapDuration,
@@ -61,6 +62,7 @@ impl HeapStats {
         self.timedout = count_variants!(is_timed_out);
         self.escaped = count_variants!(is_escaped);
         self.failed = count_variants!(is_failed);
+        self.invalid = count_variants!(is_invalid_intersections);
         self.total_particles = heap.particles.len(); // Update just in case
     }
 
@@ -90,6 +92,7 @@ impl std::fmt::Debug for HeapStats {
             .field("mapped", &self.mapped)
             .field("escaped", &self.escaped)
             .field("timedout", &self.timedout)
+            .field("invalid", &self.invalid)
             .field("failed", &self.failed)
             .field("slowest", &self.slowest)
             .field("fastest", &self.fastest)

@@ -54,6 +54,7 @@ from dexter import Geometry, Harmonic
 
 harmonic = Harmonic(args.nc_file, args.typ, m=args.m, n=args.n)
 geometry = Geometry(args.nc_file, args.typ, "bilinear")
+print(harmonic)
 
 fig = plt.figure(figsize=(14, 5), layout="constrained")
 fig.suptitle(f"$m={args.m}, n={args.n}$ $Harmonic$")

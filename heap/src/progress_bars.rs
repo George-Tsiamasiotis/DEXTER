@@ -33,6 +33,8 @@ pub(crate) struct PoincarePbar {
     mapped: Arc<AtomicUsize>,
     escaped: Arc<AtomicUsize>,
     timedout: Arc<AtomicUsize>,
+    invalid: Arc<AtomicUsize>,
+    failed: Arc<AtomicUsize>,
 }
 
 impl PoincarePbar {
@@ -52,6 +54,8 @@ impl PoincarePbar {
             mapped: Arc::default(),
             escaped: Arc::default(),
             timedout: Arc::default(),
+            invalid: Arc::default(),
+            failed: Arc::default(),
         }
     }
 
@@ -84,13 +88,17 @@ impl PoincarePbar {
         self.pbar.set_message(format!(
             concat!(
                 // "📊 Stats:\n",
-                "📍 Mapped = {}\n",
-                "🏃 Escaped = {}\n",
-                "⌛ Timed-out = {}",
+                "📍 Mapped    = {}\n",
+                "🏃 Escaped   = {}\n",
+                "⌛ Timed-out = {}\n",
+                "⛔ Invalid   = {}\n",
+                "🥀 Failed    = {}",
             ),
             self.mapped.load(Ordering::SeqCst),
             self.escaped.load(Ordering::SeqCst),
             self.timedout.load(Ordering::SeqCst),
+            self.invalid.load(Ordering::SeqCst),
+            self.failed.load(Ordering::SeqCst),
         ));
     }
 

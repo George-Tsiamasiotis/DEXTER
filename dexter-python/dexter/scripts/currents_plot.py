@@ -44,6 +44,7 @@ from dexter import Geometry, Currents
 
 currents = Currents(args.nc_file, args.typ)
 geometry = Geometry(args.nc_file, args.typ, "bilinear")
+print(currents)
 
 fig = plt.figure(figsize=(14, 5), layout="constrained")
 fig.suptitle(r"$Plasma$ $Currents$")

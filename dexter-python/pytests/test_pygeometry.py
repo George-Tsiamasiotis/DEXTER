@@ -7,6 +7,8 @@ def test_fields(geometry: Geometry):
     assert isinstance(geometry.typ2d, str)
     assert isinstance(geometry.baxis, float)
     assert isinstance(geometry.raxis, float)
+    assert isinstance(geometry.zaxis, float)
+    assert isinstance(geometry.rgeo, float)
     assert isinstance(geometry.psip_wall, float)
     assert isinstance(geometry.psi_wall, float)
     assert isinstance(geometry.r_wall, float)

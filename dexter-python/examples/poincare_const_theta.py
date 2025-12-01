@@ -15,7 +15,7 @@ harmonics = [dx.Harmonic("./data.nc", "steffen", m=1, n=n) for n in range(1, 24)
 harmonics.pop(6)
 perturbation = dx.Perturbation(harmonics)
 
-psip = 0.09378
+psip = 0.0919
 
 num1 = 31
 num2 = 21

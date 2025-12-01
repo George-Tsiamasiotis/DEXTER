@@ -34,8 +34,12 @@ pub struct Geometry {
 
     /// Magnetic field strength on the axis `B0` **in \[T\]**.
     baxis: f64,
-    /// The tokamak's major radius `R` **in \[m\]**.
+    /// The horizontal position of the magnetic axis `R0` **in \[m\]**.
     raxis: Length,
+    /// The vertical position of the magnetic axis **in \[m\]**.
+    zaxis: Length,
+    /// The geometrical axis (device major radius) **in \[m\]**.
+    rgeo: Length,
 
     /// The boozer toroidal angle `θ` **in \[rads\]**.
     theta_data: Vec<Radians>,
@@ -88,6 +92,8 @@ impl Geometry {
 
         let baxis = extract_scalar(&f, BAXIS)?;
         let raxis = extract_scalar(&f, RAXIS)?;
+        let zaxis = extract_scalar(&f, ZAXIS)?;
+        let rgeo = extract_scalar(&f, RGEO)?;
         let psip_data = extract_1d_array(&f, PSIP_NORM)?
             .as_standard_layout()
             .to_vec();
@@ -120,6 +126,8 @@ impl Geometry {
             typ2d: typ2d.into(),
             baxis,
             raxis,
+            zaxis,
+            rgeo,
             psip_data,
             psi_data,
             theta_data,
@@ -302,9 +310,19 @@ impl Geometry {
         self.baxis
     }
 
-    /// Returns the tokamak's major radius `R` **in \[m\]**.
+    /// Retruns the horizontal position of the magnetic axis `R0` **in \[m\]**.
     pub fn raxis(&self) -> f64 {
         self.raxis
+    }
+
+    /// Retruns the vertical position of the magnetic axis **in \[m\]**.
+    pub fn zaxis(&self) -> f64 {
+        self.zaxis
+    }
+
+    /// Returns the geometrical axis (device major radius) **in \[m\]**.
+    pub fn rgeo(&self) -> f64 {
+        self.rgeo
     }
 
     /// Returns the tokamak's minor radius `r_wall` **in \[m\]**.
@@ -336,6 +354,8 @@ impl std::fmt::Debug for Geometry {
             .field("typ 2D", &self.typ2d())
             .field("Baxis [T]", &format!("{:.7}", self.baxis()))
             .field("Raxis [m]", &format!("{:.7}", self.raxis()))
+            .field("Zaxis [m]", &format!("{:.7}", self.zaxis()))
+            .field("Rgeo [m]", &format!("{:.7}", self.rgeo()))
             .field("ψp_wall", &format!("{:.7}", self.psip_wall()))
             .field("ψ_wall", &format!("{:.7}", self.psi_wall()))
             .field("r_wall", &format!("{:.7}", self.r_wall()))
@@ -368,6 +388,8 @@ mod test {
         g.typ2d();
         g.baxis();
         g.raxis();
+        g.zaxis();
+        g.rgeo();
         g.psip_wall();
         g.psi_wall();
         g.r_wall();

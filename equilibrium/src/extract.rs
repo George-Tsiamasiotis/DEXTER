@@ -74,7 +74,7 @@ fn check_if_empty(var: &Variable) -> Result<()> {
 /// let path = PathBuf::from("../data/stub_netcdf.nc");
 /// let f = extract::open(&path)?;
 ///
-/// let qfactor_var: Variable = extract_variable(&f, BAXIS)?;
+/// let qfactor_var: Variable = extract_variable(&f, Q)?;
 /// # Ok(())
 /// # }
 /// ```
@@ -308,6 +308,8 @@ mod test {
 
         extract_scalar::<f64>(&f, BAXIS).unwrap();
         extract_scalar::<f64>(&f, RAXIS).unwrap();
+        extract_scalar::<f64>(&f, ZAXIS).unwrap();
+        extract_scalar::<f64>(&f, RGEO).unwrap();
     }
 
     #[test]

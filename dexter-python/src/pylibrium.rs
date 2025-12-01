@@ -38,6 +38,8 @@ py_export_getter!(PyGeometry, typ1d, String);
 py_export_getter!(PyGeometry, typ2d, String);
 py_export_getter!(PyGeometry, baxis, f64);
 py_export_getter!(PyGeometry, raxis, f64);
+py_export_getter!(PyGeometry, zaxis, f64);
+py_export_getter!(PyGeometry, rgeo, f64);
 py_export_getter!(PyGeometry, psip_wall, Flux);
 py_export_getter!(PyGeometry, psi_wall, Flux);
 py_export_getter!(PyGeometry, r_wall, Length);

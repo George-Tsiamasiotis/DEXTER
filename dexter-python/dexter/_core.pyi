@@ -33,7 +33,11 @@ class Geometry:
     baxis
         The magnetic field strength on the magnetic axis $B_0$ in $[T]$.
     raxis
-        The device's major radius $R$ in $[m]$.
+        The horizontal position of the magnetic axis $R0$ in $[m]$.
+    zaxis
+        The vertical position of the magnetic axis in $[m]$.
+    rgeo
+        The geometrical axis (device major radius) in $[m]$.
     psip_wall
         The poloidal flux value at the wall $\psi_{p,wall}$ in Normalized Units.
     psi_wall
@@ -62,6 +66,8 @@ class Geometry:
     typ2d: Interp2DType
     baxis: float
     raxis: float
+    zaxis: float
+    rgeo: float
     psip_wall: float
     psi_wall: float
     r_wall: float

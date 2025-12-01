@@ -14,7 +14,7 @@ fields and variable names.
 
 import semver
 
-VERSION = semver.Version.parse("0.1.0-alpha.1")
+VERSION = semver.Version.parse("0.1.1")
 
 import argparse
 
@@ -68,9 +68,6 @@ print(f"Loaded .npz file from '{INPUT.absolute()}'")
 # type, just in case.
 
 # NOTE: We need to divide both fluxes by 2π.
-
-baxis = npz.get("BB")[0, 0].astype("f8")  # [Tesla]
-raxis = npz.get("Rmaj").astype("f8")  # [meters]
 psip = npz.get("psipol").astype("f8")
 psi = npz.get("psitor").astype("f8")
 theta = npz.get("theta").astype("f8")
@@ -81,19 +78,28 @@ q = npz.get("q").astype("f8")
 b = npz.get("BB").astype("f8")
 rlab = npz.get("RR").astype("f8")
 zlab = npz.get("ZZ").astype("f8")
+baxis = b[0, 0]  # [Tesla]
+raxis = rlab[0, 0]  # [meters]
+zaxis = zlab[0, 0]  # [meters]
+rgeo = (rlab[-1].min() + rlab[-1].max()) / 2  # Geometrical axis [meters]
 
-# If no perturbations are found in the npz file, this will create empty
-# Variables, which we can drop at the end.
+# If no perturbations are found in the npz file, or if the exists but are
+# simply np.array(nan), this will create empty Variables, which we can
+# drop at the end.
 default_coord = np.array([])
 default_array = np.full((0, 0, len(psip)), np.nan)
 m = npz.get("m", default_coord).astype("i8")
 n = npz.get("n", default_coord).astype("i8")
 alphas = npz.get("alphas", default_array).astype("f8")
 phases = npz.get("phases", default_array).astype("f8")
+if m.ndim == 0:
+    m = n = default_coord
+    alphas = phases = default_array
 
-print("Exctracted all variables from npz file")
+print("Extracted all variables from npz file")
 
 # Normalize
+# `raxis` should be use for the normalizations, not `rgeo`
 psip_norm = psip / (baxis * raxis**2)
 psi_norm = psi / (baxis * raxis**2)
 r_norm = r / raxis
@@ -109,13 +115,33 @@ alphas_norm = alphas / raxis
 baxis_var = xr.Variable(
     data=baxis,
     dims=[],
-    attrs=dict(description="The magnetic field strength on the axis `B0`", units="[T]"),
+    attrs=dict(
+        description="The magnetic field strength on the axis `B0`",
+        units="[T]",
+        normalization="This value should be used for normalizations",
+    ),
 )
 
 raxis_var = xr.Variable(
     data=raxis,
     dims=[],
-    attrs=dict(description="The major radius `R`", units="[m]"),
+    attrs=dict(
+        description="The horizontal position of the magnetic axis R0",
+        units="[m]",
+        normalization="This value should be used for normalizations",
+    ),
+)
+
+zaxis_var = xr.Variable(
+    data=zaxis,
+    dims=[],
+    attrs=dict(description="The vertical position of the magnetic axis", units="[m]"),
+)
+
+rgeo_var = xr.Variable(
+    data=rgeo,
+    dims=[],
+    attrs=dict(description="The geometrical axis (device major radius)", units="[m]"),
 )
 
 
@@ -283,6 +309,8 @@ COORDS = {
 VARIABLES = {
     "baxis": baxis_var,
     "raxis": raxis_var,
+    "zaxis": zaxis_var,
+    "rgeo": rgeo_var,
     "psip": psip_var,
     "psi": psi_var,
     "r": r_var,

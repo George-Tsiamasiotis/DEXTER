@@ -6,8 +6,12 @@
 
 /// Magnetic field strength on the axis `B0` **in \[T\]**.
 pub const BAXIS: &str = "baxis";
-/// The tokamak's major radius `R` **in \[m\]**.
+/// The horizontal position of the magnetic axis `R0` **in \[m\]**.
 pub const RAXIS: &str = "raxis";
+/// The vertical position of the magnetic axis **in \[m\]**.
+pub const ZAXIS: &str = "zaxis";
+/// The geometrical axis (device major radius) **in \[m\]**.
+pub const RGEO: &str = "rgeo";
 
 // ================= Coordinates =================
 

@@ -31,6 +31,8 @@ from dexter import Bfield, Geometry
 
 bfield = Bfield(args.nc_file, args.typ)
 geometry = Geometry(args.nc_file, "linear", args.typ)
+print(geometry)
+print(bfield)
 
 fig = plt.figure(figsize=(15, 6), layout="constrained")
 fig.suptitle(r"$Magnetic$ $Field$ $Profile$")
@@ -64,6 +66,9 @@ contour3 = ax[2].contourf(r_data, z_data, db_dtheta_data, **contour_kw)
 plt.colorbar(contour1, ax=ax[0], cax=None, **colorbar_kw)
 plt.colorbar(contour2, ax=ax[1], cax=None, **colorbar_kw)
 plt.colorbar(contour3, ax=ax[2], cax=None, **colorbar_kw)
+
+for ax in ax:
+    ax.plot(r_data[-1], z_data[-1], "k-", linewidth=2)
 
 plt.show()
 raise SystemExit

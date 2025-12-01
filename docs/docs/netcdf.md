@@ -7,7 +7,13 @@ DEXTER reads equilibrium data from a [netCDF] file. The variables must follow th
 ## Scalars
 
 * `baxis`: The magnetic field strength on the magnetic axis $B_0$ in $[T]$.
-* `raxis`: The device's major radius $R$ in $[m]$.
+* `raxis`: The horizontal position of the magnetic axis $R_0$ $[m]$.
+* `zaxis`: The horizontal position of the magnetic axis $[m]$.
+* `rgeo`: The geometrical axis (device major radius) in $[m]$.
+
+!!! note
+
+    For the normalizations, `baxis` and `raxis` should be used. They correspond to the center of the smallest flux surface. `rgeo` is characteristic of the device, while `raxis` depends on the configuration.
 
 ## Coordinates
 

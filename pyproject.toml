@@ -1,6 +1,6 @@
 [project]
 name = "dexter"
-version = "0.1.2-pre.4"
+version = "0.1.2-pre.5"
 description = "Calculations and simulations in reconstructed equilibria of toroidal fusion devices."
 readme = "README.md"
 authors = [
@@ -54,6 +54,7 @@ npz_to_netcdf = "dexter.scripts:npz_to_netcdf"
 stub_npz = "dexter.scripts:stub_npz"
 # Plots
 qfactor_plot = "dexter.scripts:qfactor_plot"
-currents_plot = "dexter.scripts:currents_plot "
-bfield_plot = "dexter.scripts:bfield_plot "
+currents_plot = "dexter.scripts:currents_plot"
+bfield_plot = "dexter.scripts:bfield_plot"
+flux_surfaces_plot= "dexter.scripts:flux_surfaces_plot"
 harmonic_plot = "dexter.scripts:harmonic_plot"

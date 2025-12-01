@@ -5,7 +5,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from cycler import cycler
 from matplotlib.axes import Axes
-from matplotlib.patches import Circle
 from dexter import Geometry, Heap, MappingParameters
 
 s = 0.3
@@ -80,14 +79,15 @@ def poincare_plot(
         ax.set_xlabel("$R[m]$")
         ax.set_ylabel("$Z[m]$")
         ax.grid(True)
+
+        axis_point = (geometry.raxis, geometry.zaxis)
         if wall:
-            wall_circle = Circle((geometry.raxis, 0), _wall, fill=False, color="r")
-            ax.add_patch(wall_circle)
+            ax.plot(geometry.rlab_data[-1], geometry.zlab_data[-1], "r-", linewidth=2)
         ax.set_title(rf"$Cross$ $section$ $at$ $\zeta={params.alpha:.4g}$")
 
-        # Cursor
+        # ========== Cursor
         def format_coord(x, y):
-            r = np.sqrt((geometry.raxis - x) ** 2 + (y) ** 2)
+            r = np.sqrt((axis_point[0] - x) ** 2 + (axis_point[1] - y) ** 2)
             return f"(R, Z) = ({x:.5g}, {y:.5g}), r={r:.5g} "
 
         ax.format_coord = format_coord  # type: ignore
