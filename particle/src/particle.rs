@@ -117,7 +117,7 @@ impl Particle {
                 .evaluate(qfactor, currents, bfield, perturbation)
                 .inspect(|()| {
                     self.evolution.push_state(&state);
-                    self.evolution.steps += 1;
+                    self.evolution.steps_taken += 1;
                 })?;
 
             // Perform a step
@@ -224,6 +224,18 @@ impl Particle {
         self.evolution.duration = start.elapsed();
         self.evolution.finish();
         Ok(())
+    }
+}
+
+impl Particle {
+    /// Returns the initial energy of the Particle, calculated from its initial State.
+    pub fn initial_energy(&self) -> f64 {
+        self.initial_state.energy()
+    }
+
+    /// Returns the final energy of the Particle, calculated from its final State.
+    pub fn final_energy(&self) -> f64 {
+        self.final_state.energy()
     }
 }
 

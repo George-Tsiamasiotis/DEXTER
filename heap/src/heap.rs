@@ -8,7 +8,7 @@ use particle::{Flux, Radians};
 use particle::{MappingParameters, Particle};
 use utils::array2D_getter_impl;
 
-use crate::progress_bars::PoincarePbar;
+use crate::progress_bars::{FrequenciesPbar, PoincarePbar};
 use crate::{HeapInitialConditions, HeapStats, Result};
 
 /// Describes the Routine by which the Heap's particle's where integrated.
@@ -67,17 +67,40 @@ impl Heap {
         pbar.print_prelude();
 
         self.particles.par_iter_mut().try_for_each(|p| {
-            p.map(qfactor, bfield, currents, perturbation, params)
-                .inspect(|()| {
-                    pbar.inc(&p.status);
-                    pbar.print_stats();
-                })
+            let res = p.map(qfactor, bfield, currents, perturbation, params);
+            pbar.inc(&p.status);
+            pbar.print_stats();
+            res
         })?;
         pbar.finish();
 
         self.routine = Routine::Poincare(*params);
         self.stats = HeapStats::from_heap(self);
         self.store_arrays(params)?;
+        Ok(())
+    }
+
+    pub fn calculate_frequencies(
+        &mut self,
+        qfactor: &Qfactor,
+        currents: &Currents,
+        bfield: &Bfield,
+        perturbation: &Perturbation,
+    ) -> Result<()> {
+        let pbar = FrequenciesPbar::new(self);
+        pbar.print_prelude();
+
+        self.particles.par_iter_mut().try_for_each(|p| {
+            let res = p.calculate_frequencies(qfactor, bfield, currents, perturbation);
+            pbar.inc(&p.status);
+            pbar.print_stats();
+            p.evolution.discard(); // We don't need the arrays anymore, avoid wasting memory
+            res
+        })?;
+        pbar.finish();
+
+        self.routine = Routine::SinglePeriod;
+        self.stats = HeapStats::from_heap(self);
         Ok(())
     }
 

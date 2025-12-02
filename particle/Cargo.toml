@@ -1,6 +1,6 @@
 [package]
 name = "particle"
-version = "0.1.2-pre.3"
+version = "0.1.2-pre.4"
 license.workspace = true
 edition.workspace = true
 authors.workspace = true

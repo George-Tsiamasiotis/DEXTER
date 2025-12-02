@@ -1,36 +1,43 @@
-"""Integrates a Particle for a single θ-ψp period to calculate ωθ, ωζ and qkinetic."""
+"""Calculates the ωθ, ωζ and qkinetic of a Heap of Particles."""
 
 import matplotlib.pyplot as plt
+import numpy as np
 import dexter as dx
-from dexter.plot import evolution_plot
 
 
+geometry = dx.Geometry("./data.nc", "steffen", "bicubic")
 qfactor = dx.Qfactor("./data.nc", "steffen")
 currents = dx.Currents("./data.nc", "steffen")
 bfield = dx.Bfield("./data.nc", "bicubic")
 perturbation = dx.Perturbation([])
 
-initial = dx.InitialConditions(
-    time0=0,
-    theta0=2,
-    psip0=0.5 * qfactor.psip_wall,
-    rho0=0.000008,
-    zeta0=0.0,
-    mu=0,
+num = 5000
+rho0 = np.log10(1e-5)
+rho1 = np.log10(1e-1)
+initials = dx.HeapInitialConditions(
+    psips=0.7 * geometry.psip_wall * np.ones(num),
+    zetas=0 * np.ones(num),
+    thetas=np.ones(num),
+    rhos=np.logspace(rho0, rho1, num),
+    mus=7e-6 * np.zeros(num),
 )
 
-particle = dx.Particle(initial)
+heap = dx.Heap(initials)
 
-particle.calculate_frequencies(
-    qfactor=qfactor,
-    currents=currents,
-    bfield=bfield,
-    perturbation=perturbation,
-)
-print(particle)
-
-print(f"Particle's qkinetic = {particle.frequencies.qkinetic}")
-print(f"Particle's q(ψ0)    = {qfactor.q(particle.initial_conditions.psip0)}")
+heap.calculate_frequencies(qfactor, currents, bfield, perturbation)
+print(heap)
 
 fig = plt.figure(figsize=(9, 6), layout="constrained", dpi=120)
-evolution_plot(fig, particle)
+ax = fig.add_subplot()
+
+qs = np.asarray([heap[i].frequencies.qkinetic for i in range(len(heap))])
+energies = np.asarray([heap[i].initial_energy for i in range(len(heap))])
+
+ax.scatter(energies, qs, c="b", s=1)
+
+ax.set_title(r"$q_{kinetic}-E$")
+ax.set_xlabel("$E$ $[Normalized]$")
+ax.set_ylabel("$q_{kinetic}$")
+ax.grid(True)
+
+plt.show()

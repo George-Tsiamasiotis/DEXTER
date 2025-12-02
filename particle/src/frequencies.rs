@@ -87,7 +87,7 @@ pub(crate) fn close_theta_period(
     let mut dt = RKF45_FIRST_STEP;
     while particle.evolution.steps_taken() <= MAX_STEPS {
         particle.evolution.push_state(&state1);
-        particle.evolution.steps += 1;
+        particle.evolution.steps_taken += 1;
 
         // Perform a step
         let mut stepper = Stepper::default();
@@ -114,7 +114,7 @@ pub(crate) fn close_theta_period(
         // Intersected() for the flux might be unnecessary here, but its safe.
         if intersected(old_psip, new_psip, psip0) && intersected(old_theta, new_theta, theta0) {
             // Hénon's trick.
-            // If the particle intersected the `θ0-Pθ0` point, go back to `state1` and find
+            // If the particle intersected the `θ0-ψp0` point, go back to `state1` and find
             // the exact time step needed to complete the period. This step brings `θ` to
             // its initial value *exactly*, but not `ψp`, although the difference is negligible
             let params = MappingParameters {
@@ -135,7 +135,6 @@ pub(crate) fn close_theta_period(
                 mod_state2,
             )?
             .into_evaluated(qfactor, currents, bfield, perturbation)?;
-            particle.evolution.push_state(&intersection_state);
 
             #[allow(non_snake_case)]
             let Tomega = intersection_state.time - time0;
@@ -149,6 +148,7 @@ pub(crate) fn close_theta_period(
 
             particle.frequencies.update(&OmegaTheta, omega_theta);
             particle.frequencies.update(&OmegaZeta, omega_zeta);
+            particle.evolution.push_state(&intersection_state);
             particle.final_state = intersection_state;
             particle.status = crate::IntegrationStatus::SinglePeriodIntegrated;
             break;

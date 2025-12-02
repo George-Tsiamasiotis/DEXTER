@@ -134,6 +134,8 @@ def test_particle_integrate(
     assert particle.status == "Integrated"
     assert particle.evolution.steps_taken > 2
     assert particle.evolution.steps_stored > 2
+    assert isinstance(particle.initial_energy, float)
+    assert isinstance(particle.final_energy, float)
 
     str(particle)  # Inlcudes all nested fields
 
@@ -167,6 +169,8 @@ def test_particle_map(
     assert particle.status == "Mapped"
     assert particle.evolution.steps_taken > 6
     assert particle.evolution.steps_stored == 6  # + initial point
+    assert isinstance(particle.initial_energy, float)
+    assert isinstance(particle.final_energy, float)
 
 
 def test_particle_calculate_frequencies(
@@ -198,6 +202,8 @@ def test_particle_calculate_frequencies(
     assert particle.status == "SinglePeriodIntegrated"
     assert particle.evolution.steps_taken > 2
     assert particle.evolution.steps_stored > 2
+    assert isinstance(particle.initial_energy, float)
+    assert isinstance(particle.final_energy, float)
 
     assert particle.frequencies.omega_theta is not None
     assert particle.frequencies.omega_zeta is not None

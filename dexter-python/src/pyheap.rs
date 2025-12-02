@@ -76,9 +76,27 @@ impl PyHeap {
         )?)
     }
 
+    pub fn calculate_frequencies(
+        &mut self,
+        qfactor: &PyQfactor,
+        currents: &PyCurrents,
+        bfield: &PyBfield,
+        perturbation: &PyPerturbation,
+    ) -> Result<(), PyHeapError> {
+        Ok(self
+            .0
+            .calculate_frequencies(&qfactor.0, &currents.0, &bfield.0, &perturbation.0)?)
+    }
+
     /// Makes Heap indexable
     pub fn __getitem__(&self, index: usize) -> PyParticle {
-        PyParticle(self.0.initials.particle_from_index(index))
+        PyParticle(
+            self.0
+                .particles
+                .get(index)
+                .expect("Particle out of bounds")
+                .clone(),
+        )
     }
 
     pub fn __len__(&self) -> usize {

@@ -16,9 +16,9 @@ pub struct HeapStats {
     invalid: usize,
     failed: usize,
     /// Duration of the slowest particle.
-    slowest: MapDuration,
+    slowest: ParticleDuration,
     /// Duration of the fastest particle.
-    fastest: MapDuration,
+    fastest: ParticleDuration,
 }
 impl HeapStats {
     /// Creates a new [`HeapStats`], only containing information about the initial conditions.
@@ -79,8 +79,8 @@ impl HeapStats {
                 .filter(|p| p.evolution.steps_stored() > 0) // Drop invalid
                 .min_by_key(|p| p.evolution.duration)
         );
-        self.slowest = MapDuration::from(slowest);
-        self.fastest = MapDuration::from(fastest);
+        self.slowest = ParticleDuration::from(slowest);
+        self.fastest = ParticleDuration::from(fastest);
     }
 }
 
@@ -104,12 +104,12 @@ impl std::fmt::Debug for HeapStats {
 
 /// Helper struct to display fastest and slowest particles
 #[derive(Default)]
-struct MapDuration {
+struct ParticleDuration {
     steps: usize,
     duration: Duration,
 }
 
-impl From<&Particle> for MapDuration {
+impl From<&Particle> for ParticleDuration {
     fn from(p: &Particle) -> Self {
         Self {
             steps: p.evolution.steps_taken(),
@@ -118,7 +118,7 @@ impl From<&Particle> for MapDuration {
     }
 }
 
-impl std::fmt::Debug for MapDuration {
+impl std::fmt::Debug for ParticleDuration {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "duration: {:?} ({} steps)", self.duration, self.steps)
     }

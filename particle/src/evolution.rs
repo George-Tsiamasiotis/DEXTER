@@ -32,7 +32,9 @@ pub struct Evolution {
     /// The duration of the integration.
     pub duration: Duration,
     /// The total steps of the integration.
-    pub steps: usize,
+    pub steps_taken: usize,
+    /// The steps stored in the time series.
+    steps_stored: usize,
     /// Relative standard deviation of the energy time series (σ/μ).
     pub energy_std: f64,
 }
@@ -52,18 +54,19 @@ impl Evolution {
             energy: Vec::with_capacity(capacity),
             energy_std: f64::NAN,
             duration: Duration::default(),
-            steps: 0,
+            steps_taken: 0,
+            steps_stored: 0,
         }
     }
 
     /// Returns the total steps of the integration.
     pub fn steps_taken(&self) -> usize {
-        self.steps
+        self.steps_taken
     }
 
     /// Returns the number of steps stored in each time series.
     pub fn steps_stored(&self) -> usize {
-        self.time.len()
+        self.steps_stored
     }
 
     /// Pushes the variables of a [`State`] to the time series vecs.
@@ -77,6 +80,7 @@ impl Evolution {
         self.ptheta.push(state.ptheta);
         self.pzeta.push(state.pzeta);
         self.energy.push(state.energy());
+        self.steps_stored += 1;
     }
 
     /// Shrinks the vecs and calculates `energy_std`.
@@ -93,6 +97,21 @@ impl Evolution {
 
         let energy_array = Array1::from_vec(self.energy.clone());
         self.energy_std = energy_array.std(0.0) / energy_array.mean().unwrap_or(f64::NAN);
+    }
+
+    /// Resets all arrays to the empty defaults, keeping all the other fields.
+    ///
+    /// Use this to free memory when dealing with many particles.
+    pub fn discard(&mut self) {
+        self.time = Vec::default();
+        self.theta = Vec::default();
+        self.psip = Vec::default();
+        self.rho = Vec::default();
+        self.zeta = Vec::default();
+        self.psi = Vec::default();
+        self.ptheta = Vec::default();
+        self.pzeta = Vec::default();
+        self.energy = Vec::default();
     }
 
     array1D_getter_impl!(time, time, Time);

@@ -877,12 +877,18 @@ class Particle:
         The particle's integration status.
     frequencies
         The particle's calculated frequencies.
+    initial_energy
+        The particle's initial energy, calculated from its initial state, in Normalized Units.
+    final_energy
+        The particle's final energy, calculated from its final state, in Normalized Units.
     """
 
     initial_conditions: InitialConditions
     evolution: Evolution
     status: str
     frequencies: Frequencies
+    initial_energy: float
+    final_energy: float
 
     def __init__(self, initial_conditions: InitialConditions) -> None:
         """
@@ -1000,8 +1006,24 @@ class Particle:
         bfield: Bfield,
         perturbation: Perturbation,
     ) -> None:
-        r"""Integrates the particle for 1 period, calculating $\omega_\theta$,
-        $\omega_\zeta$ and $q_{kinetic}$.
+        r"""Calculates $\omega_\theta$, $\omega_\zeta$ and $q_{kinetic}$.
+
+        !!! note
+
+            $\omega_\theta$ is calculated by integrating for a single period with respect
+            to the $\theta-\psi_p$ variables.
+
+            The orbit frequency $\omega_\zeta$ corresponds to the bounce/transit averaged
+            rate of toroidal precession $\Delta\zeta / T_\omega$.
+
+            Finally, $q_{kinetic} = \omega_\zeta / \omega_\theta$.
+
+        !!! tip
+
+            Avoid using values like $\pi, 0$ for $\theta$. The solver looks for
+            intersections with the initial $\theta-\psi_p$ values, but $\pi$ and $0$
+            tend to be local minima/maxima, and therefore no intersections can be detected.
+            Use 'random' intermediate values instead.
 
         Parameters
         ----------
@@ -1018,6 +1040,17 @@ class Particle:
         -------
 
         ```python
+        >>> initial = dx.InitialConditions(
+        ...     time0=0,
+        ...     theta0=1,
+        ...     psip0=0.8*qfactor.psip_wall,
+        ...     rho0=1e-5,
+        ...     zeta0=0,
+        ...     mu=1e-6,
+        ... )
+        >>>
+        >>> particle = dx.Particle(initial)
+        >>>
         >>> particle.calculate_frequencies(
         ...     qfactor=qfactor,
         ...     currents=currents,
@@ -1234,7 +1267,58 @@ class Heap:
         ```
         """
 
-    def __getitem__(self, n: int) -> Harmonic:
+    def calculate_frequencies(
+        self,
+        qfactor: Qfactor,
+        currents: Currents,
+        bfield: Bfield,
+        perturbation: Perturbation,
+    ) -> None:
+        r"""Calculates the $\omega_\theta$, $\omega_\zeta$ and $q_{kinetic}$ of the particles.
+
+        !!! tip
+
+            This method appears to be a bit sensitive to the solver's arithmetic error, so
+            it's recommended to use the energy-adaptive-step method, and maybe tighten the
+            tolerance a bit.
+
+        Parameters
+        ----------
+        qfactor
+            The equilibrium's qfactor.
+        currents
+            The equilibrium's plasma current.
+        bfield
+            The equilibrium's magnetic field.
+        perturbation
+            The equilibrium's perturbation.
+
+        Example
+        -------
+
+        ```python
+        >>> num = 5
+        >>> initials = dx.HeapInitialConditions(
+        ...     thetas=np.ones(num),
+        ...     psips=0.8 * geometry.psip_wall * np.ones(num),
+        ...     rhos=np.linspace(1e-5, 5e-5, num),
+        ...     zetas=np.zeros(num),
+        ...     mus=np.zeros(num),
+        ... )
+        >>>
+        >>> heap = dx.Heap(initials)
+        >>>
+        >>> heap.calculate_frequencies(
+        ...     qfactor,
+        ...     currents,
+        ...     bfield,
+        ...     perturbation=dx.Perturbation([])
+        ... )
+
+        ```
+        """
+
+    def __getitem__(self, n: int) -> Particle:
         """Returns the n-th particle."""
 
     def __len__(self) -> int:
