@@ -186,7 +186,7 @@ dependencies = [
 
 [[package]]
 name = "config"
-version = "0.1.0-pre.1"
+version = "0.1.0-pre.2"
 
 [[package]]
 name = "console"
@@ -328,7 +328,7 @@ dependencies = [
 
 [[package]]
 name = "dexter"
-version = "0.1.2-pre.6"
+version = "0.1.2-pre.7"
 dependencies = [
  "config",
  "equilibrium",
@@ -510,7 +510,7 @@ dependencies = [
 
 [[package]]
 name = "heap"
-version = "0.1.1-pre.1"
+version = "0.1.1-pre.2"
 dependencies = [
  "config",
  "equilibrium",
@@ -1051,7 +1051,7 @@ dependencies = [
 
 [[package]]
 name = "particle"
-version = "0.1.2-pre.5"
+version = "0.1.2-pre.6"
 dependencies = [
  "config",
  "criterion",

@@ -54,6 +54,15 @@ pub enum IntegrationStatus {
     Failed(Box<str>),
 }
 
+/// Defines the Particle's orbit type from its θ-span.
+#[derive(Debug, Default, Clone, is_enum_variant)]
+pub enum OrbitType {
+    #[default]
+    Undefined,
+    Trapped,
+    Passing,
+}
+
 /// Representation of a particle.
 #[derive(Clone)]
 pub struct Particle {
@@ -67,6 +76,8 @@ pub struct Particle {
     pub evolution: Evolution,
     /// Status of the particle's integration.
     pub status: IntegrationStatus,
+    /// The orbit type.
+    pub orbit_type: OrbitType,
     /// The particle's `ωθ`, `ωζ` and `qkinetic`.
     pub frequencies: Frequencies,
 }
@@ -84,6 +95,7 @@ impl Particle {
             initial_state,
             final_state: State::default(),
             status: IntegrationStatus::default(),
+            orbit_type: OrbitType::default(),
             frequencies: Frequencies::default(),
         }
     }
@@ -103,7 +115,6 @@ impl Particle {
 
         // Tracks the state of the particle in each step. Also keeps the Accelerators' states.
         let mut state = self.initial_state.clone();
-        self.status = IntegrationStatus::Integrated; // Will be overwritten in case of failure.
         let mut dt = RKF45_FIRST_STEP;
 
         let start = Instant::now();
@@ -146,7 +157,9 @@ impl Particle {
 
         self.evolution.duration = start.elapsed();
         self.evolution.finish();
+        self.calculate_orbit_type();
         self.final_state = state.into_evaluated(qfactor, currents, bfield, perturbation)?;
+        self.status = IntegrationStatus::Integrated;
         Ok(())
     }
 
@@ -163,7 +176,6 @@ impl Particle {
         self.evolution = Evolution::default(); // Reset it
         self.initial_state
             .evaluate(qfactor, currents, bfield, perturbation)?;
-        self.status = IntegrationStatus::Mapped; // Will be overwritten in case of failure.
         let start = Instant::now();
 
         use ParticleError::*;
@@ -190,7 +202,9 @@ impl Particle {
 
         self.evolution.duration = start.elapsed();
         self.evolution.finish();
+        self.calculate_orbit_type();
         // Final state is set up in map_integrate, to keep the Accelerators and Cache
+        self.status = IntegrationStatus::Mapped;
         Ok(())
     }
 
@@ -218,12 +232,32 @@ impl Particle {
             Err(err) => {
                 self.status = IntegrationStatus::Failed(format!("{:?}", err).into());
             }
-            Ok(_) => (),
+            Ok(_) => {
+                self.status = IntegrationStatus::SinglePeriodIntegrated;
+            }
         }
 
         self.evolution.duration = start.elapsed();
         self.evolution.finish();
+        self.calculate_orbit_type();
         Ok(())
+    }
+
+    /// Calculates the Particles OrbitType.
+    fn calculate_orbit_type(&mut self) {
+        let thetas = &self.evolution.theta;
+        if thetas.is_empty() {
+            self.orbit_type = OrbitType::Undefined;
+            return;
+        }
+        let theta0 = thetas.first().expect("non empty");
+        let thetaf = thetas.last().expect("non empty");
+
+        use std::f64::consts::TAU;
+        match (thetaf - theta0) > TAU - TRAPPED_THRESHOLD {
+            true => self.orbit_type = OrbitType::Passing,
+            false => self.orbit_type = OrbitType::Trapped,
+        }
     }
 }
 
@@ -257,6 +291,7 @@ impl std::fmt::Debug for Particle {
             .field("Initial energy", &self.initial_state.energy())
             .field("Final energy  ", &self.final_state.energy())
             .field("Status", &self.status)
+            .field("Orbit type", &self.orbit_type)
             .field("Evolution", &self.evolution)
             .field("Frequencies", &self.frequencies)
             .finish()

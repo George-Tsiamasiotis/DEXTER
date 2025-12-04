@@ -11,15 +11,13 @@ currents = dx.Currents("./data.nc", "steffen")
 bfield = dx.Bfield("./data.nc", "bicubic")
 perturbation = dx.Perturbation([])
 
-num = 5000
-rho0 = np.log10(1e-5)
-rho1 = np.log10(1e-1)
+num = 1000
 initials = dx.HeapInitialConditions(
     psips=0.7 * geometry.psip_wall * np.ones(num),
     zetas=0 * np.ones(num),
     thetas=np.ones(num),
-    rhos=np.logspace(rho0, rho1, num),
-    mus=7e-6 * np.zeros(num),
+    rhos=np.geomspace(1e-5, 2e-3, num),
+    mus=1e-6 * np.ones(num),
 )
 
 heap = dx.Heap(initials)

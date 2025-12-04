@@ -15,6 +15,10 @@ NDArray2D
 PoincareSection
     The $\theta=const$ or $\zeta=const$ section on which to calculate orbit
     intersections.
+IntegrationStatus
+    A Particle's integrations status.
+OrbitType
+    A Particle's orbit type, calculated form its θ-span.
 CalculatedFrequency
     Possibly missing value for a particle's calculated $\omega_\theta$, $\omega_\zeta$
     or $q_{kinetic}$.
@@ -35,5 +39,20 @@ NDArray1D: TypeAlias = np.ndarray[tuple[int], np.dtype[np.float64]]
 NDArray2D: TypeAlias = np.ndarray[tuple[int, int], np.dtype[np.float64]]
 
 PoincareSection: TypeAlias = Literal["ConstTheta", "ConstZeta"]
+
+# Enum
+IntegrationStatus: TypeAlias = Literal[
+    "Initialized",
+    "Integrated",
+    "Mapped",
+    "SinglePeriodIntegrated",
+    "Escaped",
+    "TimedOut",
+    "InvalidIntersections",
+    "Failed",
+]
+
+# Enum
+OrbitType: TypeAlias = Literal["Trapped", "Passing", "Undefined"]
 
 CalculatedFrequency: TypeAlias = float | None

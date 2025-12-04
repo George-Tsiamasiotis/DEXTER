@@ -186,5 +186,6 @@ impl PyParticle {
 py_debug_impl!(PyParticle);
 py_repr_impl!(PyParticle);
 py_get_enum_string!(PyParticle, status);
+py_get_enum_string!(PyParticle, orbit_type);
 py_export_getter!(PyParticle, initial_energy, f64);
 py_export_getter!(PyParticle, final_energy, f64);

@@ -124,6 +124,7 @@ def test_particle_integrate(
     particle = Particle(init)
 
     assert particle.status == "Initialized"
+    assert particle.orbit_type == "Undefined"
     particle.integrate(
         qfactor=qfactor,
         currents=currents,
@@ -132,6 +133,7 @@ def test_particle_integrate(
         t_eval=(0, 100),
     )
     assert particle.status == "Integrated"
+    assert particle.orbit_type != "Undefined"
     assert particle.evolution.steps_taken > 2
     assert particle.evolution.steps_stored > 2
     assert isinstance(particle.initial_energy, float)
@@ -159,6 +161,7 @@ def test_particle_map(
     particle = Particle(init)
 
     assert particle.status == "Initialized"
+    assert particle.orbit_type == "Undefined"
     particle.map(
         qfactor=qfactor,
         currents=currents,
@@ -167,6 +170,7 @@ def test_particle_map(
         params=params,
     )
     assert particle.status == "Mapped"
+    assert particle.orbit_type != "Undefined"
     assert particle.evolution.steps_taken > 6
     assert particle.evolution.steps_stored == 6  # + initial point
     assert isinstance(particle.initial_energy, float)
@@ -189,6 +193,7 @@ def test_particle_calculate_frequencies(
     particle = Particle(init)
 
     assert particle.status == "Initialized"
+    assert particle.orbit_type == "Undefined"
     assert particle.frequencies.omega_theta is None
     assert particle.frequencies.omega_zeta is None
     assert particle.frequencies.qkinetic is None
@@ -200,6 +205,7 @@ def test_particle_calculate_frequencies(
         perturbation=Perturbation([]),  # Unperturbed system for frequencies
     )
     assert particle.status == "SinglePeriodIntegrated"
+    assert particle.orbit_type != "Undefined"
     assert particle.evolution.steps_taken > 2
     assert particle.evolution.steps_stored > 2
     assert isinstance(particle.initial_energy, float)

@@ -13,7 +13,8 @@ pub use error::ParticleError;
 pub use evolution::Evolution;
 pub use frequencies::*;
 pub use mapping::*;
-pub use particle::{InitialConditions, IntegrationStatus, Particle};
+pub use particle::{InitialConditions, Particle};
+pub use particle::{IntegrationStatus, OrbitType};
 pub use state::State;
 
 pub(crate) use rkf45::Stepper;

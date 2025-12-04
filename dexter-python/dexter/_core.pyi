@@ -13,6 +13,8 @@ from dexter.types import (
     Interp1DType,
     Interp2DType,
     NDArrayShape,
+    OrbitType,
+    IntegrationStatus,
     PoincareSection,
 )
 
@@ -875,6 +877,8 @@ class Particle:
         The evolution time series of the particle's integration.
     status
         The particle's integration status.
+    orbit_type
+        The particle's orbit type, calculated form its $\theta$-span.
     frequencies
         The particle's calculated frequencies.
     initial_energy
@@ -885,7 +889,8 @@ class Particle:
 
     initial_conditions: InitialConditions
     evolution: Evolution
-    status: str
+    status: IntegrationStatus
+    orbit_type: OrbitType
     frequencies: Frequencies
     initial_energy: float
     final_energy: float

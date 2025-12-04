@@ -5,21 +5,50 @@ use safe_unwrap::safe_unwrap;
 
 use crate::{Heap, HeapInitialConditions, heap::Routine};
 
-#[non_exhaustive]
-#[derive(Default)]
-pub struct HeapStats {
-    routine: Routine,
-    total_particles: usize,
+/// Keeps track of the number of Particles per `IntegrationStatus`.
+#[derive(Default, Debug)]
+struct IntegrationStatusNums {
+    initialized: usize,
+    integrated: usize,
+    single_period: usize,
     mapped: usize,
     escaped: usize,
     timedout: usize,
     invalid: usize,
     failed: usize,
+}
+
+/// Keeps track of the number of Particles per `OrbitType`.
+#[derive(Default, Debug)]
+struct OrbitTypeNums {
+    undefined: usize,
+    trapped: usize,
+    passing: usize,
+}
+
+#[non_exhaustive]
+#[derive(Default)]
+pub struct HeapStats {
+    routine: Routine,
+    status_nums: IntegrationStatusNums,
+    orbit_type_nums: OrbitTypeNums,
+    total_particles: usize,
     /// Duration of the slowest particle.
     slowest: ParticleDuration,
     /// Duration of the fastest particle.
     fastest: ParticleDuration,
 }
+
+macro_rules! count_variants {
+    ($heap:ident, $which:ident, $is_enum:ident) => {
+        $heap
+            .particles
+            .iter()
+            .filter(|p| p.$which.$is_enum())
+            .count()
+    };
+}
+
 impl HeapStats {
     /// Creates a new [`HeapStats`], only containing information about the initial conditions.
     pub fn new(initial: &HeapInitialConditions) -> Self {
@@ -40,6 +69,7 @@ impl HeapStats {
         self.update_flags(heap);
         self.calculate_particle_nums(heap);
         self.calculate_durations(heap);
+        self.calculate_orbit_types_nums(heap);
     }
 
     /// Updates various future flags.
@@ -49,21 +79,21 @@ impl HeapStats {
 
     /// Counts the occurences of each [`IntegrationStatus`]'s variants.
     fn calculate_particle_nums(&mut self, heap: &Heap) {
-        macro_rules! count_variants {
-            ($is_enum:ident) => {
-                heap.particles
-                    .iter()
-                    .filter(|p| p.status.$is_enum())
-                    .count()
-            };
-        }
-        self.mapped = count_variants!(is_mapped);
-        self.escaped = count_variants!(is_escaped);
-        self.timedout = count_variants!(is_timed_out);
-        self.escaped = count_variants!(is_escaped);
-        self.failed = count_variants!(is_failed);
-        self.invalid = count_variants!(is_invalid_intersections);
+        self.status_nums.initialized = count_variants!(heap, status, is_initialized);
+        self.status_nums.integrated = count_variants!(heap, status, is_integrated);
+        self.status_nums.mapped = count_variants!(heap, status, is_mapped);
+        self.status_nums.escaped = count_variants!(heap, status, is_escaped);
+        self.status_nums.timedout = count_variants!(heap, status, is_timed_out);
+        self.status_nums.failed = count_variants!(heap, status, is_failed);
+        self.status_nums.invalid = count_variants!(heap, status, is_invalid_intersections);
+        self.status_nums.single_period = count_variants!(heap, status, is_single_period_integrated);
         self.total_particles = heap.particles.len(); // Update just in case
+    }
+
+    fn calculate_orbit_types_nums(&mut self, heap: &Heap) {
+        self.orbit_type_nums.undefined = count_variants!(heap, orbit_type, is_undefined);
+        self.orbit_type_nums.trapped = count_variants!(heap, orbit_type, is_trapped);
+        self.orbit_type_nums.passing = count_variants!(heap, orbit_type, is_passing);
     }
 
     /// Calculates and stores the fastest and slowest integrations.
@@ -89,11 +119,8 @@ impl std::fmt::Debug for HeapStats {
         f.debug_struct("Heap") // Propagated to Heap
             .field("routine", &self.routine)
             .field("total_particles", &self.total_particles)
-            .field("mapped", &self.mapped)
-            .field("escaped", &self.escaped)
-            .field("timedout", &self.timedout)
-            .field("invalid", &self.invalid)
-            .field("failed", &self.failed)
+            .field("IntegrationStatusNums", &self.status_nums)
+            .field("OrbitTypeNums", &self.orbit_type_nums)
             .field("slowest", &self.slowest)
             .field("fastest", &self.fastest)
             .finish()

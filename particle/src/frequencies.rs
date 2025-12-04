@@ -1,6 +1,7 @@
 use std::f64::consts::PI;
+use std::time::Duration;
 
-use config::{MAX_STEPS, RKF45_FIRST_STEP};
+use config::{RKF45_FIRST_STEP, SINGLE_PERIOD_MAX_STEPS};
 use equilibrium::{Bfield, Currents, Perturbation, Qfactor};
 use safe_unwrap::safe_unwrap;
 
@@ -89,7 +90,11 @@ pub(crate) fn close_theta_period(
     let psip_dot0 = particle.initial_state.psip_dot;
 
     let mut dt = RKF45_FIRST_STEP;
-    while particle.evolution.steps_taken() <= MAX_STEPS {
+    while particle.evolution.steps_taken() <= SINGLE_PERIOD_MAX_STEPS {
+        if particle.evolution.steps_taken() == SINGLE_PERIOD_MAX_STEPS {
+            // FIXME:
+            return Err(crate::ParticleError::TimedOut(Duration::default()));
+        }
         particle.evolution.push_state(&state1);
         particle.evolution.steps_taken += 1;
 
@@ -187,7 +192,6 @@ pub(crate) fn close_theta_period(
             particle.frequencies.update(&OmegaZeta, omega_zeta);
             particle.evolution.push_state(&intersection_state);
             particle.final_state = intersection_state;
-            particle.status = crate::IntegrationStatus::SinglePeriodIntegrated;
             break;
         }
         // Keep going if not close to a period.
