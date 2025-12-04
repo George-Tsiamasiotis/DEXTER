@@ -17,7 +17,6 @@ use crate::henon::{
 /// Frequency selector.
 pub(crate) enum Omega {
     OmegaTheta,
-    #[allow(unused)]
     OmegaZeta,
 }
 
@@ -27,6 +26,8 @@ pub struct Frequencies {
     omega_theta: Option<f64>,
     omega_zeta: Option<f64>,
     qkinetic: Option<f64>,
+    pub(crate) psip_intersections: (usize, Vec<usize>),
+    pub(crate) theta_intersections: (usize, Vec<usize>),
 }
 
 impl Frequencies {
@@ -84,6 +85,9 @@ pub(crate) fn close_theta_period(
     let zeta0 = particle.initial_state.zeta;
     let time0 = particle.initial_state.time;
 
+    let theta_dot0 = particle.initial_state.theta_dot;
+    let psip_dot0 = particle.initial_state.psip_dot;
+
     let mut dt = RKF45_FIRST_STEP;
     while particle.evolution.steps_taken() <= MAX_STEPS {
         particle.evolution.push_state(&state1);
@@ -109,10 +113,44 @@ pub(crate) fn close_theta_period(
         let new_theta = state2.theta;
         let old_psip = state1.psip;
         let new_psip = state2.psip;
+        let old_theta_dot = state1.theta_dot;
+        let old_psip_dot = state1.psip_dot;
+
+        let mut psip_intersected = false;
+        let mut theta_intersected = false;
+        let mut same_directions = false;
         // Use `intersected` rather than `is_close` checks to avoid stopping the particles
         // immediately and hardcoding tolerances
         // Intersected() for the flux might be unnecessary here, but its safe.
-        if intersected(old_psip, new_psip, psip0) && intersected(old_theta, new_theta, theta0) {
+        //
+        // TODO: An additional proximity check is needed for ψp, for the case where 𝜃₀=0,π, where
+        // ψp tends to be a local extremum.
+        if intersected(old_psip, new_psip, psip0) {
+            particle.frequencies.psip_intersections.0 += 1;
+            particle
+                .frequencies
+                .psip_intersections
+                .1
+                .push(particle.evolution.steps_taken());
+            psip_intersected = true;
+        };
+        if intersected(old_theta, new_theta, theta0) {
+            particle.frequencies.theta_intersections.0 += 1;
+            particle
+                .frequencies
+                .theta_intersections
+                .1
+                .push(particle.evolution.steps_taken());
+            theta_intersected = true;
+        };
+
+        if (old_theta_dot.signum() == theta_dot0.signum())
+            && (old_psip_dot.signum() == psip_dot0.signum())
+        {
+            same_directions = true
+        }
+
+        if theta_intersected && psip_intersected && same_directions {
             // Hénon's trick.
             // If the particle intersected the `θ0-ψp0` point, go back to `state1` and find
             // the exact time step needed to complete the period. This step brings `θ` to
@@ -133,8 +171,7 @@ pub(crate) fn close_theta_period(
                 perturbation,
                 &params,
                 mod_state2,
-            )?
-            .into_evaluated(qfactor, currents, bfield, perturbation)?;
+            )?; // evaluated
 
             #[allow(non_snake_case)]
             let Tomega = intersection_state.time - time0;
@@ -171,11 +208,15 @@ impl std::fmt::Debug for Frequencies {
                 String::from("Not calculated")
             }
         }
+        let theta_intersections = format!("{:?}", &self.theta_intersections);
+        let psip_intersections = format!("{:?}", &self.psip_intersections);
 
         f.debug_struct("Frequencies")
             .field("omega_theta", &stringify(self.omega_theta))
             .field("omega_zeta", &stringify(self.omega_zeta))
             .field("qkinetic", &stringify(self.qkinetic))
+            .field("ψp-intersections", &psip_intersections)
+            .field("θ-intersections", &theta_intersections)
             .finish()
     }
 }

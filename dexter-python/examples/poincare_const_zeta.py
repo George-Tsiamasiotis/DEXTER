@@ -16,19 +16,19 @@ rs = np.linspace(0.13, geometry.r_wall, 40)
 rs = np.concat((rs, [0.1843]))  # Add the separatrix manually
 rs = np.concat((rs, [0.17976, 0.186]))  # Add some extra trapped orbits
 psips = np.asarray([geometry.psip(r) for r in rs])
-zetas = np.pi * np.ones(len(psips))
+zetas = 0 * np.ones(len(psips))
 
 initials = dx.HeapInitialConditions(
     psips=psips,
     zetas=zetas,
     thetas=np.zeros(len(psips)),
-    rhos=0.0001 * np.ones(len(psips)),
+    rhos=0.0000001 * np.ones(len(psips)),
     mus=np.zeros(len(psips)),
 )
 
 heap = dx.Heap(initials)
 
-params = dx.MappingParameters("ConstZeta", np.pi, 2000)
+params = dx.MappingParameters("ConstZeta", 0, 200)
 
 heap.poincare(qfactor, currents, bfield, perturbation, params)
 print(heap)

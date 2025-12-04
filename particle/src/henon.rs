@@ -85,6 +85,16 @@ pub(crate) fn calculate_mod_state2(
     let mut mod_stepper = Stepper::default();
     mod_stepper.init(&mod_state1);
     mod_stepper.start(dtau, qfactor, bfield, currents, perturbation)?;
+    {
+        // NOTE: I am not sure why we must do this, but we must.
+        // Probably equivalent to re-adjusting the step-size `h`, but only for the modified
+        // system's independent variables, while keeping `h=dτ` for the 'τ' (modified system's
+        // time) step size.
+        mod_stepper.weights[0] = mod_state1.theta_dot;
+        mod_stepper.weights[1] = mod_state1.psip_dot;
+        mod_stepper.weights[2] = mod_state1.rho_dot;
+        mod_stepper.weights[3] = mod_state1.zeta_dot;
+    }
     let mod_state2 = mod_stepper.next_state(dtau);
     Ok(mod_state2)
 }
