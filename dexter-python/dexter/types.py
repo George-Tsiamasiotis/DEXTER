@@ -22,6 +22,9 @@ OrbitType
 CalculatedFrequency
     Possibly missing value for a particle's calculated $\omega_\theta$, $\omega_\zeta$
     or $q_{kinetic}$.
+SingePeriodIntersections
+    The (number of found intersections, [steps of each intersection]) of the variables $\theta$
+    and $\psi_p$ calculated during SinglePeriod integration.
 
 """
 
@@ -56,3 +59,5 @@ IntegrationStatus: TypeAlias = Literal[
 OrbitType: TypeAlias = Literal["Trapped", "Passing", "Undefined"]
 
 CalculatedFrequency: TypeAlias = float | None
+
+SingePeriodIntersections: TypeAlias = tuple[int, list[int]]

@@ -69,6 +69,14 @@ impl Frequencies {
     pub fn qkinetic(&self) -> Option<f64> {
         self.qkinetic
     }
+
+    pub fn psip_intersections(&self) -> (usize, Vec<usize>) {
+        self.psip_intersections.clone()
+    }
+
+    pub fn theta_intersections(&self) -> (usize, Vec<usize>) {
+        self.theta_intersections.clone()
+    }
 }
 
 // ===============================================================================================
@@ -117,6 +125,7 @@ pub(crate) fn close_theta_period(
 
         // Prevent particle from stopping at the first step
         if particle.evolution.steps_stored() < 2 {
+            particle.evolution.push_state(&state2);
             state1 = state2;
             continue;
         }
@@ -196,6 +205,7 @@ pub(crate) fn close_theta_period(
             break;
         }
         // Keep going if not close to a period.
+        particle.evolution.push_state(&state2);
         state1 = state2;
     }
 
@@ -214,7 +224,7 @@ impl std::fmt::Debug for Frequencies {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         fn stringify(o: Option<f64>) -> String {
             if let Some(value) = o {
-                format!("{:.7}", value)
+                format!("{:.10}", value)
             } else {
                 String::from("Not calculated")
             }
@@ -224,8 +234,8 @@ impl std::fmt::Debug for Frequencies {
 
         f.debug_struct("Frequencies")
             .field("omega_theta", &stringify(self.omega_theta))
-            .field("omega_zeta", &stringify(self.omega_zeta))
-            .field("qkinetic", &stringify(self.qkinetic))
+            .field("omega_zeta ", &stringify(self.omega_zeta))
+            .field("qkinetic   ", &stringify(self.qkinetic))
             .field("ψp-intersections", &psip_intersections)
             .field("θ-intersections", &theta_intersections)
             .finish()

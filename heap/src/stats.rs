@@ -1,7 +1,6 @@
 use std::time::Duration;
 
 use particle::Particle;
-use safe_unwrap::safe_unwrap;
 
 use crate::{Heap, HeapInitialConditions, heap::Routine};
 
@@ -98,17 +97,12 @@ impl HeapStats {
 
     /// Calculates and stores the fastest and slowest integrations.
     fn calculate_durations(&mut self, heap: &Heap) {
-        let slowest = safe_unwrap!(
-            "poincare.particles is non-empty",
-            heap.particles.iter().max_by_key(|p| p.evolution.duration)
-        );
-        let fastest = safe_unwrap!(
-            "poincare.particles is non-empty",
-            heap.particles
-                .iter()
-                .filter(|p| p.evolution.steps_stored() > 0) // Drop invalid
-                .min_by_key(|p| p.evolution.duration)
-        );
+        let slowest = heap.particles.iter().max_by_key(|p| p.evolution.duration);
+        let fastest = heap
+            .particles
+            .iter()
+            .filter(|p| p.evolution.steps_stored() > 0) // Drop invalid
+            .min_by_key(|p| p.evolution.duration);
         self.slowest = ParticleDuration::from(slowest);
         self.fastest = ParticleDuration::from(fastest);
     }
@@ -136,17 +130,23 @@ struct ParticleDuration {
     duration: Duration,
 }
 
-impl From<&Particle> for ParticleDuration {
-    fn from(p: &Particle) -> Self {
-        Self {
-            steps: p.evolution.steps_taken(),
-            duration: p.evolution.duration,
-        }
+impl From<Option<&Particle>> for ParticleDuration {
+    fn from(p: Option<&Particle>) -> Self {
+        let (duration, steps) = if let Some(p) = p {
+            (p.evolution.duration, p.evolution.steps_taken())
+        } else {
+            (Duration::default(), 0)
+        };
+        Self { steps, duration }
     }
 }
 
 impl std::fmt::Debug for ParticleDuration {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "duration: {:?} ({} steps)", self.duration, self.steps)
+        write!(
+            f,
+            "duration: {:?} ({} steps taken)",
+            self.duration, self.steps
+        )
     }
 }

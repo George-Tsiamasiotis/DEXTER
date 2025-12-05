@@ -12,7 +12,7 @@ pub(crate) use rkf45::Stepper;
 pub use error::ParticleError;
 pub use evolution::Evolution;
 pub use particle::{InitialConditions, IntegrationStatus, OrbitType, Particle};
-pub use routines::{MappingParameters, PoincareSection};
+pub use routines::{Frequencies, MappingParameters, PoincareSection};
 pub use state::State;
 
 pub type Result<T> = std::result::Result<T, ParticleError>;

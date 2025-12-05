@@ -1,6 +1,6 @@
 [project]
 name = "dexter"
-version = "0.1.2-pre.8"
+version = "0.1.2-pre.9"
 description = "Calculations and simulations in reconstructed equilibria of toroidal fusion devices."
 readme = "README.md"
 authors = [

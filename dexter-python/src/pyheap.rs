@@ -55,8 +55,8 @@ pub struct PyHeap(pub Heap);
 #[pymethods]
 impl PyHeap {
     #[new]
-    pub fn new_py(initials: &PyHeapInitialConditions) -> Self {
-        Self(Heap::new(&initials.0))
+    pub fn new_py(initial_conditions: &PyHeapInitialConditions) -> Self {
+        Self(Heap::new(&initial_conditions.0))
     }
 
     pub fn poincare(
@@ -66,14 +66,14 @@ impl PyHeap {
         bfield: &PyBfield,
         perturbation: &PyPerturbation,
         params: &PyMappingParameters,
-    ) -> Result<(), PyHeapError> {
-        Ok(self.0.poincare(
+    ) {
+        self.0.poincare(
             &qfactor.0,
             &currents.0,
             &bfield.0,
             &perturbation.0,
             &params.0,
-        )?)
+        )
     }
 
     pub fn calculate_frequencies(
@@ -82,10 +82,9 @@ impl PyHeap {
         currents: &PyCurrents,
         bfield: &PyBfield,
         perturbation: &PyPerturbation,
-    ) -> Result<(), PyHeapError> {
-        Ok(self
-            .0
-            .calculate_frequencies(&qfactor.0, &currents.0, &bfield.0, &perturbation.0)?)
+    ) {
+        self.0
+            .calculate_frequencies(&qfactor.0, &currents.0, &bfield.0, &perturbation.0)
     }
 
     /// Makes Heap indexable

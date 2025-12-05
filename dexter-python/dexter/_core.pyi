@@ -16,6 +16,7 @@ from dexter.types import (
     OrbitType,
     IntegrationStatus,
     PoincareSection,
+    SingePeriodIntersections,
 )
 
 class Geometry:
@@ -1104,6 +1105,9 @@ class Evolution:
     steps_stored
         The number of points stored. This can different from the `steps_taken` attribute,
         for example when `mapping` a particle, in which case only the intersections are stored.
+    final_time
+        The final time stored in the `time` array. Returns None if the particle has not
+        been integrated.
 
     Example
     -------
@@ -1127,19 +1131,49 @@ class Evolution:
     energy_std: float
     steps_taken: int
     steps_stored: int
+    final_time: float | None
 
 class Frequencies:
     r"""Stores the Particle's calculated $\omega_\theta$, $\omega_\zeta$
     and $q_{kinetic}$.
 
-
     The values are calculated from `Particle.calculate_frequencies` since they
     must be calculated in a specific order. Otherwise they are absent.
+
+    Attributes
+    ----------
+    omega_theta
+        The $\omega_\theta$ calculated frequency.
+    omega_zeta
+        The $\omega_\zeta$ calculated frequency.
+    qkinetic
+        The calculated $q_{kinetic}$.
+    theta_intersections
+        The $\theta$ intersections found during the integration.
+    psip_intersections
+        The $\psi_p$ intersections found during the integration.
+
+    Example
+    -------
+    For a simple passing particle:
+
+    ```python
+    >>> particle.frequencies  # doctest: +SKIP
+    Frequencies: Frequencies {
+        omega_theta: "0.0000360582",
+        omega_zeta : "0.0000032916",
+        qkinetic   : "0.0912849868",
+        ψp-intersections: "(2, [284, 718])",
+        θ-intersections: "(1, [718])",
+    },
+    ```
     """
 
     omega_theta: CalculatedFrequency
     omega_zeta: CalculatedFrequency
     qkinetic: CalculatedFrequency
+    theta_intersections: SingePeriodIntersections
+    psip_intersections: SingePeriodIntersections
 
 # ==========================================================================
 
@@ -1229,7 +1263,7 @@ class Heap:
     psis: NDArray2D
     routine: str
 
-    def __init__(self, initial: HeapInitialConditions) -> None:
+    def __init__(self, initials: HeapInitialConditions) -> None:
         """Constructs a Heap.
 
         Parameters

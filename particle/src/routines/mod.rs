@@ -29,8 +29,9 @@ mod mapping;
 
 mod henon;
 
-pub(crate) use frequencies::{Frequencies, close_theta_period};
+pub(crate) use frequencies::close_theta_period;
 pub(crate) use integrate::integrate;
 pub(crate) use mapping::map_integrate;
 
+pub use frequencies::Frequencies;
 pub use mapping::{MappingParameters, PoincareSection};

@@ -11,7 +11,6 @@ use utils::{
     py_repr_impl,
 };
 
-use crate::pyerrors::PyParticleError;
 use crate::pylibrium::{PyBfield, PyCurrents, PyPerturbation, PyQfactor};
 
 #[derive(Clone)]
@@ -85,11 +84,25 @@ py_get_numpy1D!(PyEvolution, energy);
 py_get_primitive_field!(PyEvolution, energy_std, f64);
 py_export_getter!(PyEvolution, steps_taken, usize);
 py_export_getter!(PyEvolution, steps_stored, usize);
+py_export_getter!(PyEvolution, final_time, Option<f64>);
 
 // ===============================================================================================
 
 #[pyclass(frozen, name = "Frequencies")]
 pub struct PyFrequencies(Frequencies);
+
+#[pymethods]
+impl PyFrequencies {
+    #[getter]
+    pub fn get_psip_intersections(&self) -> (usize, Vec<usize>) {
+        self.0.psip_intersections()
+    }
+
+    #[getter]
+    pub fn get_theta_intersections(&self) -> (usize, Vec<usize>) {
+        self.0.theta_intersections()
+    }
+}
 
 py_debug_impl!(PyFrequencies);
 py_repr_impl!(PyFrequencies);
@@ -131,7 +144,7 @@ impl PyParticle {
         bfield: &PyBfield,
         perturbation: &PyPerturbation,
         t_eval: Bound<'py, PyTuple>,
-    ) -> Result<(), PyParticleError> {
+    ) {
         match t_eval.len() {
             2 => (),
             _ => panic!("`t_eval` must be of the form (t0, tf)"),
@@ -148,9 +161,8 @@ impl PyParticle {
             safe_unwrap!("len already checked", t_eval.last().copied()),
         );
 
-        Ok(self
-            .0
-            .integrate(&qfactor.0, &bfield.0, &currents.0, &perturbation.0, t_eval)?)
+        self.0
+            .integrate(&qfactor.0, &bfield.0, &currents.0, &perturbation.0, t_eval)
     }
 
     pub fn map(
@@ -160,14 +172,14 @@ impl PyParticle {
         bfield: &PyBfield,
         perturbation: &PyPerturbation,
         params: &PyMappingParameters,
-    ) -> Result<(), PyParticleError> {
-        Ok(self.0.map(
+    ) {
+        self.0.map(
             &qfactor.0,
             &bfield.0,
             &currents.0,
             &perturbation.0,
             &params.0,
-        )?)
+        )
     }
 
     pub fn calculate_frequencies(
@@ -176,10 +188,9 @@ impl PyParticle {
         currents: &PyCurrents,
         bfield: &PyBfield,
         perturbation: &PyPerturbation,
-    ) -> Result<(), PyParticleError> {
-        Ok(self
-            .0
-            .calculate_frequencies(&qfactor.0, &bfield.0, &currents.0, &perturbation.0)?)
+    ) {
+        self.0
+            .calculate_frequencies(&qfactor.0, &bfield.0, &currents.0, &perturbation.0)
     }
 }
 

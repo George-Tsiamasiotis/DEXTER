@@ -66,6 +66,7 @@ def test_initial_evolution(initial_conditions: InitialConditions):
     assert isinstance(evolution, Evolution)
     assert evolution.steps_taken == 0
     assert evolution.steps_stored == 1  # initial state
+    assert evolution.final_time == initial_conditions.time0
     assert np.isnan(evolution.energy_std)
     evolution_arrays = [
         "time",
@@ -101,6 +102,8 @@ def test_initial_frequencies(initial_conditions: InitialConditions):
     assert particle.frequencies.omega_theta is None
     assert particle.frequencies.omega_zeta is None
     assert particle.frequencies.qkinetic is None
+    assert particle.frequencies.theta_intersections == (0, [])
+    assert particle.frequencies.psip_intersections == (0, [])
 
 
 # ==========================================================================
@@ -197,6 +200,8 @@ def test_particle_calculate_frequencies(
     assert particle.frequencies.omega_theta is None
     assert particle.frequencies.omega_zeta is None
     assert particle.frequencies.qkinetic is None
+    assert particle.frequencies.theta_intersections == (0, [])
+    assert particle.frequencies.psip_intersections == (0, [])
 
     particle.calculate_frequencies(
         qfactor=qfactor,
@@ -204,7 +209,7 @@ def test_particle_calculate_frequencies(
         bfield=bfield,
         perturbation=Perturbation([]),  # Unperturbed system for frequencies
     )
-    assert particle.status == "SinglePeriodIntegrated"
+    assert particle.status != "Initialized"
     assert particle.orbit_type != "Undefined"
     assert particle.evolution.steps_taken > 2
     assert particle.evolution.steps_stored > 2
@@ -214,3 +219,7 @@ def test_particle_calculate_frequencies(
     assert particle.frequencies.omega_theta is not None
     assert particle.frequencies.omega_zeta is not None
     assert particle.frequencies.qkinetic is not None
+    assert particle.frequencies.theta_intersections[0] > 0
+    assert particle.frequencies.theta_intersections[1] != []
+    assert particle.frequencies.psip_intersections[0] > 0
+    assert particle.frequencies.psip_intersections[1] != []
