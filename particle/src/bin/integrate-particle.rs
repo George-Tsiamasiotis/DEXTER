@@ -1,4 +1,4 @@
-use std::{path::PathBuf, process::exit};
+use std::path::PathBuf;
 
 use equilibrium::{Bfield, Currents, Harmonic, Perturbation, Qfactor};
 use particle::*;
@@ -26,11 +26,6 @@ fn main() {
     };
 
     let mut particle = Particle::new(&initial);
-    match particle.integrate(&qfactor, &bfield, &currents, &perturbation, (0.0, 100000.0)) {
-        Ok(_) => dbg!(&particle),
-        Err(err) => {
-            eprintln!("{}", err);
-            exit(2);
-        }
-    };
+    particle.integrate(&qfactor, &bfield, &currents, &perturbation, (0.0, 100000.0));
+    eprintln!("{:?}", particle);
 }

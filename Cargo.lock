@@ -510,7 +510,7 @@ dependencies = [
 
 [[package]]
 name = "heap"
-version = "0.1.1-pre.2"
+version = "0.1.1-pre.3"
 dependencies = [
  "config",
  "equilibrium",
@@ -1051,7 +1051,7 @@ dependencies = [
 
 [[package]]
 name = "particle"
-version = "0.1.2-pre.6"
+version = "0.1.2-pre.7"
 dependencies = [
  "config",
  "criterion",

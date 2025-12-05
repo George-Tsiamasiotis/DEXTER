@@ -9,7 +9,7 @@ use particle::{MappingParameters, Particle};
 use utils::array2D_getter_impl;
 
 use crate::progress_bars::{FrequenciesPbar, PoincarePbar};
-use crate::{HeapInitialConditions, HeapStats, Result};
+use crate::{HeapInitialConditions, HeapStats};
 
 /// Describes the Routine by which the Heap's particle's where integrated.
 #[non_exhaustive]
@@ -62,22 +62,20 @@ impl Heap {
         bfield: &Bfield,
         perturbation: &Perturbation,
         params: &MappingParameters,
-    ) -> Result<()> {
+    ) {
         let pbar = PoincarePbar::new(self, params);
         pbar.print_prelude();
 
-        self.particles.par_iter_mut().try_for_each(|p| {
-            let res = p.map(qfactor, bfield, currents, perturbation, params);
+        self.particles.par_iter_mut().for_each(|p| {
+            p.map(qfactor, bfield, currents, perturbation, params);
             pbar.inc(&p.status);
             pbar.print_stats();
-            res
-        })?;
+        });
         pbar.finish();
 
         self.routine = Routine::Poincare(*params);
         self.stats = HeapStats::from_heap(self);
-        self.store_arrays(params)?;
-        Ok(())
+        self.store_arrays(params);
     }
 
     pub fn calculate_frequencies(
@@ -86,22 +84,20 @@ impl Heap {
         currents: &Currents,
         bfield: &Bfield,
         perturbation: &Perturbation,
-    ) -> Result<()> {
+    ) {
         let pbar = FrequenciesPbar::new(self);
         pbar.print_prelude();
 
-        self.particles.par_iter_mut().try_for_each(|p| {
-            let res = p.calculate_frequencies(qfactor, bfield, currents, perturbation);
+        self.particles.par_iter_mut().for_each(|p| {
+            p.calculate_frequencies(qfactor, bfield, currents, perturbation);
             pbar.inc(&p.status);
             pbar.print_stats();
             p.evolution.discard(); // We don't need the arrays anymore, avoid wasting memory
-            res
-        })?;
+        });
         pbar.finish();
 
         self.routine = Routine::SinglePeriod;
         self.stats = HeapStats::from_heap(self);
-        Ok(())
     }
 
     pub fn len(&self) -> usize {
@@ -121,7 +117,7 @@ impl Heap {
     array2D_getter_impl!(psis, psis, Flux);
 
     /// Stores the Particle's time series and stacked into 2D arrays.
-    fn store_arrays(&mut self, params: &MappingParameters) -> Result<()> {
+    fn store_arrays(&mut self, params: &MappingParameters) {
         // We dont now how many particle's got completely integrated, so we push a new row for
         // every successful one.
         // We also include the initial point for now and drop it later, otherwise the code gets
@@ -141,17 +137,19 @@ impl Heap {
         macro_rules! copy_and_fill_with_nan_and_push_row {
             ($particle:ident, $results_array:ident, $source:ident) => {
                 assert!($particle.evolution.steps_stored() <= columns);
-                self.$results_array.push_row(
-                    Array1::from_shape_fn(columns, |i| {
-                        $particle
-                            .evolution
-                            .$source()
-                            .get(i)
-                            .copied()
-                            .unwrap_or(f64::NAN)
-                    })
-                    .view(),
-                )?;
+                self.$results_array
+                    .push_row(
+                        Array1::from_shape_fn(columns, |i| {
+                            $particle
+                                .evolution
+                                .$source()
+                                .get(i)
+                                .copied()
+                                .unwrap_or(f64::NAN)
+                        })
+                        .view(),
+                    )
+                    .expect("shape is the same");
                 // Still includes the initial point
                 assert_eq!(self.$results_array.ncols(), params.intersections + 1);
             };
@@ -170,8 +168,6 @@ impl Heap {
         self.psips.remove_index(Axis(1), 0);
         self.thetas.remove_index(Axis(1), 0);
         self.psis.remove_index(Axis(1), 0);
-
-        Ok(())
     }
 }
 

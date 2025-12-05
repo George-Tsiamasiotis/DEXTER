@@ -68,10 +68,15 @@ pub(crate) struct Stepper {
 }
 
 impl Stepper {
-    pub(crate) fn init(&mut self, state: &State) {
-        self.state1 = state.clone();
+    /// Initializes a [`Stepper`] from an *evalulated* state
+    pub(crate) fn new(state: &State) -> Self {
+        Self {
+            state1: state.clone(),
+            ..Default::default()
+        }
     }
 
+    /// Calculates all intermediate [`State`]s, coefficients, weights and errors.
     pub(crate) fn start(
         &mut self,
         h: f64,

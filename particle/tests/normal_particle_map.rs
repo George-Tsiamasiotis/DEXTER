@@ -21,11 +21,7 @@ fn test_normal_particle_map_zeta() {
     let params = MappingParameters::new(PoincareSection::ConstZeta, 1.0, 6);
     let mut particle = Particle::new(&intial);
     assert!(matches!(particle.status, IntegrationStatus::Initialized));
-    particle
-        .map(&qfactor, &bfield, &currents, &perturbation, &params)
-        .unwrap();
-    dbg!(&particle);
-
+    particle.map(&qfactor, &bfield, &currents, &perturbation, &params);
     assert!(matches!(particle.status, IntegrationStatus::Mapped));
     assert_eq!(particle.evolution.zeta.len(), params.intersections + 1) // exclude initial point
 }
@@ -47,11 +43,7 @@ fn test_normal_particle_map_theta() {
     let params = MappingParameters::new(PoincareSection::ConstTheta, 1.0, 6);
     let mut particle = Particle::new(&intial);
     assert!(matches!(particle.status, IntegrationStatus::Initialized));
-    particle
-        .map(&qfactor, &bfield, &currents, &perturbation, &params)
-        .unwrap();
-    dbg!(&particle);
-
+    particle.map(&qfactor, &bfield, &currents, &perturbation, &params);
     assert!(matches!(particle.status, IntegrationStatus::Mapped));
     assert_eq!(particle.evolution.theta.len(), params.intersections + 1) // exclude initial point
 }

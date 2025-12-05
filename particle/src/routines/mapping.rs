@@ -1,18 +1,19 @@
-use crate::Particle;
-use crate::ParticleError;
+//! Integration of a [`Particle`] and calculation of its exact intersections with a
+//! constant θ/ζ surface.
+
+use std::f64::consts::TAU;
+use std::time::Instant;
+
 use crate::Radians;
-use crate::Result;
-use crate::State;
-use crate::Stepper;
-use crate::henon::{
+use crate::routines::henon::{
     calculate_intersection_state, calculate_mod_state1, calculate_mod_state2, calculate_mod_step,
     intersected,
 };
+use crate::{Evolution, Particle, State, Stepper};
+use crate::{ParticleError, Result};
 use config::*;
 
 use equilibrium::{Bfield, Currents, Perturbation, Qfactor};
-use std::f64::consts::TAU;
-use std::time::Duration;
 
 /// Defines the surface of the Poincare section.
 #[derive(Debug, Clone, Copy)]
@@ -56,24 +57,35 @@ pub(crate) fn map_integrate(
     perturbation: &Perturbation,
     params: &MappingParameters,
 ) -> Result<()> {
-    // Last two states of the particle.
-    let mut state1 = particle.initial_state.clone(); // Already evaluated
-    let mut state2: State;
+    // ==================== Setup
 
+    let start = Instant::now();
+    particle.evolution = Evolution::default();
+    particle
+        .initial_state
+        .evaluate(qfactor, currents, bfield, perturbation)?;
+    let mut state1 = particle.initial_state.clone();
+    let mut state2: State;
     let mut dt = RKF45_FIRST_STEP;
 
-    while particle.evolution.steps_stored() <= params.intersections {
+    // ==================== Main loop
+
+    loop {
+        if particle.evolution.steps_taken() == MAX_STEPS {
+            return Err(ParticleError::TimedOut(start.elapsed()));
+        }
+        if particle.evolution.steps_stored() > params.intersections {
+            break;
+        }
+
         // Perform a step on the normal system.
-        let mut stepper = Stepper::default();
-        stepper.init(&state1);
+        let mut stepper = Stepper::new(&state1);
         stepper.start(dt, qfactor, bfield, currents, perturbation)?;
         dt = stepper.calculate_optimal_step(dt)?;
-        state2 = stepper.next_state(dt);
-        state2.evaluate(qfactor, currents, bfield, perturbation)?;
-
-        if particle.evolution.steps_taken() >= MAX_STEPS {
-            return Err(ParticleError::TimedOut(Duration::default()));
-        }
+        state2 = stepper
+            .next_state(dt)
+            .into_evaluated(qfactor, currents, bfield, perturbation)?;
+        particle.evolution.steps_taken += 1;
 
         // Hénon's trick.
         // Depending on the PoincareSection, the independent variable becomes either `zeta` or
@@ -98,7 +110,6 @@ pub(crate) fn map_integrate(
                 mod_state2,
             )?;
 
-            // Store the intersection state.
             particle.evolution.push_state(&intersection_state);
 
             // NOTE: Even after landing on the intersection, we must continue the integration from
@@ -109,21 +120,33 @@ pub(crate) fn map_integrate(
         }
         // In both cases, continue from the next state.
         state1 = state2;
-        particle.evolution.steps_taken += 1;
     }
+
+    // ==================== Finalization
+
+    check_mapping_accuracy(&particle.evolution, &params.section)?;
     particle.final_state = state1.into_evaluated(qfactor, currents, bfield, perturbation)?;
+    particle.evolution.finish();
+    particle.calculate_orbit_type();
+    particle.evolution.duration = start.elapsed();
     Ok(())
 }
 
 /// Checks if all the value diffs in the array are within the threshold.
-pub(crate) fn check_accuracy(array: &[Radians], threshold: Radians) -> Result<()> {
-    // array.iter().skip(1).for_each(|v| {
-    //     dbg!(v % TAU);
-    // });
-    match array
+fn check_mapping_accuracy(evolution: &Evolution, section: &PoincareSection) -> Result<()> {
+    let intersections_array = match section {
+        PoincareSection::ConstZeta => &evolution.zeta,
+        PoincareSection::ConstTheta => &evolution.theta,
+    };
+    _check_mapping_accuracy(intersections_array)
+}
+
+/// Extract for testing
+fn _check_mapping_accuracy(intersections_array: &[f64]) -> Result<()> {
+    match intersections_array
         .windows(2)
-        .skip(1) // Skip the starting point, since it is usually not on the intersection
-        .all(|v| (v[1] - v[0]).abs() - TAU < threshold)
+        .skip(1) // Skip the starting point, since it is often not on the intersection
+        .all(|v| (v[1] - v[0]).abs() - TAU < MAP_THRESHOLD)
     {
         true => Ok(()),
         false => Err(crate::ParticleError::IntersectionError),
@@ -160,9 +183,9 @@ mod test {
             1.0 + 4.0 * TAU,
         ];
 
-        assert!(check_accuracy(&ok1, MAP_THRESHOLD).is_ok());
-        assert!(check_accuracy(&ok2, MAP_THRESHOLD).is_ok());
-        assert!(check_accuracy(&ok3, MAP_THRESHOLD).is_ok());
+        assert!(_check_mapping_accuracy(&ok1).is_ok());
+        assert!(_check_mapping_accuracy(&ok2).is_ok());
+        assert!(_check_mapping_accuracy(&ok3).is_ok());
 
         let not_ok1 = [
             0.0 * TAU,
@@ -188,8 +211,8 @@ mod test {
             5.0 * TAU,
         ];
 
-        assert!(check_accuracy(&not_ok1, MAP_THRESHOLD).is_err());
-        assert!(check_accuracy(&not_ok2, MAP_THRESHOLD).is_err());
-        assert!(check_accuracy(&not_ok3, MAP_THRESHOLD).is_err());
+        assert!(_check_mapping_accuracy(&not_ok1).is_err());
+        assert!(_check_mapping_accuracy(&not_ok2).is_err());
+        assert!(_check_mapping_accuracy(&not_ok3).is_err());
     }
 }

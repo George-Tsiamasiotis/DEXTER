@@ -1,5 +1,5 @@
 use std::f64::consts::PI;
-use std::{path::PathBuf, process::exit};
+use std::path::PathBuf;
 
 use equilibrium::{Bfield, Currents, Harmonic, Perturbation, Qfactor};
 use particle::PoincareSection::*;
@@ -30,11 +30,6 @@ fn main() {
     let mut particle = Particle::new(&initial);
     let params = MappingParameters::new(ConstTheta, PI, 7000);
 
-    match particle.map(&qfactor, &bfield, &currents, &perturbation, &params) {
-        Ok(_) => dbg!(&particle),
-        Err(err) => {
-            eprintln!("{}", err);
-            exit(2);
-        }
-    };
+    particle.map(&qfactor, &bfield, &currents, &perturbation, &params);
+    eprintln!("{:?}", particle);
 }

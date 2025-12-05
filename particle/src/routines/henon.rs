@@ -82,8 +82,7 @@ pub(crate) fn calculate_mod_state2(
     mod_state1: State,
     dtau: f64,
 ) -> Result<State> {
-    let mut mod_stepper = Stepper::default();
-    mod_stepper.init(&mod_state1);
+    let mut mod_stepper = Stepper::new(&mod_state1);
     mod_stepper.start(dtau, qfactor, bfield, currents, perturbation)?;
     {
         // NOTE: I am not sure why we must do this, but we must.

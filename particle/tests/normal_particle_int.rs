@@ -19,14 +19,12 @@ fn test_normal_particle_int() {
     };
 
     let mut particle = Particle::new(&initial);
+
     assert!(matches!(particle.status, IntegrationStatus::Initialized));
-    particle
-        .integrate(&qfactor, &bfield, &currents, &perturbation, (0.0, 500000.0))
-        .unwrap();
+    particle.integrate(&qfactor, &bfield, &currents, &perturbation, (0.0, 500000.0));
+    assert!(matches!(particle.status, IntegrationStatus::Integrated));
 
     let hcache = particle.final_state.hcache.first().unwrap();
-
-    assert!(matches!(particle.status, IntegrationStatus::Integrated));
     assert!(hcache.hits() as f64 / hcache.misses() as f64 - 3.0 <= 1e-3);
 
     dbg!(&particle);

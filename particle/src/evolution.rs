@@ -69,6 +69,11 @@ impl Evolution {
         self.steps_stored
     }
 
+    /// Returns the final stored time.
+    pub fn final_time(&self) -> Option<Time> {
+        self.time.last().copied()
+    }
+
     /// Pushes the variables of a [`State`] to the time series vecs.
     pub(crate) fn push_state(&mut self, state: &State) {
         self.time.push(state.time);

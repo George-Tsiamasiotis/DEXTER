@@ -1,25 +1,17 @@
+//! Integration of a [`Particle`] for a single period and calculation of ωθ, ωζ and qkinetic.
+
 use std::f64::consts::PI;
-use std::time::Duration;
+use std::time::Instant;
 
-use config::{RKF45_FIRST_STEP, SINGLE_PERIOD_MAX_STEPS};
-use equilibrium::{Bfield, Currents, Perturbation, Qfactor};
-use safe_unwrap::safe_unwrap;
-
-use crate::Omega::{OmegaTheta, OmegaZeta};
-use crate::PoincareSection;
-use crate::Result;
-use crate::{MappingParameters, Particle, State, Stepper};
-
-use crate::henon::{
+use crate::routines::henon::{
     calculate_intersection_state, calculate_mod_state1, calculate_mod_state2, calculate_mod_step,
     intersected,
 };
+use crate::{Evolution, MappingParameters, Particle, PoincareSection, State, Stepper};
+use crate::{ParticleError, Result};
+use config::{RKF45_FIRST_STEP, SINGLE_PERIOD_MAX_STEPS};
 
-/// Frequency selector.
-pub(crate) enum Omega {
-    OmegaTheta,
-    OmegaZeta,
-}
+use equilibrium::{Bfield, Currents, Perturbation, Qfactor};
 
 /// A particle's `ωθ`, `ωζ` and `qkinetic`.
 #[derive(Default, Clone)]
@@ -32,13 +24,15 @@ pub struct Frequencies {
 }
 
 impl Frequencies {
-    /// Updates a frequency to a new value, and updates qkinetic accordingly.
-    pub(crate) fn update(&mut self, which_omega: &Omega, value: f64) {
-        use Omega::*;
-        match which_omega {
-            OmegaTheta => self.omega_theta = Some(value),
-            OmegaZeta => self.omega_zeta = Some(value),
-        };
+    /// Updates ωθ to a new value, and updates qkinetic accordingly.
+    pub(crate) fn update_omega_theta(&mut self, value: f64) {
+        self.omega_theta = Some(value);
+        self.update_qkinetic();
+    }
+
+    /// Updates ωθ to a new value, and updates qkinetic accordingly.
+    pub(crate) fn update_omega_zeta(&mut self, value: f64) {
+        self.omega_zeta = Some(value);
         self.update_qkinetic();
     }
 
@@ -46,12 +40,22 @@ impl Frequencies {
     fn update_qkinetic(&mut self) {
         self.qkinetic = if self.omega_theta.is_some() && self.omega_zeta.is_some() {
             Some(
-                safe_unwrap!("already checked", self.omega_zeta)
-                    / safe_unwrap!("already checked", self.omega_theta),
+                self.omega_zeta.expect("already checked")
+                    / self.omega_theta.expect("already checked"),
             )
         } else {
             None
         }
+    }
+
+    pub(crate) fn update_theta_intersections(&mut self, step_num: usize) {
+        self.theta_intersections.0 += 1;
+        self.theta_intersections.1.push(step_num);
+    }
+
+    pub(crate) fn update_psip_intersections(&mut self, step_num: usize) {
+        self.psip_intersections.0 += 1;
+        self.psip_intersections.1.push(step_num);
     }
 
     pub fn omega_theta(&self) -> Option<f64> {
@@ -77,35 +81,39 @@ pub(crate) fn close_theta_period(
     currents: &Currents,
     perturbation: &Perturbation,
 ) -> Result<()> {
-    // Last two states of the particle.
-    let mut state1 = particle.initial_state.clone(); // Already evaluated
+    // ==================== Setup
+
+    let start = Instant::now();
+    particle.evolution = Evolution::default();
+    particle
+        .initial_state
+        .evaluate(qfactor, currents, bfield, perturbation)?;
+    let mut state1 = particle.initial_state.clone();
     let mut state2: State;
+    let mut dt = RKF45_FIRST_STEP;
 
     let theta0 = particle.initial_state.theta;
     let psip0 = particle.initial_state.psip;
     let zeta0 = particle.initial_state.zeta;
     let time0 = particle.initial_state.time;
-
     let theta_dot0 = particle.initial_state.theta_dot;
     let psip_dot0 = particle.initial_state.psip_dot;
 
-    let mut dt = RKF45_FIRST_STEP;
-    while particle.evolution.steps_taken() <= SINGLE_PERIOD_MAX_STEPS {
-        if particle.evolution.steps_taken() == SINGLE_PERIOD_MAX_STEPS {
-            // FIXME:
-            return Err(crate::ParticleError::TimedOut(Duration::default()));
-        }
-        particle.evolution.push_state(&state1);
-        particle.evolution.steps_taken += 1;
+    // ==================== Main loop
 
-        // Perform a step
-        let mut stepper = Stepper::default();
-        stepper.init(&state1);
+    loop {
+        if particle.evolution.steps_taken() == SINGLE_PERIOD_MAX_STEPS {
+            return Err(ParticleError::TimedOut(start.elapsed()));
+        }
+
+        // Perform a step.
+        let mut stepper = Stepper::new(&state1);
         stepper.start(dt, qfactor, bfield, currents, perturbation)?;
         dt = stepper.calculate_optimal_step(dt)?;
-        state2 = stepper.next_state(dt);
-
-        state2.evaluate(qfactor, currents, bfield, perturbation)?;
+        state2 = stepper
+            .next_state(dt)
+            .into_evaluated(qfactor, currents, bfield, perturbation)?;
+        particle.evolution.steps_taken += 1;
 
         // Prevent particle from stopping at the first step
         if particle.evolution.steps_stored() < 2 {
@@ -124,31 +132,24 @@ pub(crate) fn close_theta_period(
         let mut psip_intersected = false;
         let mut theta_intersected = false;
         let mut same_directions = false;
-        // Use `intersected` rather than `is_close` checks to avoid stopping the particles
-        // immediately and hardcoding tolerances
-        // Intersected() for the flux might be unnecessary here, but its safe.
-        //
+
+        // Check for intersections
         // TODO: An additional proximity check is needed for ψp, for the case where 𝜃₀=0,π, where
         // ψp tends to be a local extremum.
         if intersected(old_psip, new_psip, psip0) {
-            particle.frequencies.psip_intersections.0 += 1;
             particle
                 .frequencies
-                .psip_intersections
-                .1
-                .push(particle.evolution.steps_taken());
+                .update_psip_intersections(particle.evolution.steps_taken());
             psip_intersected = true;
         };
         if intersected(old_theta, new_theta, theta0) {
-            particle.frequencies.theta_intersections.0 += 1;
             particle
                 .frequencies
-                .theta_intersections
-                .1
-                .push(particle.evolution.steps_taken());
+                .update_theta_intersections(particle.evolution.steps_taken());
             theta_intersected = true;
         };
 
+        // Check for direction
         if (old_theta_dot.signum() == theta_dot0.signum())
             && (old_psip_dot.signum() == psip_dot0.signum())
         {
@@ -176,20 +177,20 @@ pub(crate) fn close_theta_period(
                 perturbation,
                 &params,
                 mod_state2,
-            )?; // evaluated
+            )?;
 
-            #[allow(non_snake_case)]
-            let Tomega = intersection_state.time - time0;
-            let omega_theta = 2.0 * PI / Tomega;
+            // ================ Frequencies calculation
 
             // NOTE:
             // >>> The orbit frequency ωζ corresponds to the bounce/transit averaged rate of
             // >>> toroidal precession Δζ/Tω.
+            let omega_period = intersection_state.time - time0;
+            let omega_theta = 2.0 * PI / omega_period;
             let dzeta = intersection_state.zeta - zeta0;
-            let omega_zeta = dzeta / Tomega;
+            let omega_zeta = dzeta / omega_period;
 
-            particle.frequencies.update(&OmegaTheta, omega_theta);
-            particle.frequencies.update(&OmegaZeta, omega_zeta);
+            particle.frequencies.update_omega_theta(omega_theta);
+            particle.frequencies.update_omega_zeta(omega_zeta);
             particle.evolution.push_state(&intersection_state);
             particle.final_state = intersection_state;
             break;
@@ -198,6 +199,12 @@ pub(crate) fn close_theta_period(
         state1 = state2;
     }
 
+    // ==================== Finalization
+
+    particle.final_state = state1.into_evaluated(qfactor, currents, bfield, perturbation)?;
+    particle.evolution.finish();
+    particle.calculate_orbit_type();
+    particle.evolution.duration = start.elapsed();
     Ok(())
 }
 
@@ -222,44 +229,5 @@ impl std::fmt::Debug for Frequencies {
             .field("ψp-intersections", &psip_intersections)
             .field("θ-intersections", &theta_intersections)
             .finish()
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use super::*;
-    use Omega::*;
-
-    #[test]
-    fn test_frequencies_update_default() {
-        let mut freq = Frequencies::default();
-
-        assert!(freq.omega_theta.is_none());
-        assert!(freq.omega_zeta.is_none());
-        assert!(freq.qkinetic.is_none());
-
-        freq.update(&OmegaTheta, 2.0);
-
-        assert_eq!(freq.omega_theta.unwrap(), 2.0);
-        assert!(freq.omega_zeta.is_none());
-        assert!(freq.qkinetic.is_none());
-
-        freq.update(&OmegaZeta, 20.0);
-
-        assert_eq!(freq.omega_theta.unwrap(), 2.0);
-        assert_eq!(freq.omega_zeta.unwrap(), 20.0);
-        assert_eq!(freq.qkinetic.unwrap(), 10.0);
-
-        freq.update(&OmegaTheta, 4.0);
-
-        assert_eq!(freq.omega_theta.unwrap(), 4.0);
-        assert_eq!(freq.omega_zeta.unwrap(), 20.0);
-        assert_eq!(freq.qkinetic.unwrap(), 5.0);
-
-        freq.update(&OmegaZeta, 100.0);
-
-        assert_eq!(freq.omega_theta.unwrap(), 4.0);
-        assert_eq!(freq.omega_zeta.unwrap(), 100.0);
-        assert_eq!(freq.qkinetic.unwrap(), 25.0);
     }
 }

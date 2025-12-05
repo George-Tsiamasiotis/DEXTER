@@ -1,18 +1,17 @@
+//! Representation of a particle
+
 use std::time::Duration;
-use std::time::Instant;
 
 use config::*;
 use derive_is_enum_variant::is_enum_variant;
 use equilibrium::{Bfield, Currents, Perturbation, Qfactor};
 
-use crate::Frequencies;
-use crate::close_theta_period;
+use crate::routines::{Frequencies, close_theta_period, integrate, map_integrate};
 use crate::state::Display;
-use crate::{Evolution, MappingParameters, PoincareSection, State, Stepper};
-use crate::{check_accuracy, map_integrate};
+use crate::{Evolution, MappingParameters, State};
 
 use crate::MagneticMoment;
-use crate::{Flux, Length, ParticleError, Radians, Result, Time};
+use crate::{Flux, Length, ParticleError, Radians, Time};
 
 /// A set of a Particle's intial conditions.
 #[derive(Clone, Debug)]
@@ -108,59 +107,11 @@ impl Particle {
         currents: &Currents,
         perturbation: &Perturbation,
         t_eval: (Time, Time),
-    ) -> Result<()> {
-        self.evolution = Evolution::default(); // Reset it
-        self.initial_state
-            .evaluate(qfactor, currents, bfield, perturbation)?;
-
-        // Tracks the state of the particle in each step. Also keeps the Accelerators' states.
-        let mut state = self.initial_state.clone();
-        let mut dt = RKF45_FIRST_STEP;
-
-        let start = Instant::now();
-        while state.time <= t_eval.1 {
-            // We still want to keep the particle, and also store its final state and final point,
-            // even if the integration isn't properly completed.
-
-            // Store the most recent state's point, including the intial and final points, even
-            // if they are invalid.
-            state
-                .evaluate(qfactor, currents, bfield, perturbation)
-                .inspect(|()| {
-                    self.evolution.push_state(&state);
-                    self.evolution.steps_taken += 1;
-                })?;
-
-            // Perform a step
-            let mut stepper = Stepper::default();
-            stepper.init(&state);
-            match stepper.start(dt, qfactor, bfield, currents, perturbation) {
-                Err(ParticleError::EqError(..)) => {
-                    self.status = IntegrationStatus::Escaped;
-                    break;
-                }
-                Err(err) => {
-                    self.status = IntegrationStatus::Failed(format!("{:?}", err).into());
-                    break;
-                }
-                Ok(_) => (),
-            }
-
-            if self.evolution.steps_taken() >= MAX_STEPS {
-                self.status = IntegrationStatus::TimedOut(start.elapsed());
-                break;
-            }
-
-            dt = stepper.calculate_optimal_step(dt)?;
-            state = stepper.next_state(dt);
+    ) {
+        match integrate(self, qfactor, bfield, currents, perturbation, t_eval) {
+            Ok(()) => self.status = IntegrationStatus::Integrated,
+            Err(error) => self.set_status_from_error(error),
         }
-
-        self.evolution.duration = start.elapsed();
-        self.evolution.finish();
-        self.calculate_orbit_type();
-        self.final_state = state.into_evaluated(qfactor, currents, bfield, perturbation)?;
-        self.status = IntegrationStatus::Integrated;
-        Ok(())
     }
 
     /// Integrates the particle, storing its intersections with the Poincare surface defined by
@@ -172,79 +123,29 @@ impl Particle {
         currents: &Currents,
         perturbation: &Perturbation,
         params: &MappingParameters,
-    ) -> Result<()> {
-        self.evolution = Evolution::default(); // Reset it
-        self.initial_state
-            .evaluate(qfactor, currents, bfield, perturbation)?;
-        let start = Instant::now();
-
-        use ParticleError::*;
+    ) {
         match map_integrate(self, qfactor, bfield, currents, perturbation, params) {
-            Err(EqError(..) | SolverNan) => {
-                self.status = IntegrationStatus::Escaped;
-            }
-            Err(TimedOut(..)) => {
-                self.status = IntegrationStatus::TimedOut(start.elapsed());
-            }
-            Err(err) => {
-                self.status = IntegrationStatus::Failed(format!("{:?}", err).into());
-            }
-            Ok(_) => (),
+            Ok(()) => self.status = IntegrationStatus::Mapped,
+            Err(error) => self.set_status_from_error(error),
         }
-
-        let intersections = match params.section {
-            PoincareSection::ConstZeta => &self.evolution.zeta,
-            PoincareSection::ConstTheta => &self.evolution.theta,
-        };
-        if check_accuracy(intersections, MAP_THRESHOLD).is_err() {
-            self.status = IntegrationStatus::InvalidIntersections;
-        };
-
-        self.evolution.duration = start.elapsed();
-        self.evolution.finish();
-        self.calculate_orbit_type();
-        // Final state is set up in map_integrate, to keep the Accelerators and Cache
-        self.status = IntegrationStatus::Mapped;
-        Ok(())
     }
 
-    /// Integrates the particle for 1 `θ-ψp` period,  calculating its `ωθ` frequency.
+    /// Integrates the particle for 1 `θ-ψp` period,  calculating its `ωθ`, `ωζ` and qkinetic.
     pub fn calculate_frequencies(
         &mut self,
         qfactor: &Qfactor,
         bfield: &Bfield,
         currents: &Currents,
         perturbation: &Perturbation,
-    ) -> Result<()> {
-        self.evolution = Evolution::default(); // Reset it
-        self.initial_state
-            .evaluate(qfactor, currents, bfield, perturbation)?;
-        let start = Instant::now();
-
-        use ParticleError::*;
+    ) {
         match close_theta_period(self, qfactor, bfield, currents, perturbation) {
-            Err(EqError(..) | SolverNan) => {
-                self.status = IntegrationStatus::Escaped;
-            }
-            Err(TimedOut(..)) => {
-                self.status = IntegrationStatus::TimedOut(start.elapsed());
-            }
-            Err(err) => {
-                self.status = IntegrationStatus::Failed(format!("{:?}", err).into());
-            }
-            Ok(_) => {
-                self.status = IntegrationStatus::SinglePeriodIntegrated;
-            }
+            Ok(()) => self.status = IntegrationStatus::SinglePeriodIntegrated,
+            Err(error) => self.set_status_from_error(error),
         }
-
-        self.evolution.duration = start.elapsed();
-        self.evolution.finish();
-        self.calculate_orbit_type();
-        Ok(())
     }
 
     /// Calculates the Particles OrbitType.
-    fn calculate_orbit_type(&mut self) {
+    pub(crate) fn calculate_orbit_type(&mut self) {
         let thetas = &self.evolution.theta;
         if thetas.is_empty() {
             self.orbit_type = OrbitType::Undefined;
@@ -257,6 +158,18 @@ impl Particle {
         match (thetaf - theta0) > TAU - TRAPPED_THRESHOLD {
             true => self.orbit_type = OrbitType::Passing,
             false => self.orbit_type = OrbitType::Trapped,
+        }
+    }
+
+    /// Sets the Particle's [`IntegrationStatus`] from a Result::Err() of an integration
+    /// routine.
+    pub(crate) fn set_status_from_error(&mut self, error: ParticleError) {
+        use ParticleError::*;
+        self.status = match error {
+            EqError(..) => IntegrationStatus::Escaped, // FIXME:
+            TimedOut(duration) => IntegrationStatus::TimedOut(duration),
+            IntersectionError => IntegrationStatus::InvalidIntersections,
+            _ => IntegrationStatus::Failed(error.to_string().into_boxed_str()),
         }
     }
 }

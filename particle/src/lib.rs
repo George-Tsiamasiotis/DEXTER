@@ -2,22 +2,18 @@
 
 mod error;
 mod evolution;
-mod frequencies;
-mod henon;
-mod mapping;
 mod particle;
 mod rkf45;
+mod routines;
 mod state;
+
+pub(crate) use rkf45::Stepper;
 
 pub use error::ParticleError;
 pub use evolution::Evolution;
-pub use frequencies::*;
-pub use mapping::*;
-pub use particle::{InitialConditions, Particle};
-pub use particle::{IntegrationStatus, OrbitType};
+pub use particle::{InitialConditions, IntegrationStatus, OrbitType, Particle};
+pub use routines::{MappingParameters, PoincareSection};
 pub use state::State;
-
-pub(crate) use rkf45::Stepper;
 
 pub type Result<T> = std::result::Result<T, ParticleError>;
 

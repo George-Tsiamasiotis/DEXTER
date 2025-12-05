@@ -3,11 +3,7 @@
 pub enum ParticleError {
     /// From [`equilibrium::EqError`].
     #[error("{0}")]
-    EqError(#[from] equilibrium::EqError),
-
-    /// From [`equilibrium::NcError`].
-    #[error("{0}")]
-    NcError(#[from] equilibrium::NcError),
+    EqError(#[from] equilibrium::EqError), // FIXME:
 
     /// Particle timed out.
     #[error("Particle timed out after {0:?}")]
