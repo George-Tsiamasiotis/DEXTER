@@ -7,3 +7,4 @@ output-dir = "./htmlcov/"
 no-fail-fast = true
 fail-immediately = true
 color = "Always"
+engine = "Llvm"

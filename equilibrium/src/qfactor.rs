@@ -7,7 +7,6 @@ use crate::Flux;
 use crate::Result;
 
 use ndarray::Array1;
-use safe_unwrap::safe_unwrap;
 
 /// q-factor reconstructed from a netCDF file.
 pub struct Qfactor {
@@ -52,18 +51,18 @@ impl Qfactor {
         let psi_data = extract_1d_array(&f, PSI_NORM)?
             .as_standard_layout()
             .to_owned();
-        // R_NORM isn't really useful at the moment
         let q_data = extract_1d_array(&f, Q)?.as_standard_layout().to_owned();
 
+        // `extract_array()` has already checked if the arrays are empty
         let q_spline = make_spline(
             typ,
-            safe_unwrap!("array is non-empty", psip_data.as_slice()),
-            safe_unwrap!("array is non-empty", q_data.as_slice()),
+            psip_data.as_slice().expect("array non-empty"),
+            q_data.as_slice().expect("array non-empty"),
         )?;
         let psi_spline = make_spline(
             typ,
-            safe_unwrap!("array is non-empty", psip_data.as_slice()),
-            safe_unwrap!("array is non-empty", psi_data.as_slice()),
+            psip_data.as_slice().expect("array non-empty"),
+            psi_data.as_slice().expect("array non-empty"),
         )?;
 
         Ok(Self {
@@ -164,16 +163,6 @@ impl Qfactor {
         self.q_spline.xa.len()
     }
 
-    /// Returns the poloidal flux's value at the wall `ψp_wall` **in Normalized Units**.
-    pub fn psip_wall(&self) -> f64 {
-        safe_unwrap!("array is non-empty", self.q_spline.xa.last().copied())
-    }
-
-    /// Returns the toroidal flux's value at the wall `ψ_wall` **in Normalized Units**.
-    pub fn psi_wall(&self) -> f64 {
-        safe_unwrap!("array is non-empty", self.psi_spline.ya.last().copied())
-    }
-
     array1D_getter_impl!(psip_data, q_spline.xa, Flux);
     array1D_getter_impl!(psi_data, psi_spline.ya, Flux);
     array1D_getter_impl!(q_data, q_spline.ya, f64);
@@ -184,8 +173,6 @@ impl std::fmt::Debug for Qfactor {
         f.debug_struct("Qfactor")
             .field("path", &self.path())
             .field("typ", &self.typ())
-            .field("ψp_wall", &format!("{:.7}", self.psip_wall()))
-            .field("ψ_wall", &format!("{:.7}", self.psi_wall()))
             .field("len", &self.len())
             .finish()
     }
@@ -212,8 +199,6 @@ mod test {
         let q = create_qfactor();
         q.path();
         q.typ();
-        q.psip_wall();
-        q.psi_wall();
         q.len();
 
         assert_eq!(q.psip_data().ndim(), 1);
@@ -229,5 +214,6 @@ mod test {
         let psip = 0.015;
         q.q(psip, &mut acc).unwrap();
         q.psi(psip, &mut acc).unwrap();
+        q.dpsi_dpsip(psip, &mut acc).unwrap();
     }
 }

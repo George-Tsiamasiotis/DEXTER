@@ -7,6 +7,10 @@
 
 """Creates a stub .npz file, in the expected format."""
 
+import semver
+
+VERSION = semver.Version.parse("0.0.1")
+
 import argparse
 
 parser = argparse.ArgumentParser(description=__doc__)
@@ -32,9 +36,10 @@ r = np.linspace(0, 1, 100)
 I = np.linspace(0, 2, 100)
 g = np.linspace(2, 0, 100)
 q = np.linspace(1, 2, 100)
-BB = np.random.random((len(psipol), len(theta)))
-RR = np.random.random((len(psipol), len(theta)))
-ZZ = np.random.random((len(psipol), len(theta)))
+BB = np.ones((len(psipol), len(theta)))
+RR = np.ones((len(psipol), len(theta)))
+ZZ = np.ones((len(psipol), len(theta)))
+JJ = np.ones((len(psipol), len(theta)))
 empty = np.array([])
 
 m = np.arange(-1, 4, dtype="i8")
@@ -64,10 +69,12 @@ np.savez(
     BB=BB,
     RR=RR,
     ZZ=ZZ,
+    JJ=JJ,
     m=m,
     n=n,
     alphas=alphas,
     phases=phases,
+    version=np.asarray(VERSION),
 )
 
 print(f"Created stub NetCDF file at '{OUTPUT.absolute()}'")

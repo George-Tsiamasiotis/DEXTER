@@ -61,6 +61,8 @@ class Geometry:
         The $R_{lab}(\psi_p, \theta_B)$ data array.
     zlab_data
         The $Z_{lab}(\psi_p, \theta_B)$ data array.
+    zlab_data
+        The $J_{lab}(\psi_p, \theta_B)$ data array.
 
     """
 
@@ -81,6 +83,7 @@ class Geometry:
     r_data: NDArray1D
     rlab_data: NDArray2D
     zlab_data: NDArray2D
+    jacobian_data: NDArray2D
 
     def __init__(self, path: str, typ1d: Interp1DType, typ2d: Interp2DType):
         """Constructs a `Geometry`.
@@ -148,6 +151,17 @@ class Geometry:
             The $\theta_B$ angle in $[rads]$.
         """
 
+    def jacobian(self, psip: float, theta: float) -> float:
+        r"""The $J_{lab}(\psi_p, \theta_B)$ value in $[m/T]$.
+
+        Parameters
+        ----------
+        psip
+            The poloidal flux $\psi_p$ in Normalized Units.
+        theta
+            The $\theta_B$ angle in $[rads]$.
+        """
+
 class Qfactor:
     r"""q-factor from a NetCDF file.
 
@@ -159,10 +173,6 @@ class Qfactor:
         The path to the NetCDF file.
     typ
         The 1D Interpolation type.
-    psip_wall
-        The poloidal flux value at the wall $\psi_{p,wall}$ in Normalized Units.
-    psi_wall
-        The toroidal flux value at the wall $\psi_{wall}$ in Normalized Units.
     psip_data
         The NetCDF $\psi_p$ data used to construct the $q(\psi_p)$ and $\psi(\psi_p)$ splines.
     q_data
@@ -173,8 +183,6 @@ class Qfactor:
 
     path: str
     typ: Interp1DType
-    psip_wall: float
-    psi_wall: float
     psip_data: NDArray1D
     q_data: NDArray1D
     psi_data: NDArray1D
@@ -197,7 +205,7 @@ class Qfactor:
         >>> qfactor = dx.Qfactor("./data.nc", "steffen")
         >>>
         >>> # ψp->ψ interpolation
-        >>> psip = qfactor.psip_wall / 3
+        >>> psip = 0.003
         >>> psi = qfactor.psi(psip)
 
         ```
@@ -206,7 +214,7 @@ class Qfactor:
         ```python
         >>> from math import isclose
         >>>
-        >>> psip = geometry.psip_wall / 2
+        >>> psip = geometry.psip_wall/2
         >>> assert isclose(qfactor.q(psip), qfactor.dpsi_dpsip(psip))
 
         ```
@@ -257,10 +265,6 @@ class Currents:
         The path to the NetCDF file.
     typ
         The 1D Interpolation type.
-    psip_wall
-        The poloidal flux value at the wall $\psi_{p,wall}$ in Normalized Units.
-    psi_wall
-        The toroidal flux value at the wall $\psi_{wall}$ in Normalized Units.
     psip_data
         The NetCDF $\psi_p$ data used to construct the $q(\psi_p)$ and $\psi(\psi_p)$ splines.
     g_data
@@ -271,7 +275,6 @@ class Currents:
 
     path: str
     typ: Interp1DType
-    psip_wall: float
     psip_data: NDArray1D
     g_data: NDArray1D
     i_data: NDArray1D
@@ -350,8 +353,6 @@ class Bfield:
         The path to the NetCDF file.
     typ
         The 2D Interpolation type.
-    psip_wall
-        The poloidal flux value at the wall $\psi_{p,wall}$ in Normalized Units.
     psip_data
         The NetCDF $\psi_p$ data used to construct the $B(\psi_p, \theta_B)$ spline.
     theta_data
@@ -368,7 +369,6 @@ class Bfield:
 
     path: str
     typ: Interp2DType
-    psip_wall: float
     shape: NDArrayShape
     psip_data: NDArray1D
     theta_data: NDArray1D
@@ -485,8 +485,6 @@ class Harmonic:
         The path to the NetCDF file.
     typ
         The 1D Interpolation type.
-    psip_wall
-        The poloidal flux value at the wall $\psi_{p,wall}$ in Normalized Units.
     m
         The $\theta$ frequency mode number.
     n
@@ -505,7 +503,6 @@ class Harmonic:
     typ: Interp1DType
     m: int
     n: int
-    psip_wall: float
     phase_average: float
     psip_data: NDArray1D
     a_data: NDArray1D
@@ -783,7 +780,7 @@ class InitialConditions:
     >>> initial = dx.InitialConditions(
     ...     time0=0,
     ...     theta0=0,
-    ...     psip0=0.3*qfactor.psip_wall,
+    ...     psip0=0.3 * geometry.psip_wall,
     ...     rho0=1e-5,
     ...     zeta0=0,
     ...     mu=1e-6,
@@ -911,7 +908,7 @@ class Particle:
         >>> initial = dx.InitialConditions(
         ...     time0=0,
         ...     theta0=0,
-        ...     psip0=0.3*qfactor.psip_wall,
+        ...     psip0=0.3 * geometry.psip_wall,
         ...     rho0=1e-5,
         ...     zeta0=0,
         ...     mu=1e-6,
@@ -1049,7 +1046,7 @@ class Particle:
         >>> initial = dx.InitialConditions(
         ...     time0=0,
         ...     theta0=1,
-        ...     psip0=0.8*qfactor.psip_wall,
+        ...     psip0=0.8 * geometry.psip_wall,
         ...     rho0=1e-5,
         ...     zeta0=0,
         ...     mu=1e-6,

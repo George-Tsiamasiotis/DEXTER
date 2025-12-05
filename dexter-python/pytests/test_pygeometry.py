@@ -18,6 +18,7 @@ def test_fields(geometry: Geometry):
     assert geometry.r_data.ndim == 1
     assert geometry.rlab_data.ndim == 2
     assert geometry.zlab_data.ndim == 2
+    assert geometry.jacobian_data.ndim == 2
 
     assert geometry.shape == (len(geometry.psip_data), len(geometry.theta_data))
     assert geometry.shape == geometry.rlab_data.shape
@@ -31,6 +32,7 @@ def test_eval(geometry: Geometry):
     assert isinstance(geometry.psip(r), float)
     assert isinstance(geometry.rlab(psip, theta), float)
     assert isinstance(geometry.zlab(psip, theta), float)
+    assert isinstance(geometry.jacobian(psip, theta), float)
 
 
 def test_repr(geometry: Geometry):

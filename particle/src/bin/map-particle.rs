@@ -16,12 +16,10 @@ fn main() {
     ];
     let perturbation = Perturbation::from_harmonics(&harmonics);
 
-    let psip_wall = qfactor.psip_wall();
-
     let initial = InitialConditions {
         time0: 0.0,
         theta0: 1.0,
-        psip0: 0.3 * psip_wall,
+        psip0: 0.001,
         rho0: 0.005,
         zeta0: 0.0,
         mu: 0.0,

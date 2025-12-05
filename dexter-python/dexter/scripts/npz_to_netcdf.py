@@ -14,7 +14,7 @@ fields and variable names.
 
 import semver
 
-VERSION = semver.Version.parse("0.1.1")
+VERSION = semver.Version.parse("0.0.1")
 
 import argparse
 
@@ -78,6 +78,7 @@ q = npz.get("q").astype("f8")
 b = npz.get("BB").astype("f8")
 rlab = npz.get("RR").astype("f8")
 zlab = npz.get("ZZ").astype("f8")
+jacobian = npz.get("JJ").astype("f8")
 baxis = b[0, 0]  # [Tesla]
 raxis = rlab[0, 0]  # [meters]
 zaxis = zlab[0, 0]  # [meters]
@@ -232,6 +233,12 @@ b_var = xr.Variable(
     attrs=dict(description="Magnetic field strength", units="[T]"),
 )
 
+jacobian_var = xr.Variable(
+    data=jacobian,
+    dims=["psip_norm", "theta"],
+    attrs=dict(description="VMEC to Boozer Jacobian", units="[m/T]"),
+)
+
 rlab_var = xr.Variable(
     data=rlab,
     dims=["psip_norm", "theta"],
@@ -318,6 +325,7 @@ VARIABLES = {
     "g": g_var,
     "i": i_var,
     "b": b_var,
+    "jacobian": jacobian_var,
     "rlab": rlab_var,
     "zlab": zlab_var,
     "alphas": alphas_var,
@@ -345,11 +353,10 @@ dataset = dataset.drop_vars(
 # Useful metadata to avoid confusion
 dataset = dataset.assign_attrs(
     {
-        "input file": str(INPUT),
-        "output file": str(OUTPUT),
+        "input_file": str(Path(INPUT).stem),
         "date": str(datetime.now().astimezone().replace(microsecond=0).isoformat()),
         "script": str(Path(__file__).stem),
-        "convention version": str(VERSION),
+        "version": str(VERSION),
     }
 )
 

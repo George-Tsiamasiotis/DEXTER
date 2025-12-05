@@ -8,7 +8,6 @@ use crate::Result;
 use crate::{Flux, Length, Radians};
 
 use ndarray::Array1;
-use safe_unwrap::safe_unwrap;
 
 /// Single perturbation harmonic reconstructed from a netCDF file.
 ///
@@ -159,19 +158,20 @@ impl Harmonic {
             .to_owned();
         let (a_data, phase_data) = extract_harmonic_arrays(&f, m, n)?;
 
+        // `extract_array()` has already checked if the arrays are empty
         let a_spline = make_spline(
             typ,
-            safe_unwrap!("array is non-empty", psip_data.as_slice()),
-            safe_unwrap!("array is non-empty", a_data.as_slice()),
+            psip_data.as_slice().expect("array is non-empty"),
+            a_data.as_slice().expect("array is non-empty"),
         )?;
         // We still want the phase spline for plotting, even with the 'phase-average' feature
         // enabled.
         let phase_spline = make_spline(
             typ,
-            safe_unwrap!("array is non-empty", psip_data.as_slice()),
-            safe_unwrap!("array is non-empty", phase_data.as_slice()),
+            psip_data.as_slice().expect("array is non-empty"),
+            phase_data.as_slice().expect("array is non-empty"),
         )?;
-        let phase_average = safe_unwrap!("array is non-empty", phase_data.mean());
+        let phase_average = phase_data.mean().expect("array is non-empty");
 
         Ok(Self {
             path: path.to_owned(),
@@ -449,11 +449,6 @@ impl Harmonic {
         self.a_spline.xa.len()
     }
 
-    /// Returns the poloidal flux's value at the wall `ψp_wall` **in Normalized Units**.
-    pub fn psip_wall(&self) -> f64 {
-        safe_unwrap!("array is non-empty", self.a_spline.xa.last().copied())
-    }
-
     /// Returns the poloidal mode number `m`.
     pub fn m(&self) -> i64 {
         self.m
@@ -497,7 +492,6 @@ impl std::fmt::Debug for Harmonic {
         f.debug_struct("Harmonic")
             .field("path", &self.path())
             .field("typ", &self.typ())
-            .field("ψp_wall", &format!("{:.7}", self.psip_wall()))
             .field("m", &self.m())
             .field("n", &self.n())
             .field("phase_average", &format!("{:.7}", self.phase_average()))
@@ -535,7 +529,6 @@ mod test {
         let h = create_harmonic();
         h.path();
         h.typ();
-        h.psip_wall();
         h.m();
         h.n();
         h.phase_average();
@@ -572,14 +565,14 @@ mod test {
         assert_eq!(cache.misses, 1);
         assert_eq!(cache.hits, 3);
         let (psip, theta, zeta) = (0.01, 0.01, 3.15);
-        h.h(psip, theta, zeta, &mut cache, &mut acc).unwrap();
         h.dh_dpsip(psip, theta, zeta, &mut cache, &mut acc).unwrap();
+        h.h(psip, theta, zeta, &mut cache, &mut acc).unwrap();
         h.dh_dtheta(psip, theta, zeta, &mut cache, &mut acc)
             .unwrap();
         h.dh_dzeta(psip, theta, zeta, &mut cache, &mut acc).unwrap();
         h.dh_dt(psip, theta, zeta, &mut cache, &mut acc).unwrap();
-        assert_eq!(cache.misses, 2);
-        assert_eq!(cache.hits, 6);
+        assert_eq!(cache.misses(), 2);
+        assert_eq!(cache.hits(), 6);
     }
 
     #[test]

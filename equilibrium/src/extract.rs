@@ -341,6 +341,7 @@ mod test {
         extract_2d_array::<f64>(&f, B_NORM).unwrap();
         extract_2d_array::<f64>(&f, RLAB).unwrap();
         extract_2d_array::<f64>(&f, ZLAB).unwrap();
+        extract_2d_array::<f64>(&f, JACOBIAN).unwrap();
     }
 
     #[test]

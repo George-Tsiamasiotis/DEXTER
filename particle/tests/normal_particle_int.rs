@@ -7,12 +7,11 @@ use crate::common::create_equilibrium;
 #[test]
 fn test_normal_particle_int() {
     let (qfactor, currents, bfield, perturbation) = create_equilibrium();
-    let psip_wall = qfactor.psip_wall();
 
     let initial = InitialConditions {
         time0: 0.0,
         theta0: 1.0,
-        psip0: 0.5 * psip_wall,
+        psip0: 0.001,
         rho0: 0.0001,
         zeta0: 0.0,
         mu: 0.0,

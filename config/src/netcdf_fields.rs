@@ -57,6 +57,8 @@ pub const B_NORM: &str = "b_norm";
 pub const RLAB: &str = "rlab";
 /// Z(ψp, θ): The `Z` coordinate with respect to boozer coordinates **in \[m\]**.
 pub const ZLAB: &str = "zlab";
+/// J(ψp, θ): The VMEC to Boozer Jacobian in **\[ m/T \]**.
+pub const JACOBIAN: &str = "jacobian";
 
 // ================ 3D Variables ================
 

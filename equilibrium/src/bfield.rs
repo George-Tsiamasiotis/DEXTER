@@ -7,7 +7,6 @@ use crate::Result;
 use crate::{Flux, Radians};
 
 use ndarray::{Array1, Array2, meshgrid};
-use safe_unwrap::safe_unwrap;
 
 /// Magnetic field reconstructed from a netCDF file.
 pub struct Bfield {
@@ -55,11 +54,12 @@ impl Bfield {
         let order = ndarray::Order::ColumnMajor;
         let b_data_flat = b_data.flatten_with_order(order).to_owned();
 
+        // `extract_array()` has already checked if the arrays are empty
         let b_spline = make_spline2d(
             typ,
-            safe_unwrap!("array is non-empty", psip_data.as_slice()),
-            safe_unwrap!("array is non-empty", theta_data.as_slice()),
-            safe_unwrap!("array is non-empty", b_data_flat.as_slice()),
+            psip_data.as_slice().expect("array is non-empty"),
+            theta_data.as_slice().expect("array is non-empty"),
+            b_data_flat.as_slice().expect("array is non-empty"),
         )?;
 
         Ok(Self {
@@ -312,11 +312,9 @@ impl Bfield {
     pub fn b_data(&self) -> Array2<f64> {
         // Array is in Fortran order.
         let shape = (self.b_spline.ya.len(), self.b_spline.xa.len());
-        safe_unwrap!(
-            "shape is correct by definition",
-            Array2::from_shape_vec(shape, self.b_spline.za.to_vec())
-        )
-        .reversed_axes()
+        Array2::from_shape_vec(shape, self.b_spline.za.to_vec())
+            .expect("shape is correct by definition")
+            .reversed_axes()
     }
 
     /// Returns the `𝜕B(ψp, θ) /𝜕ψp` data as a 2D array.
@@ -333,17 +331,16 @@ impl Bfield {
         let mut xacc = Accelerator::new();
         let mut yacc = Accelerator::new();
         let mut cache = Cache::new();
+        // If this fails, there is something wrong with the data
         Array2::from_shape_fn(self.shape(), |(i, j)| {
-            safe_unwrap!(
-                "If this fails, there is something wrong with the data",
-                self.db_dpsip(
-                    grid.0[[i, j]],
-                    grid.1[[i, j]],
-                    &mut xacc,
-                    &mut yacc,
-                    &mut cache,
-                )
-            )
+            (self.db_dpsip(
+                grid.0[[i, j]],
+                grid.1[[i, j]],
+                &mut xacc,
+                &mut yacc,
+                &mut cache,
+            ))
+            .expect("something is wrong with the data")
         })
     }
 
@@ -361,17 +358,16 @@ impl Bfield {
         let mut xacc = Accelerator::new();
         let mut yacc = Accelerator::new();
         let mut cache = Cache::new();
+        // If this fails, there is something wrong with the data
         Array2::from_shape_fn(self.shape(), |(i, j)| {
-            safe_unwrap!(
-                "If this fails, there is something wrong with the data",
-                self.db_dtheta(
-                    grid.0[[i, j]],
-                    grid.1[[i, j]],
-                    &mut xacc,
-                    &mut yacc,
-                    &mut cache,
-                )
-            )
+            (self.db_dtheta(
+                grid.0[[i, j]],
+                grid.1[[i, j]],
+                &mut xacc,
+                &mut yacc,
+                &mut cache,
+            ))
+            .expect("something is wrong with the data")
         })
     }
 
@@ -390,11 +386,6 @@ impl Bfield {
         (self.b_spline.xa.len(), self.b_spline.ya.len())
     }
 
-    /// Returns the poloidal flux's value at the wall `ψp_wall` **in Normalized Units**.
-    pub fn psip_wall(&self) -> f64 {
-        safe_unwrap!("array is non-empty", self.b_spline.xa.last().copied())
-    }
-
     array1D_getter_impl!(psip_data, b_spline.xa, Flux);
     array1D_getter_impl!(theta_data, b_spline.ya, Flux);
 }
@@ -410,7 +401,6 @@ impl std::fmt::Debug for Bfield {
         f.debug_struct("Bfield")
             .field("path", &self.path())
             .field("typ", &self.typ())
-            .field("ψp_wall", &format!("{:.7}", self.psip_wall()))
             .field("shape", &self.shape())
             .finish()
     }
@@ -437,7 +427,6 @@ mod test {
         let b = create_bfield();
         b.path();
         b.typ();
-        b.psip_wall();
         b.shape();
 
         assert_eq!(b.psip_data().ndim(), 1);

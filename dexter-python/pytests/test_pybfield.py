@@ -4,7 +4,6 @@ from dexter import Bfield
 def test_fields(bfield: Bfield):
     assert isinstance(bfield.path, str)
     assert isinstance(bfield.typ, str)
-    assert isinstance(bfield.psip_wall, float)
 
     assert bfield.psip_data.ndim == 1
     assert bfield.theta_data.ndim == 1

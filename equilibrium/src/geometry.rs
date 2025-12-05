@@ -13,7 +13,6 @@ use rsl_interpolation::{
     Accelerator, Cache, DynInterpolation, DynInterpolation2d, Interp2dType, InterpType,
 };
 use rsl_interpolation::{make_interp_type, make_interp2d_type};
-use safe_unwrap::safe_unwrap;
 use utils::array1D_getter_impl;
 
 use crate::Result;
@@ -54,6 +53,8 @@ pub struct Geometry {
     rlab_flat_data: Vec<Length>,
     /// Z(ψp, θ): The `Z` coordinate with respect to boozer coordinates **in \[m\]**.
     zlab_flat_data: Vec<Length>,
+    /// J(ψp, θ): The VMEC output to Boozer Jacobian in **\[ m/T \]**.
+    jacobian_flat_data: Vec<f64>,
 
     /// Interpolator of `ψp(r)` **in \[m\]**.
     psip_of_r_interp: DynInterpolation<f64>,
@@ -64,6 +65,8 @@ pub struct Geometry {
     rlab_interp: DynInterpolation2d<f64>,
     /// Interpolator over the Z coordinate, as a function of ψp, θ.
     zlab_interp: DynInterpolation2d<f64>,
+    /// Interpolator over the Jacobian, as a function of ψp, θ.
+    jacobian_interp: DynInterpolation2d<f64>,
 }
 
 // Creation
@@ -104,11 +107,13 @@ impl Geometry {
         let theta_data = extract_1d_array(&f, THETA)?.as_standard_layout().to_vec();
         let rlab_data = extract_2d_array(&f, RLAB)?.to_owned();
         let zlab_data = extract_2d_array(&f, ZLAB)?.to_owned();
+        let jacobian_data = extract_2d_array(&f, JACOBIAN)?.to_owned();
 
         // Interpolator's `za` input must be in Fortran order.
         let order = ndarray::Order::ColumnMajor;
         let rlab_flat_data = rlab_data.flatten_with_order(order).to_vec();
         let zlab_flat_data = zlab_data.flatten_with_order(order).to_vec();
+        let jacobian_flat_data = jacobian_data.flatten_with_order(order).to_vec();
 
         let r_of_psip_interp = make_interp_type(typ1d)?.build(&psip_data, &r_data)?;
 
@@ -119,6 +124,9 @@ impl Geometry {
 
         let zlab_interp =
             make_interp2d_type(typ2d)?.build(&psip_data, &theta_data, &zlab_flat_data)?;
+
+        let jacobian_interp =
+            make_interp2d_type(typ2d)?.build(&psip_data, &theta_data, &jacobian_flat_data)?;
 
         Ok(Self {
             path,
@@ -134,10 +142,12 @@ impl Geometry {
             r_data,
             rlab_flat_data,
             zlab_flat_data,
+            jacobian_flat_data,
             psip_of_r_interp,
             r_of_psip_interp,
             rlab_interp,
             zlab_interp,
+            jacobian_interp,
         })
     }
 }
@@ -259,30 +269,69 @@ impl Geometry {
             &mut cache,
         )?)
     }
+
+    /// Calculates the Jacobian `J(ψp, θ)`,
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use equilibrium::*;
+    /// # use std::path::PathBuf;
+    /// # use rsl_interpolation::*;
+    /// # use std::f64::consts::PI;
+    /// #
+    /// # fn main() -> Result<()> {
+    /// let path = PathBuf::from("../data/stub_netcdf.nc");
+    /// let geom = Geometry::from_dataset(&path, "steffen", "bicubic")?;
+    ///
+    /// let j = geom.jacobian(0.015, 2.0*PI)?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn jacobian(&self, psip: Flux, theta: Radians) -> Result<f64> {
+        let mut xacc = Accelerator::new();
+        let mut yacc = Accelerator::new();
+        let mut cache = Cache::new();
+        Ok(self.jacobian_interp.eval(
+            &self.psip_data,
+            &self.theta_data,
+            &self.jacobian_flat_data,
+            psip,
+            theta % TAU,
+            &mut xacc,
+            &mut yacc,
+            &mut cache,
+        )?)
+    }
 }
 
 /// Getters
 impl Geometry {
-    /// Returns the `R(ψp, θ)` data as a 2D array.
+    /// Returns the `R(ψp, θ)` data as a 2D array, in C order.
     pub fn rlab_data(&self) -> Array2<f64> {
         // Array is in Fortran order.
         let shape = (self.theta_data.len(), self.psip_data.len());
-        safe_unwrap!(
-            "shape is correct by definition",
-            Array2::from_shape_vec(shape, self.rlab_flat_data.clone())
-        )
-        .reversed_axes()
+        Array2::from_shape_vec(shape, self.rlab_flat_data.clone())
+            .expect("shape is correct by definition")
+            .reversed_axes()
     }
 
-    /// Returns the `Z(ψp, θ)` data as a 2D array.
+    /// Returns the `Z(ψp, θ)` data as a 2D array, in C order.
     pub fn zlab_data(&self) -> Array2<f64> {
         // Array is in Fortran order.
         let shape = (self.theta_data.len(), self.psip_data.len());
-        safe_unwrap!(
-            "shape is correct by definition",
-            Array2::from_shape_vec(shape, self.zlab_flat_data.clone())
-        )
-        .reversed_axes()
+        Array2::from_shape_vec(shape, self.zlab_flat_data.clone())
+            .expect("shape is correct by definition")
+            .reversed_axes()
+    }
+
+    /// Returns the `J(ψp, θ)` data as a 2D array, in C order.
+    pub fn jacobian_data(&self) -> Array2<f64> {
+        // Array is in Fortran order.
+        let shape = (self.theta_data.len(), self.psip_data.len());
+        Array2::from_shape_vec(shape, self.jacobian_flat_data.clone())
+            .expect("shape is correct by definition")
+            .reversed_axes()
     }
 
     /// Returns the netCDF file's path.
@@ -327,17 +376,20 @@ impl Geometry {
 
     /// Returns the tokamak's minor radius `r_wall` **in \[m\]**.
     pub fn r_wall(&self) -> f64 {
-        safe_unwrap!("array is non-empty", self.r_data.last().copied())
+        // `r_data` is always non-empty, otherwise `Geometry` cannot be constructed
+        self.r_data.last().copied().expect("array non-empty")
     }
 
     /// Returns the poloidal flux's value at the wall `ψp_wall` **in Normalized Units**.
     pub fn psip_wall(&self) -> f64 {
-        safe_unwrap!("array is non-empty", self.psip_data.last().copied())
+        // `psip_data` is always non-empty, otherwise `Geometry` cannot be constructed
+        self.psip_data.last().copied().expect("array non-empty")
     }
 
     /// Returns the toroidal flux's value at the wall `ψ_wall` **in Normalized Units**.
     pub fn psi_wall(&self) -> f64 {
-        safe_unwrap!("array is non-empty", self.psi_data.last().copied())
+        // `psi_data` is always non-empty, otherwise `Geometry` cannot be constructed
+        self.psi_data.last().copied().expect("array non-empty")
     }
 
     array1D_getter_impl!(theta_data, theta_data, Radians);
@@ -401,6 +453,7 @@ mod test {
         assert_eq!(g.theta_data().ndim(), 1);
         assert_eq!(g.rlab_data().ndim(), 2);
         assert_eq!(g.zlab_data().ndim(), 2);
+        assert_eq!(g.jacobian_data().ndim(), 2);
     }
 
     #[test]
@@ -414,5 +467,6 @@ mod test {
         g.psip(r).unwrap();
         g.rlab(psip, theta).unwrap();
         g.zlab(psip, theta).unwrap();
+        g.jacobian(psip, theta).unwrap();
     }
 }

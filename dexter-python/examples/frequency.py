@@ -5,6 +5,7 @@ import dexter as dx
 from dexter.plot import evolution_plot
 
 
+geometry = dx.Geometry("./data.nc", "steffen", "bicubic")
 qfactor = dx.Qfactor("./data.nc", "steffen")
 currents = dx.Currents("./data.nc", "steffen")
 bfield = dx.Bfield("./data.nc", "bicubic")
@@ -13,7 +14,7 @@ perturbation = dx.Perturbation([])
 initial = dx.InitialConditions(
     time0=0,
     theta0=2,
-    psip0=0.5 * qfactor.psip_wall,
+    psip0=0.5 * geometry.psip_wall,
     rho0=0.000008,
     zeta0=0.0,
     mu=0,

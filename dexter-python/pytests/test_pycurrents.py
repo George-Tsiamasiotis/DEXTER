@@ -4,7 +4,6 @@ from dexter import Currents
 def test_fields(currents: Currents):
     assert isinstance(currents.path, str)
     assert isinstance(currents.typ, str)
-    assert isinstance(currents.psip_wall, float)
     assert currents.psip_data.ndim == 1
     assert currents.g_data.ndim == 1
     assert currents.i_data.ndim == 1

@@ -269,7 +269,7 @@ mod test {
         // Normally, this would happen inside State.
         let mut hcache1 = vec![HarmonicCache::default(); per1.harmonics.len()];
         let mut hcache2 = vec![HarmonicCache::default(); per2.harmonics.len()];
-        let psip = per1.harmonics[0].psip_wall() / 2.0;
+        let psip = 0.000001;
         let theta = 1.0;
         let zeta = 1.0;
 
@@ -312,7 +312,9 @@ mod test {
         let path = PathBuf::from(STUB_NETCDF_PATH);
         let harmonics = vec![Harmonic::from_dataset(&path, "akima", 2, 1).unwrap()];
         let per = Perturbation::from_harmonics(&harmonics);
+        assert_eq!(per.len(), 1);
 
         let _ = per.get_harmonics();
+        let _ = format!("{:?}", per);
     }
 }

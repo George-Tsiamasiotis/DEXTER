@@ -1,6 +1,7 @@
 import pytest
 import numpy as np
 from dexter import (
+    Geometry,
     Bfield,
     Currents,
     Evolution,
@@ -111,6 +112,7 @@ def test_initial_frequencies(initial_conditions: InitialConditions):
 
 
 def test_particle_integrate(
+    geometry: Geometry,
     qfactor: Qfactor,
     currents: Currents,
     bfield: Bfield,
@@ -119,7 +121,7 @@ def test_particle_integrate(
     init = InitialConditions(
         time0=0,
         theta0=0,
-        psip0=0.5 * qfactor.psip_wall,
+        psip0=0.5 * geometry.psip_wall,
         rho0=1e-3,
         zeta0=0,
         mu=0,
@@ -146,6 +148,7 @@ def test_particle_integrate(
 
 
 def test_particle_map(
+    geometry: Geometry,
     qfactor: Qfactor,
     currents: Currents,
     bfield: Bfield,
@@ -154,7 +157,7 @@ def test_particle_map(
     init = InitialConditions(
         time0=0,
         theta0=0,
-        psip0=0.5 * qfactor.psip_wall,
+        psip0=0.5 * geometry.psip_wall,
         rho0=1e-3,
         zeta0=0,
         mu=0,
@@ -181,6 +184,7 @@ def test_particle_map(
 
 
 def test_particle_calculate_frequencies(
+    geometry: Geometry,
     qfactor: Qfactor,
     currents: Currents,
     bfield: Bfield,
@@ -188,7 +192,7 @@ def test_particle_calculate_frequencies(
     init = InitialConditions(
         time0=0,
         theta0=2,
-        psip0=0.5 * qfactor.psip_wall,
+        psip0=0.5 * geometry.psip_wall,
         rho0=0.000008,
         zeta0=0.0,
         mu=0,

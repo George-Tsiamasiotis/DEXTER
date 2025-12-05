@@ -1,6 +1,6 @@
 [project]
 name = "dexter"
-version = "0.1.2-pre.9"
+version = "0.1.3"
 description = "Calculations and simulations in reconstructed equilibria of toroidal fusion devices."
 readme = "README.md"
 authors = [
@@ -10,6 +10,7 @@ requires-python = ">=3.14"
 dependencies = [
     "matplotlib>=3.10.7",
     "numpy>=2.3.4",
+    "semver>=3.0.4",
 ]
 
 [tool.maturin]
@@ -58,3 +59,4 @@ currents_plot = "dexter.scripts:currents_plot"
 bfield_plot = "dexter.scripts:bfield_plot"
 flux_surfaces_plot= "dexter.scripts:flux_surfaces_plot"
 harmonic_plot = "dexter.scripts:harmonic_plot"
+jacobian_plot = "dexter.scripts:jacobian_plot"
