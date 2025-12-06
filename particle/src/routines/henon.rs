@@ -63,11 +63,11 @@ pub(crate) fn calculate_mod_step(
     match params.section {
         PoincareSection::ConstTheta => {
             let direction = (state2.theta - state1.theta).signum();
-            direction * (params.alpha - (state1.theta + pole) % TAU + pole)
+            direction * (params.alpha - (state1.theta + pole).rem_euclid(TAU) + pole)
         }
         PoincareSection::ConstZeta => {
             let direction = (state2.zeta - state1.zeta).signum();
-            direction * (params.alpha - (state1.zeta + pole) % TAU + pole)
+            direction * (params.alpha - (state1.zeta + pole).rem_euclid(TAU) + pole)
         }
     }
 }

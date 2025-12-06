@@ -457,4 +457,24 @@ mod test {
         b.d2b_dpsip_dtheta(psip, theta, &mut xacc, &mut yacc, &mut cache)
             .unwrap();
     }
+
+    /// Uninitialized Cache bug,
+    ///
+    /// This caused NaNs appearing when evaluating with ψp < psip_data[1] AND θ < theta_data[1]
+    /// with a newly created Cache.
+    ///
+    /// Fixed in rsl-interpolation 0.1.16-pre.3
+    #[test]
+    fn test_nan_near_first_flux_surface_theta0() {
+        let b = create_bfield();
+        let mut xacc = Accelerator::new();
+        let mut yacc = Accelerator::new();
+        let mut cache = Cache::new();
+
+        let psip = 1e-10;
+        let theta = 1e-10;
+
+        let val = b.b(psip, theta, &mut xacc, &mut yacc, &mut cache).unwrap();
+        assert!(val.is_finite());
+    }
 }

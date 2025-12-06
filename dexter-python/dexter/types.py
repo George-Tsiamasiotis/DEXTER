@@ -50,6 +50,7 @@ IntegrationStatus: TypeAlias = Literal[
     "Mapped",
     "SinglePeriodIntegrated",
     "Escaped",
+    "EvaluationNaN",
     "TimedOut",
     "InvalidIntersections",
     "Failed",

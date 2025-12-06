@@ -94,8 +94,7 @@ impl PoincarePbar {
             Escaped => self.escaped.fetch_add(1, Ordering::SeqCst),
             TimedOut(..) => self.timedout.fetch_add(1, Ordering::SeqCst),
             InvalidIntersections => self.invalid.fetch_add(1, Ordering::SeqCst),
-            Failed(..) => self.failed.fetch_add(1, Ordering::SeqCst),
-            _ => 0, // ignored
+            _ => self.failed.fetch_add(1, Ordering::SeqCst),
         };
     }
 
@@ -172,8 +171,7 @@ impl FrequenciesPbar {
             SinglePeriodIntegrated => self.integrated.fetch_add(1, Ordering::SeqCst),
             Escaped => self.escaped.fetch_add(1, Ordering::SeqCst),
             TimedOut(..) => self.timedout.fetch_add(1, Ordering::SeqCst),
-            Failed(..) => self.failed.fetch_add(1, Ordering::SeqCst),
-            _ => 0, // ignored
+            _ => self.failed.fetch_add(1, Ordering::SeqCst),
         };
     }
 

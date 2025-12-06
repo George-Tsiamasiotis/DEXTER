@@ -42,7 +42,7 @@ impl MappingParameters {
         // mod `alpha` to avoid modding it in every step
         Self {
             section,
-            alpha: alpha % TAU,
+            alpha: alpha.rem_euclid(TAU),
             intersections,
         }
     }

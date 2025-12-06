@@ -12,6 +12,7 @@ struct IntegrationStatusNums {
     single_period: usize,
     mapped: usize,
     escaped: usize,
+    evaluation_nan: usize,
     timedout: usize,
     invalid: usize,
     failed: usize,
@@ -82,6 +83,7 @@ impl HeapStats {
         self.status_nums.integrated = count_variants!(heap, status, is_integrated);
         self.status_nums.mapped = count_variants!(heap, status, is_mapped);
         self.status_nums.escaped = count_variants!(heap, status, is_escaped);
+        self.status_nums.evaluation_nan = count_variants!(heap, status, is_evaluation_nan);
         self.status_nums.timedout = count_variants!(heap, status, is_timed_out);
         self.status_nums.failed = count_variants!(heap, status, is_failed);
         self.status_nums.invalid = count_variants!(heap, status, is_invalid_intersections);

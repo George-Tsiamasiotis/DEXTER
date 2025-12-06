@@ -44,6 +44,8 @@ pub enum IntegrationStatus {
     SinglePeriodIntegrated,
     /// Escaped / Hit the wall.
     Escaped,
+    /// NaN encountered during [`State`] evaluation.
+    EvaluationNan,
     /// Timed out after [`config::MAX_STEPS`]
     TimedOut(Duration),
     /// Intersections calculated from the mapping are invalid (The spacing between each
@@ -166,10 +168,11 @@ impl Particle {
     pub(crate) fn set_status_from_error(&mut self, error: ParticleError) {
         use ParticleError::*;
         self.status = match error {
-            EqError(..) => IntegrationStatus::Escaped, // FIXME:
+            EqError(..) => IntegrationStatus::Escaped,
             TimedOut(duration) => IntegrationStatus::TimedOut(duration),
             IntersectionError => IntegrationStatus::InvalidIntersections,
-            _ => IntegrationStatus::Failed(error.to_string().into_boxed_str()),
+            EvaluationNaN => IntegrationStatus::EvaluationNan,
+            // _ => IntegrationStatus::Failed(error.to_string().into_boxed_str()),
         }
     }
 }

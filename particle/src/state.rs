@@ -176,8 +176,8 @@ impl State {
     }
 
     fn calculate_modulos(&mut self) {
-        self.mod_theta = self.theta % TAU;
-        self.mod_zeta = self.zeta % TAU;
+        self.mod_theta = self.theta.rem_euclid(TAU);
+        self.mod_zeta = self.zeta.rem_euclid(TAU);
     }
 
     fn calculate_qfactor_quantities(&mut self, qfactor: &Qfactor) -> Result<()> {

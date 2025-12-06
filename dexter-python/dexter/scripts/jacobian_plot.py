@@ -32,8 +32,8 @@ from dexter import Geometry
 geometry = Geometry(args.nc_file, "linear", args.typ)
 print(geometry)
 
-fig = plt.figure(figsize=(9, 8), layout="constrained")
-fig.suptitle(r"$Magnetic$ $Field$ $Profile$")
+fig = plt.figure(figsize=(8, 7), layout="constrained")
+fig.suptitle(r"$Jacobian$ $J(\psi_p,\theta)$")
 subplot_kw = {"aspect": "equal"}
 ax = fig.subplots(1, subplot_kw=subplot_kw)
 
@@ -43,7 +43,6 @@ r_data = geometry.rlab_data
 z_data = geometry.zlab_data
 jacobian_data = geometry.jacobian_data
 
-ax.set_title(r"$Jacobian$ $J(\psi_p,\theta)$")
 ax.set_xlabel(r"$R[m]$")
 ax.set_ylabel(r"$Z[m]$")
 

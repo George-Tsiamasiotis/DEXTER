@@ -105,7 +105,7 @@ impl HarmonicCache {
         self.alpha = h.a_spline.eval(psip, acc)?;
         self.phase = calculate_phase(h, psip, acc)?;
         self.dalpha = h.a_spline.eval_deriv(psip, acc)?;
-        let mod_arg = (h._m * self.theta - h._n * self.zeta + self.phase) % TAU;
+        let mod_arg = (h._m * self.theta - h._n * self.zeta + self.phase).rem_euclid(TAU);
         (self.sin, self.cos) = mod_arg.sin_cos();
         Ok(())
     }

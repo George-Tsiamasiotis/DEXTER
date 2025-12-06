@@ -14,8 +14,7 @@ ndarray = "0.17.1"
 thiserror = "2.0.17"
 criterion = "0.7.0"
 safe_unwrap = "0.4.1"
-# rsl-interpolation = {version = "0.1.16", features = ["openblas-system"]}
-rsl-interpolation = { git = "https://github.com/George-Tsiamasiotis/rsl-interpolation.git", branch = "make_interp_type", features = ["openblas-system"]}
+rsl-interpolation = { git = "https://github.com/George-Tsiamasiotis/rsl-interpolation.git", branch = "dev-0.1.16-pre", features = ["openblas-system"]}
 
 [workspace.package]
 authors = ["George Tsiamasiotis"]

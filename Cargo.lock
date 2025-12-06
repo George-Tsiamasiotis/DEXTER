@@ -376,7 +376,7 @@ checksum = "34aa73646ffb006b8f5147f3dc182bd4bcb190227ce861fc4a4844bf8e3cb2c0"
 
 [[package]]
 name = "equilibrium"
-version = "0.1.3"
+version = "0.1.3-pre.1"
 dependencies = [
  "config",
  "ndarray",
@@ -509,7 +509,7 @@ dependencies = [
 
 [[package]]
 name = "heap"
-version = "0.1.1-pre.4"
+version = "0.1.1-pre.5"
 dependencies = [
  "config",
  "equilibrium",
@@ -1335,8 +1335,8 @@ checksum = "7a2d987857b319362043e95f5353c0535c1f58eec5336fdfcf626430af7def58"
 
 [[package]]
 name = "rsl-interpolation"
-version = "0.1.16-pre.2"
-source = "git+https://github.com/George-Tsiamasiotis/rsl-interpolation.git?branch=make_interp_type#0656fea519b95c41cbfb003e704dabca43958922"
+version = "0.1.16-pre.3"
+source = "git+https://github.com/George-Tsiamasiotis/rsl-interpolation.git?branch=dev-0.1.16-pre#2c14cae6608809d03fcd53149195b1bdca453e09"
 dependencies = [
  "is_close",
  "ndarray",

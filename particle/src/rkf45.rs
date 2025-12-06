@@ -93,7 +93,22 @@ impl Stepper {
         self.calculate_state_k6(h, qfactor, bfield, currents, perturbation)?;
         self.calculate_embedded_weights();
         self.calculate_errors();
-        Ok(())
+        // Check if any NaNs where produced/propagated during the evaluations. `self.errors`
+        // depends on all previous computations, so if any NaN appears, it will show up here.
+        // If we dont check it here, next_optimal_step() will return NaN, which would be much
+        // harder to debug.
+        self.errors
+            .iter()
+            .try_for_each(|val| match val.is_finite() {
+                false => {
+                    // This would be a truly peculiar situation, and might be missed when dealing
+                    // with a lot of particles, so lets print it as well. Still unsure if this
+                    // should be a panic or simply discard the paricle.
+                    eprintln!("{:?}", ParticleError::EvaluationNaN);
+                    Err(ParticleError::EvaluationNaN)
+                }
+                true => Ok(()),
+            })
     }
 
     pub(crate) fn calculate_k1(&mut self) {
@@ -333,14 +348,14 @@ impl Stepper {
     pub(crate) fn calculate_optimal_step(&mut self, h: f64) -> Result<f64> {
         // Using the max error vs each variable's error is equivalent.
 
-        // In the case that NaNs are produced inside the solver
+        // The only way this could fail was if `self.errors` contained any non-finite values,
+        // which is already checked at the end of `start()`.
         let mut max_error = self
             .errors
             .iter()
             .max_by(|a, b| a.abs().total_cmp(&b.abs()))
             .copied()
-            .take_if(|max_error| max_error.is_finite())
-            .ok_or(ParticleError::SolverNan)?;
+            .expect("only finite values here");
 
         // When all errors happen to be smaller than REL_TOL, the optimal step keeps getting
         // smaller due to the `REL_TOL/max_error` factor, so we need to bound it
