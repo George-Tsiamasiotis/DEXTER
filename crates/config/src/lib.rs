@@ -6,7 +6,7 @@ pub mod netcdf_fields;
 ///
 /// Must be *relative* to the crate's `CARGO_MANIFEST_DIR`. Can be created with
 /// `equilibrium/scripts/npz_to_netcdf.py` from an `.npz` file.
-pub const STUB_NETCDF_PATH: &str = "../data/stub_netcdf.nc";
+pub const STUB_NETCDF_PATH: &str = "../../data/stub_netcdf.nc";
 
 // ==================== Solver
 
