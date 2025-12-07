@@ -1,0 +1,553 @@
+//! Methods for data extraction from NetCDF file and field names definitions.
+//!
+//! - For spline creation, only the `extract_<>d_array()` functions are necessary.
+//!
+//! - [`extract_variable`] provides access to the underlying [`Variable`] and it's
+//!   [`attributes`](netcdf::Attribute).
+
+// ================== Stub netCDF file
+
+/// Path to a stub NetCDF file to be used for general testing.
+///
+/// Must be *relative* to the **crate**'s `CARGO_MANIFEST_DIR`. Can be created with
+/// `equilibrium/scripts/npz_to_netcdf.py` from an `.npz` file.
+pub const STUB_TEST_NETCDF_PATH: &str = "lar_netcdf.nc";
+
+/// The names each variable is expected to appear in the netCDF file.
+///
+/// If the naming convention changes, this is the only file we must update.
+pub mod netcdf_fields {
+
+    // ================== Scalars ==================
+
+    /// Magnetic field strength on the axis `B0` **in \[T\]**.
+    pub const BAXIS: &str = "baxis";
+    /// The horizontal position of the magnetic axis `R0` **in \[m\]**.
+    pub const RAXIS: &str = "raxis";
+    /// The vertical position of the magnetic axis **in \[m\]**.
+    pub const ZAXIS: &str = "zaxis";
+    /// The geometrical axis (device major radius) **in \[m\]**.
+    pub const RGEO: &str = "rgeo";
+
+    // ================= Coordinates =================
+
+    /// The boozer toroidal angle `θ` **in \[rads\]**.
+    pub const THETA: &str = "theta";
+    /// The poloidal flux `ψp` **in Normalized Units**.
+    pub const PSIP_NORM: &str = "psip_norm";
+    /// The toroidal flux `ψ` **in Normalized Units**.
+    pub const PSI_NORM: &str = "psi_norm";
+    /// The radial coordinate `r` **in Normalized Units**.
+    pub const R_NORM: &str = "r_norm";
+    /// The poloidal mode numbers `m`.
+    pub const M: &str = "m";
+    /// The toroidal mode numbers `n`.
+    pub const N: &str = "n";
+    /// The poloidal flux `ψp` **in \[Tm\]**.
+    pub const PSIP: &str = "psip";
+    /// The toroidal flux `ψ` **in \[Tm\]**.
+    pub const PSI: &str = "psi";
+    /// The radial coordinate r **in \[m\]**.
+    pub const R: &str = "r";
+
+    // ================ 1D Variables ================
+
+    /// q(ψp): The safety factor.
+    pub const Q: &str = "q";
+    /// g(ψp): The covariant toroidal plasma current **in \[Tm\]**.
+    pub const G: &str = "g";
+    /// I(ψp): The covariant poloidal plasma current **in \[Tm\]**.
+    pub const I: &str = "i";
+    /// g(ψp): The covariant toroidal plasma current **in Normalized Units**.
+    pub const G_NORM: &str = "g_norm";
+    /// I(ψp): The covariant poloidal plasma current **in Normalized Units**.
+    pub const I_NORM: &str = "i_norm";
+
+    // ================ 2D Variables ================
+
+    /// B(ψp, θ): The magnetic field strength in **in \[T\]**.
+    pub const B: &str = "b";
+    /// B(ψp, θ): The magnetic field strength in **in Normalized Units**.
+    pub const B_NORM: &str = "b_norm";
+    /// R(ψp, θ): The `R` coordinate with respect to boozer coordinates **in \[m\]**.
+    pub const RLAB: &str = "rlab";
+    /// Z(ψp, θ): The `Z` coordinate with respect to boozer coordinates **in \[m\]**.
+    pub const ZLAB: &str = "zlab";
+    /// J(ψp, θ): The VMEC to Boozer Jacobian in **\[ m/T \]**.
+    pub const JACOBIAN: &str = "jacobian";
+
+    // ================ 3D Variables ================
+
+    /// The 3D array containing all the `α{m,n}(ψp)` 1D arrays **in Normalized Units**.
+    pub const ALPHAS_NORM: &str = "alphas_norm";
+    /// The 3D array containing all the `α{m,n}(ψp)` 1D arrays **i \[m\]**.
+    pub const ALPHAS: &str = "alphas";
+    /// The 3D array containing all the `φ{m,n}(ψp)` 1D arrays.
+    pub const PHASES: &str = "phases";
+}
+
+// ===============================================================================================
+
+use std::path::PathBuf;
+
+use ndarray::{Array, Array1, Array2, Array3};
+use netcdf::{Extents, File, NcTypeDescriptor, Variable};
+
+use crate::NcError;
+
+type Result<T> = std::result::Result<T, NcError>;
+
+/// NetCDF-supported data types.
+pub trait NcType: NcTypeDescriptor + Copy {}
+impl NcType for f64 {}
+impl NcType for f32 {}
+impl NcType for i64 {}
+impl NcType for i32 {}
+
+/// Opens a [`File`] from a given path.
+///
+/// # Example
+/// ```
+/// # use equilibrium::extract::*;
+/// # use equilibrium::*;
+/// # use std::path::PathBuf;
+/// #
+/// let path = PathBuf::from("netcdf.nc");
+/// let f = open(&path)?;
+/// # Ok::<_, EqError>(())
+/// ```
+///
+/// # Errors
+///
+/// Returns an [`NcError`] if the path is not found or the NetCDF could not be opened.
+pub fn open(path: &PathBuf) -> Result<File> {
+    if !path.exists() {
+        return Err(NcError::FileNotFound(path.clone()));
+    }
+    match netcdf::open(path) {
+        Ok(f) => Ok(f),
+        Err(err) => Err(NcError::FileOpenError {
+            path: path.clone(),
+            err,
+        }),
+    }
+}
+
+/// Checks if a [`Variable`] is not empty, e.g has a length of at least 1.
+fn check_if_empty(var: &Variable) -> Result<()> {
+    match var.len() {
+        1.. => Ok(()),
+        0 => Err(NcError::EmptyVariable(var.name())),
+    }
+}
+
+/// Extracts a [`Variable`] named `name` from a [`File`].
+///
+/// # Example
+/// ```
+/// # use equilibrium::extract::netcdf_fields::*;
+/// # use equilibrium::extract::*;
+/// # use equilibrium::*;
+/// # use netcdf::Variable;
+/// # use std::path::PathBuf;
+/// #
+/// let path = PathBuf::from("netcdf.nc");
+/// let f = extract::open(&path)?;
+///
+/// let qfactor_var: Variable = extract_variable(&f, Q)?;
+/// # Ok::<_, EqError>(())
+/// ```
+///
+/// # Errors
+///
+/// Returns an [`NcError`] if the [`Variable`] is not found.
+pub fn extract_variable<'f>(f: &'f File, name: &str) -> Result<Variable<'f>> {
+    f.variable(name)
+        .ok_or(NcError::VariableNotFound(name.into()))
+}
+
+// ===============================================================================================
+
+/// Returns an [`Array<T, D>`] with the values of the [`Variable`] named `name`, in standard
+/// layout.
+fn extract_array<T, D>(f: &File, name: &str) -> Result<Array<T, D>>
+where
+    T: NcType,
+    D: ndarray::Dimension,
+{
+    let var = extract_variable(f, name)?;
+    check_if_empty(&var)?;
+
+    let dyn_array = match var.get::<T, _>(Extents::All) {
+        Ok(arr) => Ok(arr),
+        Err(err) => Err(NcError::GetValues {
+            name: var.name(),
+            err,
+        }),
+    }?
+    .into_dimensionality::<D>()?
+    .as_standard_layout()
+    .to_owned();
+
+    Ok(dyn_array)
+}
+
+/// Extracts a scalar value of type `T` from a [`File`].
+///
+/// # Example
+/// ```
+/// # use equilibrium::extract::netcdf_fields::*;
+/// # use equilibrium::extract::*;
+/// # use equilibrium::*;
+/// # use ndarray::Array1;
+/// # use std::path::PathBuf;
+/// #
+/// let path = PathBuf::from("netcdf.nc");
+/// let f = extract::open(&path)?;
+///
+/// let baxis: f64 = extract_scalar(&f, BAXIS)?;
+/// # Ok::<_, EqError>(())
+/// ```
+///
+/// # Errors
+///
+/// Returns an [`NcError`] if the [`Variable`] is not found, is empty, or has a different shape.
+pub fn extract_scalar<T: NcType>(f: &File, name: &str) -> Result<T> {
+    Ok(extract_array(f, name)?.into_scalar())
+}
+
+/// Extracts an [`Array1<T>`] value from a [`File`].
+///
+/// The array is returned in [`standard layout`](method@ndarray::ArrayRef::as_standard_layout).
+///
+/// # Example
+/// ```
+/// # use equilibrium::extract::netcdf_fields::*;
+/// # use equilibrium::extract::*;
+/// # use equilibrium::*;
+/// # use ndarray::Array1;
+/// # use std::path::PathBuf;
+/// #
+/// let path = PathBuf::from("netcdf.nc");
+/// let f = extract::open(&path)?;
+///
+/// let qfactor: Array1<f64> = extract_1d_array(&f, Q)?;
+/// # Ok::<_, EqError>(())
+/// ```
+///
+/// # Errors
+///
+/// Returns an [`NcError`] if the [`Variable`] is not found, is empty, or has a different shape.
+pub fn extract_1d_array<T: NcType>(f: &File, name: &str) -> Result<Array1<T>> {
+    extract_array(f, name)
+}
+
+/// Extracts an [`Array2<T>`] value from a [`File`].
+///
+/// The array is returned in [`standard layout`](method@ndarray::ArrayRef::as_standard_layout).
+///
+/// # Example
+/// ```
+/// # use equilibrium::extract::netcdf_fields::*;
+/// # use equilibrium::extract::*;
+/// # use equilibrium::*;
+/// # use ndarray::Array2;
+/// # use std::path::PathBuf;
+/// #
+/// let path = PathBuf::from("netcdf.nc");
+/// let f = extract::open(&path)?;
+///
+/// let b_norm: Array2<f64> = extract_2d_array(&f, B_NORM)?;
+/// # Ok::<_, EqError>(())
+/// ```
+///
+/// # Errors
+///
+/// Returns an [`NcError`] if the [`Variable`] is not found, is empty, or has a different shape.
+pub fn extract_2d_array<T: NcType>(f: &File, name: &str) -> Result<Array2<T>> {
+    extract_array(f, name)
+}
+
+/// Extracts an [`Array3<T>`] value from a [`File`].
+///
+/// The array is returned in [`standard layout`](method@ndarray::ArrayRef::as_standard_layout).
+///
+/// # Example
+/// ```
+/// # use equilibrium::extract::netcdf_fields::*;
+/// # use equilibrium::extract::*;
+/// # use equilibrium::*;
+/// # use ndarray::Array3;
+/// # use std::path::PathBuf;
+/// #
+/// let path = PathBuf::from("netcdf.nc");
+/// let f = extract::open(&path)?;
+///
+/// let alphas_norm: Array3<f64> = extract_3d_array(&f, ALPHAS_NORM)?;
+/// # Ok::<_, EqError>(())
+/// ```
+///
+/// # Errors
+///
+/// Returns an [`NcError`] if the [`Variable`] is not found, is empty, or has a different shape.
+pub fn extract_3d_array<T: NcType>(f: &File, name: &str) -> Result<Array3<T>> {
+    extract_array(f, name)
+}
+
+/// Extracts the `α{m,n}(ψp)` and `φ{m,n}(ψp)` 1D arrays of the specified {m,n} mode.
+///
+/// # Example
+/// ```
+/// # use equilibrium::extract::netcdf_fields::*;
+/// # use equilibrium::extract::*;
+/// # use equilibrium::*;
+/// # use ndarray::Array1;
+/// # use std::path::PathBuf;
+/// #
+/// let path = PathBuf::from("netcdf.nc");
+/// let f = extract::open(&path)?;
+///
+/// let (harmonic32_alpha, harmonic32_phase): (Array1<f64>, Array1<f64>) =
+///     extract_harmonic_arrays(&f, 3, 2)?;
+/// # Ok::<_, EqError>(())
+/// ```
+///
+/// # Errors
+///
+/// Returns an [`NcError`] if the NetCDF file does not contain the {`m`, `n`} harmonic.
+pub fn extract_harmonic_arrays<T: NcType>(
+    f: &File,
+    m: i64,
+    n: i64,
+) -> Result<(Array1<T>, Array1<T>)> {
+    let alpha_3d = extract_3d_array::<T>(f, netcdf_fields::ALPHAS_NORM)?;
+    let phase_3d = extract_3d_array::<T>(f, netcdf_fields::PHASES)?;
+
+    let m_index = get_logical_index(f, m, netcdf_fields::M)?;
+    let n_index = get_logical_index(f, n, netcdf_fields::N)?;
+
+    let alpha_1d = alpha_3d.slice(ndarray::s![m_index, n_index, ..]).to_owned();
+    let phase_1d = phase_3d.slice(ndarray::s![m_index, n_index, ..]).to_owned();
+
+    Ok((alpha_1d, phase_1d))
+}
+
+/// Returns the logical index of a harmonic's 1D arrays.
+///
+/// For example, if the NetCDF file contains m = [-1, 0, 1, 2, 4], and we want the arrays
+/// corresponding to m=1, we create the following index-mode mapping:
+/// mmap = [
+///     (0, -1),
+///     (1, 0),
+///     (2, 1),
+///     (3, 2),
+///     (4, 4),
+/// ]
+/// So for the mode m=1, we want the 2nd entry on the 3D array (m_index = 2).
+fn get_logical_index(f: &File, mode: i64, field: &str) -> Result<usize> {
+    let coord = extract_1d_array::<i64>(f, field)?;
+    let map: Vec<(usize, &i64)> = coord.indexed_iter().collect(); // create mapping
+    let pair = map
+        .iter()
+        .filter(|tuple| *tuple.1 == mode) // pick the (index, mode) entry we want
+        .map(|tuple| tuple.0) // drop index
+        .collect::<Vec<usize>>();
+    // There should be at most 1 entry at this point, otherwise there is something
+    // seriously wrong with the data.
+    assert!(pair.len() <= 1, "Duplicate mode numbers found");
+
+    pair.first()
+        .ok_or(NcError::HarmonicModeNotFound {
+            which: field.to_lowercase(),
+            mode,
+        })
+        .copied()
+}
+
+#[cfg(test)]
+mod test {
+    use super::netcdf_fields::*;
+    use super::*;
+
+    fn open_test_file() -> netcdf::File {
+        let path = PathBuf::from(STUB_TEST_NETCDF_PATH);
+        open(&path).unwrap()
+    }
+
+    #[test]
+    fn test_netcdf_open() {
+        open_test_file();
+    }
+
+    #[test]
+    fn test_extract_raw_variable() {
+        let f = open_test_file();
+
+        let var = extract_variable(&f, BAXIS).unwrap();
+        let var_units = var.attribute("units").unwrap();
+        assert_eq!(var_units.name(), "units");
+
+        use netcdf::AttributeValue;
+        assert_eq!(
+            var_units.value().unwrap(),
+            AttributeValue::Str("[T]".into())
+        );
+    }
+
+    #[test]
+    fn test_netcdf_all_scalars_extraction() {
+        let f = open_test_file();
+
+        extract_scalar::<f64>(&f, BAXIS).unwrap();
+        extract_scalar::<f64>(&f, RAXIS).unwrap();
+        extract_scalar::<f64>(&f, ZAXIS).unwrap();
+        extract_scalar::<f64>(&f, RGEO).unwrap();
+    }
+
+    #[test]
+    fn test_netcdf_all_1d_arrays_extraction() {
+        let f = open_test_file();
+
+        extract_1d_array::<f64>(&f, THETA).unwrap();
+        extract_1d_array::<f64>(&f, PSIP_NORM).unwrap();
+        extract_1d_array::<f64>(&f, PSI_NORM).unwrap();
+        extract_1d_array::<f64>(&f, R_NORM).unwrap();
+        extract_1d_array::<i64>(&f, M).unwrap();
+        extract_1d_array::<i64>(&f, N).unwrap();
+        extract_1d_array::<f64>(&f, PSIP).unwrap();
+        extract_1d_array::<f64>(&f, PSI).unwrap();
+        extract_1d_array::<f64>(&f, R).unwrap();
+
+        extract_1d_array::<f64>(&f, Q).unwrap();
+        extract_1d_array::<f64>(&f, G).unwrap();
+        extract_1d_array::<f64>(&f, I).unwrap();
+        extract_1d_array::<f64>(&f, G_NORM).unwrap();
+        extract_1d_array::<f64>(&f, I_NORM).unwrap();
+    }
+
+    #[test]
+    fn test_netcdf_all_2d_arrays_extraction() {
+        let f = open_test_file();
+
+        extract_2d_array::<f64>(&f, B).unwrap();
+        extract_2d_array::<f64>(&f, B_NORM).unwrap();
+        extract_2d_array::<f64>(&f, RLAB).unwrap();
+        extract_2d_array::<f64>(&f, ZLAB).unwrap();
+        extract_2d_array::<f64>(&f, JACOBIAN).unwrap();
+    }
+
+    #[test]
+    fn test_netcdf_all_3d_arrays_extraction() {
+        let f = open_test_file();
+
+        extract_3d_array::<f64>(&f, ALPHAS_NORM).unwrap();
+        extract_3d_array::<f64>(&f, ALPHAS).unwrap();
+        extract_3d_array::<f64>(&f, PHASES).unwrap();
+    }
+
+    /// WARN: Make sure this test is up to date with the stub netcdf file.
+    /// We inspect the (1,3) mode, which corresponds to the indeces (0, 1).
+    #[test]
+    fn test_netcdf_harmonic_extraction_values() {
+        let f = open_test_file();
+
+        let alpha_3d = extract_3d_array::<f64>(&f, ALPHAS).unwrap();
+        let phase_3d = extract_3d_array::<f64>(&f, PHASES).unwrap();
+
+        // Cast to i64 to avoid float comparisons
+        use ndarray::s;
+        // Index by logical index
+        assert_eq!(
+            alpha_3d.slice(s![0, 1, 0]).into_scalar().to_owned() as i64,
+            1111,
+            "Is this test up to date with the stub netcdf file?"
+        );
+        assert_eq!(
+            phase_3d.slice(s![0, 1, 0]).into_scalar().to_owned() as i64,
+            9999,
+            "Is this test up to date with the stub netcdf file?"
+        );
+        assert_eq!(
+            alpha_3d.slice(s![0, 1, -1]).into_scalar().to_owned() as i64,
+            11111,
+            "Is this test up to date with the stub netcdf file?"
+        );
+        assert_eq!(
+            phase_3d.slice(s![0, 1, -1]).into_scalar().to_owned() as i64,
+            99999,
+            "Is this test up to date with the stub netcdf file?"
+        );
+
+        // Index by mode number
+        assert_eq!(
+            extract_harmonic_arrays::<f64>(&f, 2, 2)
+                .unwrap()
+                .0
+                .first()
+                .unwrap()
+                .to_owned() as i64,
+            2222,
+            "Is this test up to date with the stub netcdf file?"
+        );
+        assert_eq!(
+            extract_harmonic_arrays::<f64>(&f, 2, 2)
+                .unwrap()
+                .0
+                .last()
+                .unwrap()
+                .to_owned() as i64,
+            22222,
+            "Is this test up to date with the stub netcdf file?"
+        );
+        assert_eq!(
+            extract_harmonic_arrays::<f64>(&f, 2, 2)
+                .unwrap()
+                .1
+                .first()
+                .unwrap()
+                .to_owned() as i64,
+            9999,
+            "Is this test up to date with the stub netcdf file?"
+        );
+        assert_eq!(
+            extract_harmonic_arrays::<f64>(&f, 2, 2)
+                .unwrap()
+                .1
+                .last()
+                .unwrap()
+                .to_owned() as i64,
+            99999,
+            "Is this test up to date with the stub netcdf file?"
+        );
+    }
+
+    #[test]
+    fn test_netcdf_errors() {
+        let f = open_test_file();
+
+        assert!(matches!(
+            dbg!(open(&PathBuf::from("not a path"))),
+            Err(NcError::FileNotFound(..))
+        ));
+
+        assert!(matches!(
+            dbg!(open(&PathBuf::from("/tmp"))),
+            Err(NcError::FileOpenError { .. })
+        ));
+
+        assert!(matches!(
+            dbg!(extract_scalar::<f64>(&f, "not a name")),
+            Err(NcError::VariableNotFound(..))
+        ));
+
+        assert!(matches!(
+            dbg!(dbg!(extract_1d_array::<f64>(&f, B_NORM))),
+            Err(NcError::NdArray { .. })
+        ));
+
+        assert!(matches!(
+            dbg!(extract_harmonic_arrays::<f64>(&f, 1000, -2000)),
+            Err(NcError::HarmonicModeNotFound { .. })
+        ));
+    }
+}

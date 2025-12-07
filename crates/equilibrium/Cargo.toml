@@ -1,0 +1,24 @@
+[package]
+name = "equilibrium"
+version = "0.1.4"
+license.workspace = true
+edition.workspace = true
+authors.workspace = true
+homepage.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+documentation.workspace = true
+description = "Representation of Tokamak Equilibria from experimental data."
+
+[dependencies]
+ndarray = {workspace = true}
+thiserror = {workspace = true}
+rsl-interpolation = {workspace = true}
+common = {workspace = true}
+netcdf = { version = "0.11.1", features = ["ndarray"] }
+
+[features]
+default = []
+phase-interpolation = []
+openblas-static = ["rsl-interpolation/openblas-static"]
+netcdf-static = ["netcdf/static"]

@@ -61,8 +61,8 @@ contour_kw = {"levels": args.levels, "cmap": "gist_heat"}
 colorbar_kw = {"location": "bottom"}
 
 contour1 = ax[0].contourf(r_data, z_data, b_data, **contour_kw)
-contour2 = ax[1].contourf(r_data, z_data, db_dpsip_data, **contour_kw)
-contour3 = ax[2].contourf(r_data, z_data, db_dtheta_data, **contour_kw)
+contour2 = ax[1].contourf(r_data, z_data, db_dtheta_data, **contour_kw)
+contour3 = ax[2].contourf(r_data, z_data, db_dpsip_data, **contour_kw)
 plt.colorbar(contour1, ax=ax[0], cax=None, **colorbar_kw)
 plt.colorbar(contour2, ax=ax[1], cax=None, **colorbar_kw)
 plt.colorbar(contour3, ax=ax[2], cax=None, **colorbar_kw)

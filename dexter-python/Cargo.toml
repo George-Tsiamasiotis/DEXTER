@@ -18,11 +18,11 @@ bench = false
 [dependencies]
 safe_unwrap.workspace = true
 rsl-interpolation.workspace = true
-config = {path = "../config"}
-utils = {path = "../utils"}
-equilibrium = {path = "../equilibrium"}
-particle = {path = "../particle"}
-heap = {path = "../heap"}
+config = { workspace = true }
+utils = { workspace = true }
+equilibrium = { workspace = true }
+particle = { workspace = true }
+heap = { workspace = true }
 pyo3 = { version = "0.27.1", features = ["extension-module", "abi3-py314", "multiple-pymethods"] }
 # Fix until 0.27.0 is actually released
 # At the moment of writing, git numpy supports ndarray ">=0.15, <=0.17", while
