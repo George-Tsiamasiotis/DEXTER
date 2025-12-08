@@ -185,6 +185,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "common"
+version = "0.1.0"
+
+[[package]]
 name = "config"
 version = "0.1.0-pre.2"
 
@@ -378,12 +382,11 @@ checksum = "34aa73646ffb006b8f5147f3dc182bd4bcb190227ce861fc4a4844bf8e3cb2c0"
 name = "equilibrium"
 version = "0.1.3-pre.1"
 dependencies = [
- "config",
+ "common",
  "ndarray",
  "netcdf",
  "rsl-interpolation",
  "thiserror",
- "utils",
 ]
 
 [[package]]

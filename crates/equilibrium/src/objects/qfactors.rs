@@ -168,6 +168,36 @@ impl std::fmt::Debug for NcQfactor {
     }
 }
 
+// ===============================================================================================
+
+pub struct Unity;
+
+impl Unity {
+    pub fn new() -> Self {
+        Self
+    }
+}
+
+impl Qfactor for Unity {
+    /// Always returns `1.0`.
+    #[allow(unused_variables)]
+    fn q(&self, psip: Flux, acc: &mut Accelerator) -> Result<f64> {
+        Ok(1.0)
+    }
+
+    /// Always returns `psip`.
+    #[allow(unused_variables)]
+    fn psi(&self, psip: Flux, acc: &mut Accelerator) -> Result<Flux> {
+        Ok(psip)
+    }
+
+    /// Always returns `1.0`.
+    #[allow(unused_variables)]
+    fn dpsi_dpsip(&self, psip: Flux, acc: &mut Accelerator) -> Result<f64> {
+        Ok(1.0)
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
