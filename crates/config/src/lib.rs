@@ -1,5 +1,3 @@
-pub mod netcdf_fields;
-
 // ==================== NetCDF
 
 /// Stub NetCDF file path to be used for unit tests.

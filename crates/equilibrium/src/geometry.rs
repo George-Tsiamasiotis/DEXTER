@@ -1,25 +1,79 @@
 //! Object for conversion from normalized to lab quantities
 //!
-//! Use the lower level interpolators here, to avoid storing the same data many times.
-//!
 //! We do not really care about performance here, creating accelerators in every eval call
 //! is much simpler.
 
 use std::f64::consts::TAU;
 use std::path::PathBuf;
 
-use ndarray::{Array1, Array2};
+use common::array1D_getter_impl;
 use rsl_interpolation::{
     Accelerator, Cache, DynInterpolation, DynInterpolation2d, Interp2dType, InterpType,
+    make_interp_type, make_interp2d_type,
 };
-use rsl_interpolation::{make_interp_type, make_interp2d_type};
-use utils::array1D_getter_impl;
 
-use crate::Result;
+use ndarray::{Array1, Array2};
+
+use crate::fortran_vec_to_carray2d_impl;
 use crate::{Flux, Length, Radians};
+use crate::{Geometry, Result};
 
+/// Used to create an [`NcGeometry`].
+pub struct NcGeometryBuilder {
+    /// Path to the netCDF file.
+    path: PathBuf,
+    /// 1D [`Interpolation type`], in case-insensitive string format.
+    ///
+    /// [`Interpolation type`]: ../rsl_interpolation/trait.InterpType.html#implementors
+    typ1d: String,
+    /// 2D [`Interpolation type`], in case-insensitive string format.
+    ///
+    /// [`Interpolation type`]: ../rsl_interpolation/trait.Interp2dType.html#implementors
+    typ2d: String,
+}
+
+impl NcGeometryBuilder {
+    /// Creates a new [`NcGeometryBuilder`] from a netCDF file at `path`, with spline of `typ`
+    /// interpolation type.
+    ///
+    /// # Example
+    /// ```
+    /// # use std::path::PathBuf;
+    /// let path = PathBuf::from("../data/stub_netcdf.nc");
+    /// let builder = NcGeometryBuilder::new(&path, "akima", "bicubic");
+    /// ```
+    pub fn new(path: &PathBuf, typ1d: &str, typ2d: &str) -> Self {
+        Self {
+            path: path.clone(),
+            typ1d: typ1d.into(),
+            typ2d: typ2d.into(),
+        }
+    }
+
+    /// Creates a new [`NcGeometry`] with the Builder's configuration.
+    ///
+    /// # Example
+    /// ```
+    /// # use equilibrium::*;
+    /// # use std::path::PathBuf;
+    /// #
+    /// # fn main() -> Result<()> {
+    /// let path = PathBuf::from("../data/stub_netcdf.nc");
+    /// let geometry = NcGeometryBuilder::new(&path, "akima", "bicubic").build()?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn build(self) -> Result<NcGeometry> {
+        NcGeometry::build(self)
+    }
+}
+
+// ===============================================================================================
+
+/// Describes the general geometry of the equilibrium.
+///
 /// Stores fluxes, angles and lab variables' data, and provides interpolation methods between them.
-pub struct Geometry {
+pub struct NcGeometry {
     /// Path to the netCDF file.
     path: PathBuf,
     /// 1D [`Interpolation type`], in case-insensitive string format.
@@ -49,12 +103,14 @@ pub struct Geometry {
     /// The radial coordinate r **in \[m\]**.
     r_data: Vec<Length>,
 
-    /// R(ψp, θ): The `R` coordinate with respect to boozer coordinates **in \[m\]**.
-    rlab_flat_data: Vec<Length>,
-    /// Z(ψp, θ): The `Z` coordinate with respect to boozer coordinates **in \[m\]**.
-    zlab_flat_data: Vec<Length>,
-    /// J(ψp, θ): The VMEC output to Boozer Jacobian in **\[ m/T \]**.
-    jacobian_flat_data: Vec<f64>,
+    /// R(ψp, θ): The `R` coordinate with respect to boozer coordinates **in \[m\]**, flattened
+    /// in F order.
+    rlab_data_fortran_flat: Vec<Length>,
+    /// Z(ψp, θ): The `Z` coordinate with respect to boozer coordinates **in \[m\]**, flattened
+    /// in F order.
+    zlab_data_fortran_flat: Vec<Length>,
+    /// J(ψp, θ): The VMEC output to Boozer Jacobian in **\[ m/T \]**, flattened in F order.
+    jacobian_data_fortran_flat: Vec<f64>,
 
     /// Interpolator of `ψp(r)` **in \[m\]**.
     psip_of_r_interp: DynInterpolation<f64>,
@@ -69,28 +125,15 @@ pub struct Geometry {
     jacobian_interp: DynInterpolation2d<f64>,
 }
 
-// Creation
-impl Geometry {
-    /// Constructs a [`Geometry`] from a netCDF file, with `typ1d` 1D interpolation type, and
-    /// `typ2d` 2D interpolation type.
-    ///
-    /// # Example
-    /// ```
-    /// # use equilibrium::*;
-    /// # use std::path::PathBuf;
-    /// #
-    /// # fn main() -> Result<()> {
-    /// let path = PathBuf::from("../data/stub_netcdf.nc");
-    /// let geom = Geometry::from_dataset(&path, "steffen", "bicubic")?;
-    /// # Ok(())
-    /// # }
-    /// ```
-    pub fn from_dataset(path: &PathBuf, typ1d: &str, typ2d: &str) -> Result<Self> {
+/// Creation
+impl NcGeometry {
+    /// Constructs an [`NcGeometry`] from [`NcGeometryBuilder`].
+    pub(crate) fn build(builder: NcGeometryBuilder) -> Result<Self> {
+        use crate::extract::netcdf_fields::*;
         use crate::extract::*;
-        use config::netcdf_fields::*;
 
         // Make path absolute for display purposes.
-        let path = std::path::absolute(path)?;
+        let path = std::path::absolute(builder.path)?;
         let f = open(&path)?;
 
         let baxis = extract_scalar(&f, BAXIS)?;
@@ -105,33 +148,42 @@ impl Geometry {
             .to_vec();
         let r_data = extract_1d_array(&f, R)?.as_standard_layout().to_vec();
         let theta_data = extract_1d_array(&f, THETA)?.as_standard_layout().to_vec();
-        let rlab_data = extract_2d_array(&f, RLAB)?.to_owned();
-        let zlab_data = extract_2d_array(&f, ZLAB)?.to_owned();
-        let jacobian_data = extract_2d_array(&f, JACOBIAN)?.to_owned();
+        let rlab_data = extract_2d_array(&f, RLAB)?;
+        let zlab_data = extract_2d_array(&f, ZLAB)?;
+        let jacobian_data = extract_2d_array(&f, JACOBIAN)?;
 
         // Interpolator's `za` input must be in Fortran order.
         let order = ndarray::Order::ColumnMajor;
-        let rlab_flat_data = rlab_data.flatten_with_order(order).to_vec();
-        let zlab_flat_data = zlab_data.flatten_with_order(order).to_vec();
-        let jacobian_flat_data = jacobian_data.flatten_with_order(order).to_vec();
+        let rlab_data_fortran_flat = rlab_data.flatten_with_order(order).to_vec();
+        let zlab_data_fortran_flat = zlab_data.flatten_with_order(order).to_vec();
+        let jacobian_data_fortran_flat = jacobian_data.flatten_with_order(order).to_vec();
 
-        let r_of_psip_interp = make_interp_type(typ1d)?.build(&psip_data, &r_data)?;
+        let r_of_psip_interp = make_interp_type(&builder.typ1d)?.build(&psip_data, &r_data)?;
 
-        let psip_of_r_interp = make_interp_type(typ1d)?.build(&r_data, &psip_data)?;
+        let psip_of_r_interp = make_interp_type(&builder.typ1d)?.build(&r_data, &psip_data)?;
 
-        let rlab_interp =
-            make_interp2d_type(typ2d)?.build(&psip_data, &theta_data, &rlab_flat_data)?;
+        let rlab_interp = make_interp2d_type(&builder.typ2d)?.build(
+            &psip_data,
+            &theta_data,
+            &rlab_data_fortran_flat,
+        )?;
 
-        let zlab_interp =
-            make_interp2d_type(typ2d)?.build(&psip_data, &theta_data, &zlab_flat_data)?;
+        let zlab_interp = make_interp2d_type(&builder.typ2d)?.build(
+            &psip_data,
+            &theta_data,
+            &zlab_data_fortran_flat,
+        )?;
 
-        let jacobian_interp =
-            make_interp2d_type(typ2d)?.build(&psip_data, &theta_data, &jacobian_flat_data)?;
+        let jacobian_interp = make_interp2d_type(&builder.typ2d)?.build(
+            &psip_data,
+            &theta_data,
+            &jacobian_data_fortran_flat,
+        )?;
 
         Ok(Self {
             path,
-            typ1d: typ1d.into(),
-            typ2d: typ2d.into(),
+            typ1d: builder.typ1d,
+            typ2d: builder.typ2d,
             baxis,
             raxis,
             zaxis,
@@ -140,9 +192,9 @@ impl Geometry {
             psi_data,
             theta_data,
             r_data,
-            rlab_flat_data,
-            zlab_flat_data,
-            jacobian_flat_data,
+            rlab_data_fortran_flat,
+            zlab_data_fortran_flat,
+            jacobian_data_fortran_flat,
             psip_of_r_interp,
             r_of_psip_interp,
             rlab_interp,
@@ -153,81 +205,29 @@ impl Geometry {
 }
 
 /// Interpolation
-impl Geometry {
-    /// Calculates the radial coordinate `r(ψp)` **in \[m\]**.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// # use equilibrium::*;
-    /// # use std::path::PathBuf;
-    /// # use rsl_interpolation::*;
-    /// #
-    /// # fn main() -> Result<()> {
-    /// let path = PathBuf::from("../data/stub_netcdf.nc");
-    /// let geom = Geometry::from_dataset(&path, "steffen", "bicubic")?;
-    ///
-    /// let r = geom.r(0.015)?;
-    /// # Ok(())
-    /// # }
-    /// ```
-    pub fn r(&self, psip: Flux) -> Result<Length> {
+impl Geometry for NcGeometry {
+    fn r(&self, psip: Flux) -> Result<Length> {
         let mut acc = Accelerator::new();
         Ok(self
             .r_of_psip_interp
             .eval(&self.psip_data, &self.r_data, psip, &mut acc)?)
     }
 
-    /// Calculates the poloidal flux `ψp(r)`, where r is **in \[m\]**.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// # use equilibrium::*;
-    /// # use std::path::PathBuf;
-    /// # use rsl_interpolation::*;
-    /// #
-    /// # fn main() -> Result<()> {
-    /// let path = PathBuf::from("../data/stub_netcdf.nc");
-    /// let geom = Geometry::from_dataset(&path, "steffen", "bicubic")?;
-    ///
-    /// let psip = geom.psip(0.45)?;
-    /// # Ok(())
-    /// # }
-    /// ```
-    pub fn psip(&self, r: Length) -> Result<Flux> {
+    fn psip(&self, r: Length) -> Result<Flux> {
         let mut acc = Accelerator::new();
         Ok(self
             .psip_of_r_interp
             .eval(&self.r_data, &self.psip_data, r, &mut acc)?)
     }
 
-    /// Calculates `R(ψp, θ)`,
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// # use equilibrium::*;
-    /// # use std::path::PathBuf;
-    /// # use rsl_interpolation::*;
-    /// # use std::f64::consts::PI;
-    /// #
-    /// # fn main() -> Result<()> {
-    /// let path = PathBuf::from("../data/stub_netcdf.nc");
-    /// let geom = Geometry::from_dataset(&path, "steffen", "bicubic")?;
-    ///
-    /// let rlab = geom.rlab(0.015, 2.0*PI)?;
-    /// # Ok(())
-    /// # }
-    /// ```
-    pub fn rlab(&self, psip: Flux, theta: Radians) -> Result<f64> {
+    fn rlab(&self, psip: Flux, theta: Radians) -> Result<f64> {
         let mut xacc = Accelerator::new();
         let mut yacc = Accelerator::new();
         let mut cache = Cache::new();
         Ok(self.rlab_interp.eval(
             &self.psip_data,
             &self.theta_data,
-            &self.rlab_flat_data,
+            &self.rlab_data_fortran_flat,
             psip,
             theta.rem_euclid(TAU),
             &mut xacc,
@@ -236,32 +236,14 @@ impl Geometry {
         )?)
     }
 
-    /// Calculates `Z(ψp, θ)`,
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// # use equilibrium::*;
-    /// # use std::path::PathBuf;
-    /// # use rsl_interpolation::*;
-    /// # use std::f64::consts::PI;
-    /// #
-    /// # fn main() -> Result<()> {
-    /// let path = PathBuf::from("../data/stub_netcdf.nc");
-    /// let geom = Geometry::from_dataset(&path, "steffen", "bicubic")?;
-    ///
-    /// let zlab = geom.zlab(0.015, 2.0*PI)?;
-    /// # Ok(())
-    /// # }
-    /// ```
-    pub fn zlab(&self, psip: Flux, theta: Radians) -> Result<f64> {
+    fn zlab(&self, psip: Flux, theta: Radians) -> Result<f64> {
         let mut xacc = Accelerator::new();
         let mut yacc = Accelerator::new();
         let mut cache = Cache::new();
         Ok(self.zlab_interp.eval(
             &self.psip_data,
             &self.theta_data,
-            &self.zlab_flat_data,
+            &self.zlab_data_fortran_flat,
             psip,
             theta.rem_euclid(TAU),
             &mut xacc,
@@ -270,32 +252,14 @@ impl Geometry {
         )?)
     }
 
-    /// Calculates the Jacobian `J(ψp, θ)`,
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// # use equilibrium::*;
-    /// # use std::path::PathBuf;
-    /// # use rsl_interpolation::*;
-    /// # use std::f64::consts::PI;
-    /// #
-    /// # fn main() -> Result<()> {
-    /// let path = PathBuf::from("../data/stub_netcdf.nc");
-    /// let geom = Geometry::from_dataset(&path, "steffen", "bicubic")?;
-    ///
-    /// let j = geom.jacobian(0.015, 2.0*PI)?;
-    /// # Ok(())
-    /// # }
-    /// ```
-    pub fn jacobian(&self, psip: Flux, theta: Radians) -> Result<f64> {
+    fn jacobian(&self, psip: Flux, theta: Radians) -> Result<f64> {
         let mut xacc = Accelerator::new();
         let mut yacc = Accelerator::new();
         let mut cache = Cache::new();
         Ok(self.jacobian_interp.eval(
             &self.psip_data,
             &self.theta_data,
-            &self.jacobian_flat_data,
+            &self.jacobian_data_fortran_flat,
             psip,
             theta.rem_euclid(TAU),
             &mut xacc,
@@ -306,34 +270,7 @@ impl Geometry {
 }
 
 /// Getters
-impl Geometry {
-    /// Returns the `R(ψp, θ)` data as a 2D array, in C order.
-    pub fn rlab_data(&self) -> Array2<f64> {
-        // Array is in Fortran order.
-        let shape = (self.theta_data.len(), self.psip_data.len());
-        Array2::from_shape_vec(shape, self.rlab_flat_data.clone())
-            .expect("shape is correct by definition")
-            .reversed_axes()
-    }
-
-    /// Returns the `Z(ψp, θ)` data as a 2D array, in C order.
-    pub fn zlab_data(&self) -> Array2<f64> {
-        // Array is in Fortran order.
-        let shape = (self.theta_data.len(), self.psip_data.len());
-        Array2::from_shape_vec(shape, self.zlab_flat_data.clone())
-            .expect("shape is correct by definition")
-            .reversed_axes()
-    }
-
-    /// Returns the `J(ψp, θ)` data as a 2D array, in C order.
-    pub fn jacobian_data(&self) -> Array2<f64> {
-        // Array is in Fortran order.
-        let shape = (self.theta_data.len(), self.psip_data.len());
-        Array2::from_shape_vec(shape, self.jacobian_flat_data.clone())
-            .expect("shape is correct by definition")
-            .reversed_axes()
-    }
-
+impl NcGeometry {
     /// Returns the netCDF file's path.
     pub fn path(&self) -> PathBuf {
         self.path.clone()
@@ -376,19 +313,19 @@ impl Geometry {
 
     /// Returns the tokamak's minor radius `r_wall` **in \[m\]**.
     pub fn r_wall(&self) -> f64 {
-        // `r_data` is always non-empty, otherwise `Geometry` cannot be constructed
+        // `r_data` is always non-empty, otherwise `NcGeometry` cannot be constructed
         self.r_data.last().copied().expect("array non-empty")
     }
 
     /// Returns the poloidal flux's value at the wall `ψp_wall` **in Normalized Units**.
     pub fn psip_wall(&self) -> f64 {
-        // `psip_data` is always non-empty, otherwise `Geometry` cannot be constructed
+        // `psip_data` is always non-empty, otherwise `NcGeometry` cannot be constructed
         self.psip_data.last().copied().expect("array non-empty")
     }
 
     /// Returns the toroidal flux's value at the wall `ψ_wall` **in Normalized Units**.
     pub fn psi_wall(&self) -> f64 {
-        // `psi_data` is always non-empty, otherwise `Geometry` cannot be constructed
+        // `psi_data` is always non-empty, otherwise `NcGeometry` cannot be constructed
         self.psi_data.last().copied().expect("array non-empty")
     }
 
@@ -396,11 +333,15 @@ impl Geometry {
     array1D_getter_impl!(psip_data, psip_data, Flux);
     array1D_getter_impl!(psi_data, psi_data, Flux);
     array1D_getter_impl!(r_data, r_data, Length);
+
+    fortran_vec_to_carray2d_impl!(rlab_data, rlab_data_fortran_flat, R);
+    fortran_vec_to_carray2d_impl!(zlab_data, zlab_data_fortran_flat, Z);
+    fortran_vec_to_carray2d_impl!(jacobian_data, jacobian_data_fortran_flat, J);
 }
 
-impl std::fmt::Debug for Geometry {
+impl std::fmt::Debug for NcGeometry {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Geometry")
+        f.debug_struct("NcGeometry")
             .field("path", &self.path())
             .field("typ 1D", &self.typ1d())
             .field("typ 2D", &self.typ2d())
@@ -419,22 +360,24 @@ impl std::fmt::Debug for Geometry {
 #[cfg(test)]
 mod test {
     use super::*;
-    use config::STUB_NETCDF_PATH;
+    use crate::extract::STUB_NETCDF_PATH;
 
-    fn create_geometry() -> Geometry {
+    fn create_nc_geometry() -> NcGeometry {
         let path = PathBuf::from(STUB_NETCDF_PATH);
-        Geometry::from_dataset(&path, "steffen", "bicubic").unwrap()
+        let typ1d = "steffen";
+        let typ2d = "bicubic";
+        NcGeometryBuilder::new(&path, typ1d, typ2d).build().unwrap()
     }
 
     #[test]
     fn test_geometry_creation() {
-        let g = create_geometry();
+        let g = create_nc_geometry();
         let _ = format!("{g:?}");
     }
 
     #[test]
     fn test_getters() {
-        let g = create_geometry();
+        let g = create_nc_geometry();
         g.path();
         g.typ1d();
         g.typ2d();
@@ -458,7 +401,7 @@ mod test {
 
     #[test]
     fn test_spline_evaluation() {
-        let g = create_geometry();
+        let g = create_nc_geometry();
 
         let r = 0.1;
         let psip = 0.015;

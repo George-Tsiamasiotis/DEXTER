@@ -1,12 +1,94 @@
-//! Methods for data extraction from NetCDF file.
+//! Methods for data extraction from NetCDF file and field names definitions.
 //!
 //! - For spline creation, only the `extract_<>d_array()` functions are necessary.
 //!
 //! - `extract_variable` provides access to the underlying [`Variable`] and it's [`netcdf::Attribute`]s.
 
+/// ================== Stub netCDF file
+
+/// Stub NetCDF file path to be used for unit tests.
+///
+/// Must be *relative* to the crate's `CARGO_MANIFEST_DIR`. Can be created with
+/// `equilibrium/scripts/npz_to_netcdf.py` from an `.npz` file.
+pub const STUB_NETCDF_PATH: &str = "../data/stub_netcdf.nc";
+
+/// The names each variable is expected to appear in the netCDF file.
+///
+/// If the naming convention changes, this is the only file we must update.
+pub(crate) mod netcdf_fields {
+
+    /// ================== Scalars ==================
+
+    /// Magnetic field strength on the axis `B0` **in \[T\]**.
+    pub(crate) const BAXIS: &str = "baxis";
+    /// The horizontal position of the magnetic axis `R0` **in \[m\]**.
+    pub(crate) const RAXIS: &str = "raxis";
+    /// The vertical position of the magnetic axis **in \[m\]**.
+    pub(crate) const ZAXIS: &str = "zaxis";
+    /// The geometrical axis (device major radius) **in \[m\]**.
+    pub(crate) const RGEO: &str = "rgeo";
+
+    /// ================= Coordinates =================
+
+    /// The boozer toroidal angle `θ` **in \[rads\]**.
+    pub(crate) const THETA: &str = "theta";
+    /// The poloidal flux `ψp` **in Normalized Units**.
+    pub(crate) const PSIP_NORM: &str = "psip_norm";
+    /// The toroidal flux `ψ` **in Normalized Units**.
+    pub(crate) const PSI_NORM: &str = "psi_norm";
+    /// The radial coordinate `r` **in Normalized Units**.
+    pub(crate) const R_NORM: &str = "r_norm";
+    /// The poloidal mode numbers `m`.
+    pub(crate) const M: &str = "m";
+    /// The toroidal mode numbers `n`.
+    pub(crate) const N: &str = "n";
+    /// The poloidal flux `ψp` **in \[Tm\]**.
+    pub(crate) const PSIP: &str = "psip";
+    /// The toroidal flux `ψ` **in \[Tm\]**.
+    pub(crate) const PSI: &str = "psi";
+    /// The radial coordinate r **in \[m\]**.
+    pub(crate) const R: &str = "r";
+
+    /// ================ 1D Variables ================
+
+    /// q(ψp): The safety factor.
+    pub(crate) const Q: &str = "q";
+    /// g(ψp): The covariant toroidal plasma current **in \[Tm\]**.
+    pub(crate) const G: &str = "g";
+    /// I(ψp): The covariant poloidal plasma current **in \[Tm\]**.
+    pub(crate) const I: &str = "i";
+    /// g(ψp): The covariant toroidal plasma current **in Normalized Units**.
+    pub(crate) const G_NORM: &str = "g_norm";
+    /// I(ψp): The covariant poloidal plasma current **in Normalized Units**.
+    pub(crate) const I_NORM: &str = "i_norm";
+
+    /// ================ 2D Variables ================
+
+    /// B(ψp, θ): The magnetic field strength in **in \[T\]**.
+    pub(crate) const B: &str = "b";
+    /// B(ψp, θ): The magnetic field strength in **in Normalized Units**.
+    pub(crate) const B_NORM: &str = "b_norm";
+    /// R(ψp, θ): The `R` coordinate with respect to boozer coordinates **in \[m\]**.
+    pub(crate) const RLAB: &str = "rlab";
+    /// Z(ψp, θ): The `Z` coordinate with respect to boozer coordinates **in \[m\]**.
+    pub(crate) const ZLAB: &str = "zlab";
+    /// J(ψp, θ): The VMEC to Boozer Jacobian in **\[ m/T \]**.
+    pub(crate) const JACOBIAN: &str = "jacobian";
+
+    /// ================ 3D Variables ================
+
+    /// The 3D array containing all the `α{m,n}(ψp)` 1D arrays **in Normalized Units**.
+    pub(crate) const ALPHAS_NORM: &str = "alphas_norm";
+    /// The 3D array containing all the `α{m,n}(ψp)` 1D arrays **i \[m\]**.
+    pub(crate) const ALPHAS: &str = "alphas";
+    /// The 3D array containing all the `φ{m,n}(ψp)` 1D arrays.
+    pub(crate) const PHASES: &str = "phases";
+}
+
+// ===============================================================================================
+
 use std::path::PathBuf;
 
-use config::netcdf_fields::{ALPHAS_NORM, M, N, PHASES};
 use ndarray::{Array, Array1, Array2, Array3};
 use netcdf::{Extents, File, NcTypeDescriptor, Variable};
 
@@ -242,11 +324,11 @@ pub fn extract_harmonic_arrays<T: NcType>(
     m: i64,
     n: i64,
 ) -> Result<(Array1<T>, Array1<T>)> {
-    let alpha_3d = extract_3d_array::<T>(f, ALPHAS_NORM)?;
-    let phase_3d = extract_3d_array::<T>(f, PHASES)?;
+    let alpha_3d = extract_3d_array::<T>(f, netcdf_fields::ALPHAS_NORM)?;
+    let phase_3d = extract_3d_array::<T>(f, netcdf_fields::PHASES)?;
 
-    let m_index = get_logical_index(f, m, M)?;
-    let n_index = get_logical_index(f, n, N)?;
+    let m_index = get_logical_index(f, m, netcdf_fields::M)?;
+    let n_index = get_logical_index(f, n, netcdf_fields::N)?;
 
     let alpha_1d = alpha_3d.slice(ndarray::s![m_index, n_index, ..]).to_owned();
     let phase_1d = phase_3d.slice(ndarray::s![m_index, n_index, ..]).to_owned();
@@ -288,9 +370,8 @@ fn get_logical_index(f: &File, mode: i64, field: &str) -> Result<usize> {
 
 #[cfg(test)]
 mod test {
+    use super::netcdf_fields::*;
     use super::*;
-    use config::STUB_NETCDF_PATH;
-    use config::netcdf_fields::*;
 
     fn open_test_file() -> netcdf::File {
         let path = PathBuf::from(STUB_NETCDF_PATH);
@@ -300,6 +381,21 @@ mod test {
     #[test]
     fn test_netcdf_open() {
         open_test_file();
+    }
+
+    #[test]
+    fn test_extract_raw_variable() {
+        let f = open_test_file();
+
+        let var = extract_variable(&f, BAXIS).unwrap();
+        let var_units = var.attribute("units").unwrap();
+        assert_eq!(var_units.name(), "units");
+
+        use netcdf::AttributeValue;
+        assert_eq!(
+            var_units.value().unwrap(),
+            AttributeValue::Str("[T]".into())
+        );
     }
 
     #[test]
@@ -397,6 +493,11 @@ mod test {
         assert!(matches!(
             extract_scalar::<f64>(&f, "not a name"),
             Err(NcError::VariableNotFound(..))
+        ));
+
+        assert!(matches!(
+            extract_1d_array::<f64>(&f, B_NORM),
+            Err(NcError::GetValues { .. })
         ));
 
         assert!(matches!(

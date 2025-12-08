@@ -1,4 +1,4 @@
-//! Representation of an equilibrium's plasma current.
+//! Representation of an equilibrium's q-factor.
 
 use std::path::PathBuf;
 
@@ -7,12 +7,12 @@ use rsl_interpolation::{Accelerator, DynInterpolation, InterpType, make_interp_t
 
 use ndarray::Array1;
 
-use crate::Current;
 use crate::Flux;
+use crate::Qfactor;
 use crate::Result;
 
-/// Used to create a [`NcCurrent`].
-pub struct NcCurrentBuilder {
+/// Used to create a [`NcQfactor`].
+pub struct NcQfactorBuilder {
     /// Path to the netCDF file.
     path: PathBuf,
     /// 1D [`Interpolation type`], in case-insensitive string format.
@@ -21,15 +21,15 @@ pub struct NcCurrentBuilder {
     typ: String,
 }
 
-impl NcCurrentBuilder {
-    /// Creates a new [`NcCurrentBuilder`] from a netCDF file at `path`, with spline of `typ`
+impl NcQfactorBuilder {
+    /// Creates a new [`NcQfactorBuilder`] from a netCDF file at `path`, with spline of `typ`
     /// interpolation type.
     ///
     /// # Example
     /// ```
     /// # use std::path::PathBuf;
     /// let path = PathBuf::from("../data/stub_netcdf.nc");
-    /// let builder = NcCurrentBuilder::new(&path, "cubic");
+    /// let builder = NcQfactorBuilder::new(&path, "cubic");
     /// ```
     pub fn new(path: &PathBuf, typ: &str) -> Self {
         Self {
@@ -47,19 +47,19 @@ impl NcCurrentBuilder {
     /// #
     /// # fn main() -> Result<()> {
     /// let path = PathBuf::from("../data/stub_netcdf.nc");
-    /// let current = NcCurrentBuilder::new(&path, "cubic").build()?;
+    /// let qfactor = NcQfactorBuilder::new(&path, "cubic").build()?;
     /// # Ok(())
     /// # }
     /// ```
-    pub fn build(self) -> Result<NcCurrent> {
-        NcCurrent::build(self)
+    pub fn build(self) -> Result<NcQfactor> {
+        NcQfactor::build(self)
     }
 }
 
 // ===============================================================================================
 
-/// Plasma current reconstructed from a netCDF file.
-pub struct NcCurrent {
+/// q-factor reconstructed from a netCDF file.
+pub struct NcQfactor {
     /// Path to the netCDF file.
     path: PathBuf,
     /// 1D [`Interpolation type`], in case-insensitive string format.
@@ -69,21 +69,21 @@ pub struct NcCurrent {
 
     /// The `ψp` data array.
     psip_data: Vec<Flux>,
-    /// The `g` data array.
-    g_data: Vec<f64>,
-    /// The `I` data array.
-    i_data: Vec<f64>,
+    /// The `q` data array.
+    q_data: Vec<f64>,
+    /// The `ψ` data array.
+    psi_data: Vec<Flux>,
 
-    /// Interpolator over the `g` values, as a function of ψp.
-    g_interp: DynInterpolation<f64>,
-    /// Interpolator over the `I` values, as a function of ψp.
-    i_interp: DynInterpolation<f64>,
+    /// Interpolator over the `q` values, as a function of ψp.
+    q_interp: DynInterpolation<f64>,
+    /// Interpolator over the `ψ` values, as a function of ψp.
+    psi_interp: DynInterpolation<f64>,
 }
 
 /// Creation
-impl NcCurrent {
-    /// Constructs an [`NcCurrent`] from [`NcCurrentBuilder`].
-    pub(crate) fn build(builder: NcCurrentBuilder) -> Result<Self> {
+impl NcQfactor {
+    /// Constructs an [`NcQfactor`] from [`NcQfactorBuilder`].
+    pub(crate) fn build(builder: NcQfactorBuilder) -> Result<Self> {
         use crate::extract::netcdf_fields::*;
         use crate::extract::*;
 
@@ -94,53 +94,49 @@ impl NcCurrent {
         let psip_data = extract_1d_array(&f, PSIP_NORM)?
             .as_standard_layout()
             .to_vec();
-        let g_data = extract_1d_array(&f, G_NORM)?.as_standard_layout().to_vec();
-        let i_data = extract_1d_array(&f, I_NORM)?.as_standard_layout().to_vec();
+        let psi_data = extract_1d_array(&f, PSI_NORM)?
+            .as_standard_layout()
+            .to_vec();
+        let q_data = extract_1d_array(&f, Q)?.as_standard_layout().to_vec();
 
-        let g_interp = make_interp_type(&builder.typ)?.build(&psip_data, &g_data)?;
-        let i_interp = make_interp_type(&builder.typ)?.build(&psip_data, &i_data)?;
+        let q_interp = make_interp_type(&builder.typ)?.build(&psip_data, &q_data)?;
+        let psi_interp = make_interp_type(&builder.typ)?.build(&psip_data, &psi_data)?;
 
         Ok(Self {
             path: path.to_owned(),
             typ: builder.typ,
             psip_data,
-            g_data,
-            i_data,
-            g_interp,
-            i_interp,
+            q_data,
+            psi_data,
+            q_interp,
+            psi_interp,
         })
     }
 }
 
 /// Interpolation
-impl Current for NcCurrent {
-    fn g(&self, psip: Flux, acc: &mut Accelerator) -> Result<f64> {
+impl Qfactor for NcQfactor {
+    fn q(&self, psip: Flux, acc: &mut Accelerator) -> Result<f64> {
         Ok(self
-            .g_interp
-            .eval(&self.psip_data, &self.g_data, psip, acc)?)
+            .q_interp
+            .eval(&self.psip_data, &self.q_data, psip, acc)?)
     }
 
-    fn i(&self, psip: Flux, acc: &mut Accelerator) -> Result<f64> {
+    fn psi(&self, psip: Flux, acc: &mut Accelerator) -> Result<Flux> {
         Ok(self
-            .i_interp
-            .eval(&self.psip_data, &self.i_data, psip, acc)?)
+            .psi_interp
+            .eval(&self.psip_data, &self.psi_data, psip, acc)?)
     }
 
-    fn dg_dpsip(&self, psip: Flux, acc: &mut Accelerator) -> Result<f64> {
+    fn dpsi_dpsip(&self, psip: Flux, acc: &mut Accelerator) -> Result<f64> {
         Ok(self
-            .g_interp
-            .eval_deriv(&self.psip_data, &self.g_data, psip, acc)?)
-    }
-
-    fn di_dpsip(&self, psip: Flux, acc: &mut Accelerator) -> Result<f64> {
-        Ok(self
-            .i_interp
-            .eval_deriv(&self.psip_data, &self.i_data, psip, acc)?)
+            .psi_interp
+            .eval_deriv(&self.psip_data, &self.psi_data, psip, acc)?)
     }
 }
 
-// Getters
-impl NcCurrent {
+/// Getters
+impl NcQfactor {
     /// Returns the netCDF file's path.
     pub fn path(&self) -> PathBuf {
         self.path.clone()
@@ -158,13 +154,13 @@ impl NcCurrent {
     }
 
     array1D_getter_impl!(psip_data, psip_data, Flux);
-    array1D_getter_impl!(g_data, g_data, f64);
-    array1D_getter_impl!(i_data, i_data, f64);
+    array1D_getter_impl!(psi_data, psi_data, Flux);
+    array1D_getter_impl!(q_data, q_data, f64);
 }
 
-impl std::fmt::Debug for NcCurrent {
+impl std::fmt::Debug for NcQfactor {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("NcCurrent")
+        f.debug_struct("NcQfactor")
             .field("path", &self.path())
             .field("typ", &self.typ())
             .field("len", &self.len())
@@ -177,42 +173,38 @@ mod test {
     use super::*;
     use crate::extract::STUB_NETCDF_PATH;
 
-    fn create_nc_current() -> NcCurrent {
+    fn create_nc_qfactor() -> NcQfactor {
         let path = PathBuf::from(STUB_NETCDF_PATH);
         let typ = "steffen";
-        NcCurrentBuilder::new(&path, typ).build().unwrap()
+        NcQfactorBuilder::new(&path, typ).build().unwrap()
     }
 
     #[test]
-    fn test_current_creation() {
-        let c = create_nc_current();
-        let _ = format!("{c:?}");
+    fn test_qfactor_creation() {
+        let q = create_nc_qfactor();
+        let _ = format!("{q:?}");
     }
 
     #[test]
     fn test_getters() {
-        let c = create_nc_current();
-        c.path();
-        c.typ();
-        c.len();
+        let q = create_nc_qfactor();
+        q.path();
+        q.typ();
+        q.len();
 
-        assert_eq!(c.psip_data().ndim(), 1);
-        assert_eq!(c.g_data().ndim(), 1);
-        assert_eq!(c.i_data().ndim(), 1);
+        assert_eq!(q.psip_data().ndim(), 1);
+        assert_eq!(q.q_data().ndim(), 1);
+        assert_eq!(q.psi_data().ndim(), 1);
     }
 
     #[test]
-    fn test_extraction_methods() {}
-
-    #[test]
     fn test_spline_evaluation() {
-        let c = create_nc_current();
+        let q = create_nc_qfactor();
         let mut acc = Accelerator::new();
 
         let psip = 0.015;
-        c.g(psip, &mut acc).unwrap();
-        c.i(psip, &mut acc).unwrap();
-        c.di_dpsip(psip, &mut acc).unwrap();
-        c.dg_dpsip(psip, &mut acc).unwrap();
+        q.q(psip, &mut acc).unwrap();
+        q.psi(psip, &mut acc).unwrap();
+        q.dpsi_dpsip(psip, &mut acc).unwrap();
     }
 }
