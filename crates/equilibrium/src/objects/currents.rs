@@ -1,23 +1,21 @@
 //! Representation of an equilibrium's plasma current.
 
+use common::array1D_getter_impl;
+use ndarray::Array1;
+use rsl_interpolation::{Accelerator, DynInterpolation, InterpType, make_interp_type};
 use std::path::PathBuf;
 
-use common::array1D_getter_impl;
-use rsl_interpolation::{Accelerator, DynInterpolation, InterpType, make_interp_type};
-
-use ndarray::Array1;
-
 use crate::Current;
-use crate::Flux;
 use crate::Result;
 
 /// Used to create a [`NcCurrent`].
+///
+/// Exists for future configuration flexibility.
+#[non_exhaustive]
 pub struct NcCurrentBuilder {
     /// Path to the netCDF file.
     path: PathBuf,
-    /// 1D [`Interpolation type`], in case-insensitive string format.
-    ///
-    /// [`Interpolation type`]: ../rsl_interpolation/trait.InterpType.html#implementors
+    /// 1D [`DynInterpolation`], in case-insensitive string format.
     typ: String,
 }
 
@@ -28,8 +26,9 @@ impl NcCurrentBuilder {
     /// # Example
     /// ```
     /// # use std::path::PathBuf;
-    /// let path = PathBuf::from("../data/stub_netcdf.nc");
-    /// let builder = NcCurrentBuilder::new(&path, "cubic");
+    /// # use equilibrium::currents;
+    /// let path = PathBuf::from("./netcdf.nc");
+    /// let builder = currents::NcCurrentBuilder::new(&path, "cubic");
     /// ```
     pub fn new(path: &PathBuf, typ: &str) -> Self {
         Self {
@@ -38,18 +37,15 @@ impl NcCurrentBuilder {
         }
     }
 
-    /// Creates a new [`NcQfactor`] with the Builder's configuration.
+    /// Creates a new [`NcCurrent`] with the Builder's configuration.
     ///
     /// # Example
     /// ```
-    /// # use equilibrium::*;
     /// # use std::path::PathBuf;
-    /// #
-    /// # fn main() -> Result<()> {
-    /// let path = PathBuf::from("../data/stub_netcdf.nc");
-    /// let current = NcCurrentBuilder::new(&path, "cubic").build()?;
-    /// # Ok(())
-    /// # }
+    /// # use equilibrium::currents;
+    /// let path = PathBuf::from("./netcdf.nc");
+    /// let current = currents::NcCurrentBuilder::new(&path, "cubic").build()?;
+    /// # Ok::<_, equilibrium::EqError>(())
     /// ```
     pub fn build(self) -> Result<NcCurrent> {
         NcCurrent::build(self)
@@ -59,6 +55,11 @@ impl NcCurrentBuilder {
 // ===============================================================================================
 
 /// Plasma current reconstructed from a netCDF file.
+///
+/// Related quantities are computed by interpolating over the data arrays.
+///
+/// Should be created with an [`NcCurrentBuilder`].
+#[non_exhaustive]
 pub struct NcCurrent {
     /// Path to the netCDF file.
     path: PathBuf,
@@ -68,7 +69,7 @@ pub struct NcCurrent {
     typ: String,
 
     /// The `ψp` data array.
-    psip_data: Vec<Flux>,
+    psip_data: Vec<f64>,
     /// The `g` data array.
     g_data: Vec<f64>,
     /// The `I` data array.
@@ -91,11 +92,9 @@ impl NcCurrent {
         let path = std::path::absolute(builder.path)?;
         let f = open(&path)?;
 
-        let psip_data = extract_1d_array(&f, PSIP_NORM)?
-            .as_standard_layout()
-            .to_vec();
-        let g_data = extract_1d_array(&f, G_NORM)?.as_standard_layout().to_vec();
-        let i_data = extract_1d_array(&f, I_NORM)?.as_standard_layout().to_vec();
+        let psip_data = extract_1d_array(&f, PSIP_NORM)?.to_vec();
+        let g_data = extract_1d_array(&f, G_NORM)?.to_vec();
+        let i_data = extract_1d_array(&f, I_NORM)?.to_vec();
 
         let g_interp = make_interp_type(&builder.typ)?.build(&psip_data, &g_data)?;
         let i_interp = make_interp_type(&builder.typ)?.build(&psip_data, &i_data)?;
@@ -114,32 +113,32 @@ impl NcCurrent {
 
 /// Interpolation
 impl Current for NcCurrent {
-    fn g(&self, psip: Flux, acc: &mut Accelerator) -> Result<f64> {
+    fn g(&self, psip: f64, acc: &mut Accelerator) -> Result<f64> {
         Ok(self
             .g_interp
             .eval(&self.psip_data, &self.g_data, psip, acc)?)
     }
 
-    fn i(&self, psip: Flux, acc: &mut Accelerator) -> Result<f64> {
+    fn i(&self, psip: f64, acc: &mut Accelerator) -> Result<f64> {
         Ok(self
             .i_interp
             .eval(&self.psip_data, &self.i_data, psip, acc)?)
     }
 
-    fn dg_dpsip(&self, psip: Flux, acc: &mut Accelerator) -> Result<f64> {
+    fn dg_dpsip(&self, psip: f64, acc: &mut Accelerator) -> Result<f64> {
         Ok(self
             .g_interp
             .eval_deriv(&self.psip_data, &self.g_data, psip, acc)?)
     }
 
-    fn di_dpsip(&self, psip: Flux, acc: &mut Accelerator) -> Result<f64> {
+    fn di_dpsip(&self, psip: f64, acc: &mut Accelerator) -> Result<f64> {
         Ok(self
             .i_interp
             .eval_deriv(&self.psip_data, &self.i_data, psip, acc)?)
     }
 }
 
-// Getters
+/// Getters
 impl NcCurrent {
     /// Returns the netCDF file's path.
     pub fn path(&self) -> PathBuf {
@@ -157,9 +156,9 @@ impl NcCurrent {
         self.psip_data.len()
     }
 
-    array1D_getter_impl!(psip_data, psip_data, Flux);
-    array1D_getter_impl!(g_data, g_data, f64);
-    array1D_getter_impl!(i_data, i_data, f64);
+    array1D_getter_impl!(psip_data, psip_data);
+    array1D_getter_impl!(g_data, g_data);
+    array1D_getter_impl!(i_data, i_data);
 }
 
 impl std::fmt::Debug for NcCurrent {
@@ -172,47 +171,40 @@ impl std::fmt::Debug for NcCurrent {
     }
 }
 
-#[cfg(test)]
-mod test {
-    use super::*;
-    use crate::extract::STUB_NETCDF_PATH;
+// ===============================================================================================
 
-    fn create_nc_current() -> NcCurrent {
-        let path = PathBuf::from(STUB_NETCDF_PATH);
-        let typ = "steffen";
-        NcCurrentBuilder::new(&path, typ).build().unwrap()
+/// Large Aspect Ratio approximation, with `q=1` and `Ι=0`.
+///
+/// # Example
+/// ```
+/// # use equilibrium::currents;
+/// let qfactor = currents::Lar;
+/// ```
+#[derive(Debug)]
+pub struct Lar;
+
+impl Current for Lar {
+    /// Always returns `1.0`.
+    #[allow(unused_variables)]
+    fn g(&self, psip: crate::Flux, acc: &mut Accelerator) -> Result<f64> {
+        Ok(1.0)
     }
 
-    #[test]
-    fn test_current_creation() {
-        let c = create_nc_current();
-        let _ = format!("{c:?}");
+    /// Always returns `0.0`.
+    #[allow(unused_variables)]
+    fn i(&self, psip: crate::Flux, acc: &mut Accelerator) -> Result<f64> {
+        Ok(0.0)
     }
 
-    #[test]
-    fn test_getters() {
-        let c = create_nc_current();
-        c.path();
-        c.typ();
-        c.len();
-
-        assert_eq!(c.psip_data().ndim(), 1);
-        assert_eq!(c.g_data().ndim(), 1);
-        assert_eq!(c.i_data().ndim(), 1);
+    /// Always returns `0.0`.
+    #[allow(unused_variables)]
+    fn dg_dpsip(&self, psip: crate::Flux, acc: &mut Accelerator) -> Result<f64> {
+        Ok(0.0)
     }
 
-    #[test]
-    fn test_extraction_methods() {}
-
-    #[test]
-    fn test_spline_evaluation() {
-        let c = create_nc_current();
-        let mut acc = Accelerator::new();
-
-        let psip = 0.015;
-        c.g(psip, &mut acc).unwrap();
-        c.i(psip, &mut acc).unwrap();
-        c.di_dpsip(psip, &mut acc).unwrap();
-        c.dg_dpsip(psip, &mut acc).unwrap();
+    /// Always returns `0.0`.
+    #[allow(unused_variables)]
+    fn di_dpsip(&self, psip: crate::Flux, acc: &mut Accelerator) -> Result<f64> {
+        Ok(0.0)
     }
 }

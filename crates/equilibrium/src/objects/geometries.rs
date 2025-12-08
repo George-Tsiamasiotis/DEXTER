@@ -1,34 +1,28 @@
-//! Object for conversion from normalized to lab quantities
-//!
-//! We do not really care about performance here, creating accelerators in every eval call
-//! is much simpler.
-
-use std::f64::consts::TAU;
-use std::path::PathBuf;
+//! Object for conversion from normalized to lab/SI quantities
 
 use common::array1D_getter_impl;
+use ndarray::{Array1, Array2};
 use rsl_interpolation::{
     Accelerator, Cache, DynInterpolation, DynInterpolation2d, Interp2dType, InterpType,
     make_interp_type, make_interp2d_type,
 };
-
-use ndarray::{Array1, Array2};
+use std::f64::consts::TAU;
+use std::path::PathBuf;
 
 use crate::fortran_vec_to_carray2d_impl;
 use crate::{Flux, Length, Radians};
 use crate::{Geometry, Result};
 
 /// Used to create an [`NcGeometry`].
+///
+/// Exists for future configuration flexibility.
+#[non_exhaustive]
 pub struct NcGeometryBuilder {
     /// Path to the netCDF file.
     path: PathBuf,
-    /// 1D [`Interpolation type`], in case-insensitive string format.
-    ///
-    /// [`Interpolation type`]: ../rsl_interpolation/trait.InterpType.html#implementors
+    /// 1D [`DynInterpolation`], in case-insensitive string format.
     typ1d: String,
-    /// 2D [`Interpolation type`], in case-insensitive string format.
-    ///
-    /// [`Interpolation type`]: ../rsl_interpolation/trait.Interp2dType.html#implementors
+    /// 2D [`DynInterpolation2d`], in case-insensitive string format.
     typ2d: String,
 }
 
@@ -39,8 +33,9 @@ impl NcGeometryBuilder {
     /// # Example
     /// ```
     /// # use std::path::PathBuf;
-    /// let path = PathBuf::from("../data/stub_netcdf.nc");
-    /// let builder = NcGeometryBuilder::new(&path, "akima", "bicubic");
+    /// # use equilibrium::geometries;
+    /// let path = PathBuf::from("./netcdf.nc");
+    /// let builder = geometries::NcGeometryBuilder::new(&path, "akima", "bicubic");
     /// ```
     pub fn new(path: &PathBuf, typ1d: &str, typ2d: &str) -> Self {
         Self {
@@ -54,14 +49,11 @@ impl NcGeometryBuilder {
     ///
     /// # Example
     /// ```
-    /// # use equilibrium::*;
     /// # use std::path::PathBuf;
-    /// #
-    /// # fn main() -> Result<()> {
+    /// # use equilibrium::geometries;
     /// let path = PathBuf::from("../data/stub_netcdf.nc");
-    /// let geometry = NcGeometryBuilder::new(&path, "akima", "bicubic").build()?;
-    /// # Ok(())
-    /// # }
+    /// let geometry = geometries::NcGeometryBuilder::new(&path, "akima", "bicubic").build()?;
+    /// # Ok::<_, equilibrium::EqError>(())
     /// ```
     pub fn build(self) -> Result<NcGeometry> {
         NcGeometry::build(self)
@@ -73,6 +65,9 @@ impl NcGeometryBuilder {
 /// Describes the general geometry of the equilibrium.
 ///
 /// Stores fluxes, angles and lab variables' data, and provides interpolation methods between them.
+///
+/// Should be created with an [`NcGeometryBuilder`].
+#[non_exhaustive]
 pub struct NcGeometry {
     /// Path to the netCDF file.
     path: PathBuf,
@@ -116,6 +111,8 @@ pub struct NcGeometry {
     psip_of_r_interp: DynInterpolation<f64>,
     /// Interpolator of `r(ψp)` **in \[m\]**.
     r_of_psip_interp: DynInterpolation<f64>,
+    /// Interpolator of `ψ(ψp)`.
+    psi_of_psip_interp: DynInterpolation<f64>,
 
     /// Interpolator over the R coordinate, as a function of ψp, θ.
     rlab_interp: DynInterpolation2d<f64>,
@@ -140,19 +137,15 @@ impl NcGeometry {
         let raxis = extract_scalar(&f, RAXIS)?;
         let zaxis = extract_scalar(&f, ZAXIS)?;
         let rgeo = extract_scalar(&f, RGEO)?;
-        let psip_data = extract_1d_array(&f, PSIP_NORM)?
-            .as_standard_layout()
-            .to_vec();
-        let psi_data = extract_1d_array(&f, PSI_NORM)?
-            .as_standard_layout()
-            .to_vec();
-        let r_data = extract_1d_array(&f, R)?.as_standard_layout().to_vec();
-        let theta_data = extract_1d_array(&f, THETA)?.as_standard_layout().to_vec();
+        let psip_data = extract_1d_array(&f, PSIP_NORM)?.to_vec();
+        let psi_data = extract_1d_array(&f, PSI_NORM)?.to_vec();
+        let r_data = extract_1d_array(&f, R)?.to_vec();
+        let theta_data = extract_1d_array(&f, THETA)?.to_vec();
         let rlab_data = extract_2d_array(&f, RLAB)?;
         let zlab_data = extract_2d_array(&f, ZLAB)?;
         let jacobian_data = extract_2d_array(&f, JACOBIAN)?;
 
-        // Interpolator's `za` input must be in Fortran order.
+        // `Interp.za` must be in Fortran order.
         let order = ndarray::Order::ColumnMajor;
         let rlab_data_fortran_flat = rlab_data.flatten_with_order(order).to_vec();
         let zlab_data_fortran_flat = zlab_data.flatten_with_order(order).to_vec();
@@ -161,6 +154,8 @@ impl NcGeometry {
         let r_of_psip_interp = make_interp_type(&builder.typ1d)?.build(&psip_data, &r_data)?;
 
         let psip_of_r_interp = make_interp_type(&builder.typ1d)?.build(&r_data, &psip_data)?;
+
+        let psi_of_psip_interp = make_interp_type(&builder.typ1d)?.build(&psip_data, &psi_data)?;
 
         let rlab_interp = make_interp2d_type(&builder.typ2d)?.build(
             &psip_data,
@@ -197,6 +192,7 @@ impl NcGeometry {
             jacobian_data_fortran_flat,
             psip_of_r_interp,
             r_of_psip_interp,
+            psi_of_psip_interp,
             rlab_interp,
             zlab_interp,
             jacobian_interp,
@@ -218,6 +214,13 @@ impl Geometry for NcGeometry {
         Ok(self
             .psip_of_r_interp
             .eval(&self.r_data, &self.psip_data, r, &mut acc)?)
+    }
+
+    fn psi(&self, psip: Length) -> Result<Flux> {
+        let mut acc = Accelerator::new();
+        Ok(self
+            .psi_of_psip_interp
+            .eval(&self.psip_data, &self.psi_data, psip, &mut acc)?)
     }
 
     fn rlab(&self, psip: Flux, theta: Radians) -> Result<f64> {
@@ -286,7 +289,7 @@ impl NcGeometry {
         self.typ2d.clone()
     }
 
-    /// Returns the shape of the `b` array.
+    /// Returns the shape of the `2D arrays.
     pub fn shape(&self) -> (usize, usize) {
         (self.psip_data.len(), self.theta_data.len())
     }
@@ -329,10 +332,10 @@ impl NcGeometry {
         self.psi_data.last().copied().expect("array non-empty")
     }
 
-    array1D_getter_impl!(theta_data, theta_data, Radians);
-    array1D_getter_impl!(psip_data, psip_data, Flux);
-    array1D_getter_impl!(psi_data, psi_data, Flux);
-    array1D_getter_impl!(r_data, r_data, Length);
+    array1D_getter_impl!(theta_data, theta_data);
+    array1D_getter_impl!(psip_data, psip_data);
+    array1D_getter_impl!(psi_data, psi_data);
+    array1D_getter_impl!(r_data, r_data);
 
     fortran_vec_to_carray2d_impl!(rlab_data, rlab_data_fortran_flat, R);
     fortran_vec_to_carray2d_impl!(zlab_data, zlab_data_fortran_flat, Z);
@@ -354,62 +357,5 @@ impl std::fmt::Debug for NcGeometry {
             .field("r_wall", &format!("{:.7}", self.r_wall()))
             .field("shape", &self.shape())
             .finish()
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use super::*;
-    use crate::extract::STUB_NETCDF_PATH;
-
-    fn create_nc_geometry() -> NcGeometry {
-        let path = PathBuf::from(STUB_NETCDF_PATH);
-        let typ1d = "steffen";
-        let typ2d = "bicubic";
-        NcGeometryBuilder::new(&path, typ1d, typ2d).build().unwrap()
-    }
-
-    #[test]
-    fn test_geometry_creation() {
-        let g = create_nc_geometry();
-        let _ = format!("{g:?}");
-    }
-
-    #[test]
-    fn test_getters() {
-        let g = create_nc_geometry();
-        g.path();
-        g.typ1d();
-        g.typ2d();
-        g.baxis();
-        g.raxis();
-        g.zaxis();
-        g.rgeo();
-        g.psip_wall();
-        g.psi_wall();
-        g.r_wall();
-        g.shape();
-
-        assert_eq!(g.psip_data().ndim(), 1);
-        assert_eq!(g.psi_data().ndim(), 1);
-        assert_eq!(g.r_data().ndim(), 1);
-        assert_eq!(g.theta_data().ndim(), 1);
-        assert_eq!(g.rlab_data().ndim(), 2);
-        assert_eq!(g.zlab_data().ndim(), 2);
-        assert_eq!(g.jacobian_data().ndim(), 2);
-    }
-
-    #[test]
-    fn test_spline_evaluation() {
-        let g = create_nc_geometry();
-
-        let r = 0.1;
-        let psip = 0.015;
-        let theta = 0.0;
-        g.r(psip).unwrap();
-        g.psip(r).unwrap();
-        g.rlab(psip, theta).unwrap();
-        g.zlab(psip, theta).unwrap();
-        g.jacobian(psip, theta).unwrap();
     }
 }

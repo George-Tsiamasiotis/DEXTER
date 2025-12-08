@@ -1,23 +1,21 @@
 //! Representation of an equilibrium's q-factor.
 
+use common::array1D_getter_impl;
+use ndarray::Array1;
+use rsl_interpolation::{Accelerator, DynInterpolation, InterpType, make_interp_type};
 use std::path::PathBuf;
 
-use common::array1D_getter_impl;
-use rsl_interpolation::{Accelerator, DynInterpolation, InterpType, make_interp_type};
-
-use ndarray::Array1;
-
-use crate::Flux;
 use crate::Qfactor;
 use crate::Result;
 
-/// Used to create a [`NcQfactor`].
+/// Used to create an [`NcQfactor`].
+///
+/// Exists for future configuration flexibility.
+#[non_exhaustive]
 pub struct NcQfactorBuilder {
     /// Path to the netCDF file.
     path: PathBuf,
-    /// 1D [`Interpolation type`], in case-insensitive string format.
-    ///
-    /// [`Interpolation type`]: ../rsl_interpolation/trait.InterpType.html#implementors
+    /// 1D [`DynInterpolation`], in case-insensitive string format.
     typ: String,
 }
 
@@ -28,8 +26,9 @@ impl NcQfactorBuilder {
     /// # Example
     /// ```
     /// # use std::path::PathBuf;
-    /// let path = PathBuf::from("../data/stub_netcdf.nc");
-    /// let builder = NcQfactorBuilder::new(&path, "cubic");
+    /// # use equilibrium::qfactors;
+    /// let path = PathBuf::from("./netcdf.nc");
+    /// let builder = qfactors::NcQfactorBuilder::new(&path, "cubic");
     /// ```
     pub fn new(path: &PathBuf, typ: &str) -> Self {
         Self {
@@ -42,14 +41,11 @@ impl NcQfactorBuilder {
     ///
     /// # Example
     /// ```
-    /// # use equilibrium::*;
     /// # use std::path::PathBuf;
-    /// #
-    /// # fn main() -> Result<()> {
-    /// let path = PathBuf::from("../data/stub_netcdf.nc");
-    /// let qfactor = NcQfactorBuilder::new(&path, "cubic").build()?;
-    /// # Ok(())
-    /// # }
+    /// # use equilibrium::qfactors;
+    /// let path = PathBuf::from("./netcdf.nc");
+    /// let qfactor = qfactors::NcQfactorBuilder::new(&path, "cubic").build()?;
+    /// # Ok::<_, equilibrium::EqError>(())
     /// ```
     pub fn build(self) -> Result<NcQfactor> {
         NcQfactor::build(self)
@@ -59,20 +55,23 @@ impl NcQfactorBuilder {
 // ===============================================================================================
 
 /// q-factor reconstructed from a netCDF file.
+///
+/// Related quantities are computed by interpolating over the data arrays.
+///
+/// Should be created with an [`NcQfactorBuilder`].
+#[non_exhaustive]
 pub struct NcQfactor {
     /// Path to the netCDF file.
     path: PathBuf,
-    /// 1D [`Interpolation type`], in case-insensitive string format.
-    ///
-    /// [`Interpolation type`]: ../rsl_interpolation/trait.InterpType.html#implementors
+    /// 1D [`DynInterpolation`], in case-insensitive string format.
     typ: String,
 
     /// The `ψp` data array.
-    psip_data: Vec<Flux>,
+    psip_data: Vec<f64>,
     /// The `q` data array.
     q_data: Vec<f64>,
     /// The `ψ` data array.
-    psi_data: Vec<Flux>,
+    psi_data: Vec<f64>,
 
     /// Interpolator over the `q` values, as a function of ψp.
     q_interp: DynInterpolation<f64>,
@@ -91,13 +90,9 @@ impl NcQfactor {
         let path = std::path::absolute(builder.path)?;
         let f = open(&path)?;
 
-        let psip_data = extract_1d_array(&f, PSIP_NORM)?
-            .as_standard_layout()
-            .to_vec();
-        let psi_data = extract_1d_array(&f, PSI_NORM)?
-            .as_standard_layout()
-            .to_vec();
-        let q_data = extract_1d_array(&f, Q)?.as_standard_layout().to_vec();
+        let psip_data = extract_1d_array(&f, PSIP_NORM)?.to_vec();
+        let psi_data = extract_1d_array(&f, PSI_NORM)?.to_vec();
+        let q_data = extract_1d_array(&f, Q)?.to_vec();
 
         let q_interp = make_interp_type(&builder.typ)?.build(&psip_data, &q_data)?;
         let psi_interp = make_interp_type(&builder.typ)?.build(&psip_data, &psi_data)?;
@@ -116,19 +111,19 @@ impl NcQfactor {
 
 /// Interpolation
 impl Qfactor for NcQfactor {
-    fn q(&self, psip: Flux, acc: &mut Accelerator) -> Result<f64> {
+    fn q(&self, psip: f64, acc: &mut Accelerator) -> Result<f64> {
         Ok(self
             .q_interp
             .eval(&self.psip_data, &self.q_data, psip, acc)?)
     }
 
-    fn psi(&self, psip: Flux, acc: &mut Accelerator) -> Result<Flux> {
+    fn psi(&self, psip: f64, acc: &mut Accelerator) -> Result<f64> {
         Ok(self
             .psi_interp
             .eval(&self.psip_data, &self.psi_data, psip, acc)?)
     }
 
-    fn dpsi_dpsip(&self, psip: Flux, acc: &mut Accelerator) -> Result<f64> {
+    fn dpsi_dpsip(&self, psip: f64, acc: &mut Accelerator) -> Result<f64> {
         Ok(self
             .psi_interp
             .eval_deriv(&self.psip_data, &self.psi_data, psip, acc)?)
@@ -153,9 +148,9 @@ impl NcQfactor {
         self.psip_data.len()
     }
 
-    array1D_getter_impl!(psip_data, psip_data, Flux);
-    array1D_getter_impl!(psi_data, psi_data, Flux);
-    array1D_getter_impl!(q_data, q_data, f64);
+    array1D_getter_impl!(psip_data, psip_data);
+    array1D_getter_impl!(psi_data, psi_data);
+    array1D_getter_impl!(q_data, q_data);
 }
 
 impl std::fmt::Debug for NcQfactor {
@@ -170,71 +165,32 @@ impl std::fmt::Debug for NcQfactor {
 
 // ===============================================================================================
 
+/// Analytical q-factor profile with `q=1`.
+///
+/// # Example
+/// ```
+/// # use equilibrium::qfactors;
+/// let qfactor = qfactors::Unity;
+/// ```
+#[derive(Debug)]
 pub struct Unity;
-
-impl Unity {
-    pub fn new() -> Self {
-        Self
-    }
-}
 
 impl Qfactor for Unity {
     /// Always returns `1.0`.
     #[allow(unused_variables)]
-    fn q(&self, psip: Flux, acc: &mut Accelerator) -> Result<f64> {
+    fn q(&self, psip: f64, acc: &mut Accelerator) -> Result<f64> {
         Ok(1.0)
     }
 
     /// Always returns `psip`.
     #[allow(unused_variables)]
-    fn psi(&self, psip: Flux, acc: &mut Accelerator) -> Result<Flux> {
+    fn psi(&self, psip: f64, acc: &mut Accelerator) -> Result<f64> {
         Ok(psip)
     }
 
     /// Always returns `1.0`.
     #[allow(unused_variables)]
-    fn dpsi_dpsip(&self, psip: Flux, acc: &mut Accelerator) -> Result<f64> {
+    fn dpsi_dpsip(&self, psip: f64, acc: &mut Accelerator) -> Result<f64> {
         Ok(1.0)
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use super::*;
-    use crate::extract::STUB_NETCDF_PATH;
-
-    fn create_nc_qfactor() -> NcQfactor {
-        let path = PathBuf::from(STUB_NETCDF_PATH);
-        let typ = "steffen";
-        NcQfactorBuilder::new(&path, typ).build().unwrap()
-    }
-
-    #[test]
-    fn test_qfactor_creation() {
-        let q = create_nc_qfactor();
-        let _ = format!("{q:?}");
-    }
-
-    #[test]
-    fn test_getters() {
-        let q = create_nc_qfactor();
-        q.path();
-        q.typ();
-        q.len();
-
-        assert_eq!(q.psip_data().ndim(), 1);
-        assert_eq!(q.q_data().ndim(), 1);
-        assert_eq!(q.psi_data().ndim(), 1);
-    }
-
-    #[test]
-    fn test_spline_evaluation() {
-        let q = create_nc_qfactor();
-        let mut acc = Accelerator::new();
-
-        let psip = 0.015;
-        q.q(psip, &mut acc).unwrap();
-        q.psi(psip, &mut acc).unwrap();
-        q.dpsi_dpsip(psip, &mut acc).unwrap();
     }
 }

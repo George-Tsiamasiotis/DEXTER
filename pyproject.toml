@@ -52,7 +52,7 @@ addopts = "--durations 2 --doctest-glob='*.md' --doctest-glob='*.pyi'"
 [project.scripts]
 # NetCDF handling
 npz_to_netcdf = "dexter.scripts:npz_to_netcdf"
-stub_npz = "dexter.scripts:stub_npz"
+lar_netcdf = "dexter.scripts:lar_netcdf"
 # Plots
 qfactor_plot = "dexter.scripts:qfactor_plot"
 currents_plot = "dexter.scripts:currents_plot"

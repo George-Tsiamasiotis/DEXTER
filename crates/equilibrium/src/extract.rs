@@ -2,87 +2,88 @@
 //!
 //! - For spline creation, only the `extract_<>d_array()` functions are necessary.
 //!
-//! - `extract_variable` provides access to the underlying [`Variable`] and it's [`netcdf::Attribute`]s.
+//! - [`extract_variable`] provides access to the underlying [`Variable`] and it's
+//! [`attributes`](netcdf::Attribute).
 
-/// ================== Stub netCDF file
+// ================== Stub netCDF file
 
-/// Stub NetCDF file path to be used for unit tests.
+/// Path to a stub NetCDF file to be used for general testing.
 ///
-/// Must be *relative* to the crate's `CARGO_MANIFEST_DIR`. Can be created with
+/// Must be *relative* to the **crate**'s `CARGO_MANIFEST_DIR`. Can be created with
 /// `equilibrium/scripts/npz_to_netcdf.py` from an `.npz` file.
-pub const STUB_NETCDF_PATH: &str = "../data/stub_netcdf.nc";
+pub const STUB_TEST_NETCDF_PATH: &str = "lar_netcdf.nc";
 
 /// The names each variable is expected to appear in the netCDF file.
 ///
 /// If the naming convention changes, this is the only file we must update.
-pub(crate) mod netcdf_fields {
+pub mod netcdf_fields {
 
-    /// ================== Scalars ==================
+    // ================== Scalars ==================
 
     /// Magnetic field strength on the axis `B0` **in \[T\]**.
-    pub(crate) const BAXIS: &str = "baxis";
+    pub const BAXIS: &str = "baxis";
     /// The horizontal position of the magnetic axis `R0` **in \[m\]**.
-    pub(crate) const RAXIS: &str = "raxis";
+    pub const RAXIS: &str = "raxis";
     /// The vertical position of the magnetic axis **in \[m\]**.
-    pub(crate) const ZAXIS: &str = "zaxis";
+    pub const ZAXIS: &str = "zaxis";
     /// The geometrical axis (device major radius) **in \[m\]**.
-    pub(crate) const RGEO: &str = "rgeo";
+    pub const RGEO: &str = "rgeo";
 
-    /// ================= Coordinates =================
+    // ================= Coordinates =================
 
     /// The boozer toroidal angle `θ` **in \[rads\]**.
-    pub(crate) const THETA: &str = "theta";
+    pub const THETA: &str = "theta";
     /// The poloidal flux `ψp` **in Normalized Units**.
-    pub(crate) const PSIP_NORM: &str = "psip_norm";
+    pub const PSIP_NORM: &str = "psip_norm";
     /// The toroidal flux `ψ` **in Normalized Units**.
-    pub(crate) const PSI_NORM: &str = "psi_norm";
+    pub const PSI_NORM: &str = "psi_norm";
     /// The radial coordinate `r` **in Normalized Units**.
-    pub(crate) const R_NORM: &str = "r_norm";
+    pub const R_NORM: &str = "r_norm";
     /// The poloidal mode numbers `m`.
-    pub(crate) const M: &str = "m";
+    pub const M: &str = "m";
     /// The toroidal mode numbers `n`.
-    pub(crate) const N: &str = "n";
+    pub const N: &str = "n";
     /// The poloidal flux `ψp` **in \[Tm\]**.
-    pub(crate) const PSIP: &str = "psip";
+    pub const PSIP: &str = "psip";
     /// The toroidal flux `ψ` **in \[Tm\]**.
-    pub(crate) const PSI: &str = "psi";
+    pub const PSI: &str = "psi";
     /// The radial coordinate r **in \[m\]**.
-    pub(crate) const R: &str = "r";
+    pub const R: &str = "r";
 
-    /// ================ 1D Variables ================
+    // ================ 1D Variables ================
 
     /// q(ψp): The safety factor.
-    pub(crate) const Q: &str = "q";
+    pub const Q: &str = "q";
     /// g(ψp): The covariant toroidal plasma current **in \[Tm\]**.
-    pub(crate) const G: &str = "g";
+    pub const G: &str = "g";
     /// I(ψp): The covariant poloidal plasma current **in \[Tm\]**.
-    pub(crate) const I: &str = "i";
+    pub const I: &str = "i";
     /// g(ψp): The covariant toroidal plasma current **in Normalized Units**.
-    pub(crate) const G_NORM: &str = "g_norm";
+    pub const G_NORM: &str = "g_norm";
     /// I(ψp): The covariant poloidal plasma current **in Normalized Units**.
-    pub(crate) const I_NORM: &str = "i_norm";
+    pub const I_NORM: &str = "i_norm";
 
-    /// ================ 2D Variables ================
+    // ================ 2D Variables ================
 
     /// B(ψp, θ): The magnetic field strength in **in \[T\]**.
-    pub(crate) const B: &str = "b";
+    pub const B: &str = "b";
     /// B(ψp, θ): The magnetic field strength in **in Normalized Units**.
-    pub(crate) const B_NORM: &str = "b_norm";
+    pub const B_NORM: &str = "b_norm";
     /// R(ψp, θ): The `R` coordinate with respect to boozer coordinates **in \[m\]**.
-    pub(crate) const RLAB: &str = "rlab";
+    pub const RLAB: &str = "rlab";
     /// Z(ψp, θ): The `Z` coordinate with respect to boozer coordinates **in \[m\]**.
-    pub(crate) const ZLAB: &str = "zlab";
+    pub const ZLAB: &str = "zlab";
     /// J(ψp, θ): The VMEC to Boozer Jacobian in **\[ m/T \]**.
-    pub(crate) const JACOBIAN: &str = "jacobian";
+    pub const JACOBIAN: &str = "jacobian";
 
-    /// ================ 3D Variables ================
+    // ================ 3D Variables ================
 
     /// The 3D array containing all the `α{m,n}(ψp)` 1D arrays **in Normalized Units**.
-    pub(crate) const ALPHAS_NORM: &str = "alphas_norm";
+    pub const ALPHAS_NORM: &str = "alphas_norm";
     /// The 3D array containing all the `α{m,n}(ψp)` 1D arrays **i \[m\]**.
-    pub(crate) const ALPHAS: &str = "alphas";
+    pub const ALPHAS: &str = "alphas";
     /// The 3D array containing all the `φ{m,n}(ψp)` 1D arrays.
-    pub(crate) const PHASES: &str = "phases";
+    pub const PHASES: &str = "phases";
 }
 
 // ===============================================================================================
@@ -112,7 +113,7 @@ impl NcType for i32 {}
 /// # use std::path::PathBuf;
 /// #
 /// # fn main() -> Result<()> {
-/// let path = PathBuf::from("../data/stub_netcdf.nc");
+/// let path = PathBuf::from("netcdf.nc");
 /// let f = open(&path)?;
 /// # Ok(())
 /// # }
@@ -153,7 +154,7 @@ fn check_if_empty(var: &Variable) -> Result<()> {
 /// # use std::path::PathBuf;
 /// #
 /// # fn main() -> Result<()> {
-/// let path = PathBuf::from("../data/stub_netcdf.nc");
+/// let path = PathBuf::from("netcdf.nc");
 /// let f = extract::open(&path)?;
 ///
 /// let qfactor_var: Variable = extract_variable(&f, Q)?;
@@ -171,7 +172,8 @@ pub fn extract_variable<'f>(f: &'f File, name: &str) -> Result<Variable<'f>> {
 
 // ===============================================================================================
 
-/// Returns an [`Array<T, D>`] with the values of the [`Variable`] named `name`.
+/// Returns an [`Array<T, D>`] with the values of the [`Variable`] named `name`, in standard
+/// layout.
 fn extract_array<T, D>(f: &File, name: &str) -> Result<Array<T, D>>
 where
     T: NcType,
@@ -187,7 +189,9 @@ where
             err,
         }),
     }?
-    .into_dimensionality::<D>()?;
+    .into_dimensionality::<D>()?
+    .as_standard_layout()
+    .to_owned();
 
     Ok(dyn_array)
 }
@@ -203,7 +207,7 @@ where
 /// # use std::path::PathBuf;
 /// #
 /// # fn main() -> Result<()> {
-/// let path = PathBuf::from("../data/stub_netcdf.nc");
+/// let path = PathBuf::from("netcdf.nc");
 /// let f = extract::open(&path)?;
 ///
 /// let baxis: f64 = extract_scalar(&f, BAXIS)?;
@@ -220,6 +224,8 @@ pub fn extract_scalar<T: NcType>(f: &File, name: &str) -> Result<T> {
 
 /// Extracts an [`Array1<T>`] value from a [`File`].
 ///
+/// The array is returned in [`standard layout`](method@ndarray::ArrayRef::as_standard_layout).
+///
 /// # Example
 /// ```
 /// # use config::netcdf_fields::*;
@@ -229,7 +235,7 @@ pub fn extract_scalar<T: NcType>(f: &File, name: &str) -> Result<T> {
 /// # use std::path::PathBuf;
 /// #
 /// # fn main() -> Result<()> {
-/// let path = PathBuf::from("../data/stub_netcdf.nc");
+/// let path = PathBuf::from("netcdf.nc");
 /// let f = extract::open(&path)?;
 ///
 /// let qfactor: Array1<f64> = extract_1d_array(&f, Q)?;
@@ -246,6 +252,8 @@ pub fn extract_1d_array<T: NcType>(f: &File, name: &str) -> Result<Array1<T>> {
 
 /// Extracts an [`Array2<T>`] value from a [`File`].
 ///
+/// The array is returned in [`standard layout`](method@ndarray::ArrayRef::as_standard_layout).
+///
 /// # Example
 /// ```
 /// # use config::netcdf_fields::*;
@@ -255,7 +263,7 @@ pub fn extract_1d_array<T: NcType>(f: &File, name: &str) -> Result<Array1<T>> {
 /// # use std::path::PathBuf;
 /// #
 /// # fn main() -> Result<()> {
-/// let path = PathBuf::from("../data/stub_netcdf.nc");
+/// let path = PathBuf::from("netcdf.nc");
 /// let f = extract::open(&path)?;
 ///
 /// let b_norm: Array2<f64> = extract_2d_array(&f, B_NORM)?;
@@ -272,6 +280,8 @@ pub fn extract_2d_array<T: NcType>(f: &File, name: &str) -> Result<Array2<T>> {
 
 /// Extracts an [`Array3<T>`] value from a [`File`].
 ///
+/// The array is returned in [`standard layout`](method@ndarray::ArrayRef::as_standard_layout).
+///
 /// # Example
 /// ```
 /// # use config::netcdf_fields::*;
@@ -281,7 +291,7 @@ pub fn extract_2d_array<T: NcType>(f: &File, name: &str) -> Result<Array2<T>> {
 /// # use std::path::PathBuf;
 /// #
 /// # fn main() -> Result<()> {
-/// let path = PathBuf::from("../data/stub_netcdf.nc");
+/// let path = PathBuf::from("netcdf.nc");
 /// let f = extract::open(&path)?;
 ///
 /// let alphas_norm: Array3<f64> = extract_3d_array(&f, ALPHAS_NORM)?;
@@ -307,7 +317,7 @@ pub fn extract_3d_array<T: NcType>(f: &File, name: &str) -> Result<Array3<T>> {
 /// # use std::path::PathBuf;
 /// #
 /// # fn main() -> Result<()> {
-/// let path = PathBuf::from("../data/stub_netcdf.nc");
+/// let path = PathBuf::from("netcdf.nc");
 /// let f = extract::open(&path)?;
 ///
 /// let (harmonic32_alpha, harmonic32_phase): (Array1<f64>, Array1<f64>) =
@@ -374,7 +384,7 @@ mod test {
     use super::*;
 
     fn open_test_file() -> netcdf::File {
-        let path = PathBuf::from(STUB_NETCDF_PATH);
+        let path = PathBuf::from(STUB_TEST_NETCDF_PATH);
         open(&path).unwrap()
     }
 
@@ -450,6 +460,7 @@ mod test {
     }
 
     /// WARN: Make sure this test is up to date with the stub netcdf file.
+    /// We inspect the (1,3) mode, which corresponds to the indeces (0, 1).
     #[test]
     fn test_netcdf_harmonic_extraction_values() {
         let f = open_test_file();
@@ -459,23 +470,66 @@ mod test {
 
         // Cast to i64 to avoid float comparisons
         use ndarray::s;
+        // Index by logical index
         assert_eq!(
-            alpha_3d.slice(s![2, 3, 0]).into_scalar().to_owned() as i64,
+            alpha_3d.slice(s![0, 1, 0]).into_scalar().to_owned() as i64,
             1111,
             "Is this test up to date with the stub netcdf file?"
         );
         assert_eq!(
-            phase_3d.slice(s![2, 3, 0]).into_scalar().to_owned() as i64,
+            phase_3d.slice(s![0, 1, 0]).into_scalar().to_owned() as i64,
             9999,
             "Is this test up to date with the stub netcdf file?"
         );
         assert_eq!(
-            alpha_3d.slice(s![2, 3, -1]).into_scalar().to_owned() as i64,
+            alpha_3d.slice(s![0, 1, -1]).into_scalar().to_owned() as i64,
             11111,
             "Is this test up to date with the stub netcdf file?"
         );
         assert_eq!(
-            phase_3d.slice(s![2, 3, -1]).into_scalar().to_owned() as i64,
+            phase_3d.slice(s![0, 1, -1]).into_scalar().to_owned() as i64,
+            99999,
+            "Is this test up to date with the stub netcdf file?"
+        );
+
+        // Index by mode number
+        assert_eq!(
+            extract_harmonic_arrays::<f64>(&f, 1, 3)
+                .unwrap()
+                .0
+                .first()
+                .unwrap()
+                .to_owned() as i64,
+            2222,
+            "Is this test up to date with the stub netcdf file?"
+        );
+        assert_eq!(
+            extract_harmonic_arrays::<f64>(&f, 1, 3)
+                .unwrap()
+                .0
+                .last()
+                .unwrap()
+                .to_owned() as i64,
+            22222,
+            "Is this test up to date with the stub netcdf file?"
+        );
+        assert_eq!(
+            extract_harmonic_arrays::<f64>(&f, 1, 3)
+                .unwrap()
+                .1
+                .first()
+                .unwrap()
+                .to_owned() as i64,
+            9999,
+            "Is this test up to date with the stub netcdf file?"
+        );
+        assert_eq!(
+            extract_harmonic_arrays::<f64>(&f, 1, 3)
+                .unwrap()
+                .1
+                .last()
+                .unwrap()
+                .to_owned() as i64,
             99999,
             "Is this test up to date with the stub netcdf file?"
         );
@@ -486,22 +540,27 @@ mod test {
         let f = open_test_file();
 
         assert!(matches!(
-            open(&PathBuf::from("not a path")),
+            dbg!(open(&PathBuf::from("not a path"))),
             Err(NcError::FileNotFound(..))
         ));
 
         assert!(matches!(
-            extract_scalar::<f64>(&f, "not a name"),
+            dbg!(open(&PathBuf::from("/tmp"))),
+            Err(NcError::FileOpenError { .. })
+        ));
+
+        assert!(matches!(
+            dbg!(extract_scalar::<f64>(&f, "not a name")),
             Err(NcError::VariableNotFound(..))
         ));
 
         assert!(matches!(
-            extract_1d_array::<f64>(&f, B_NORM),
-            Err(NcError::GetValues { .. })
+            dbg!(dbg!(extract_1d_array::<f64>(&f, B_NORM))),
+            Err(NcError::NdArray { .. })
         ));
 
         assert!(matches!(
-            extract_harmonic_arrays::<f64>(&f, 1000, -2000),
+            dbg!(extract_harmonic_arrays::<f64>(&f, 1000, -2000)),
             Err(NcError::HarmonicModeNotFound { .. })
         ));
     }
