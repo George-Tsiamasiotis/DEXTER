@@ -6,6 +6,16 @@ Interp1DType
     Availiable 1D Interpolation types (case-insensitive).
 Interp2DType
     Availiable 2D Interpolation types (case-insensitive).
+PhaseMethod
+    Availiable methods for the calculation of an NcHarmonic's phase $\phi(\psi_p)$:
+        Zero
+            Corresponds to ``φ(ψp) = 0`.
+        Average
+            Corresponds to φ = const = the average of all the values of the phase array.
+        Resonance
+            Corresponds to φ = const = the value of φ(ψp) at the resonance m/n.
+        Interpolation
+            Interpolation over the phase array.
 NDArrayShape
     Shape of a numpy array.
 NDArray1D
@@ -36,6 +46,8 @@ Interp1DType: TypeAlias = Literal[
     "linear", "cubic", "cubic periodic", "akima", "akima periodic", "steffen"
 ]
 Interp2DType: TypeAlias = Literal["bilinear", "bicubic"]
+
+PhaseMethod: TypeAlias = Literal["zero", "average", "resonance", "interpolation"]
 
 NDArrayShape: TypeAlias = tuple[int, ...]
 NDArray1D: TypeAlias = np.ndarray[tuple[int], np.dtype[np.float64]]

@@ -3,23 +3,20 @@
 Example
 -------
 >>> import dexter as dx
+>>> from dexter import _LAR_NETCDF_PATH as path
 
 """
 
 from dexter.types import (
-    CalculatedFrequency,
     NDArray1D,
     NDArray2D,
     Interp1DType,
     Interp2DType,
     NDArrayShape,
-    OrbitType,
-    IntegrationStatus,
-    PoincareSection,
-    SingePeriodIntersections,
+    PhaseMethod,
 )
 
-class Geometry:
+class NcGeometry:
     r"""Object describing the geometry of the device.
 
     Stores relates scalars and arrays, and provides interpolation methods for converting
@@ -61,7 +58,7 @@ class Geometry:
         The $R_{lab}(\psi_p, \theta_B)$ data array.
     zlab_data
         The $Z_{lab}(\psi_p, \theta_B)$ data array.
-    zlab_data
+    jacobian_data
         The $J_{lab}(\psi_p, \theta_B)$ data array.
 
     """
@@ -102,7 +99,7 @@ class Geometry:
         Creating a `Geometry`:
 
         ```python
-        >>> geometry = dx.Geometry("./data.nc", "cubic", "bicubic")
+        >>> geometry = dx.NcGeometry("./data.nc", "cubic", "bicubic")
         >>>
         >>> # r->ψp interpolation
         >>> psip = geometry.psip_wall / 2
@@ -127,6 +124,15 @@ class Geometry:
         ----------
         r
             The distance from the (geometrical) magnetic axis $r$ in $[m]$.
+        """
+
+    def psi(self, psip: float) -> float:
+        r"""The $\psi(\psi_p)$ value in Normalized Units.
+
+        Parameters
+        ----------
+        psip
+            The poloidal flux $\psi_p$ in Normalized Units.
         """
 
     def rlab(self, psip: float, theta: float) -> float:
@@ -162,7 +168,7 @@ class Geometry:
             The $\theta_B$ angle in $[rads]$.
         """
 
-class Qfactor:
+class NcQfactor:
     r"""q-factor from a NetCDF file.
 
     Provides methods for calculating $q(\psi_p)$, $\psi(\psi_p)$ and $d\psi/d\psi_p$.
@@ -202,7 +208,7 @@ class Qfactor:
         Creating a `Qfactor`:
 
         ```python
-        >>> qfactor = dx.Qfactor("./data.nc", "steffen")
+        >>> qfactor = dx.NcQfactor("./data.nc", "steffen")
         >>>
         >>> # ψp->ψ interpolation
         >>> psip = 0.003
@@ -214,8 +220,8 @@ class Qfactor:
         ```python
         >>> from math import isclose
         >>>
-        >>> psip = geometry.psip_wall/2
-        >>> assert isclose(qfactor.q(psip), qfactor.dpsi_dpsip(psip))
+        >>> psip = 0.9*geometry.psip_wall
+        >>> assert isclose(qfactor.q(psip), qfactor.dpsi_dpsip(psip), rel_tol=1e-1)
 
         ```
         """
@@ -253,7 +259,43 @@ class Qfactor:
     def __len__(self) -> int:
         """Returns the number of ψp data points."""
 
-class Currents:
+class UnityQfactor:
+    r"""q-factor of $q=1$."""
+
+    def __init__(self) -> None:
+        """Constructs a `Qfactor`.
+
+        Example
+        -------
+        Creating a `Qfactor`:
+
+        ```python
+        >>> qfactor = dx.UnityQfactor()
+        >>>
+        >>> # ψp->ψ interpolation
+        >>> psip = 0.003
+        >>> qfactor.q(psip)
+        1.0
+        >>> qfactor.psi(psip)
+        0.003
+
+        ```
+
+        """
+
+    def q(self, psip: float) -> float:
+        r"""Always returns 1."""
+
+    def psi(self, psip: float) -> float:
+        r"""Always returns `psip`."""
+
+    def dpsi_dpsip(self, psip: float) -> float:
+        r"""Always returns 1."""
+
+    def __len__(self) -> int:
+        """Returns the number of ψp data points."""
+
+class NcCurrent:
     r"""Plasma reconstructed from a NetCDF file.
 
     Provides methods for calculating $g(\psi_p)$, $I(\psi_p)$, $dg/d\psi_p$ and
@@ -294,11 +336,11 @@ class Currents:
         Creating a `Currents`:
 
         ```python
-        >>> currents = dx.Currents("./data.nc", "steffen")
+        >>> current = dx.NcCurrent("./data.nc", "steffen")
         >>>
         >>> # ψp->g interpolation
         >>> psip = 0.015
-        >>> g = currents.g(psip)
+        >>> g = current.g(psip)
 
         ```
         """
@@ -342,7 +384,42 @@ class Currents:
     def __len__(self) -> int:
         """Returns the number of ψp data points."""
 
-class Bfield:
+class LarCurrent:
+    r"""Large Aspect Ratio plasma current approximation, with $g=1$ and $I=0$."""
+
+    def __init__(self) -> None:
+        """Constructs a `LarCurrent`.
+
+        ```python
+        >>> current = dx.LarCurrent()
+        >>>
+        >>> # ψp->g interpolation
+        >>> psip = 0.015
+        >>> current.g(psip)
+        1.0
+        >>> current.i(psip)
+        0.0
+        >>> current.dg_dpsip(psip)
+        0.0
+        >>> current.di_dpsip(psip)
+        0.0
+
+        ```
+        """
+
+    def g(self, psip: float) -> float:
+        """Always returns 1."""
+
+    def i(self, psip: float) -> float:
+        """Always returns 0."""
+
+    def dg_dpsip(self, psip: float) -> float:
+        """Always returns 0."""
+
+    def di_dpsip(self, psip: float) -> float:
+        """Always returns 0."""
+
+class NcBfield:
     r"""Magnetic field from a NetCDF file.
 
     Provides methods for calculating $B(\psi_p, \theta_B)$, and its derivatives.
@@ -388,10 +465,10 @@ class Bfield:
 
         Example
         -------
-        Creating a `Bfield`:
+        Creating an `NcBfield`:
 
         ```python
-        >>> bfield = dx.Bfield("./data.nc", "bicubic")
+        >>> bfield = dx.NcBfield("./data.nc", "bicubic")
         >>>
         >>> psip = 0.015
         >>> theta = 3.1415
@@ -435,40 +512,7 @@ class Bfield:
             The angle $\theta$ in $[rads]$.
         """
 
-    def d2b_dpsip2(self, psip: float, theta: float) -> float:
-        r"""The $d^2B/d\psi_p^2$ value.
-
-        Parameters
-        ----------
-        psip
-            The poloidal flux $\psi_p$ in Normalized Units.
-        theta
-            The angle $\theta$ in $[rads]$.
-        """
-
-    def d2b_dtheta2(self, psip: float, theta: float) -> float:
-        r"""The $d^2B/d\theta_B^2$ value.
-
-        Parameters
-        ----------
-        psip
-            The poloidal flux $\psi_p$ in Normalized Units.
-        theta
-            The angle $\theta$ in $[rads]$.
-        """
-
-    def d2b_dpsip_dtheta(self, psip: float, theta: float) -> float:
-        r"""The $d^2B/d\psi_p d\theta_B$ value.
-
-        Parameters
-        ----------
-        psip
-            The poloidal flux $\psi_p$ in Normalized Units.
-        theta
-            The angle $\theta$ in $[rads]$.
-        """
-
-class Harmonic:
+class NcHarmonic:
     r"""A single Harmonic from a NetCDF file.
 
     A Harmonic has the form:
@@ -489,8 +533,12 @@ class Harmonic:
         The $\theta$ frequency mode number.
     n
         The $\zeta$ frequency mode number.
+    phase_method
+        The method for calculating the harmonic's phase.
     phase_average
-        The average_value of the phase data array.
+        The average_value of the phase data array, if `phase_method="average"`.
+    phase_resonance
+        The value of the phase at the resonance $m/n$, if `phase_method="resonance"`.
     psip_data
         The NetCDF $\psi_p$ data used to construct the $\alpha(\psi_p)$ and $\phi(\psi_p)$ splines.
     a_data
@@ -503,13 +551,22 @@ class Harmonic:
     typ: Interp1DType
     m: int
     n: int
-    phase_average: float
+    phase_average: float | None
+    phase_resonance: float | None
+    phase_method: str
     psip_data: NDArray1D
     a_data: NDArray1D
     phase_data: NDArray1D
 
-    def __init__(self, path: str, typ: Interp1DType, m: int, n: int) -> None:
-        """Constructs a `Harmonic`.
+    def __init__(
+        self,
+        path: str,
+        typ: Interp1DType,
+        m: int,
+        n: int,
+        phase_method: PhaseMethod = "zero",
+    ) -> None:
+        r"""Constructs a `Harmonic`.
 
         Parameters
         ----------
@@ -522,19 +579,25 @@ class Harmonic:
         n
             The `ζ` frequency mode number.
 
+        Other Parameters
+        ----------------
+        phase_method
+            Availiable methods for the calculation of an NcHarmonic's phase $\phi(\psi_p)$.
+
         Example
         -------
         Creating a `Harmonic`:
 
         ```python
-        >>> harmonic = dx.Harmonic("./data.nc", "steffen", m=1, n=7)
+        >>> harmonic1 = dx.NcHarmonic("./data.nc", "steffen", m=1, n=3)
+        >>> harmonic2 = dx.NcHarmonic("./data.nc", "steffen", m=1, n=4, phase_method="resonance")
         >>>
         >>> psip = 0.015
         >>> theta = 3.1415
         >>> zeta = 6.28
         >>>
-        >>> h = harmonic.h(psip, theta, zeta)
-        >>> alpha = harmonic.a(psip)
+        >>> h = harmonic1.h(psip, theta, zeta)
+        >>> alpha = harmonic2.a(psip)
 
         ```
         """
@@ -636,8 +699,8 @@ class Harmonic:
     def __len__(self) -> int:
         """Returns the number of ψp data points."""
 
-class Perturbation:
-    r"""A sum of different perturbation harmonics.
+class NcPerturbation:
+    r"""A sum of different netCDF perturbation harmonics.
 
     A Perturbation has the form:
 
@@ -655,16 +718,18 @@ class Perturbation:
         The list of harmonics that appear in the perturbation.
     """
 
-    harmonics: list[Harmonic]
+    harmonics: list[NcHarmonic]
 
-    def __init__(self, harmonics: list[Harmonic]) -> None:
+    def __init__(self, harmonics: list[NcHarmonic]) -> None:
         """Constructs a `Perturbation`.
 
         Parameters
         ----------
         harmonics
             The list of harmonics that appear in the perturbation.
+
         """
+        # TODO: example
 
     def p(self, psip: float, theta: float, zeta: float) -> float:
         r"""The $p(\psi_p, \theta_B, \zeta)$ value.
@@ -758,604 +823,10 @@ class Perturbation:
             The angle $\zeta$ in $[rads]$.
         """
 
-    def __getitem__(self, n: int) -> Harmonic:
+    def __getitem__(self, n: int) -> NcHarmonic:
         """Returns the n-th harmonic"""
 
     def __len__(self) -> int:
         """Returns the number of ψp data points."""
 
 # ==========================================================================
-
-class InitialConditions:
-    r"""A set of initial conditions.
-
-    The initial conditions are defined on the
-    $(t, \theta, \psi_p, \rho, \zeta, \mu)$ space.
-
-    Example
-    -------
-    Creating an `InitialConditions` set:
-
-    ```python
-    >>> initial = dx.InitialConditions(
-    ...     time0=0,
-    ...     theta0=0,
-    ...     psip0=0.3 * geometry.psip_wall,
-    ...     rho0=1e-5,
-    ...     zeta0=0,
-    ...     mu=1e-6,
-    ... )
-
-    ```
-    """
-
-    time0: float
-    theta0: float
-    psip0: float
-    rho0: float
-    zeta0: float
-    mu: float
-
-    def __init__(
-        self,
-        time0: float,
-        theta0: float,
-        psip0: float,
-        rho0: float,
-        zeta0: float,
-        mu: float,
-    ) -> None:
-        r"""
-        Parameters
-        ----------
-        time0
-            The initial time.
-        theta0
-            The initial $\theta$ angle.
-        psip0
-            The initial poloidal magnetic flux $\psi_p$.
-        rho0
-            The initial parallel gyro radius $\rho$.
-        zeta0
-            The initial $\zeta$ angle.
-        mu
-            The magnetic moment $\mu$.
-        """
-
-class MappingParameters:
-    """Defines all the necessary parameters of a Mapping.
-
-    Example
-    -------
-    Creating an `MappingParameters`:
-
-    ```python
-    >>> params = dx.MappingParameters(
-    ...     section="ConstTheta",
-    ...     alpha=0, # θ=0 interection
-    ...     intersections=2000,
-    ... )
-
-    ```
-    """
-
-    section: PoincareSection
-    alpha: float
-    intersections: int
-
-    def __init__(
-        self,
-        section: PoincareSection,
-        alpha: float,
-        intersections: int,
-    ) -> None:
-        r"""
-        Parameters
-        ----------
-        section
-            The surface of section $\Sigma$, defined by an equation $x_i = \alpha$,
-            where $x_i = \theta$ or $\zeta$.
-        alpha
-            The constant that defines the surface of section (modulo $2π$).
-        intersections
-            The number of interections to calculate.
-        """
-
-class Particle:
-    r"""A Particle.
-
-    By taking $\mu = 0$ and $\rho \rightarrow 0$, the particle traces magnetic field
-    lines.
-
-    Attributes
-    ----------
-    initial_conditions
-        The initial conditions set.
-    evolution
-        The evolution time series of the particle's integration.
-    status
-        The particle's integration status.
-    orbit_type
-        The particle's orbit type, calculated form its $\theta$-span.
-    frequencies
-        The particle's calculated frequencies.
-    initial_energy
-        The particle's initial energy, calculated from its initial state, in Normalized Units.
-    final_energy
-        The particle's final energy, calculated from its final state, in Normalized Units.
-    """
-
-    initial_conditions: InitialConditions
-    evolution: Evolution
-    status: IntegrationStatus
-    orbit_type: OrbitType
-    frequencies: Frequencies
-    initial_energy: float
-    final_energy: float
-
-    def __init__(self, initial_conditions: InitialConditions) -> None:
-        """
-        Parameters
-        ----------
-        initial_conditions: InitialConditions
-            The initial conditions set.
-
-        Example
-        -------
-        Creating a `Particle` from an `InitialConditions` set:
-
-        ```python
-        >>> initial = dx.InitialConditions(
-        ...     time0=0,
-        ...     theta0=0,
-        ...     psip0=0.3 * geometry.psip_wall,
-        ...     rho0=1e-5,
-        ...     zeta0=0,
-        ...     mu=1e-6,
-        ... )
-        >>>
-        >>> particle = dx.Particle(initial)
-
-        ```
-        """
-
-    def integrate(
-        self,
-        qfactor: Qfactor,
-        bfield: Bfield,
-        currents: Currents,
-        perturbation: Perturbation,
-        t_eval: tuple[float, float],
-    ) -> None:
-        """Integrates the particle, storing its evolution.
-
-        Parameters
-        ----------
-        qfactor
-            The equilibrium's qfactor.
-        currents
-            The equilibrium's plasma current.
-        bfield
-            The equilibrium's magnetic field.
-        perturbation
-            The equilibrium's perturbation.
-        t_eval: tuple[float, float]
-            The time span $(t_0, t_f)$ in which to integrate the particle, in Normalized Units.
-
-        Example
-        -------
-
-        ```python
-        >>> particle.integrate(
-        ...     qfactor=qfactor,
-        ...     currents=currents,
-        ...     bfield=bfield,
-        ...     perturbation=perturbation,
-        ...     t_eval=(0, 500),
-        ... )
-
-        ```
-        """
-
-    def map(
-        self,
-        qfactor: Qfactor,
-        currents: Currents,
-        bfield: Bfield,
-        perturbation: Perturbation,
-        params: MappingParameters,
-    ) -> None:
-        """Integrates the particle, storing its intersections with the Poincare
-        surface defined by `params`.
-
-        Parameters
-        ----------
-        qfactor
-            The equilibrium's qfactor.
-        currents
-            The equilibrium's plasma current.
-        bfield
-            The equilibrium's magnetic field.
-        perturbation
-            The equilibrium's perturbation.
-        params
-            The parameters of the Poincare mapping.
-
-        Example
-        -------
-
-        ```python
-        >>> params = dx.MappingParameters(
-        ...     section="ConstTheta",
-        ...     alpha=0, # θ=0 interection
-        ...     intersections=100,
-        ... )
-        >>>
-        >>> particle.map(
-        ...     qfactor=qfactor,
-        ...     currents=currents,
-        ...     bfield=bfield,
-        ...     perturbation=perturbation,
-        ...     params=params,
-        ... )
-
-        ```
-        """
-
-    def calculate_frequencies(
-        self,
-        qfactor: Qfactor,
-        currents: Currents,
-        bfield: Bfield,
-        perturbation: Perturbation,
-    ) -> None:
-        r"""Calculates $\omega_\theta$, $\omega_\zeta$ and $q_{kinetic}$.
-
-        !!! note
-
-            $\omega_\theta$ is calculated by integrating for a single period with respect
-            to the $\theta-\psi_p$ variables.
-
-            The orbit frequency $\omega_\zeta$ corresponds to the bounce/transit averaged
-            rate of toroidal precession $\Delta\zeta / T_\omega$.
-
-            Finally, $q_{kinetic} = \omega_\zeta / \omega_\theta$.
-
-        !!! tip
-
-            Avoid using values like $\pi, 0$ for $\theta$. The solver looks for
-            intersections with the initial $\theta-\psi_p$ values, but $\pi$ and $0$
-            tend to be local minima/maxima, and therefore no intersections can be detected.
-            Use 'random' intermediate values instead.
-
-        Parameters
-        ----------
-        qfactor
-            The equilibrium's qfactor.
-        currents
-            The equilibrium's plasma current.
-        bfield
-            The equilibrium's magnetic field.
-        perturbation: Perturbation
-            The equilibrium's perturbation.
-
-        Example
-        -------
-
-        ```python
-        >>> initial = dx.InitialConditions(
-        ...     time0=0,
-        ...     theta0=1,
-        ...     psip0=0.8 * geometry.psip_wall,
-        ...     rho0=1e-5,
-        ...     zeta0=0,
-        ...     mu=1e-6,
-        ... )
-        >>>
-        >>> particle = dx.Particle(initial)
-        >>>
-        >>> particle.calculate_frequencies(
-        ...     qfactor=qfactor,
-        ...     currents=currents,
-        ...     bfield=bfield,
-        ...     perturbation=dx.Perturbation([]),
-        ... )
-        >>> print(particle.frequencies)  # doctest: +SKIP
-        Frequencies {
-            omega_theta: "0.0000357",
-            omega_zeta: "0.0000033",
-            qkinetic: "0.0911628",
-        }
-
-        ```
-        """
-
-class Evolution:
-    r"""Stores the time series of the particle's orbit.
-
-    Not meant to be constructed. It is stored as a particle's attribute.
-
-    Attributes
-    ----------
-    time
-        The time evolution
-    theta
-        The $\theta$ time series.
-    psip
-        The $\psi_p$ time series.
-    rho
-        The $\rho_{||}$ time series.
-    zeta
-        The $\zeta$ time series.
-    psi
-        The $\psi$ time series.
-    ptheta
-        The $P_\theta$ time series.
-    pzeta
-        The $P_\zeta$ time series.
-    energy
-        The energy time series.
-    energy_std
-        The relative standard deviation ($\sigma/\mu$) of the energy time series.
-    steps_taken
-        The total number of steps taken to complete the integration.
-    steps_stored
-        The number of points stored. This can different from the `steps_taken` attribute,
-        for example when `mapping` a particle, in which case only the intersections are stored.
-    final_time
-        The final time stored in the `time` array. Returns None if the particle has not
-        been integrated.
-
-    Example
-    -------
-
-    ```python
-    >>> particle.evolution.theta # doctest: +SKIP
-    array([  3.14      ,   3.14293393,   3.14607403, ..., 504.04624189,
-        504.05828496, 504.07118786], shape=(41270,))
-    ```
-    """
-
-    time: NDArray1D
-    theta: NDArray1D
-    psip: NDArray1D
-    rho: NDArray1D
-    zeta: NDArray1D
-    psi: NDArray1D
-    ptheta: NDArray1D
-    pzeta: NDArray1D
-    energy: NDArray1D
-    energy_std: float
-    steps_taken: int
-    steps_stored: int
-    final_time: float | None
-
-class Frequencies:
-    r"""Stores the Particle's calculated $\omega_\theta$, $\omega_\zeta$
-    and $q_{kinetic}$.
-
-    The values are calculated from `Particle.calculate_frequencies` since they
-    must be calculated in a specific order. Otherwise they are absent.
-
-    Attributes
-    ----------
-    omega_theta
-        The $\omega_\theta$ calculated frequency.
-    omega_zeta
-        The $\omega_\zeta$ calculated frequency.
-    qkinetic
-        The calculated $q_{kinetic}$.
-    theta_intersections
-        The $\theta$ intersections found during the integration.
-    psip_intersections
-        The $\psi_p$ intersections found during the integration.
-
-    Example
-    -------
-    For a simple passing particle:
-
-    ```python
-    >>> particle.frequencies  # doctest: +SKIP
-    Frequencies: Frequencies {
-        omega_theta: "0.0000360582",
-        omega_zeta : "0.0000032916",
-        qkinetic   : "0.0912849868",
-        ψp-intersections: "(2, [284, 718])",
-        θ-intersections: "(1, [718])",
-    },
-    ```
-    """
-
-    omega_theta: CalculatedFrequency
-    omega_zeta: CalculatedFrequency
-    qkinetic: CalculatedFrequency
-    theta_intersections: SingePeriodIntersections
-    psip_intersections: SingePeriodIntersections
-
-# ==========================================================================
-
-class HeapInitialConditions:
-    """Sets up the initial conditions of the Particles.
-
-    Example
-    -------
-
-    ```python
-    >>> import numpy as np
-    >>>
-    >>> # set initial conditions on the `r` space
-    >>> rs = np.linspace(0, geometry.r_wall, 40)
-    >>> psips = np.asarray([geometry.psip(r) for r in rs])
-    >>>
-    >>> initials = dx.HeapInitialConditions(
-    ...     psips=psips,
-    ...     zetas=np.zeros(len(psips)),
-    ...     thetas=np.zeros(len(psips)),
-    ...     rhos=1e-5 * np.ones(len(psips)),
-    ...     mus=np.zeros(len(psips)),
-    ... )
-    >>> print(len(initials))
-    40
-
-    ```
-    """
-
-    thetas: NDArray1D
-    psips: NDArray1D
-    rhos: NDArray1D
-    zetas: NDArray1D
-    mus: NDArray1D
-
-    def __init__(
-        self,
-        thetas: NDArray1D,
-        psips: NDArray1D,
-        rhos: NDArray1D,
-        zetas: NDArray1D,
-        mus: NDArray1D,
-    ) -> None:
-        r"""
-        Parameters
-        ----------
-        thetas
-            The initial $\theta$ angles.
-        psips
-            The initial poloidal magnetic fluxes $\psi_p$.
-        rhos
-            The initial parallel gyro radii $\rho$.
-        zetas
-            The initial $\zeta$ angles.
-        mus
-            The magnetic moments $mu$.
-        """
-
-    def __len__(self) -> int:
-        """Returns the number of InitialConditions sets."""
-
-class Heap:
-    """A collection of multiple Particles constructed from sets of Initial Conditions.
-
-    The particles are stored in arbitrary order.
-
-    Example
-    -------
-
-    ```python
-    >>> initials = dx.HeapInitialConditions(
-    ...     psips=psips,
-    ...     zetas=np.zeros(len(psips)),
-    ...     thetas=np.zeros(len(psips)),
-    ...     rhos=1e-5 * np.ones(len(psips)),
-    ...     mus=np.zeros(len(psips)),
-    ... )
-    >>>
-    >>> heap = dx.Heap(initials)
-
-    ```
-    """
-
-    zetas: NDArray2D
-    psips: NDArray2D
-    thetas: NDArray2D
-    psis: NDArray2D
-    routine: str
-
-    def __init__(self, initials: HeapInitialConditions) -> None:
-        """Constructs a Heap.
-
-        Parameters
-        ----------
-        initials
-            The Particles' initial conditions sets.
-        """
-
-    def poincare(
-        self,
-        qfactor: Qfactor,
-        currents: Currents,
-        bfield: Bfield,
-        perturbation: Perturbation,
-        params: MappingParameters,
-    ) -> None:
-        """Calculates the Poincare map.
-
-        Parameters
-        ----------
-        qfactor
-            The equilibrium's qfactor.
-        currents
-            The equilibrium's plasma current.
-        bfield
-            The equilibrium's magnetic field.
-        perturbation
-            The equilibrium's perturbation.
-        params
-            The parameters of the Poincare mapping.
-
-        Example
-        -------
-
-        ```python
-        >>> heap = dx.Heap(initials)
-        >>> params = dx.MappingParameters("ConstTheta", np.pi, 100)
-        >>> heap.poincare(qfactor, currents, bfield, perturbation, params)
-
-        ```
-        """
-
-    def calculate_frequencies(
-        self,
-        qfactor: Qfactor,
-        currents: Currents,
-        bfield: Bfield,
-        perturbation: Perturbation,
-    ) -> None:
-        r"""Calculates the $\omega_\theta$, $\omega_\zeta$ and $q_{kinetic}$ of the particles.
-
-        !!! tip
-
-            This method appears to be a bit sensitive to the solver's arithmetic error, so
-            it's recommended to use the energy-adaptive-step method, and maybe tighten the
-            tolerance a bit.
-
-        Parameters
-        ----------
-        qfactor
-            The equilibrium's qfactor.
-        currents
-            The equilibrium's plasma current.
-        bfield
-            The equilibrium's magnetic field.
-        perturbation
-            The equilibrium's perturbation.
-
-        Example
-        -------
-
-        ```python
-        >>> num = 5
-        >>> initials = dx.HeapInitialConditions(
-        ...     thetas=np.ones(num),
-        ...     psips=0.8 * geometry.psip_wall * np.ones(num),
-        ...     rhos=np.linspace(1e-5, 5e-5, num),
-        ...     zetas=np.zeros(num),
-        ...     mus=np.zeros(num),
-        ... )
-        >>>
-        >>> heap = dx.Heap(initials)
-        >>>
-        >>> heap.calculate_frequencies(
-        ...     qfactor,
-        ...     currents,
-        ...     bfield,
-        ...     perturbation=dx.Perturbation([])
-        ... )
-
-        ```
-        """
-
-    def __getitem__(self, n: int) -> Particle:
-        """Returns the n-th particle."""
-
-    def __len__(self) -> int:
-        """Returns the number of particles."""

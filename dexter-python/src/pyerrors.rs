@@ -1,5 +1,4 @@
-use equilibrium::EqError;
-use heap::HeapError;
+use dexter::equilibrium::EqError;
 use pyo3::PyErr;
 use pyo3::exceptions::PyException;
 
@@ -28,4 +27,3 @@ macro_rules! to_pyerr_impl {
 }
 
 to_pyerr_impl!(EqError, PyEqError);
-to_pyerr_impl!(HeapError, PyHeapError);

@@ -39,11 +39,11 @@ args = parser.parse_args()
 
 import numpy as np
 import matplotlib.pyplot as plt
-from dexter import Geometry, Qfactor
+from dexter import NcGeometry, NcQfactor
 
 
-qfactor = Qfactor(args.nc_file, args.typ)
-geometry = Geometry(args.nc_file, args.typ, "bilinear")
+qfactor = NcQfactor(args.nc_file, args.typ)
+geometry = NcGeometry(args.nc_file, args.typ, "bilinear")
 print(qfactor)
 
 fig = plt.figure(figsize=(11, 5), layout="constrained")

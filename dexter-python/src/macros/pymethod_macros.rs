@@ -102,10 +102,14 @@ macro_rules! py_get_path {
         impl $py_object {
             #[getter]
             pub fn path(&self) -> String {
-                String::from(safe_unwrap!(
-                    "file already opened",
-                    self.0.path().clone().into_os_string().into_string()
-                ))
+                String::from(
+                    self.0
+                        .path()
+                        .clone()
+                        .into_os_string()
+                        .into_string()
+                        .unwrap(), // Safe: path exists since object exists.
+                )
             }
         }
     };

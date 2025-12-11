@@ -27,11 +27,11 @@ args = parser.parse_args()
 # ==========================================================================
 
 import matplotlib.pyplot as plt
-from dexter import Bfield, Geometry
+from dexter import NcBfield, NcGeometry
 
 
-bfield = Bfield(args.nc_file, args.typ)
-geometry = Geometry(args.nc_file, "linear", args.typ)
+bfield = NcBfield(args.nc_file, args.typ)
+geometry = NcGeometry(args.nc_file, "linear", args.typ)
 print(geometry)
 print(bfield)
 

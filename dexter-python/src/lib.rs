@@ -1,8 +1,7 @@
 //! Module and sub-module final exports
 
-mod pyheap;
+mod macros;
 mod pylibrium;
-mod pyparticle;
 
 mod pyerrors;
 
@@ -11,21 +10,13 @@ use pyo3::prelude::*;
 #[pymodule]
 fn _core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     // Equilibrium
-    m.add_class::<pylibrium::PyGeometry>()?;
-    m.add_class::<pylibrium::PyQfactor>()?;
-    m.add_class::<pylibrium::PyQfactor>()?;
-    m.add_class::<pylibrium::PyCurrents>()?;
-    m.add_class::<pylibrium::PyBfield>()?;
-    m.add_class::<pylibrium::PyHarmonic>()?;
-    m.add_class::<pylibrium::PyPerturbation>()?;
-    // Particle
-    m.add_class::<pyparticle::PyInitialConditions>()?;
-    m.add_class::<pyparticle::PyMappingParameters>()?;
-    m.add_class::<pyparticle::PyEvolution>()?;
-    m.add_class::<pyparticle::PyFrequencies>()?;
-    m.add_class::<pyparticle::PyParticle>()?;
-    // Heap
-    m.add_class::<pyheap::PyHeapInitialConditions>()?;
-    m.add_class::<pyheap::PyHeap>()?;
+    m.add_class::<pylibrium::PyNcGeometry>()?;
+    m.add_class::<pylibrium::PyNcQfactor>()?;
+    m.add_class::<pylibrium::PyUnityQfactor>()?;
+    m.add_class::<pylibrium::PyNcCurrent>()?;
+    m.add_class::<pylibrium::PyLarCurrent>()?;
+    m.add_class::<pylibrium::PyNcBfield>()?;
+    m.add_class::<pylibrium::PyNcHarmonic>()?;
+    m.add_class::<pylibrium::PyNcPerturbation>()?;
     Ok(())
 }

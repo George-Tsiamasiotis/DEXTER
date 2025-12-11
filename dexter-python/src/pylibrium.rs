@@ -4,25 +4,38 @@ use numpy::{IntoPyArray, PyArray1, PyArray2};
 use pyo3::prelude::*;
 use pyo3::types::PyList;
 use rsl_interpolation::{Accelerator, Cache};
-use safe_unwrap::safe_unwrap;
 
-use equilibrium::{Bfield, Currents, Geometry, Harmonic, HarmonicCache, Perturbation, Qfactor};
-use equilibrium::{Flux, Length};
-use utils::*;
+use dexter::equilibrium::{
+    Bfield, Current, Geometry, Harmonic, Perturbation, Qfactor,
+    bfields::{NcBfield, NcBfieldBuilder},
+    cache::HarmonicCache,
+    currents::{LarCurrent, NcCurrent, NcCurrentBuilder},
+    geometries::{NcGeometry, NcGeometryBuilder},
+    harmonics::{NcHarmonic, NcHarmonicBuilder, PhaseMethod},
+    perturbations::NcPerturbation,
+    qfactors::{NcQfactor, NcQfactorBuilder, Unity},
+};
 
 use super::pyerrors::PyEqError;
+use crate::{
+    py_debug_impl, py_eval_harmonic, py_eval_perturbation, py_eval1D, py_eval2D, py_export_getter,
+    py_get_numpy1D, py_get_numpy2D, py_get_path, py_len_impl, py_repr_impl,
+};
 
 // ===============================================================================================
+// ===============================================================================================
 
-#[pyclass(frozen, name = "Geometry")]
-pub struct PyGeometry(pub Geometry);
+#[pyclass(frozen, name = "NcGeometry")]
+pub struct PyNcGeometry(pub NcGeometry);
 
 #[pymethods]
-impl PyGeometry {
+impl PyNcGeometry {
     #[new]
+    #[pyo3(signature = (path, typ1d, typ2d))]
     pub fn new(path: &str, typ1d: &str, typ2d: &str) -> Result<Self, PyEqError> {
         let path = std::path::PathBuf::from(path);
-        Ok(Self(Geometry::from_dataset(&path, typ1d, typ2d)?))
+        let builder = NcGeometryBuilder::new(&path, typ1d, typ2d);
+        Ok(Self(builder.build()?))
     }
 
     #[getter]
@@ -31,95 +44,145 @@ impl PyGeometry {
     }
 }
 
-py_debug_impl!(PyGeometry);
-py_repr_impl!(PyGeometry);
-py_get_path!(PyGeometry);
-py_export_getter!(PyGeometry, typ1d, String);
-py_export_getter!(PyGeometry, typ2d, String);
-py_export_getter!(PyGeometry, baxis, f64);
-py_export_getter!(PyGeometry, raxis, f64);
-py_export_getter!(PyGeometry, zaxis, f64);
-py_export_getter!(PyGeometry, rgeo, f64);
-py_export_getter!(PyGeometry, psip_wall, Flux);
-py_export_getter!(PyGeometry, psi_wall, Flux);
-py_export_getter!(PyGeometry, r_wall, Length);
-py_get_numpy1D!(PyGeometry, theta_data);
-py_get_numpy1D!(PyGeometry, psip_data);
-py_get_numpy1D!(PyGeometry, psi_data);
-py_get_numpy1D!(PyGeometry, r_data);
-py_get_numpy2D!(PyGeometry, rlab_data);
-py_get_numpy2D!(PyGeometry, zlab_data);
-py_get_numpy2D!(PyGeometry, jacobian_data);
-py_eval1D!(PyGeometry, r, "no-acc");
-py_eval1D!(PyGeometry, psip, "no-acc");
-py_eval2D!(PyGeometry, rlab, "no-acc");
-py_eval2D!(PyGeometry, zlab, "no-acc");
-py_eval2D!(PyGeometry, jacobian, "no-acc");
+py_debug_impl!(PyNcGeometry);
+py_repr_impl!(PyNcGeometry);
+py_get_path!(PyNcGeometry);
+py_export_getter!(PyNcGeometry, typ1d, String);
+py_export_getter!(PyNcGeometry, typ2d, String);
+py_export_getter!(PyNcGeometry, baxis, f64);
+py_export_getter!(PyNcGeometry, raxis, f64);
+py_export_getter!(PyNcGeometry, zaxis, f64);
+py_export_getter!(PyNcGeometry, rgeo, f64);
+py_export_getter!(PyNcGeometry, psip_wall, f64);
+py_export_getter!(PyNcGeometry, psi_wall, f64);
+py_export_getter!(PyNcGeometry, r_wall, f64);
+py_get_numpy1D!(PyNcGeometry, theta_data);
+py_get_numpy1D!(PyNcGeometry, psip_data);
+py_get_numpy1D!(PyNcGeometry, psi_data);
+py_get_numpy1D!(PyNcGeometry, r_data);
+py_get_numpy2D!(PyNcGeometry, rlab_data);
+py_get_numpy2D!(PyNcGeometry, zlab_data);
+py_get_numpy2D!(PyNcGeometry, jacobian_data);
+py_eval1D!(PyNcGeometry, r, "no-acc");
+py_eval1D!(PyNcGeometry, psi, "no-acc");
+py_eval1D!(PyNcGeometry, psip, "no-acc");
+py_eval2D!(PyNcGeometry, rlab, "no-acc");
+py_eval2D!(PyNcGeometry, zlab, "no-acc");
+py_eval2D!(PyNcGeometry, jacobian, "no-acc");
 
 // ===============================================================================================
+// ===============================================================================================
 
-#[pyclass(frozen, name = "Qfactor")]
-pub struct PyQfactor(pub Qfactor);
+#[pyclass(frozen, name = "NcQfactor")]
+pub struct PyNcQfactor(pub NcQfactor);
 
 #[pymethods]
-impl PyQfactor {
+impl PyNcQfactor {
     #[new]
+    #[pyo3(signature = (path, typ))]
     pub fn new(path: &str, typ: &str) -> Result<Self, PyEqError> {
         let path = std::path::PathBuf::from(path);
-        Ok(Self(Qfactor::from_dataset(&path, typ)?))
+        let builder = NcQfactorBuilder::new(&path, typ);
+        Ok(Self(builder.build()?))
     }
 }
 
-py_debug_impl!(PyQfactor);
-py_repr_impl!(PyQfactor);
-py_get_path!(PyQfactor);
-py_len_impl!(PyQfactor);
-py_export_getter!(PyQfactor, typ, String);
-py_get_numpy1D!(PyQfactor, psip_data);
-py_get_numpy1D!(PyQfactor, q_data);
-py_get_numpy1D!(PyQfactor, psi_data);
-py_eval1D!(PyQfactor, q);
-py_eval1D!(PyQfactor, psi);
-py_eval1D!(PyQfactor, dpsi_dpsip);
+py_debug_impl!(PyNcQfactor);
+py_repr_impl!(PyNcQfactor);
+py_get_path!(PyNcQfactor);
+py_len_impl!(PyNcQfactor);
+py_export_getter!(PyNcQfactor, typ, String);
+py_get_numpy1D!(PyNcQfactor, psip_data);
+py_get_numpy1D!(PyNcQfactor, q_data);
+py_get_numpy1D!(PyNcQfactor, psi_data);
+py_eval1D!(PyNcQfactor, q);
+py_eval1D!(PyNcQfactor, psi);
+py_eval1D!(PyNcQfactor, dpsi_dpsip);
 
 // ===============================================================================================
 
-#[pyclass(frozen, name = "Currents")]
-pub struct PyCurrents(pub Currents);
+#[pyclass(frozen, name = "UnityQfactor")]
+pub struct PyUnityQfactor(pub Unity);
 
 #[pymethods]
-impl PyCurrents {
+impl PyUnityQfactor {
     #[new]
-    pub fn new(path: &str, typ: &str) -> Result<Self, PyEqError> {
-        let path = std::path::PathBuf::from(path);
-        Ok(Self(Currents::from_dataset(&path, typ)?))
+    #[pyo3(signature = ())]
+    pub fn new() -> Result<Self, PyEqError> {
+        Ok(Self(Unity))
     }
 }
 
-py_debug_impl!(PyCurrents);
-py_repr_impl!(PyCurrents);
-py_get_path!(PyCurrents);
-py_len_impl!(PyCurrents);
-py_export_getter!(PyCurrents, typ, String);
-py_eval1D!(PyCurrents, g);
-py_eval1D!(PyCurrents, i);
-py_eval1D!(PyCurrents, dg_dpsip);
-py_eval1D!(PyCurrents, di_dpsip);
-py_get_numpy1D!(PyCurrents, psip_data);
-py_get_numpy1D!(PyCurrents, g_data);
-py_get_numpy1D!(PyCurrents, i_data);
+py_debug_impl!(PyUnityQfactor);
+py_repr_impl!(PyUnityQfactor);
+py_eval1D!(PyUnityQfactor, q);
+py_eval1D!(PyUnityQfactor, psi);
+py_eval1D!(PyUnityQfactor, dpsi_dpsip);
+
+// ===============================================================================================
+// ===============================================================================================
+
+#[pyclass(frozen, name = "NcCurrent")]
+pub struct PyNcCurrent(pub NcCurrent);
+
+#[pymethods]
+impl PyNcCurrent {
+    #[new]
+    #[pyo3(signature = (path, typ))]
+    pub fn new(path: &str, typ: &str) -> Result<Self, PyEqError> {
+        let path = std::path::PathBuf::from(path);
+        let builder = NcCurrentBuilder::new(&path, typ);
+        Ok(Self(builder.build()?))
+    }
+}
+
+py_debug_impl!(PyNcCurrent);
+py_repr_impl!(PyNcCurrent);
+py_get_path!(PyNcCurrent);
+py_len_impl!(PyNcCurrent);
+py_export_getter!(PyNcCurrent, typ, String);
+py_eval1D!(PyNcCurrent, g);
+py_eval1D!(PyNcCurrent, i);
+py_eval1D!(PyNcCurrent, dg_dpsip);
+py_eval1D!(PyNcCurrent, di_dpsip);
+py_get_numpy1D!(PyNcCurrent, psip_data);
+py_get_numpy1D!(PyNcCurrent, g_data);
+py_get_numpy1D!(PyNcCurrent, i_data);
 
 // ===============================================================================================
 
-#[pyclass(frozen, name = "Bfield")]
-pub struct PyBfield(pub Bfield);
+#[pyclass(frozen, name = "LarCurrent")]
+pub struct PyLarCurrent(pub LarCurrent);
 
 #[pymethods]
-impl PyBfield {
+impl PyLarCurrent {
     #[new]
+    #[pyo3(signature = ())]
+    pub fn new() -> Result<Self, PyEqError> {
+        Ok(Self(LarCurrent))
+    }
+}
+
+py_debug_impl!(PyLarCurrent);
+py_repr_impl!(PyLarCurrent);
+py_eval1D!(PyLarCurrent, g);
+py_eval1D!(PyLarCurrent, i);
+py_eval1D!(PyLarCurrent, dg_dpsip);
+py_eval1D!(PyLarCurrent, di_dpsip);
+
+// ===============================================================================================
+
+#[pyclass(frozen, name = "NcBfield")]
+pub struct PyNcBfield(pub NcBfield);
+
+#[pymethods]
+impl PyNcBfield {
+    #[new]
+    #[pyo3(signature = (path, typ))]
     pub fn new(path: &str, typ: &str) -> Result<Self, PyEqError> {
         let path = std::path::PathBuf::from(path);
-        Ok(Self(Bfield::from_dataset(&path, typ)?))
+        let builder = NcBfieldBuilder::new(&path, typ);
+        Ok(Self(builder.build()?))
     }
 
     #[getter]
@@ -128,112 +191,140 @@ impl PyBfield {
     }
 }
 
-py_debug_impl!(PyBfield);
-py_repr_impl!(PyBfield);
-py_get_path!(PyBfield);
-py_export_getter!(PyBfield, typ, String);
-py_eval2D!(PyBfield, b);
-py_eval2D!(PyBfield, db_dtheta);
-py_eval2D!(PyBfield, db_dpsip);
-py_eval2D!(PyBfield, d2b_dtheta2);
-py_eval2D!(PyBfield, d2b_dpsip2);
-py_eval2D!(PyBfield, d2b_dpsip_dtheta);
-py_get_numpy1D!(PyBfield, psip_data);
-py_get_numpy1D!(PyBfield, theta_data);
-py_get_numpy2D!(PyBfield, b_data);
-py_get_numpy2D!(PyBfield, db_dpsip_data);
-py_get_numpy2D!(PyBfield, db_dtheta_data);
+py_debug_impl!(PyNcBfield);
+py_repr_impl!(PyNcBfield);
+py_get_path!(PyNcBfield);
+py_export_getter!(PyNcBfield, typ, String);
+py_eval2D!(PyNcBfield, b);
+py_eval2D!(PyNcBfield, db_dtheta);
+py_eval2D!(PyNcBfield, db_dpsip);
+py_get_numpy1D!(PyNcBfield, psip_data);
+py_get_numpy1D!(PyNcBfield, theta_data);
+py_get_numpy2D!(PyNcBfield, b_data);
+py_get_numpy2D!(PyNcBfield, db_dpsip_data);
+py_get_numpy2D!(PyNcBfield, db_dtheta_data);
 
 // ===============================================================================================
 
 #[derive(Clone)]
-#[pyclass(frozen, name = "Harmonic")]
-pub struct PyHarmonic(pub Harmonic);
+#[pyclass(frozen, name = "NcHarmonic")]
+pub struct PyNcHarmonic(pub NcHarmonic);
 
 #[pymethods]
-impl PyHarmonic {
+impl PyNcHarmonic {
     #[new]
-    pub fn new(path: &str, typ: &str, m: i64, n: i64) -> Result<Self, PyEqError> {
+    #[pyo3(signature = (path, typ, m, n, phase_method = "resonance"))]
+    pub fn new(
+        path: &str,
+        typ: &str,
+        m: i64,
+        n: i64,
+        phase_method: Option<&str>,
+    ) -> Result<Self, PyEqError> {
         let path = std::path::PathBuf::from(path);
-        Ok(Self(Harmonic::from_dataset(&path, typ, m, n)?))
+        let builder = NcHarmonicBuilder::new(&path, typ, m, n).phase_method(match phase_method {
+            Some(method) => match method {
+                "zero" => PhaseMethod::Zero,
+                "average" => PhaseMethod::Average,
+                "resonance" => PhaseMethod::Resonance,
+                "interpolation" => PhaseMethod::Interpolation,
+                "custom" => todo!("How to pass this?"), // TODO:
+                _ => panic!("Invalid phase method"),
+            },
+            None => PhaseMethod::default(),
+        });
+
+        Ok(Self(builder.build()?))
+    }
+
+    #[getter]
+    fn get_phase_method(&self) -> String {
+        format!("{:?}", self.0.phase_method())
     }
 }
 
-impl From<&Harmonic> for PyHarmonic {
-    fn from(harmonic: &Harmonic) -> Self {
-        safe_unwrap!(
-            "If harmonic exists, Pyharmonic::new() cannot fail",
-            PyHarmonic::new(
-                safe_unwrap!("file already opened", harmonic.path().to_str()),
-                harmonic.typ().as_str(),
-                harmonic.m(),
-                harmonic.n(),
-            )
+impl From<&NcHarmonic> for PyNcHarmonic {
+    fn from(harmonic: &NcHarmonic) -> Self {
+        PyNcHarmonic::new(
+            harmonic.path().to_str().unwrap(), // Safe: already exists
+            harmonic.typ().as_str(),
+            harmonic.m(),
+            harmonic.n(),
+            Some(match harmonic.phase_method() {
+                PhaseMethod::Zero => "zero",
+                PhaseMethod::Average => "average",
+                PhaseMethod::Resonance => "resonance",
+                PhaseMethod::Interpolation => "interpolation",
+                PhaseMethod::Custom(_) => "custom",
+            }),
         )
+        .unwrap()
     }
 }
 
-py_debug_impl!(PyHarmonic);
-py_repr_impl!(PyHarmonic);
-py_get_path!(PyHarmonic);
-py_len_impl!(PyHarmonic);
-py_export_getter!(PyHarmonic, typ, String);
-py_export_getter!(PyHarmonic, phase_average, f64);
-py_export_getter!(PyHarmonic, m, i64);
-py_export_getter!(PyHarmonic, n, i64);
-py_get_numpy1D!(PyHarmonic, psip_data);
-py_get_numpy1D!(PyHarmonic, a_data);
-py_get_numpy1D!(PyHarmonic, phase_data);
-py_eval_harmonic!(PyHarmonic, h);
-py_eval_harmonic!(PyHarmonic, dh_dpsip);
-py_eval_harmonic!(PyHarmonic, dh_dtheta);
-py_eval_harmonic!(PyHarmonic, dh_dzeta);
-py_eval_harmonic!(PyHarmonic, dh_dt);
-py_eval1D!(PyHarmonic, a);
-py_eval1D!(PyHarmonic, da_dpsip);
-py_eval1D!(PyHarmonic, phase);
+py_debug_impl!(PyNcHarmonic);
+py_repr_impl!(PyNcHarmonic);
+py_get_path!(PyNcHarmonic);
+py_len_impl!(PyNcHarmonic);
+py_export_getter!(PyNcHarmonic, typ, String);
+py_export_getter!(PyNcHarmonic, phase_average, Option<f64>);
+py_export_getter!(PyNcHarmonic, phase_resonance, Option<f64>);
+py_export_getter!(PyNcHarmonic, m, i64);
+py_export_getter!(PyNcHarmonic, n, i64);
+py_get_numpy1D!(PyNcHarmonic, psip_data);
+py_get_numpy1D!(PyNcHarmonic, a_data);
+py_get_numpy1D!(PyNcHarmonic, phase_data);
+py_eval_harmonic!(PyNcHarmonic, h);
+py_eval_harmonic!(PyNcHarmonic, dh_dpsip);
+py_eval_harmonic!(PyNcHarmonic, dh_dtheta);
+py_eval_harmonic!(PyNcHarmonic, dh_dzeta);
+py_eval_harmonic!(PyNcHarmonic, dh_dt);
+py_eval1D!(PyNcHarmonic, a);
+py_eval1D!(PyNcHarmonic, da_dpsip);
+py_eval1D!(PyNcHarmonic, phase);
 
 // ===============================================================================================
 
-#[pyclass(frozen, name = "Perturbation")]
-pub struct PyPerturbation(pub Perturbation);
+#[pyclass(frozen, name = "NcPerturbation")]
+pub struct PyNcPerturbation(pub NcPerturbation);
 
 #[pymethods]
-impl PyPerturbation {
+impl PyNcPerturbation {
     #[new]
+    #[pyo3(signature = (harmonics))]
     pub fn new_py<'py>(harmonics: Bound<'py, PyList>) -> Result<Self, PyEqError> {
-        let pyharmonics_vec: Vec<PyHarmonic> = harmonics
+        let pyharmonics_vec: Vec<PyNcHarmonic> = harmonics
             .iter()
             .map(|ph| {
                 ph.extract()
-                    .expect("Could not extract 'PyHarmonic' from python list")
+                    .expect("Could not extract 'PyNcHarmonic' from python list")
             })
             .collect();
-        let harmonics_vec: Vec<Harmonic> = pyharmonics_vec
+        let harmonics_vec: Vec<NcHarmonic> = pyharmonics_vec
             .clone()
             .iter()
             .map(|ph| ph.0.clone())
             .collect();
 
-        Ok(Self(Perturbation::from_harmonics(&harmonics_vec)))
+        Ok(Self(NcPerturbation::from_harmonics(&harmonics_vec)))
     }
 
-    /// Makes PyPerturbation indexable
-    pub fn __getitem__(&self, index: usize) -> PyHarmonic {
-        PyHarmonic::from(
+    /// Makes PyNcPerturbation indexable
+    pub fn __getitem__(&self, index: usize) -> PyNcHarmonic {
+        PyNcHarmonic::from(
             self.0
                 .get_harmonics()
                 .get(index)
-                .expect("Harmonic index out of bounds"),
+                .expect("NcHarmonic index out of bounds"),
         )
     }
 }
 
-py_debug_impl!(PyPerturbation);
-py_repr_impl!(PyPerturbation);
-py_len_impl!(PyPerturbation);
-py_eval_perturbation!(PyPerturbation, p);
-py_eval_perturbation!(PyPerturbation, dp_dpsip);
-py_eval_perturbation!(PyPerturbation, dp_dtheta);
-py_eval_perturbation!(PyPerturbation, dp_dzeta);
-py_eval_perturbation!(PyPerturbation, dp_dt);
+py_debug_impl!(PyNcPerturbation);
+py_repr_impl!(PyNcPerturbation);
+py_len_impl!(PyNcPerturbation);
+py_eval_perturbation!(PyNcPerturbation, p);
+py_eval_perturbation!(PyNcPerturbation, dp_dpsip);
+py_eval_perturbation!(PyNcPerturbation, dp_dtheta);
+py_eval_perturbation!(PyNcPerturbation, dp_dzeta);
+py_eval_perturbation!(PyNcPerturbation, dp_dt);

@@ -26,10 +26,10 @@ args = parser.parse_args()
 # ==========================================================================
 
 import matplotlib.pyplot as plt
-from dexter import Geometry
+from dexter import NcGeometry
 
 
-geometry = Geometry(args.nc_file, "linear", args.typ)
+geometry = NcGeometry(args.nc_file, "linear", args.typ)
 print(geometry)
 
 fig = plt.figure(figsize=(8, 7), layout="constrained")

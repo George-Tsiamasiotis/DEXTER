@@ -1,14 +1,17 @@
-from dexter._core import Geometry, Qfactor, Currents, Bfield, Harmonic, Perturbation
 from dexter._core import (
-    InitialConditions,
-    MappingParameters,
-    Evolution,
-    Frequencies,
-    Particle,
+    NcGeometry,
+    NcQfactor,
+    UnityQfactor,
+    NcCurrent,
+    LarCurrent,
+    NcBfield,
+    NcHarmonic,
+    NcPerturbation,
 )
-from dexter._core import HeapInitialConditions, Heap
 
 from importlib.util import find_spec
+
+_LAR_NETCDF_PATH = "./crates/equilibrium/lar_netcdf.nc"
 
 # gtk3agg backend needs PyGObject(gi), which needs a C compiler to be installed.
 # gkt4agg spams warnings for no reason
@@ -21,17 +24,13 @@ if find_spec("gi") is not None:
     matplotlib.pyplot.rcParams["text.usetex"] = True
 
 __all__ = [
-    "Geometry",
-    "Qfactor",
-    "Currents",
-    "Bfield",
-    "Harmonic",
-    "Perturbation",
-    "InitialConditions",
-    "MappingParameters",
-    "Evolution",
-    "Frequencies",
-    "Particle",
-    "HeapInitialConditions",
-    "Heap",
+    "_LAR_NETCDF_PATH",
+    "NcGeometry",
+    "NcQfactor",
+    "UnityQfactor",
+    "NcCurrent",
+    "LarCurrent",
+    "NcBfield",
+    "NcHarmonic",
+    "NcPerturbation",
 ]

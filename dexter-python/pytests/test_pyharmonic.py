@@ -1,30 +1,36 @@
-from dexter import Harmonic
+from dexter import NcHarmonic
+from dexter import _LAR_NETCDF_PATH as netcdf_path
 
 
-def test_derived_fields(harmonic1: Harmonic):
-    assert isinstance(harmonic1.path, str)
-    assert isinstance(harmonic1.typ, str)
-    assert isinstance(harmonic1.phase_average, float)
-    assert isinstance(harmonic1.m, int)
-    assert isinstance(harmonic1.n, int)
-    assert harmonic1.psip_data.ndim == 1
-    assert harmonic1.a_data.ndim == 1
-    assert harmonic1.phase_data.ndim == 1
+def test_nc_harmonic_getters(nc_harmonic1: NcHarmonic):
+    assert isinstance(nc_harmonic1.path, str)
+    assert isinstance(nc_harmonic1.typ, str)
+    assert isinstance(nc_harmonic1.phase_average, float | None)
+    assert isinstance(nc_harmonic1.phase_resonance, float | None)
+    assert isinstance(nc_harmonic1.phase_method, str | None)
+    assert isinstance(nc_harmonic1.m, int)
+    assert isinstance(nc_harmonic1.n, int)
+    assert nc_harmonic1.psip_data.ndim == 1
+    assert nc_harmonic1.a_data.ndim == 1
+    assert nc_harmonic1.phase_data.ndim == 1
+    assert len(nc_harmonic1) == len(nc_harmonic1.psip_data)
+    str(nc_harmonic1)
 
 
-def test_eval(harmonic1: Harmonic):
+def test_nc_harmonic_evals(nc_harmonic1: NcHarmonic):
     (psip, theta, zeta) = 0.015, 3.14, 0
-    assert isinstance(harmonic1.h(psip, theta, zeta), float)
-    assert isinstance(harmonic1.dh_dpsip(psip, theta, zeta), float)
-    assert isinstance(harmonic1.dh_dtheta(psip, theta, zeta), float)
-    assert isinstance(harmonic1.dh_dzeta(psip, theta, zeta), float)
-    assert isinstance(harmonic1.dh_dt(psip, theta, zeta), float)
-    assert isinstance(harmonic1.a(psip), float)
-    assert isinstance(harmonic1.da_dpsip(psip), float)
-    assert isinstance(harmonic1.phase(psip), float)
+    assert isinstance(nc_harmonic1.h(psip, theta, zeta), float)
+    assert isinstance(nc_harmonic1.dh_dpsip(psip, theta, zeta), float)
+    assert isinstance(nc_harmonic1.dh_dtheta(psip, theta, zeta), float)
+    assert isinstance(nc_harmonic1.dh_dzeta(psip, theta, zeta), float)
+    assert isinstance(nc_harmonic1.dh_dt(psip, theta, zeta), float)
+    assert isinstance(nc_harmonic1.a(psip), float)
+    assert isinstance(nc_harmonic1.da_dpsip(psip), float)
+    assert isinstance(nc_harmonic1.phase(psip), float)
 
 
-def test_magic(harmonic1: Harmonic):
-    assert len(harmonic1) == len(harmonic1.psip_data)
-    assert isinstance(harmonic1.__str__(), str)
-    assert isinstance(harmonic1.__repr__(), str)
+def test_nc_harmonic_phase_methods():
+    NcHarmonic(netcdf_path, "steffen", 2, 1, phase_method="zero")
+    NcHarmonic(netcdf_path, "steffen", 2, 1, phase_method="average")
+    NcHarmonic(netcdf_path, "steffen", 2, 1, phase_method="resonance")
+    NcHarmonic(netcdf_path, "steffen", 2, 1, phase_method="interpolation")

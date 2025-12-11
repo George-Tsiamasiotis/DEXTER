@@ -39,11 +39,11 @@ args = parser.parse_args()
 
 import numpy as np
 import matplotlib.pyplot as plt
-from dexter import Geometry, Currents
+from dexter import NcGeometry, NcCurrent
 
 
-currents = Currents(args.nc_file, args.typ)
-geometry = Geometry(args.nc_file, args.typ, "bilinear")
+currents = NcCurrent(args.nc_file, args.typ)
+geometry = NcGeometry(args.nc_file, args.typ, "bilinear")
 print(currents)
 
 fig = plt.figure(figsize=(14, 5), layout="constrained")

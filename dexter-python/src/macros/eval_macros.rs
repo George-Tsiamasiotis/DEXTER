@@ -67,7 +67,7 @@ macro_rules! py_eval_harmonic {
                 let mut cache = HarmonicCache::new();
                 Ok(self
                     .0
-                    .$eval_method(psip, theta, zeta, &mut cache, &mut acc)?)
+                    .$eval_method(psip, theta, zeta, &mut acc, &mut cache)?)
             }
         }
     };
@@ -81,10 +81,10 @@ macro_rules! py_eval_perturbation {
         impl $py_object {
             pub fn $eval_method(&self, psip: f64, theta: f64, zeta: f64) -> Result<f64, PyEqError> {
                 let mut acc = Accelerator::new();
-                let mut cache = vec![HarmonicCache::new(); self.0.len()];
+                let mut caches = vec![HarmonicCache::new(); self.0.len()];
                 Ok(self
                     .0
-                    .$eval_method(psip, theta, zeta, &mut cache, &mut acc)?)
+                    .$eval_method(psip, theta, zeta, &mut acc, &mut caches)?)
             }
         }
     };

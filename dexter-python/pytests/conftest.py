@@ -1,65 +1,69 @@
 import pytest
 
-from dexter import Geometry, Qfactor, Currents, Bfield, Harmonic, Perturbation
-from dexter import InitialConditions
-
-
-netcdf_path = "./data.nc"
+from dexter import (
+    _LAR_NETCDF_PATH as netcdf_path,
+    NcGeometry,
+    NcQfactor,
+    UnityQfactor,
+    NcCurrent,
+    LarCurrent,
+    NcBfield,
+    NcHarmonic,
+    NcPerturbation,
+)
 
 
 @pytest.fixture(scope="session")
-def geometry() -> Geometry:
-    """Creates a Geometry object from a netCDF file."""
-    return Geometry(netcdf_path, "steffen", "bicubic")
+def nc_geometry() -> NcGeometry:
+    """Creates an NcGeometry object from a netCDF file."""
+    return NcGeometry(netcdf_path, "steffen", "bicubic")
 
 
 @pytest.fixture(scope="session")
-def qfactor() -> Qfactor:
+def nc_qfactor() -> NcQfactor:
     """Creates a Qfactor object from a netCDF file."""
-    return Qfactor(netcdf_path, "akima")
+    return NcQfactor(netcdf_path, "steffen")
 
 
 @pytest.fixture(scope="session")
-def currents() -> Currents:
-    """Creates a Current object from a netCDF file."""
-    return Currents(netcdf_path, "akima")
+def unity_qfactor() -> UnityQfactor:
+    """Creates a Unity Qfactor object."""
+    return UnityQfactor()
 
 
 @pytest.fixture(scope="session")
-def bfield() -> Bfield:
-    """Creates a Bfield object from a netCDF file."""
-    return Bfield(netcdf_path, "bicubic")
+def nc_current() -> NcCurrent:
+    """Creates an NcCurrent object from a netCDF file."""
+    return NcCurrent(netcdf_path, "steffen")
 
 
 @pytest.fixture(scope="session")
-def harmonic1() -> Harmonic:
-    """Creates a Harmonic object from a netCDF file."""
-    return Harmonic(netcdf_path, "akima", m=1, n=2)
+def lar_current() -> LarCurrent:
+    """Creates an LarCurrent object."""
+    return LarCurrent()
 
 
 @pytest.fixture(scope="session")
-def harmonic2() -> Harmonic:
-    """Creates a Harmonic object from a netCDF file."""
-    return Harmonic(netcdf_path, "akima", m=1, n=3)
+def nc_bfield() -> NcBfield:
+    """Creates a NcBfield object from a netCDF file."""
+    return NcBfield(netcdf_path, "bicubic")
 
 
 @pytest.fixture(scope="session")
-def perturbation(harmonic1: Harmonic, harmonic2: Harmonic) -> Perturbation:
+def nc_harmonic1() -> NcHarmonic:
+    """Creates a NcHarmonic object from a netCDF file."""
+    return NcHarmonic(netcdf_path, "akima", m=2, n=1)
+
+
+@pytest.fixture(scope="session")
+def nc_harmonic2() -> NcHarmonic:
+    """Creates a NcHarmonic object from a netCDF file."""
+    return NcHarmonic(netcdf_path, "akima", m=3, n=2)
+
+
+@pytest.fixture(scope="session")
+def nc_perturbation(
+    nc_harmonic1: NcHarmonic, nc_harmonic2: NcHarmonic
+) -> NcPerturbation:
     """Creates a Perturbation object with the 2 fixture harmonics."""
-    return Perturbation(harmonics=[harmonic1, harmonic2])
-
-
-# ==========================================================================
-
-
-@pytest.fixture(scope="session")
-def initial_conditions(geometry: Geometry) -> InitialConditions:
-    """Creates an InitialConditions set. Do not use for integrations"""
-    return InitialConditions(
-        time0=0,
-        theta0=0,
-        psip0=0.5 * geometry.psip_wall,
-        rho0=1e-3,
-        zeta0=0,
-        mu=0,
-    )
+    return NcPerturbation(harmonics=[nc_harmonic1, nc_harmonic2])
