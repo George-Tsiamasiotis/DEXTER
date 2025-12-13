@@ -9,9 +9,9 @@ The bulk computations are implemented in *[Rust]*. The Rust code consists of sta
 The Python interface directly exposes all underlying objects and routines in the form of a single python package:
 
 ```python
->>> import dexter as dx
+>>> import dexter as dex
 >>>
->>> qfactor = dx.NcQfactor(path="./data.nc", typ="cubic")
+>>> qfactor = dex.NcQfactor(path="./data.nc", typ="cubic")
 
 ```
 

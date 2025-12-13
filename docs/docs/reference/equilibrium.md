@@ -3,42 +3,58 @@
     Interpolation methods and stored data attributes are direct re-exports from the underlying Rust objects.
 
 
-::: dexter.Geometry
+## Geometries
+
+::: dexter.NcGeometry
+    options:
+        summary:
+            functions: true
+
+## q-factors
+
+::: dexter.NcQfactor
     options:
         summary:
             functions: true
 
 ---
 
-::: dexter.Qfactor
+::: dexter.UnityQfactor
+    options:
+        summary:
+            functions: true
+
+## Currents
+
+::: dexter.NcCurrent
     options:
         summary:
             functions: true
 
 ---
 
-::: dexter.Currents
+::: dexter.LarCurrent
     options:
         summary:
             functions: true
 
----
+## Bfields
 
-::: dexter.Bfield
+::: dexter.NcBfield
     options:
         summary:
             functions: true
 
----
+## Harmonics
 
-::: dexter.Harmonic
+::: dexter.NcHarmonic
     options:
         summary:
             functions: true
 
----
+## Perturbations
 
-::: dexter.Perturbation
+::: dexter.NcPerturbation
     options:
         summary:
             functions: true

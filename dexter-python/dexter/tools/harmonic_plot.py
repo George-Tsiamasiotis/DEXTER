@@ -1,7 +1,8 @@
 """Plots a Harmonic's α(ψp), dα(ψp)/dψp and φ(ψp)."""
 
 import argparse
-from dexter.types import PhaseMethod
+from typing import get_args
+from dexter.types import PhaseMethod, Interp1DType
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument(
@@ -12,7 +13,7 @@ parser.add_argument(
     "-t",
     "--typ",
     help="the interpolation type (default=steffen)",
-    choices=["linear", "cubic", "akima", "akimaperiodic", "steffen"],
+    choices=get_args(Interp1DType),
     default="steffen",
 )
 parser.add_argument(
@@ -49,7 +50,7 @@ parser.add_argument(
     dest="phase_method",
     help="the method of the phase φ(ψp) calculation",
     type=str,
-    choices=PhaseMethod.__args__,
+    choices=get_args(PhaseMethod),
     default="interpolation",
 )
 args = parser.parse_args()
@@ -64,7 +65,8 @@ from dexter import NcGeometry, NcHarmonic
 harmonic = NcHarmonic(
     args.nc_file, args.typ, m=args.m, n=args.n, phase_method=args.phase_method
 )
-geometry = NcGeometry(args.nc_file, args.typ, "bilinear")
+geometry = NcGeometry(args.nc_file, args.typ, "Bilinear")
+print(geometry)
 print(harmonic)
 
 fig = plt.figure(figsize=(14, 5), layout="constrained")

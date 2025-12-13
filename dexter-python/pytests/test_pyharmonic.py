@@ -30,7 +30,7 @@ def test_nc_harmonic_evals(nc_harmonic1: NcHarmonic):
 
 
 def test_nc_harmonic_phase_methods():
-    NcHarmonic(netcdf_path, "steffen", 2, 1, phase_method="zero")
-    NcHarmonic(netcdf_path, "steffen", 2, 1, phase_method="average")
-    NcHarmonic(netcdf_path, "steffen", 2, 1, phase_method="resonance")
-    NcHarmonic(netcdf_path, "steffen", 2, 1, phase_method="interpolation")
+    NcHarmonic(netcdf_path, "Steffen", 2, 1, phase_method="Zero")
+    NcHarmonic(netcdf_path, "Steffen", 2, 1, phase_method="Average")
+    NcHarmonic(netcdf_path, "Steffen", 2, 1, phase_method="Resonance")
+    NcHarmonic(netcdf_path, "Steffen", 2, 1, phase_method="Interpolation")

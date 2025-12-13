@@ -1,6 +1,8 @@
 """Plots the equilibrium's poloidal flux surfaces."""
 
 import argparse
+from typing import get_args
+from dexter.types import Interp2DType
 from math import sqrt
 
 parser = argparse.ArgumentParser(description=__doc__)
@@ -12,7 +14,7 @@ parser.add_argument(
     "-t",
     "--typ",
     help="the interpolation type (default=bicubic)",
-    choices=["bilinear", "bicubic"],
+    choices=get_args(Interp2DType),
     default="bicubic",
 )
 parser.add_argument(
@@ -31,7 +33,7 @@ from dexter import NcBfield, NcGeometry
 
 
 bfield = NcBfield(args.nc_file, args.typ)
-geometry = NcGeometry(args.nc_file, "linear", args.typ)
+geometry = NcGeometry(args.nc_file, "Linear", args.typ)
 print(geometry)
 print(bfield)
 
@@ -65,7 +67,7 @@ def format_coord(x, y):
     return f"(R, Z) = ({x:.5g}, {y:.5g}), r={r:.5g} "
 
 
-ax.format_coord = format_coord  # type: ignore
+setattr(ax, "format_coord", format_coord)
 
 ax.plot(*axis_point, "ko", markersize=4, label="$R_{axis}$")
 ax.plot(*geom_center, "ro", markersize=4, label="$R_{geometric}$")

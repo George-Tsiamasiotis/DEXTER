@@ -85,11 +85,11 @@ impl NcHarmonicBuilder {
     /// # use equilibrium::harmonics::PhaseMethod;
     /// let path = PathBuf::from("./netcdf.nc");
     /// let builder = harmonics::NcHarmonicBuilder::new(&path, "steffen", 1, 2)
-    ///     .phase_method(PhaseMethod::Interpolation)
+    ///     .with_phase_method(PhaseMethod::Interpolation)
     ///     .build()?;
     /// # Ok::<_, equilibrium::EqError>(())
     /// ```
-    pub fn phase_method(mut self, method: PhaseMethod) -> Self {
+    pub fn with_phase_method(mut self, method: PhaseMethod) -> Self {
         self.phase_method = method;
         self
     }

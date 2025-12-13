@@ -1,6 +1,8 @@
 """Plots a Qfactors's q(ψp), dψ/dψp, and ψ(ψp)."""
 
 import argparse
+from typing import get_args
+from dexter.types import Interp1DType
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument(
@@ -11,7 +13,7 @@ parser.add_argument(
     "-t",
     "--typ",
     help="the interpolation type (default=steffen)",
-    choices=["linear", "cubic", "akima", "akimaperiodic", "steffen"],
+    choices=get_args(Interp1DType),
     default="cubic",
 )
 parser.add_argument(
@@ -43,7 +45,8 @@ from dexter import NcGeometry, NcQfactor
 
 
 qfactor = NcQfactor(args.nc_file, args.typ)
-geometry = NcGeometry(args.nc_file, args.typ, "bilinear")
+geometry = NcGeometry(args.nc_file, args.typ, "Bilinear")
+print(geometry)
 print(qfactor)
 
 fig = plt.figure(figsize=(11, 5), layout="constrained")

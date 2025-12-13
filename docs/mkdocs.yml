@@ -84,5 +84,3 @@ nav:
   - API Reference: 
     - Types: reference/types.md
     - Equilibirum: reference/equilibrium.md
-    - Particle: reference/particle.md
-    - Heap: reference/heap.md

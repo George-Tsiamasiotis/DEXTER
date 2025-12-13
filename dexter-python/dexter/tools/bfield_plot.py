@@ -1,6 +1,8 @@
 """Plots a Bfields's B(ψp, θ), dB/dψp, and dB/dθ."""
 
 import argparse
+from typing import get_args
+from dexter.types import Interp2DType
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument(
@@ -11,7 +13,7 @@ parser.add_argument(
     "-t",
     "--typ",
     help="the interpolation type (default=bicubic)",
-    choices=["bilinear", "bicubic"],
+    choices=get_args(Interp2DType),
     default="bicubic",
 )
 parser.add_argument(
@@ -30,7 +32,7 @@ from dexter import NcBfield, NcGeometry
 
 
 bfield = NcBfield(args.nc_file, args.typ)
-geometry = NcGeometry(args.nc_file, "linear", args.typ)
+geometry = NcGeometry(args.nc_file, "Linear", args.typ)
 print(geometry)
 print(bfield)
 

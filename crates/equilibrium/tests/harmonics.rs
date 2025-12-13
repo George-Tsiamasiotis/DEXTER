@@ -3,7 +3,7 @@ use equilibrium::extract::STUB_TEST_NETCDF_PATH;
 use rsl_interpolation::Accelerator;
 use std::path::PathBuf;
 
-use equilibrium::harmonics;
+use equilibrium::harmonics::*;
 use equilibrium::*;
 
 #[test]
@@ -12,7 +12,7 @@ fn test_nc_harmonic() {
     let typ = "steffen";
     let m = 2;
     let n = 1;
-    let builder = harmonics::NcHarmonicBuilder::new(&path, typ, m, n);
+    let builder = NcHarmonicBuilder::new(&path, typ, m, n);
     let harmonic = builder.build().unwrap();
 
     println!("{harmonic:?}");
@@ -39,10 +39,7 @@ fn test_nc_harmonic() {
     // The (1,2) resonance is inside the wall here
     assert!(harmonic_phase_average.is_none());
     assert!(harmonic_phase_resonance.is_some());
-    assert!(matches!(
-        harmonic_phase_method,
-        harmonics::PhaseMethod::Resonance
-    ));
+    assert!(matches!(harmonic_phase_method, PhaseMethod::Resonance));
 
     assert_eq!(psip_data.len(), harmonic_len);
     assert_eq!(psip_data.ndim(), 1);
@@ -56,7 +53,7 @@ fn test_nc_harmonic_evals() {
     let typ = "steffen";
     let m = 2;
     let n = 1;
-    let builder = harmonics::NcHarmonicBuilder::new(&path, typ, m, n);
+    let builder = NcHarmonicBuilder::new(&path, typ, m, n);
     let harmonic = builder.build().unwrap();
 
     let psip_data = harmonic.psip_data();
@@ -139,7 +136,7 @@ fn test_nc_harmonic_evals() {
     // Out of bounds
     assert!(matches!(
         harmonic.a(100000.0, &mut acc),
-        Err(equilibrium::EqError::DomainError(..))
+        Err(EqError::DomainError(..))
     ));
 
     assert_eq!(cache.hits(), 6);
@@ -153,7 +150,7 @@ fn test_nc_harmonic_zero_phase_method() {
     let typ = "steffen";
     let m = 2;
     let n = 1;
-    let builder = harmonics::NcHarmonicBuilder::new(&path, typ, m, n).phase_method(Zero);
+    let builder = NcHarmonicBuilder::new(&path, typ, m, n).with_phase_method(Zero);
     let harmonic = builder.build().unwrap();
     let psip_data = harmonic.psip_data();
     let psip_wall = psip_data.last().unwrap();
@@ -171,7 +168,7 @@ fn test_nc_harmonic_average_phase_method() {
     let typ = "steffen";
     let m = 2;
     let n = 1;
-    let builder = harmonics::NcHarmonicBuilder::new(&path, typ, m, n).phase_method(Average);
+    let builder = NcHarmonicBuilder::new(&path, typ, m, n).with_phase_method(Average);
     let harmonic = builder.build().unwrap();
     let psip_data = harmonic.psip_data();
     let psip_wall = psip_data.last().unwrap();
@@ -190,7 +187,7 @@ fn test_nc_harmonic_resonance_phase_method() {
     let typ = "steffen";
     let m = 2;
     let n = 1;
-    let builder = harmonics::NcHarmonicBuilder::new(&path, typ, m, n).phase_method(Resonance);
+    let builder = NcHarmonicBuilder::new(&path, typ, m, n).with_phase_method(Resonance);
     let harmonic = builder.build().unwrap();
     let psip_data = harmonic.psip_data();
     let psip_wall = psip_data.last().unwrap();
@@ -212,7 +209,7 @@ fn test_nc_harmonic_interpolation_phase_method() {
     let typ = "steffen";
     let m = 2;
     let n = 1;
-    let builder = harmonics::NcHarmonicBuilder::new(&path, typ, m, n).phase_method(Interpolation);
+    let builder = NcHarmonicBuilder::new(&path, typ, m, n).with_phase_method(Interpolation);
     let harmonic = builder.build().unwrap();
     let psip_data = harmonic.psip_data();
     let psip_wall = psip_data.last().unwrap();
@@ -232,7 +229,7 @@ fn test_nc_harmonic_custom_phase_method() {
     let m = 2;
     let n = 1;
     let custom = 1.57;
-    let builder = harmonics::NcHarmonicBuilder::new(&path, typ, m, n).phase_method(Custom(custom));
+    let builder = NcHarmonicBuilder::new(&path, typ, m, n).with_phase_method(Custom(custom));
     let harmonic = builder.build().unwrap();
     let psip_data = harmonic.psip_data();
     let psip_wall = psip_data.last().unwrap();

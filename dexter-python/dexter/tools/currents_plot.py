@@ -1,6 +1,8 @@
 """Plots a Currents' g(ψp), dg/dψp, I(ψp) and dI/dψp."""
 
 import argparse
+from typing import get_args
+from dexter.types import Interp1DType
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument(
@@ -11,7 +13,7 @@ parser.add_argument(
     "-t",
     "--typ",
     help="the interpolation type (default=steffen)",
-    choices=["linear", "cubic", "akima", "akimaperiodic", "steffen"],
+    choices=get_args(Interp1DType),
     default="steffen",
 )
 parser.add_argument(
@@ -43,7 +45,8 @@ from dexter import NcGeometry, NcCurrent
 
 
 currents = NcCurrent(args.nc_file, args.typ)
-geometry = NcGeometry(args.nc_file, args.typ, "bilinear")
+geometry = NcGeometry(args.nc_file, args.typ, "Bilinear")
+print(geometry)
 print(currents)
 
 fig = plt.figure(figsize=(14, 5), layout="constrained")

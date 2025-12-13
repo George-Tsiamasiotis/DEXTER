@@ -213,7 +213,7 @@ pub struct PyNcHarmonic(pub NcHarmonic);
 #[pymethods]
 impl PyNcHarmonic {
     #[new]
-    #[pyo3(signature = (path, typ, m, n, phase_method = "resonance"))]
+    #[pyo3(signature = (path, typ, m, n, phase_method = "Resonance"))]
     pub fn new(
         path: &str,
         typ: &str,
@@ -222,17 +222,18 @@ impl PyNcHarmonic {
         phase_method: Option<&str>,
     ) -> Result<Self, PyEqError> {
         let path = std::path::PathBuf::from(path);
-        let builder = NcHarmonicBuilder::new(&path, typ, m, n).phase_method(match phase_method {
-            Some(method) => match method {
-                "zero" => PhaseMethod::Zero,
-                "average" => PhaseMethod::Average,
-                "resonance" => PhaseMethod::Resonance,
-                "interpolation" => PhaseMethod::Interpolation,
-                "custom" => todo!("How to pass this?"), // TODO:
-                _ => panic!("Invalid phase method"),
-            },
-            None => PhaseMethod::default(),
-        });
+        let builder =
+            NcHarmonicBuilder::new(&path, typ, m, n).with_phase_method(match phase_method {
+                Some(method) => match method.to_lowercase().as_str() {
+                    "zero" => PhaseMethod::Zero,
+                    "average" => PhaseMethod::Average,
+                    "resonance" => PhaseMethod::Resonance,
+                    "interpolation" => PhaseMethod::Interpolation,
+                    "custom" => todo!("How to pass this?"), // TODO:
+                    _ => panic!("Invalid phase method"),
+                },
+                None => PhaseMethod::default(),
+            });
 
         Ok(Self(builder.build()?))
     }

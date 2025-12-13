@@ -1,11 +1,4 @@
-"""This file mirrors all the definitions made in the dexter-python Rust API.
-
-Example
--------
->>> import dexter as dx
->>> from dexter import _LAR_NETCDF_PATH as path
-
-"""
+"""This file mirrors all the definitions made in the dexter-python Rust API."""
 
 from dexter.types import (
     NDArray1D,
@@ -59,7 +52,7 @@ class NcGeometry:
     zlab_data
         The $Z_{lab}(\psi_p, \theta_B)$ data array.
     jacobian_data
-        The $J_{lab}(\psi_p, \theta_B)$ data array.
+        The $J(\psi_p, \theta_B)$ data array.
 
     """
 
@@ -96,10 +89,10 @@ class NcGeometry:
 
         Example
         -------
-        Creating a `Geometry`:
 
-        ```python
-        >>> geometry = dx.NcGeometry("./data.nc", "cubic", "bicubic")
+
+        ```python title="NcGeometry creation"
+        >>> geometry = dex.NcGeometry(path, "Cubic", "Bicubic")
         >>>
         >>> # r->ψp interpolation
         >>> psip = geometry.psip_wall / 2
@@ -158,7 +151,7 @@ class NcGeometry:
         """
 
     def jacobian(self, psip: float, theta: float) -> float:
-        r"""The $J_{lab}(\psi_p, \theta_B)$ value in $[m/T]$.
+        r"""The $J(\psi_p, \theta_B)$ value in $[m/T]$.
 
         Parameters
         ----------
@@ -205,23 +198,21 @@ class NcQfactor:
 
         Example
         -------
-        Creating a `Qfactor`:
 
-        ```python
-        >>> qfactor = dx.NcQfactor("./data.nc", "steffen")
+        ```python title="Qfactor creation"
+        >>> qfactor = dex.NcQfactor(path, "Steffen")
         >>>
         >>> # ψp->ψ interpolation
         >>> psip = 0.003
         >>> psi = qfactor.psi(psip)
 
         ```
-        dψ/dψp check:
 
-        ```python
+        ```python title="dψ/dψp check:"
         >>> from math import isclose
         >>>
-        >>> psip = 0.9*geometry.psip_wall
-        >>> assert isclose(qfactor.q(psip), qfactor.dpsi_dpsip(psip), rel_tol=1e-1)
+        >>> psip = 0.4*geometry.psip_wall
+        >>> assert isclose(qfactor.q(psip), qfactor.dpsi_dpsip(psip), rel_tol=1e-4)
 
         ```
         """
@@ -267,10 +258,9 @@ class UnityQfactor:
 
         Example
         -------
-        Creating a `Qfactor`:
 
-        ```python
-        >>> qfactor = dx.UnityQfactor()
+        ```python title="UnityQfactor creation"
+        >>> qfactor = dex.UnityQfactor()
         >>>
         >>> # ψp->ψ interpolation
         >>> psip = 0.003
@@ -333,10 +323,9 @@ class NcCurrent:
 
         Example
         -------
-        Creating a `Currents`:
 
-        ```python
-        >>> current = dx.NcCurrent("./data.nc", "steffen")
+        ```python title="NcCurrent creation"
+        >>> current = dex.NcCurrent(path, "Steffen")
         >>>
         >>> # ψp->g interpolation
         >>> psip = 0.015
@@ -390,8 +379,11 @@ class LarCurrent:
     def __init__(self) -> None:
         """Constructs a `LarCurrent`.
 
+        Example
+        -------
+
         ```python
-        >>> current = dx.LarCurrent()
+        >>> current = dex.LarCurrent()
         >>>
         >>> # ψp->g interpolation
         >>> psip = 0.015
@@ -465,10 +457,9 @@ class NcBfield:
 
         Example
         -------
-        Creating an `NcBfield`:
 
-        ```python
-        >>> bfield = dx.NcBfield("./data.nc", "bicubic")
+        ```python title="NcBfield creation"
+        >>> bfield = dex.NcBfield(path, "Bicubic")
         >>>
         >>> psip = 0.015
         >>> theta = 3.1415
@@ -564,7 +555,7 @@ class NcHarmonic:
         typ: Interp1DType,
         m: int,
         n: int,
-        phase_method: PhaseMethod = "zero",
+        phase_method: PhaseMethod = "Zero",
     ) -> None:
         r"""Constructs a `Harmonic`.
 
@@ -586,11 +577,10 @@ class NcHarmonic:
 
         Example
         -------
-        Creating a `Harmonic`:
 
-        ```python
-        >>> harmonic1 = dx.NcHarmonic("./data.nc", "steffen", m=1, n=3)
-        >>> harmonic2 = dx.NcHarmonic("./data.nc", "steffen", m=1, n=4, phase_method="resonance")
+        ```python title="NcHarmonic creation"
+        >>> harmonic1 = dex.NcHarmonic(path, "Steffen", m=2, n=1)
+        >>> harmonic2 = dex.NcHarmonic(path, "Steffen", m=3, n=2, phase_method="Resonance")
         >>>
         >>> psip = 0.015
         >>> theta = 3.1415
@@ -728,6 +718,27 @@ class NcPerturbation:
         harmonics
             The list of harmonics that appear in the perturbation.
 
+        Example
+        -------
+
+        ```python title="NcPerturbation creation with specific NcHarmonics"
+        >>> perturbation = dex.NcPerturbation(
+        ...     [
+        ...         dex.NcHarmonic(path, "steffen", m=2, n=1),
+        ...         dex.NcHarmonic(path, "steffen", m=3, n=1),
+        ...         dex.NcHarmonic(path, "steffen", m=3, n=2),
+        ...     ]
+        ... )
+
+        ```
+
+        ```python title="NcPerturbation creation by list comprehension"
+        >>> perturbation = dex.NcPerturbation(
+        ...     [dex.NcHarmonic(path, "steffen", m=2, n=n) for n in range(1, 3)]
+        ... )
+
+        ```
+
         """
         # TODO: example
 
@@ -743,30 +754,6 @@ class NcPerturbation:
         zeta
             The angle $\zeta$ in $[rads]$.
 
-
-        Example
-        -------
-        Creating a `Perturbation` by picking Harmonics:
-
-        ```python
-        >>> perturbation = dx.Perturbation(
-        ...     [
-        ...         dx.Harmonic("./data.nc", "steffen", m=1, n=7),
-        ...         dx.Harmonic("./data.nc", "steffen", m=1, n=8),
-        ...         dx.Harmonic("./data.nc", "steffen", m=1, n=9),
-        ...     ]
-        ... )
-
-        ```
-
-        Creating a `Perturbation` by list comprehension:
-
-        ```python
-        >>> perturbation = dx.Perturbation(
-        ...     [dx.Harmonic("./data.nc", "steffen", m=0, n=n) for n in range(1, 5)]
-        ... )
-
-        ```
         """
 
     def dp_dpsip(self, psip: float, theta: float, zeta: float) -> float:

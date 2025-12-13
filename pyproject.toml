@@ -1,6 +1,6 @@
 [project]
 name = "dexter"
-version = "0.1.3-pre.1"
+version = "0.1.3-pre.2"
 description = "Calculations and simulations in reconstructed equilibria of toroidal fusion devices."
 readme = "README.md"
 authors = [
@@ -44,6 +44,9 @@ docs = [
     "mkdocs-material>=9.7.0",
     "mkdocstrings[python]>=1.0.0",
 ]
+misc = [
+    "xarray>=2025.10.1",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["./dexter-python/pytests", "./dexter-python/dexter/", "./docs/docs/"] # Run from workspace root
@@ -51,12 +54,12 @@ addopts = "--durations 2 --doctest-glob='*.md' --doctest-glob='*.pyi'"
 
 [project.scripts]
 # NetCDF handling
-npz_to_netcdf = "dexter.scripts:npz_to_netcdf"
-lar_netcdf = "dexter.scripts:lar_netcdf"
+npz_to_netcdf = "dexter.tools:npz_to_netcdf"
+lar_netcdf = "dexter.tools:lar_netcdf"
 # Plots
-qfactor_plot = "dexter.scripts:qfactor_plot"
-currents_plot = "dexter.scripts:currents_plot"
-bfield_plot = "dexter.scripts:bfield_plot"
-flux_surfaces_plot= "dexter.scripts:flux_surfaces_plot"
-harmonic_plot = "dexter.scripts:harmonic_plot"
-jacobian_plot = "dexter.scripts:jacobian_plot"
+qfactor_plot = "dexter.tools:qfactor_plot"
+currents_plot = "dexter.tools:currents_plot"
+bfield_plot = "dexter.tools:bfield_plot"
+flux_surfaces_plot= "dexter.tools:flux_surfaces_plot"
+harmonic_plot = "dexter.tools:harmonic_plot"
+jacobian_plot = "dexter.tools:jacobian_plot"
