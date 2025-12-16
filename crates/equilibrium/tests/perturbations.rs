@@ -1,17 +1,16 @@
-use equilibrium::cache::HarmonicCache;
 use equilibrium::extract::STUB_TEST_NETCDF_PATH;
 use rsl_interpolation::Accelerator;
 use std::path::PathBuf;
 
-use equilibrium::Perturbation;
 use equilibrium::*;
 
 #[test]
 fn test_nc_perturbation_no_harmonics() {
-    let perturbation = perturbations::NcPerturbation::from_harmonics(&[]);
+    let perturbation = NcPerturbation::from_harmonics(&[]);
 
     println!("{perturbation:?}");
 
+    assert!(perturbation.is_empty());
     assert_eq!(perturbation.get_harmonics().len(), 0);
     assert_eq!(perturbation.len(), 0);
 
@@ -56,11 +55,12 @@ fn test_nc_perturbation_no_harmonics() {
 #[test]
 fn test_nc_perturbation_one_harmonic() {
     let path = PathBuf::from(STUB_TEST_NETCDF_PATH);
-    let builder = harmonics::NcHarmonicBuilder::new(&path, "steffen", 2, 1);
+    let builder = NcHarmonicBuilder::new(&path, "steffen", 2, 1);
     let harmonic = builder.build().unwrap();
     let psip_data = harmonic.psip_data();
-    let perturbation = perturbations::NcPerturbation::from_harmonics(&[harmonic]);
+    let perturbation = NcPerturbation::from_harmonics(&[harmonic]);
 
+    assert!(!perturbation.is_empty());
     println!("{perturbation:?}");
 
     let psip_wall = psip_data.last().unwrap();
@@ -143,9 +143,8 @@ fn test_nc_perturbation_one_harmonic() {
 
 #[test]
 fn test_nc_perturbation_multiple_harmonics() {
-    use harmonics::NcHarmonicBuilder;
     let path = PathBuf::from(STUB_TEST_NETCDF_PATH);
-    let perturbation = perturbations::NcPerturbation::from_harmonics(&[
+    let perturbation = NcPerturbation::from_harmonics(&[
         NcHarmonicBuilder::new(&path, "steffen", 2, 1)
             .build()
             .unwrap(),
@@ -161,6 +160,7 @@ fn test_nc_perturbation_multiple_harmonics() {
     ]);
     let psip_data = perturbation.get_harmonics().first().unwrap().psip_data();
 
+    assert!(!perturbation.is_empty());
     println!("{perturbation:?}");
 
     let psip_wall = psip_data.last().unwrap();

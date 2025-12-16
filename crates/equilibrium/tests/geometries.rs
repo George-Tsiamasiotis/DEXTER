@@ -1,7 +1,6 @@
 use equilibrium::extract::STUB_TEST_NETCDF_PATH;
 use std::path::PathBuf;
 
-use equilibrium::geometries;
 use equilibrium::*;
 
 #[test]
@@ -9,7 +8,7 @@ fn test_nc_geometry() {
     let path = PathBuf::from(STUB_TEST_NETCDF_PATH);
     let typ1d = "cubic";
     let typ2d = "bicubic";
-    let builder = geometries::NcGeometryBuilder::new(&path, typ1d, typ2d);
+    let builder = NcGeometryBuilder::new(&path, typ1d, typ2d);
     let geometry = builder.build().unwrap();
 
     println!("{geometry:?}");
@@ -73,7 +72,7 @@ fn test_nc_geometry_evals() {
     let path = PathBuf::from(STUB_TEST_NETCDF_PATH);
     let typ1d = "cubic";
     let typ2d = "bicubic";
-    let builder = geometries::NcGeometryBuilder::new(&path, typ1d, typ2d);
+    let builder = NcGeometryBuilder::new(&path, typ1d, typ2d);
     let geometry = builder.build().unwrap();
 
     println!("{geometry:?}");

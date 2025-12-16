@@ -2,36 +2,33 @@
 
 use std::time::Duration;
 
-use config::*;
-use derive_is_enum_variant::is_enum_variant;
-use equilibrium::{Bfield, Currents, Perturbation, Qfactor};
+use derive_is_enum_variant::is_enum_variant as IsEnumVariant;
+use equilibrium::{Bfield, Current, Perturbation, Qfactor};
 
 use crate::routines::{Frequencies, close_theta_period, integrate, map_integrate};
 use crate::state::Display;
-use crate::{Evolution, MappingParameters, State};
-
-use crate::MagneticMoment;
-use crate::{Flux, Length, ParticleError, Radians, Time};
+use crate::{Evolution, IntegrationConfig, MappingParameters, SinglePeriodConfig, State};
+use crate::{MappingConfig, ParticleError};
 
 /// A set of a Particle's intial conditions.
 #[derive(Clone, Debug)]
 pub struct InitialConditions {
     /// The initial time.
-    pub time0: Time,
+    pub time0: f64,
     /// The initial `θ` angle.
-    pub theta0: Radians,
+    pub theta0: f64,
     /// The intial poloidal magnetic flux `ψp`.
-    pub psip0: Flux,
+    pub psip0: f64,
     /// The initial parallel gyro radius `ρ`.
-    pub rho0: Length,
+    pub rho0: f64,
     /// The initial `ζ` angle.
-    pub zeta0: Flux,
+    pub zeta0: f64,
     /// The magnetic moment `μ`.
-    pub mu: MagneticMoment,
+    pub mu: f64,
 }
 
 /// The [`Particle`]'s integration status.
-#[derive(Debug, Clone, Default, PartialEq, is_enum_variant)]
+#[derive(Debug, Clone, Default, PartialEq, IsEnumVariant)]
 pub enum IntegrationStatus {
     /// Initialized from [`InitialConditions`], not integrated.
     #[default]
@@ -44,9 +41,9 @@ pub enum IntegrationStatus {
     SinglePeriodIntegrated,
     /// Escaped / Hit the wall.
     Escaped,
-    /// NaN encountered during [`State`] evaluation.
+    /// NaN encountered during State evaluation.
     EvaluationNan,
-    /// Timed out after [`config::MAX_STEPS`]
+    /// Timed out after a maximum number of steps.
     TimedOut(Duration),
     /// Intersections calculated from the mapping are invalid (The spacing between each
     /// intersection and its neighbors must be *exactly* 2π).
@@ -56,7 +53,7 @@ pub enum IntegrationStatus {
 }
 
 /// Defines the Particle's orbit type from its θ-span.
-#[derive(Debug, Default, Clone, is_enum_variant)]
+#[derive(Debug, Default, Clone, IsEnumVariant)]
 pub enum OrbitType {
     #[default]
     Undefined,
@@ -70,10 +67,10 @@ pub struct Particle {
     /// The [`InitialConditions`] set of the particle.
     pub initial_conditions: InitialConditions,
     /// The initial [`State`] of the particle.
-    pub initial_state: State,
+    pub(crate) initial_state: State,
     /// The final [`State`] of the particle.
-    pub final_state: State,
-    /// The [`Evolution`] time series of the particle.
+    pub(crate) final_state: State,
+    /// The time [`Evolution`] of the particle.
     pub evolution: Evolution,
     /// Status of the particle's integration.
     pub status: IntegrationStatus,
@@ -84,10 +81,32 @@ pub struct Particle {
 }
 
 impl Particle {
-    /// Creates a new [`Particle`] from the initial conditions.
+    /// Creates a new [`Particle`] from a set of [`InitialConditions`].
+    ///
+    /// Example
+    ///
+    /// ```
+    /// # use std::path::PathBuf;
+    /// # use particle::*;
+    /// # use equilibrium::geometries::NcGeometryBuilder;
+    /// #
+    /// # let path = PathBuf::from("../equilibrium/lar_netcdf.nc");
+    /// # let geometry = NcGeometryBuilder::new(&path, "steffen", "bicubic").build()?;
+    /// let initial_conditions = InitialConditions {
+    ///     time0: 0.0,
+    ///     theta0: 0.0,
+    ///     psip0: geometry.psip_wall() / 2.0,
+    ///     rho0: 1e-4,
+    ///     zeta0: 0.0,
+    ///     mu: 0.0,
+    /// };
+    /// let mut particle = Particle::new(&initial_conditions);
+    /// # Ok::<_, ParticleError>(())
+    ///
+    /// ```
     pub fn new(initial_conditions: &InitialConditions) -> Self {
         let initial_state = State::from_initial(initial_conditions);
-        let mut evolution = Evolution::with_capacity(EVOLUTION_INIT_CAPACITY);
+        let mut evolution = Evolution::new();
         evolution.push_state(&initial_state);
 
         Self {
@@ -101,16 +120,62 @@ impl Particle {
         }
     }
 
-    /// Integrates the particle, storing the calculated orbit in [`Evolution`].
+    /// Integrates the particle, storing the calculated orbit in [`Particle::evolution`].
+    ///
+    /// Example
+    ///
+    /// ```
+    /// # use std::path::PathBuf;
+    /// # use particle::*;
+    /// # use equilibrium::{geometries::*, qfactors::*, currents::*, bfields::*, harmonics::*, perturbations::*};
+    /// #
+    /// # let path = PathBuf::from("../equilibrium/lar_netcdf.nc");
+    /// # let geometry = NcGeometryBuilder::new(&path, "steffen", "bicubic").build()?;
+    /// # let qfactor = NcQfactorBuilder::new(&path, "steffen").build()?;
+    /// # let current = NcCurrentBuilder::new(&path, "steffen").build()?;
+    /// # let bfield = NcBfieldBuilder::new(&path, "bicubic").build()?;
+    /// # let perturbation = NcPerturbation::from_harmonics(&vec![
+    /// #   NcHarmonicBuilder::new(&path, "steffen", 2, 1).build()?
+    /// # ]);
+    /// #
+    /// # let initial_conditions = InitialConditions {
+    /// #   time0: 0.0,
+    /// #   theta0: 0.0,
+    /// #   psip0: geometry.psip_wall() / 2.0,
+    /// #   rho0: 1e-4,
+    /// #   zeta0: 0.0,
+    /// #   mu: 0.0,
+    /// # };
+    /// # let mut particle = Particle::new(&initial_conditions);
+    /// #
+    /// let config = IntegrationConfig {
+    ///     method: SteppingMethod::EnergyAdaptiveStep,
+    ///     max_steps: 10_000_000,
+    ///     energy_rel_tol: 1e-12,
+    ///     energy_abs_tol: 1e-13,
+    ///     ..Default::default()
+    /// };
+    ///
+    /// particle.integrate(
+    ///     &qfactor,
+    ///     &current,
+    ///     &bfield,
+    ///     &perturbation,
+    ///     (0.0, 1e6),
+    ///     &config,
+    /// );
+    /// # Ok::<_, ParticleError>(())
+    /// ```
     pub fn integrate(
         &mut self,
-        qfactor: &Qfactor,
-        bfield: &Bfield,
-        currents: &Currents,
-        perturbation: &Perturbation,
-        t_eval: (Time, Time),
+        qfactor: &impl Qfactor,
+        current: &impl Current,
+        bfield: &impl Bfield,
+        perturbation: &impl Perturbation,
+        t_eval: (f64, f64),
+        config: &IntegrationConfig,
     ) {
-        match integrate(self, qfactor, bfield, currents, perturbation, t_eval) {
+        match integrate(self, qfactor, current, bfield, perturbation, t_eval, config) {
             Ok(()) => self.status = IntegrationStatus::Integrated,
             Err(error) => self.set_status_from_error(error),
         }
@@ -118,29 +183,116 @@ impl Particle {
 
     /// Integrates the particle, storing its intersections with the Poincare surface defined by
     /// [`MappingParameters`].
+    ///
+    /// Example
+    ///
+    /// ```
+    /// # use std::path::PathBuf;
+    /// # use particle::*;
+    /// # use equilibrium::{geometries::*, qfactors::*, currents::*, bfields::*, harmonics::*, perturbations::*};
+    /// #
+    /// # let path = PathBuf::from("../equilibrium/lar_netcdf.nc");
+    /// # let geometry = NcGeometryBuilder::new(&path, "steffen", "bicubic").build()?;
+    /// # let qfactor = NcQfactorBuilder::new(&path, "steffen").build()?;
+    /// # let current = NcCurrentBuilder::new(&path, "steffen").build()?;
+    /// # let bfield = NcBfieldBuilder::new(&path, "bicubic").build()?;
+    /// # let perturbation = NcPerturbation::from_harmonics(&vec![
+    /// #   NcHarmonicBuilder::new(&path, "steffen", 2, 1).build()?
+    /// # ]);
+    /// #
+    /// # let initial_conditions = InitialConditions {
+    /// #   time0: 0.0,
+    /// #   theta0: 0.0,
+    /// #   psip0: geometry.psip_wall() / 2.0,
+    /// #   rho0: 1e-4,
+    /// #   zeta0: 0.0,
+    /// #   mu: 0.0,
+    /// # };
+    /// # let mut particle = Particle::new(&initial_conditions);
+    /// #
+    /// let config = MappingConfig {
+    ///     method: SteppingMethod::ErrorAdaptiveStep,
+    ///     max_steps: 100_000,
+    ///     error_rel_tol: 1e-12,
+    ///     error_abs_tol: 1e-13,
+    ///     ..Default::default()
+    /// };
+    ///
+    /// let params = MappingParameters::new(PoincareSection::ConstTheta, 0.0, 10);
+    ///
+    /// particle.map(
+    ///     &qfactor,
+    ///     &current,
+    ///     &bfield,
+    ///     &perturbation,
+    ///     &params,
+    ///     &config,
+    /// );
+    /// # Ok::<_, ParticleError>(())
+    /// ```
     pub fn map(
         &mut self,
-        qfactor: &Qfactor,
-        bfield: &Bfield,
-        currents: &Currents,
-        perturbation: &Perturbation,
+        qfactor: &impl Qfactor,
+        current: &impl Current,
+        bfield: &impl Bfield,
+        perturbation: &impl Perturbation,
         params: &MappingParameters,
+        config: &MappingConfig,
     ) {
-        match map_integrate(self, qfactor, bfield, currents, perturbation, params) {
+        match map_integrate(self, qfactor, current, bfield, perturbation, params, config) {
             Ok(()) => self.status = IntegrationStatus::Mapped,
             Err(error) => self.set_status_from_error(error),
         }
     }
 
     /// Integrates the particle for 1 `θ-ψp` period,  calculating its `ωθ`, `ωζ` and qkinetic.
-    pub fn calculate_frequencies(
+    ///
+    /// The orbit is stored in [`Particle::evolution`].
+    ///
+    /// Example
+    ///
+    /// ```
+    /// # use std::path::PathBuf;
+    /// # use particle::*;
+    /// # use equilibrium::{geometries::*, qfactors::*, currents::*, bfields::*, harmonics::*, perturbations::*};
+    /// #
+    /// # let path = PathBuf::from("../equilibrium/lar_netcdf.nc");
+    /// # let geometry = NcGeometryBuilder::new(&path, "steffen", "bicubic").build()?;
+    /// # let qfactor = NcQfactorBuilder::new(&path, "steffen").build()?;
+    /// # let current = NcCurrentBuilder::new(&path, "steffen").build()?;
+    /// # let bfield = NcBfieldBuilder::new(&path, "bicubic").build()?;
+    /// # let perturbation = NcPerturbation::from_harmonics(&vec![
+    /// #   NcHarmonicBuilder::new(&path, "steffen", 2, 1).build()?
+    /// # ]);
+    /// #
+    /// # let initial_conditions = InitialConditions {
+    /// #   time0: 0.0,
+    /// #   theta0: 0.0,
+    /// #   psip0: geometry.psip_wall() / 2.0,
+    /// #   rho0: 1e-4,
+    /// #   zeta0: 0.0,
+    /// #   mu: 0.0,
+    /// # };
+    /// # let mut particle = Particle::new(&initial_conditions);
+    /// #
+    /// particle.single_period_integrate(
+    ///     &qfactor,
+    ///     &current,
+    ///     &bfield,
+    ///     &perturbation,
+    ///     &SinglePeriodConfig::default(),
+    /// );
+    /// # Ok::<_, ParticleError>(())
+    /// ```
+    pub fn single_period_integrate(
         &mut self,
-        qfactor: &Qfactor,
-        bfield: &Bfield,
-        currents: &Currents,
-        perturbation: &Perturbation,
+        qfactor: &impl Qfactor,
+        current: &impl Current,
+        bfield: &impl Bfield,
+        perturbation: &impl Perturbation,
+        config: &SinglePeriodConfig,
     ) {
-        match close_theta_period(self, qfactor, bfield, currents, perturbation) {
+        match close_theta_period(self, qfactor, current, bfield, perturbation, config) {
             Ok(()) => self.status = IntegrationStatus::SinglePeriodIntegrated,
             Err(error) => self.set_status_from_error(error),
         }
@@ -148,19 +300,7 @@ impl Particle {
 
     /// Calculates the Particles OrbitType.
     pub(crate) fn calculate_orbit_type(&mut self) {
-        let thetas = &self.evolution.theta;
-        if thetas.is_empty() {
-            self.orbit_type = OrbitType::Undefined;
-            return;
-        }
-        let theta0 = thetas.first().expect("non empty");
-        let thetaf = thetas.last().expect("non empty");
-
-        use std::f64::consts::TAU;
-        match (thetaf - theta0) > TAU - TRAPPED_THRESHOLD {
-            true => self.orbit_type = OrbitType::Passing,
-            false => self.orbit_type = OrbitType::Trapped,
-        }
+        // TODO: Decide how to setup up parameters
     }
 
     /// Sets the Particle's [`IntegrationStatus`] from a Result::Err() of an integration
@@ -169,7 +309,10 @@ impl Particle {
         use ParticleError::*;
         self.status = match error {
             EqError(..) => IntegrationStatus::Escaped,
-            TimedOut(duration) => IntegrationStatus::TimedOut(duration),
+            TimedOut(duration) => {
+                self.evolution.duration = duration;
+                IntegrationStatus::TimedOut(duration)
+            }
             IntersectionError => IntegrationStatus::InvalidIntersections,
             EvaluationNaN => IntegrationStatus::EvaluationNan,
             // _ => IntegrationStatus::Failed(error.to_string().into_boxed_str()),

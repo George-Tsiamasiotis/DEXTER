@@ -26,9 +26,9 @@ impl NcCurrentBuilder {
     /// # Example
     /// ```
     /// # use std::path::PathBuf;
-    /// # use equilibrium::currents;
+    /// # use equilibrium::*;
     /// let path = PathBuf::from("./netcdf.nc");
-    /// let builder = currents::NcCurrentBuilder::new(&path, "cubic");
+    /// let builder = NcCurrentBuilder::new(&path, "cubic");
     /// ```
     pub fn new(path: &Path, typ: &str) -> Self {
         Self {
@@ -42,9 +42,9 @@ impl NcCurrentBuilder {
     /// # Example
     /// ```
     /// # use std::path::PathBuf;
-    /// # use equilibrium::currents;
+    /// # use equilibrium::*;
     /// let path = PathBuf::from("./netcdf.nc");
-    /// let current = currents::NcCurrentBuilder::new(&path, "cubic").build()?;
+    /// let current = NcCurrentBuilder::new(&path, "cubic").build()?;
     /// # Ok::<_, equilibrium::EqError>(())
     /// ```
     pub fn build(self) -> Result<NcCurrent> {
@@ -177,8 +177,8 @@ impl std::fmt::Debug for NcCurrent {
 ///
 /// # Example
 /// ```
-/// # use equilibrium::currents;
-/// let current = currents::LarCurrent;
+/// # use equilibrium::*;
+/// let current = LarCurrent;
 /// ```
 #[derive(Debug)]
 pub struct LarCurrent;

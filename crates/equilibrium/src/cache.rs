@@ -3,8 +3,8 @@
 use rsl_interpolation::Accelerator;
 
 use crate::Harmonic;
+use crate::NcHarmonic;
 use crate::Result;
-use crate::harmonics::NcHarmonic;
 
 /// Holds a Harmonic's values evalutated at a specific point.
 ///
@@ -131,7 +131,7 @@ mod test {
         let typ = "steffen";
         let m = 2;
         let n = 1;
-        let builder = harmonics::NcHarmonicBuilder::new(&path, typ, m, n);
+        let builder = NcHarmonicBuilder::new(&path, typ, m, n);
         let harmonic = builder.build().unwrap();
         let mut cache = HarmonicCache::new();
         let mut acc = Accelerator::new();

@@ -21,7 +21,7 @@ pub trait Geometry {
     /// # use std::path::PathBuf;
     /// #
     /// # let path = PathBuf::from("./netcdf.nc");
-    /// # let geometry = geometries::NcGeometryBuilder::new(&path, "steffen", "bicubic").build()?;
+    /// # let geometry = NcGeometryBuilder::new(&path, "steffen", "bicubic").build()?;
     /// #
     /// let r = geometry.r(0.015)?;
     /// # Ok::<_, EqError>(())
@@ -37,7 +37,7 @@ pub trait Geometry {
     /// # use std::path::PathBuf;
     /// #
     /// # let path = PathBuf::from("./netcdf.nc");
-    /// # let geometry = geometries::NcGeometryBuilder::new(&path, "steffen", "bicubic").build()?;
+    /// # let geometry = NcGeometryBuilder::new(&path, "steffen", "bicubic").build()?;
     /// #
     /// let psip = geometry.psip(0.02)?;
     /// # Ok::<_, EqError>(())
@@ -53,7 +53,7 @@ pub trait Geometry {
     /// # use std::path::PathBuf;
     /// #
     /// # let path = PathBuf::from("./netcdf.nc");
-    /// # let geometry = geometries::NcGeometryBuilder::new(&path, "steffen", "bicubic").build()?;
+    /// # let geometry = NcGeometryBuilder::new(&path, "steffen", "bicubic").build()?;
     /// let psi = geometry.psi(0.015)?;
     /// # Ok::<_, EqError>(())
     /// ```
@@ -68,7 +68,7 @@ pub trait Geometry {
     /// # use std::path::PathBuf;
     /// #
     /// # let path = PathBuf::from("./netcdf.nc");
-    /// # let geometry = geometries::NcGeometryBuilder::new(&path, "steffen", "bicubic").build()?;
+    /// # let geometry = NcGeometryBuilder::new(&path, "steffen", "bicubic").build()?;
     /// #
     /// let rlab = geometry.rlab(0.015, 3.1415)?;
     /// # Ok::<_, EqError>(())
@@ -84,7 +84,7 @@ pub trait Geometry {
     /// # use std::path::PathBuf;
     /// #
     /// # let path = PathBuf::from("./netcdf.nc");
-    /// # let geometry = geometries::NcGeometryBuilder::new(&path, "steffen", "bicubic").build()?;
+    /// # let geometry = NcGeometryBuilder::new(&path, "steffen", "bicubic").build()?;
     /// #
     /// let zlab = geometry.zlab(0.015, 3.1415)?;
     /// # Ok::<_, EqError>(())
@@ -100,7 +100,7 @@ pub trait Geometry {
     /// # use std::path::PathBuf;
     /// #
     /// # let path = PathBuf::from("./netcdf.nc");
-    /// # let geometry = geometries::NcGeometryBuilder::new(&path, "steffen", "bicubic").build()?;
+    /// # let geometry = NcGeometryBuilder::new(&path, "steffen", "bicubic").build()?;
     /// #
     /// let j = geometry.jacobian(0.015, 3.1415)?;
     /// # Ok::<_, EqError>(())
@@ -109,7 +109,7 @@ pub trait Geometry {
 }
 
 /// q-factor related quantities computation.
-pub trait Qfactor {
+pub trait Qfactor: Clone {
     /// Calculates the q-factor `q(ψp)`.
     ///
     /// # Example
@@ -120,7 +120,7 @@ pub trait Qfactor {
     /// # use rsl_interpolation::Accelerator;
     /// #
     /// # let path = PathBuf::from("./netcdf.nc");
-    /// # let qfactor = qfactors::NcQfactorBuilder::new(&path, "steffen").build()?;
+    /// # let qfactor = NcQfactorBuilder::new(&path, "steffen").build()?;
     /// #
     /// let mut acc = Accelerator::new();
     /// let q = qfactor.q(0.015, &mut acc)?;
@@ -138,7 +138,7 @@ pub trait Qfactor {
     /// # use rsl_interpolation::Accelerator;
     /// #
     /// # let path = PathBuf::from("./netcdf.nc");
-    /// # let qfactor = qfactors::NcQfactorBuilder::new(&path, "steffen").build()?;
+    /// # let qfactor = NcQfactorBuilder::new(&path, "steffen").build()?;
     /// #
     /// let mut acc = Accelerator::new();
     /// let psi = qfactor.psi(0.015, &mut acc)?;
@@ -156,7 +156,7 @@ pub trait Qfactor {
     /// # use rsl_interpolation::Accelerator;
     /// #
     /// # let path = PathBuf::from("./netcdf.nc");
-    /// # let qfactor = qfactors::NcQfactorBuilder::new(&path, "steffen").build()?;
+    /// # let qfactor = NcQfactorBuilder::new(&path, "steffen").build()?;
     /// #
     /// let mut acc = Accelerator::new();
     /// let dpsi_dpsip = qfactor.dpsi_dpsip(0.015, &mut acc)?;
@@ -177,7 +177,7 @@ pub trait Current {
     /// # use rsl_interpolation::Accelerator;
     /// #
     /// # let path = PathBuf::from("./netcdf.nc");
-    /// # let current = currents::NcCurrentBuilder::new(&path, "steffen").build()?;
+    /// # let current = NcCurrentBuilder::new(&path, "steffen").build()?;
     /// #
     /// let mut acc = Accelerator::new();
     /// let g = current.g(0.015, &mut acc)?;
@@ -195,7 +195,7 @@ pub trait Current {
     /// # use rsl_interpolation::Accelerator;
     /// #
     /// # let path = PathBuf::from("./netcdf.nc");
-    /// # let current = currents::NcCurrentBuilder::new(&path, "steffen").build()?;
+    /// # let current = NcCurrentBuilder::new(&path, "steffen").build()?;
     /// #
     /// let mut acc = Accelerator::new();
     /// let i = current.i(0.015, &mut acc)?;
@@ -213,7 +213,7 @@ pub trait Current {
     /// # use rsl_interpolation::Accelerator;
     /// #
     /// # let path = PathBuf::from("./netcdf.nc");
-    /// # let current = currents::NcCurrentBuilder::new(&path, "steffen").build()?;
+    /// # let current = NcCurrentBuilder::new(&path, "steffen").build()?;
     /// #
     /// let mut acc = Accelerator::new();
     /// let dg_dpsip = current.dg_dpsip(0.015, &mut acc)?;
@@ -231,7 +231,7 @@ pub trait Current {
     /// # use rsl_interpolation::Accelerator;
     /// #
     /// # let path = PathBuf::from("./netcdf.nc");
-    /// # let current = currents::NcCurrentBuilder::new(&path, "steffen").build()?;
+    /// # let current = NcCurrentBuilder::new(&path, "steffen").build()?;
     /// #
     /// let mut acc = Accelerator::new();
     /// let di_dpsip = current.di_dpsip(0.015, &mut acc)?;
@@ -252,7 +252,7 @@ pub trait Bfield {
     /// # use rsl_interpolation::{Accelerator, Cache};
     /// #
     /// # let path = PathBuf::from("./netcdf.nc");
-    /// # let bfield = bfields::NcBfieldBuilder::new(&path, "bilinear").build()?;
+    /// # let bfield = NcBfieldBuilder::new(&path, "bilinear").build()?;
     /// #
     /// let mut xacc = Accelerator::new();
     /// let mut yacc = Accelerator::new();
@@ -279,7 +279,7 @@ pub trait Bfield {
     /// # use rsl_interpolation::{Accelerator, Cache};
     /// #
     /// # let path = PathBuf::from("./netcdf.nc");
-    /// # let bfield = bfields::NcBfieldBuilder::new(&path, "bilinear").build()?;
+    /// # let bfield = NcBfieldBuilder::new(&path, "bilinear").build()?;
     /// #
     /// let mut xacc = Accelerator::new();
     /// let mut yacc = Accelerator::new();
@@ -306,7 +306,7 @@ pub trait Bfield {
     /// # use rsl_interpolation::{Accelerator, Cache};
     /// #
     /// # let path = PathBuf::from("./netcdf.nc");
-    /// # let bfield = bfields::NcBfieldBuilder::new(&path, "bilinear").build()?;
+    /// # let bfield = NcBfieldBuilder::new(&path, "bilinear").build()?;
     /// #
     /// let mut xacc = Accelerator::new();
     /// let mut yacc = Accelerator::new();
@@ -332,12 +332,11 @@ pub trait Harmonic {
     ///
     /// ```
     /// # use equilibrium::*;
-    /// # use equilibrium::cache::*;
     /// # use std::path::PathBuf;
     /// # use rsl_interpolation::{Accelerator, Cache};
     /// #
     /// # let path = PathBuf::from("./netcdf.nc");
-    /// # let harmonic = harmonics::NcHarmonicBuilder::new(&path, "steffen", 1, 2).build()?;
+    /// # let harmonic = NcHarmonicBuilder::new(&path, "steffen", 1, 2).build()?;
     /// #
     /// let mut acc = Accelerator::new();
     /// let mut hcache = HarmonicCache::new();
@@ -359,12 +358,11 @@ pub trait Harmonic {
     ///
     /// ```
     /// # use equilibrium::*;
-    /// # use equilibrium::cache::*;
     /// # use std::path::PathBuf;
     /// # use rsl_interpolation::{Accelerator, Cache};
     /// #
     /// # let path = PathBuf::from("./netcdf.nc");
-    /// # let harmonic = harmonics::NcHarmonicBuilder::new(&path, "steffen", 1, 2).build()?;
+    /// # let harmonic = NcHarmonicBuilder::new(&path, "steffen", 1, 2).build()?;
     /// #
     /// let mut acc = Accelerator::new();
     /// let mut hcache = HarmonicCache::new();
@@ -386,12 +384,11 @@ pub trait Harmonic {
     ///
     /// ```
     /// # use equilibrium::*;
-    /// # use equilibrium::cache::*;
     /// # use std::path::PathBuf;
     /// # use rsl_interpolation::{Accelerator, Cache};
     /// #
     /// # let path = PathBuf::from("./netcdf.nc");
-    /// # let harmonic = harmonics::NcHarmonicBuilder::new(&path, "steffen", 1, 2).build()?;
+    /// # let harmonic = NcHarmonicBuilder::new(&path, "steffen", 1, 2).build()?;
     /// #
     /// let mut acc = Accelerator::new();
     /// let mut hcache = HarmonicCache::new();
@@ -413,12 +410,11 @@ pub trait Harmonic {
     ///
     /// ```
     /// # use equilibrium::*;
-    /// # use equilibrium::cache::*;
     /// # use std::path::PathBuf;
     /// # use rsl_interpolation::{Accelerator, Cache};
     /// #
     /// # let path = PathBuf::from("./netcdf.nc");
-    /// # let harmonic = harmonics::NcHarmonicBuilder::new(&path, "steffen", 1, 2).build()?;
+    /// # let harmonic = NcHarmonicBuilder::new(&path, "steffen", 1, 2).build()?;
     /// #
     /// let mut acc = Accelerator::new();
     /// let mut hcache = HarmonicCache::new();
@@ -442,12 +438,11 @@ pub trait Harmonic {
     ///
     /// ```
     /// # use equilibrium::*;
-    /// # use equilibrium::cache::*;
     /// # use std::path::PathBuf;
     /// # use rsl_interpolation::{Accelerator, Cache};
     /// #
     /// # let path = PathBuf::from("./netcdf.nc");
-    /// # let harmonic = harmonics::NcHarmonicBuilder::new(&path, "steffen", 1, 2).build()?;
+    /// # let harmonic = NcHarmonicBuilder::new(&path, "steffen", 1, 2).build()?;
     /// #
     /// let mut acc = Accelerator::new();
     /// let mut hcache = HarmonicCache::new();
@@ -477,7 +472,7 @@ pub trait Harmonic {
     /// # use rsl_interpolation::{Accelerator, Cache};
     /// #
     /// # let path = PathBuf::from("./netcdf.nc");
-    /// # let harmonic = harmonics::NcHarmonicBuilder::new(&path, "steffen", 1, 2).build()?;
+    /// # let harmonic = NcHarmonicBuilder::new(&path, "steffen", 1, 2).build()?;
     /// #
     /// let mut acc = Accelerator::new();
     /// let a = harmonic.a(0.015, &mut acc)?;
@@ -495,7 +490,7 @@ pub trait Harmonic {
     /// # use rsl_interpolation::{Accelerator, Cache};
     /// #
     /// # let path = PathBuf::from("./netcdf.nc");
-    /// # let harmonic = harmonics::NcHarmonicBuilder::new(&path, "steffen", 1, 2).build()?;
+    /// # let harmonic = NcHarmonicBuilder::new(&path, "steffen", 1, 2).build()?;
     /// #
     /// let mut acc = Accelerator::new();
     /// let da_dpsip = harmonic.da_dpsip(0.015, &mut acc)?;
@@ -513,7 +508,7 @@ pub trait Harmonic {
     /// # use rsl_interpolation::{Accelerator, Cache};
     /// #
     /// # let path = PathBuf::from("./netcdf.nc");
-    /// # let harmonic = harmonics::NcHarmonicBuilder::new(&path, "steffen", 1, 2).build()?;
+    /// # let harmonic = NcHarmonicBuilder::new(&path, "steffen", 1, 2).build()?;
     /// #
     /// let mut acc = Accelerator::new();
     /// let phase = harmonic.phase(0.015, &mut acc)?;
@@ -531,7 +526,7 @@ pub trait Harmonic {
     /// # use rsl_interpolation::{Accelerator, Cache};
     /// #
     /// # let path = PathBuf::from("./netcdf.nc");
-    /// # let harmonic = harmonics::NcHarmonicBuilder::new(&path, "steffen", 1, 2).build()?;
+    /// # let harmonic = NcHarmonicBuilder::new(&path, "steffen", 1, 2).build()?;
     /// #
     /// let mut acc = Accelerator::new();
     /// let module = harmonic.mod_arg(0.015, 3.1415, 6.2831, &mut acc)?;
@@ -541,15 +536,15 @@ pub trait Harmonic {
 }
 
 /// Perturbation related quantities computation
+///
+/// Since a Perturbation consists of multiple harmonics, the perturbation's value at a specific
+/// point is the total sum of all the contained harmonics evaluated at that point.
 pub trait Perturbation {
-    /// Calculates the Perturbation `Σ{ α(n,m)(ψp) * cos(mθ-nζ+φ0) }`.
+    /// Calculates the perturbation's value.
     ///
     /// # Example
     ///
     /// ```
-    /// # use equilibrium::perturbations::*;
-    /// # use equilibrium::harmonics::*;
-    /// # use equilibrium::cache::*;
     /// # use equilibrium::*;
     /// # use std::path::PathBuf;
     /// # use rsl_interpolation::{Accelerator, Cache};
@@ -579,9 +574,6 @@ pub trait Perturbation {
     /// # Example
     ///
     /// ```
-    /// # use equilibrium::perturbations::*;
-    /// # use equilibrium::harmonics::*;
-    /// # use equilibrium::cache::*;
     /// # use equilibrium::*;
     /// # use std::path::PathBuf;
     /// # use rsl_interpolation::{Accelerator, Cache};
@@ -611,9 +603,6 @@ pub trait Perturbation {
     /// # Example
     ///
     /// ```
-    /// # use equilibrium::perturbations::*;
-    /// # use equilibrium::harmonics::*;
-    /// # use equilibrium::cache::*;
     /// # use equilibrium::*;
     /// # use std::path::PathBuf;
     /// # use rsl_interpolation::{Accelerator, Cache};
@@ -643,9 +632,6 @@ pub trait Perturbation {
     /// # Example
     ///
     /// ```
-    /// # use equilibrium::perturbations::*;
-    /// # use equilibrium::harmonics::*;
-    /// # use equilibrium::cache::*;
     /// # use equilibrium::*;
     /// # use std::path::PathBuf;
     /// # use rsl_interpolation::{Accelerator, Cache};
@@ -677,9 +663,6 @@ pub trait Perturbation {
     /// # Example
     ///
     /// ```
-    /// # use equilibrium::perturbations::*;
-    /// # use equilibrium::harmonics::*;
-    /// # use equilibrium::cache::*;
     /// # use equilibrium::*;
     /// # use std::path::PathBuf;
     /// # use rsl_interpolation::{Accelerator, Cache};
@@ -704,4 +687,12 @@ pub trait Perturbation {
         acc: &mut Accelerator,
         caches: &mut [HarmonicCache],
     ) -> Result<f64>;
+
+    /// Returns the number of harmonics.
+    fn len(&self) -> usize;
+
+    /// Returns true if the perturbation has no harmonics (== no perturbation).
+    fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
 }

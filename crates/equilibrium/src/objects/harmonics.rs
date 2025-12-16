@@ -13,11 +13,13 @@ use crate::cache::HarmonicCache;
 /// Defines the calculation method of the phase `φ(ψp)` in an Numerical [`Harmonic`].
 #[derive(Default, Debug, Clone)]
 pub enum PhaseMethod {
-    /// Corresponds to ``φ(ψp) = 0`.
+    /// Corresponds to `φ(ψp) = 0`.
     Zero,
     /// Corresponds to `φ = const = the average of all the values of the phase array`.
     Average,
     /// Corresponds to `φ = const = the value of φ(ψp) at the resonance m/n`.
+    ///
+    /// In the case that the resonance falls outside the wall, it defaults to [`Zero`](PhaseMethod::Zero).
     #[default]
     Resonance,
     /// Interpolation over the phase array.
@@ -48,9 +50,9 @@ impl NcHarmonicBuilder {
     /// # Example
     /// ```
     /// # use std::path::PathBuf;
-    /// # use equilibrium::harmonics;
+    /// # use equilibrium::*;
     /// let path = PathBuf::from("./netcdf.nc");
-    /// let builder = harmonics::NcHarmonicBuilder::new(&path, "steffen", 1, 2);
+    /// let builder = NcHarmonicBuilder::new(&path, "steffen", 1, 2);
     /// ```
     pub fn new(path: &Path, typ: &str, m: i64, n: i64) -> Self {
         Self {
@@ -67,9 +69,9 @@ impl NcHarmonicBuilder {
     /// # Example
     /// ```
     /// # use std::path::PathBuf;
-    /// # use equilibrium::harmonics;
+    /// # use equilibrium::*;
     /// let path = PathBuf::from("./netcdf.nc");
-    /// let harmonic = harmonics::NcHarmonicBuilder::new(&path, "cubic", 1, 2).build()?;
+    /// let harmonic = NcHarmonicBuilder::new(&path, "cubic", 1, 2).build()?;
     /// # Ok::<_, equilibrium::EqError>(())
     /// ```
     pub fn build(self) -> Result<NcHarmonic> {
@@ -81,10 +83,9 @@ impl NcHarmonicBuilder {
     /// # Example
     /// ```
     /// # use std::path::PathBuf;
-    /// # use equilibrium::harmonics;
-    /// # use equilibrium::harmonics::PhaseMethod;
+    /// # use equilibrium::*;
     /// let path = PathBuf::from("./netcdf.nc");
-    /// let builder = harmonics::NcHarmonicBuilder::new(&path, "steffen", 1, 2)
+    /// let builder = NcHarmonicBuilder::new(&path, "steffen", 1, 2)
     ///     .with_phase_method(PhaseMethod::Interpolation)
     ///     .build()?;
     /// # Ok::<_, equilibrium::EqError>(())

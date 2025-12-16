@@ -2,14 +2,13 @@ use equilibrium::extract::STUB_TEST_NETCDF_PATH;
 use rsl_interpolation::Accelerator;
 use std::path::PathBuf;
 
-use equilibrium::Current;
-use equilibrium::currents;
+use equilibrium::*;
 
 #[test]
 fn test_nc_current() {
     let path = PathBuf::from(STUB_TEST_NETCDF_PATH);
     let typ = "steffen";
-    let builder = currents::NcCurrentBuilder::new(&path, typ);
+    let builder = NcCurrentBuilder::new(&path, typ);
     let current = builder.build().unwrap();
 
     println!("{current:?}");
@@ -37,7 +36,7 @@ fn test_nc_current() {
 fn test_nc_current_evals() {
     let path = PathBuf::from(STUB_TEST_NETCDF_PATH);
     let typ = "steffen";
-    let builder = currents::NcCurrentBuilder::new(&path, typ);
+    let builder = NcCurrentBuilder::new(&path, typ);
     let current = builder.build().unwrap();
 
     let psip_data = current.psip_data();
@@ -62,7 +61,7 @@ fn test_nc_current_evals() {
 fn test_g_axis_value_is_1() {
     let path = PathBuf::from(STUB_TEST_NETCDF_PATH);
     let typ = "steffen";
-    let builder = currents::NcCurrentBuilder::new(&path, typ);
+    let builder = NcCurrentBuilder::new(&path, typ);
     let current = builder.build().unwrap();
 
     let mut acc = Accelerator::new();
@@ -71,7 +70,7 @@ fn test_g_axis_value_is_1() {
 
 #[test]
 fn test_lar_current() {
-    let current = currents::LarCurrent;
+    let current = LarCurrent;
 
     println!("{current:?}");
 

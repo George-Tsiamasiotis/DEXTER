@@ -3,14 +3,13 @@ use ndarray::Array1;
 use rsl_interpolation::Accelerator;
 use std::path::PathBuf;
 
-use equilibrium::Qfactor;
-use equilibrium::qfactors;
+use equilibrium::*;
 
 #[test]
 fn test_nc_qfactor() {
     let path = PathBuf::from(STUB_TEST_NETCDF_PATH);
     let typ = "steffen";
-    let builder = qfactors::NcQfactorBuilder::new(&path, typ);
+    let builder = NcQfactorBuilder::new(&path, typ);
     let qfactor = builder.build().unwrap();
 
     println!("{qfactor:?}");
@@ -38,7 +37,7 @@ fn test_nc_qfactor() {
 fn test_nc_qfactor_evals() {
     let path = PathBuf::from(STUB_TEST_NETCDF_PATH);
     let typ = "steffen";
-    let builder = qfactors::NcQfactorBuilder::new(&path, typ);
+    let builder = NcQfactorBuilder::new(&path, typ);
     let qfactor = builder.build().unwrap();
 
     let psip_data = qfactor.psip_data();
@@ -62,7 +61,7 @@ fn test_nc_qfactor_evals() {
 fn test_nc_qfactor_q_dpsidpsip() {
     let path = PathBuf::from(STUB_TEST_NETCDF_PATH);
     let typ = "steffen";
-    let builder = qfactors::NcQfactorBuilder::new(&path, typ);
+    let builder = NcQfactorBuilder::new(&path, typ);
     let qfactor = builder.build().unwrap();
 
     let mut acc = Accelerator::new();
@@ -81,8 +80,36 @@ fn test_nc_qfactor_q_dpsidpsip() {
 }
 
 #[test]
+fn test_nc_qfactor_cloning() {
+    let path = PathBuf::from(STUB_TEST_NETCDF_PATH);
+    let typ = "steffen";
+    let builder = NcQfactorBuilder::new(&path, typ);
+    let qfactor1 = builder.build().unwrap();
+    let qfactor2 = qfactor1.clone();
+
+    let mut acc = Accelerator::new();
+    let psip_wall = qfactor1.psip_data().last().copied().unwrap();
+    let psip = 0.5 * psip_wall;
+
+    assert_eq!(
+        qfactor1.q(psip, &mut acc).unwrap(),
+        qfactor2.q(psip, &mut acc).unwrap()
+    );
+
+    assert_eq!(
+        qfactor1.psi(psip, &mut acc).unwrap(),
+        qfactor2.psi(psip, &mut acc).unwrap()
+    );
+
+    assert_eq!(
+        qfactor1.dpsi_dpsip(psip, &mut acc).unwrap(),
+        qfactor2.dpsi_dpsip(psip, &mut acc).unwrap()
+    );
+}
+
+#[test]
 fn test_unity_qfactor() {
-    let qfactor = qfactors::Unity;
+    let qfactor = UnityQfactor;
 
     println!("{qfactor:?}");
 

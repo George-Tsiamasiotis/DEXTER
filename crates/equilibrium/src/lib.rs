@@ -3,29 +3,30 @@
 //! # Equilibrium objects
 //!
 //! + [`Qfactor`]: Representation of the q-factor profile
-//!     - [`qfactors::NcQfactor`]: q-factor reconstructed from a netCDF file.
-//!     - [`qfactors::Unity`]: Analytical q-factor profile with q=1.
+//!     - [`NcQfactor`]: q-factor reconstructed from a netCDF file.
+//!     - [`UnityQfactor`]: Analytical q-factor profile with q=1.
 //!
 //! + [`Current`]: Representation of the plasma currents
-//!     - [`currents::NcCurrent`]: Plasma current reconstructed from a netCDF file.
-//!     - [`currents::LarCurrent`]: Large Aspect Ratio approximation, with g=1 and I=0.
+//!     - [`NcCurrent`]: Plasma current reconstructed from a netCDF file.
+//!     - [`LarCurrent`]: Large Aspect Ratio approximation, with g=1 and I=0.
 //!
 //! + [`Bfield`]: Representation of the magnetic field
-//!     - [`bfields::NcBfield`]: Magnetic field reconstructed from a netCDF file.
+//!     - [`NcBfield`]: Magnetic field reconstructed from a netCDF file.
+//!     - [`LarBfield`]: Large Aspect Ratio approximation, with `B(ψ, θ) = 1 - sqrt(2ψ)cosθ`.
 //!
 //! + [`Harmonic`]: Representation of a single magnetic ripple harmonic
-//!     - [`harmonics::NcHarmonic`]: Harmonic reconstructed from a netCDF file.
-//!         - [`harmonics::PhaseMethod`]: The method for calculating the reconstructed Harmonic's
+//!     - [`NcHarmonic`]: Harmonic reconstructed from a netCDF file.
+//!         - [`PhaseMethod`]: The method for calculating the reconstructed Harmonic's
 //!         phase `φ(ψp)`.
 //!
 //! + [`Perturbation`]: Representation of a sum of different harmonics.
-//!     - [`perturbations::NcPerturbation`]: Sum of arbitrarily many [`harmonics::NcHarmonic`]s.
+//!     - [`NcPerturbation`]: Sum of arbitrarily many [`NcHarmonic`]s.
 //!
 //! ## Geometry object
 //!
 //! + [`Geometry`]: An object containing all information about the geometry of the equilibrium, and
 //! provides interpolation methods between `ψp`, `r`, `R` and `Z`
-//!     - [`geometries::NcGeometry`]: Geometry of the netCDF equilibrium
+//!     - [`NcGeometry`]: Geometry of the netCDF equilibrium
 //!
 //! ## Data extraction
 //!
@@ -43,7 +44,7 @@
 //!
 //! ## Caching
 //!
-//! + [`cache::HarmonicCache`]: Cache holding a single Harmonic's intermediate values.
+//! + [`HarmonicCache`]: Cache holding a single Harmonic's intermediate values.
 //!
 //! Since each harmonic appears 3-4 times in the equation of motion in the form of its different
 //! derivatives, we can cache its *angular* part, as well as its *sin* and *cos* values, to avoid
@@ -51,13 +52,20 @@
 //! functions are quite expensive when evaluated so many times in such a tight loop. We can also
 //! cache all its interpolated values.
 
+mod cache;
 mod error;
 mod eval;
 mod objects;
 
 pub mod extract;
-pub use objects::*;
-pub mod cache;
+
+pub use cache::*;
+pub use objects::bfields::*;
+pub use objects::currents::*;
+pub use objects::geometries::*;
+pub use objects::harmonics::*;
+pub use objects::perturbations::*;
+pub use objects::qfactors::*;
 
 pub use eval::{Bfield, Current, Geometry, Harmonic, Perturbation, Qfactor};
 

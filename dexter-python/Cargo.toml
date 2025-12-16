@@ -1,6 +1,6 @@
 [package]
 name = "dexter-python"
-version = "0.1.3"
+version = "0.1.3-pre.1"
 license.workspace = true
 edition.workspace = true
 authors.workspace = true
@@ -18,7 +18,7 @@ bench = false
 [dependencies]
 rsl-interpolation = {workspace = true}
 dexter = {workspace = true}
-pyo3 = { version = "0.27.1", features = ["extension-module", "abi3-py314", "multiple-pymethods"] }
+pyo3 = { version = "0.27.2", features = ["extension-module", "abi3-py314", "multiple-pymethods"] }
 numpy = { version = "0.27.1" }
 
 [features]

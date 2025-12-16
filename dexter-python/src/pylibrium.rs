@@ -5,16 +5,8 @@ use pyo3::prelude::*;
 use pyo3::types::PyList;
 use rsl_interpolation::{Accelerator, Cache};
 
-use dexter::equilibrium::{
-    Bfield, Current, Geometry, Harmonic, Perturbation, Qfactor,
-    bfields::{NcBfield, NcBfieldBuilder},
-    cache::HarmonicCache,
-    currents::{LarCurrent, NcCurrent, NcCurrentBuilder},
-    geometries::{NcGeometry, NcGeometryBuilder},
-    harmonics::{NcHarmonic, NcHarmonicBuilder, PhaseMethod},
-    perturbations::NcPerturbation,
-    qfactors::{NcQfactor, NcQfactorBuilder, Unity},
-};
+use dexter::equilibrium::*;
+use std::result::Result; // awful; replace equilibrium's Result
 
 use super::pyerrors::PyEqError;
 use crate::{
@@ -102,14 +94,14 @@ py_eval1D!(PyNcQfactor, dpsi_dpsip);
 // ===============================================================================================
 
 #[pyclass(frozen, name = "UnityQfactor")]
-pub struct PyUnityQfactor(pub Unity);
+pub struct PyUnityQfactor(pub UnityQfactor);
 
 #[pymethods]
 impl PyUnityQfactor {
     #[new]
     #[pyo3(signature = ())]
     pub fn new() -> Result<Self, PyEqError> {
-        Ok(Self(Unity))
+        Ok(Self(UnityQfactor))
     }
 }
 

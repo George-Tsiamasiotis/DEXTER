@@ -6,9 +6,9 @@ use rsl_interpolation::{Accelerator, Cache, DynInterpolation2d, Interp2dType, ma
 use std::f64::consts::TAU;
 use std::path::{Path, PathBuf};
 
-use crate::Bfield;
 use crate::Result;
 use crate::fortran_vec_to_carray2d_impl;
+use crate::{Bfield, Qfactor};
 
 /// Used to create a [`NcBfield`].
 ///
@@ -28,9 +28,9 @@ impl NcBfieldBuilder {
     /// # Example
     /// ```
     /// # use std::path::PathBuf;
-    /// # use equilibrium::bfields;
+    /// # use equilibrium::*;
     /// let path = PathBuf::from("./netcdf.nc");
-    /// let builder = bfields::NcBfieldBuilder::new(&path, "bicubic");
+    /// let builder = NcBfieldBuilder::new(&path, "bicubic");
     /// ```
     pub fn new(path: &Path, typ: &str) -> Self {
         Self {
@@ -44,9 +44,9 @@ impl NcBfieldBuilder {
     /// # Example
     /// ```
     /// # use std::path::PathBuf;
-    /// # use equilibrium::bfields;
+    /// # use equilibrium::*;
     /// let path = PathBuf::from("./netcdf.nc");
-    /// let bfield = bfields::NcBfieldBuilder::new(&path, "bicubic").build()?;
+    /// let bfield = NcBfieldBuilder::new(&path, "bicubic").build()?;
     /// # Ok::<_, equilibrium::EqError>(())
     /// ```
     pub fn build(self) -> Result<NcBfield> {
@@ -217,6 +217,99 @@ impl std::fmt::Debug for NcBfield {
             .field("typ", &self.typ())
             .field("shape", &self.shape())
             .finish()
+    }
+}
+
+// ===============================================================================================
+
+/// Large Aspect Ratio approximation, with `B(ψ, θ) = 1 - sqrt(2ψ)cosθ`.
+///
+/// Since the LAR magnetic field is defined as a function of ψ rather than ψ, it depends of the
+/// q-factor profile. In every evaluation, ψ is calculated from ψp through the qfactor, and the
+/// used to calculate the magnetic field quantities.
+#[derive(Debug)]
+pub struct LarBfield<Q: Qfactor> {
+    qfactor: Q,
+}
+
+/// Creation
+impl<Q> LarBfield<Q>
+where
+    Q: Qfactor,
+{
+    /// Creates a new Lar Magnetic Field.
+    ///
+    /// # Example
+    ///
+    /// From an analytical qfactor:
+    /// ```
+    /// # use equilibrium::*;
+    /// let qfactor = UnityQfactor;
+    /// let current = LarBfield::new(&qfactor);
+    /// ```
+    ///
+    /// From a numerical qfactor:
+    /// ```
+    /// # use equilibrium::*;
+    /// # use std::path::PathBuf;
+    /// # let path = PathBuf::from(extract::STUB_TEST_NETCDF_PATH);
+    /// let qfactor = NcQfactorBuilder::new(&path, "steffen").build().unwrap();
+    /// let bfield = LarBfield::new(&qfactor);
+    /// ```
+    pub fn new(qfactor: &Q) -> Self {
+        Self {
+            qfactor: qfactor.clone(),
+        }
+    }
+
+    /// Returns the contained [`Qfactor`] object.
+    pub fn qfactor(&self) -> impl Qfactor {
+        self.qfactor.clone()
+    }
+}
+
+/// Interpolation
+impl<Q> Bfield for LarBfield<Q>
+where
+    Q: Qfactor,
+{
+    #[allow(unused_variables)]
+    fn b(
+        &self,
+        psip: f64,
+        theta: f64,
+        xacc: &mut Accelerator,
+        yacc: &mut Accelerator,
+        cache: &mut Cache<f64>,
+    ) -> Result<f64> {
+        let psi = self.qfactor.psi(psip, xacc)?;
+        Ok(1.0 - (2.0 * psi).sqrt() * theta.cos())
+    }
+
+    #[allow(unused_variables)]
+    fn db_dpsip(
+        &self,
+        psip: f64,
+        theta: f64,
+        xacc: &mut Accelerator,
+        yacc: &mut Accelerator,
+        cache: &mut Cache<f64>,
+    ) -> Result<f64> {
+        let psi = self.qfactor.psi(psip, xacc)?;
+        Ok(-1.0 / (2.0 * psi).sqrt() * theta.cos())
+    }
+
+    #[allow(unused_variables)]
+    fn db_dtheta(
+        &self,
+        psip: f64,
+        theta: f64,
+        xacc: &mut Accelerator,
+        yacc: &mut Accelerator,
+        cache: &mut Cache<f64>,
+    ) -> Result<f64> {
+        let psi = self.qfactor.psi(psip, xacc)?;
+        Ok(-(2.0 * psi).sqrt() * theta.sin())
     }
 }
 

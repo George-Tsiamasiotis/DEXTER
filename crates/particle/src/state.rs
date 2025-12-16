@@ -1,13 +1,12 @@
 use core::f64;
 use std::f64::consts::TAU;
 
-use equilibrium::HarmonicCache;
-use equilibrium::{Bfield, Currents, Perturbation, Qfactor};
+use equilibrium::cache::HarmonicCache;
+use equilibrium::{Bfield, Current, Perturbation, Qfactor};
 use rsl_interpolation::{Accelerator, Cache};
 
-use crate::{CanonicalMomentum, Energy, Result};
-use crate::{Flux, Radians, Time};
-use crate::{InitialConditions, Length, MagneticMoment};
+use crate::InitialConditions;
+use crate::Result;
 
 /// State of a [`Particle`] at each step.
 ///
@@ -18,7 +17,7 @@ use crate::{InitialConditions, Length, MagneticMoment};
 ///
 /// [`Particle`]: crate::Particle
 #[derive(Clone)]
-pub struct State {
+pub(crate) struct State {
     /// The `ψp` coordinate [`Accelerator`].
     pub xacc: Accelerator,
     /// The `θ` coordinate [`Accelerator`].
@@ -30,24 +29,24 @@ pub struct State {
     pub hcache: Vec<HarmonicCache>,
 
     /// The time of evaluation.
-    pub time: Time,
+    pub time: f64,
     /// The `θ` angle.
-    pub theta: Radians,
+    pub theta: f64,
     /// The poloidal magnetic flux `ψp`.
-    pub psip: Flux,
+    pub psip: f64,
     /// The parallel gyro radius `ρ`.
-    pub rho: Length,
+    pub rho: f64,
     /// The `ζ` angle.
-    pub zeta: Radians,
+    pub zeta: f64,
     /// The magnetic moment.
-    pub mu: MagneticMoment,
+    pub mu: f64,
 
     /// The toroidal magnetic flux `ψ`.
-    pub psi: Flux,
+    pub psi: f64,
     /// The canonical momentum `Pθ`,
-    pub ptheta: CanonicalMomentum,
+    pub ptheta: f64,
     /// The canonical momentum `Pζ`,
-    pub pzeta: CanonicalMomentum,
+    pub pzeta: f64,
 
     /// The `θ` angle time derivative.
     pub theta_dot: f64,
@@ -136,10 +135,10 @@ impl State {
     /// Returns the state evaluated, consuming self.
     pub(crate) fn into_evaluated(
         mut self,
-        qfactor: &Qfactor,
-        currents: &Currents,
-        bfield: &Bfield,
-        perturbation: &Perturbation,
+        qfactor: &impl Qfactor,
+        currents: &impl Current,
+        bfield: &impl Bfield,
+        perturbation: &impl Perturbation,
     ) -> Result<Self> {
         self.evaluate(qfactor, currents, bfield, perturbation)?;
         Ok(self)
@@ -148,15 +147,15 @@ impl State {
     /// Evaluation all quantites derived by (t, θ, ψp, ρ, ζ, μ)
     pub fn evaluate(
         &mut self,
-        qfactor: &Qfactor,
-        currents: &Currents,
-        bfield: &Bfield,
-        perturbation: &Perturbation,
+        qfactor: &impl Qfactor,
+        current: &impl Current,
+        bfield: &impl Bfield,
+        perturbation: &impl Perturbation,
     ) -> Result<()> {
         // First do all the interpolations.
         self.calculate_modulos();
         self.calculate_qfactor_quantities(qfactor)?;
-        self.calculate_currents_quantities(currents)?;
+        self.calculate_currents_quantities(current)?;
         self.calculate_bfield_quantities(bfield)?;
         self.calculate_perturbation(perturbation)?;
 
@@ -180,21 +179,21 @@ impl State {
         self.mod_zeta = self.zeta.rem_euclid(TAU);
     }
 
-    fn calculate_qfactor_quantities(&mut self, qfactor: &Qfactor) -> Result<()> {
+    fn calculate_qfactor_quantities(&mut self, qfactor: &impl Qfactor) -> Result<()> {
         self.psi = qfactor.psi(self.psip, &mut self.xacc)?;
         self.q = qfactor.q(self.psip, &mut self.xacc)?;
         Ok(())
     }
 
-    fn calculate_currents_quantities(&mut self, currents: &Currents) -> Result<()> {
-        self.i = currents.i(self.psip, &mut self.xacc)?;
-        self.g = currents.g(self.psip, &mut self.xacc)?;
-        self.di_dpsip = currents.di_dpsip(self.psip, &mut self.xacc)?;
-        self.dg_dpsip = currents.dg_dpsip(self.psip, &mut self.xacc)?;
+    fn calculate_currents_quantities(&mut self, current: &impl Current) -> Result<()> {
+        self.i = current.i(self.psip, &mut self.xacc)?;
+        self.g = current.g(self.psip, &mut self.xacc)?;
+        self.di_dpsip = current.di_dpsip(self.psip, &mut self.xacc)?;
+        self.dg_dpsip = current.dg_dpsip(self.psip, &mut self.xacc)?;
         Ok(())
     }
 
-    fn calculate_bfield_quantities(&mut self, bfield: &Bfield) -> Result<()> {
+    fn calculate_bfield_quantities(&mut self, bfield: &impl Bfield) -> Result<()> {
         self.b = bfield.b(
             self.psip,
             self.mod_theta,
@@ -220,7 +219,7 @@ impl State {
         Ok(())
     }
 
-    fn calculate_perturbation(&mut self, perturbation: &Perturbation) -> Result<()> {
+    fn calculate_perturbation(&mut self, perturbation: &impl Perturbation) -> Result<()> {
         // This is necessary, since we can't know the number of harmonics from the start. The
         // hcache vec should be cloned in each solver state.
         if self.hcache.is_empty() {
@@ -231,36 +230,36 @@ impl State {
             self.psip,
             self.mod_theta,
             self.mod_zeta,
-            &mut self.hcache,
             &mut self.xacc,
+            &mut self.hcache,
         )?;
         self.dp_dpsip = perturbation.dp_dpsip(
             self.psip,
             self.mod_theta,
             self.mod_zeta,
-            &mut self.hcache,
             &mut self.xacc,
+            &mut self.hcache,
         )?;
         self.dp_dtheta = perturbation.dp_dtheta(
             self.psip,
             self.mod_theta,
             self.mod_zeta,
-            &mut self.hcache,
             &mut self.xacc,
+            &mut self.hcache,
         )?;
         self.dp_dzeta = perturbation.dp_dzeta(
             self.psip,
             self.mod_theta,
             self.mod_zeta,
-            &mut self.hcache,
             &mut self.xacc,
+            &mut self.hcache,
         )?;
         self.dp_dt = perturbation.dp_dt(
             self.psip,
             self.mod_theta,
             self.mod_zeta,
-            &mut self.hcache,
             &mut self.xacc,
+            &mut self.hcache,
         )?;
         Ok(())
     }
@@ -322,33 +321,33 @@ impl State {
     }
 
     /// Returns the Energy of the State.
-    pub fn energy(&self) -> Energy {
+    pub fn energy(&self) -> f64 {
         let parallel = self.parallel_energy();
         let perpendicular = self.perpendicular_energy();
         parallel + perpendicular
     }
 
     /// Returns the parallel energy of the State.
-    pub fn parallel_energy(&self) -> Energy {
+    pub fn parallel_energy(&self) -> f64 {
         // Use the ρ expression here, since the g^2 in the denominator causes numerical instability
         // on configurations with g=0.
         (self.rho * self.b).powi(2) / 2.0
     }
 
     /// Returns the perpendicular energy of the State.
-    pub fn perpendicular_energy(&self) -> Energy {
+    pub fn perpendicular_energy(&self) -> f64 {
         self.mu * self.b
     }
 }
 
 /// Helper struct for printing [`State`]'s independent variables.
 pub(crate) struct Display {
-    pub time: Time,
-    pub theta: Radians,
-    pub psip: Flux,
-    pub rho: Length,
-    pub zeta: Radians,
-    pub mu: MagneticMoment,
+    pub time: f64,
+    pub theta: f64,
+    pub psip: f64,
+    pub rho: f64,
+    pub zeta: f64,
+    pub mu: f64,
 }
 
 impl std::fmt::Debug for Display {
@@ -429,45 +428,66 @@ impl Default for State {
     }
 }
 
-/// Just to remove the Caches and Accelerators.
-impl std::fmt::Debug for State {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("State")
-            .field("time", &self.time)
-            .field("theta", &self.theta)
-            .field("psip", &self.psip)
-            .field("rho", &self.rho)
-            .field("zeta", &self.zeta)
-            .field("mu", &self.mu)
-            .field("theta_dot", &self.theta_dot)
-            .field("psip_dot", &self.psip_dot)
-            .field("rho_dot", &self.rho_dot)
-            .field("zeta_dot", &self.zeta_dot)
-            .field("b", &self.b)
-            .field("q", &self.q)
-            .field("g", &self.g)
-            .field("i", &self.i)
-            .field("p", &self.p)
-            .field("db_dtheta", &self.db_dtheta)
-            .field("db_dzeta", &self.db_dzeta)
-            .field("db_dpsip", &self.db_dpsip)
-            .field("dg_dpsip", &self.dg_dpsip)
-            .field("di_dpsip", &self.di_dpsip)
-            .field("dp_dpsip", &self.dp_dpsip)
-            .field("dp_dtheta", &self.dp_dtheta)
-            .field("dp_dzeta", &self.dp_dzeta)
-            .field("dp_dt", &self.dp_dt)
-            .field("dterm", &self.dterm)
-            .field("kterm", &self.kterm)
-            .field("cterm", &self.cterm)
-            .field("fterm", &self.fterm)
-            .field("mu_par", &self.mu_par)
-            .field("psip_brace", &self.psip_brace)
-            .field("theta_brace", &self.theta_brace)
-            .field("zeta_brace", &self.zeta_brace)
-            .field("rho_bsquared_d", &self.rho_bsquared_d)
-            .field("g_over_d", &self.g_over_d)
-            .field("i_over_d", &self.i_over_d)
-            .finish()
+// /// Just to remove the Caches and Accelerators.
+// impl std::fmt::Debug for State {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         f.debug_struct("State")
+//             .field("time", &self.time)
+//             .field("theta", &self.theta)
+//             .field("psip", &self.psip)
+//             .field("rho", &self.rho)
+//             .field("zeta", &self.zeta)
+//             .field("mu", &self.mu)
+//             .field("theta_dot", &self.theta_dot)
+//             .field("psip_dot", &self.psip_dot)
+//             .field("rho_dot", &self.rho_dot)
+//             .field("zeta_dot", &self.zeta_dot)
+//             .field("b", &self.b)
+//             .field("q", &self.q)
+//             .field("g", &self.g)
+//             .field("i", &self.i)
+//             .field("p", &self.p)
+//             .field("db_dtheta", &self.db_dtheta)
+//             .field("db_dzeta", &self.db_dzeta)
+//             .field("db_dpsip", &self.db_dpsip)
+//             .field("dg_dpsip", &self.dg_dpsip)
+//             .field("di_dpsip", &self.di_dpsip)
+//             .field("dp_dpsip", &self.dp_dpsip)
+//             .field("dp_dtheta", &self.dp_dtheta)
+//             .field("dp_dzeta", &self.dp_dzeta)
+//             .field("dp_dt", &self.dp_dt)
+//             .field("dterm", &self.dterm)
+//             .field("kterm", &self.kterm)
+//             .field("cterm", &self.cterm)
+//             .field("fterm", &self.fterm)
+//             .field("mu_par", &self.mu_par)
+//             .field("psip_brace", &self.psip_brace)
+//             .field("theta_brace", &self.theta_brace)
+//             .field("zeta_brace", &self.zeta_brace)
+//             .field("rho_bsquared_d", &self.rho_bsquared_d)
+//             .field("g_over_d", &self.g_over_d)
+//             .field("i_over_d", &self.i_over_d)
+//             .finish()
+//     }
+// }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_state_display() {
+        let state = State {
+            time: 1.0,
+            theta: 2.0,
+            psip: 3.0,
+            rho: 4.0,
+            zeta: 5.0,
+            mu: 6.0,
+            ..Default::default()
+        };
+
+        let display = Display::from_state(&state);
+        let _ = format!("{:?}", display);
     }
 }

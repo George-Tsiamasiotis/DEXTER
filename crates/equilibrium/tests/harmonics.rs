@@ -1,9 +1,7 @@
-use equilibrium::cache::HarmonicCache;
 use equilibrium::extract::STUB_TEST_NETCDF_PATH;
 use rsl_interpolation::Accelerator;
 use std::path::PathBuf;
 
-use equilibrium::harmonics::*;
 use equilibrium::*;
 
 #[test]
@@ -145,7 +143,7 @@ fn test_nc_harmonic_evals() {
 
 #[test]
 fn test_nc_harmonic_zero_phase_method() {
-    use harmonics::PhaseMethod::*;
+    use PhaseMethod::*;
     let path = PathBuf::from(STUB_TEST_NETCDF_PATH);
     let typ = "steffen";
     let m = 2;
@@ -163,7 +161,7 @@ fn test_nc_harmonic_zero_phase_method() {
 
 #[test]
 fn test_nc_harmonic_average_phase_method() {
-    use harmonics::PhaseMethod::*;
+    use PhaseMethod::*;
     let path = PathBuf::from(STUB_TEST_NETCDF_PATH);
     let typ = "steffen";
     let m = 2;
@@ -182,7 +180,7 @@ fn test_nc_harmonic_average_phase_method() {
 
 #[test]
 fn test_nc_harmonic_resonance_phase_method() {
-    use harmonics::PhaseMethod::*;
+    use PhaseMethod::*;
     let path = PathBuf::from(STUB_TEST_NETCDF_PATH);
     let typ = "steffen";
     let m = 2;
@@ -204,7 +202,7 @@ fn test_nc_harmonic_resonance_phase_method() {
 
 #[test]
 fn test_nc_harmonic_interpolation_phase_method() {
-    use harmonics::PhaseMethod::*;
+    use PhaseMethod::*;
     let path = PathBuf::from(STUB_TEST_NETCDF_PATH);
     let typ = "steffen";
     let m = 2;
@@ -223,7 +221,7 @@ fn test_nc_harmonic_interpolation_phase_method() {
 
 #[test]
 fn test_nc_harmonic_custom_phase_method() {
-    use harmonics::PhaseMethod::*;
+    use PhaseMethod::*;
     let path = PathBuf::from(STUB_TEST_NETCDF_PATH);
     let typ = "steffen";
     let m = 2;

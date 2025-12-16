@@ -3,14 +3,13 @@ use rsl_interpolation::Accelerator;
 use rsl_interpolation::Cache;
 use std::path::PathBuf;
 
-use equilibrium::bfields;
 use equilibrium::*;
 
 #[test]
 fn test_nc_bfield() {
     let path = PathBuf::from(STUB_TEST_NETCDF_PATH);
     let typ = "bicubic";
-    let builder = bfields::NcBfieldBuilder::new(&path, typ);
+    let builder = NcBfieldBuilder::new(&path, typ);
     let bfield = builder.build().unwrap();
 
     println!("{bfield:?}");
@@ -44,7 +43,7 @@ fn test_nc_bfield() {
 fn test_nc_bfield_evals() {
     let path = PathBuf::from(STUB_TEST_NETCDF_PATH);
     let typ = "bicubic";
-    let builder = bfields::NcBfieldBuilder::new(&path, typ);
+    let builder = NcBfieldBuilder::new(&path, typ);
     let bfield = builder.build().unwrap();
 
     let psip_data = bfield.psip_data();
@@ -95,6 +94,130 @@ fn test_nc_bfield_evals() {
             .is_finite()
     );
 
+    // Out of bounds
+    assert!(matches!(
+        bfield.b(100000.0, theta, &mut xacc, &mut yacc, &mut cache),
+        Err(EqError::DomainError(..))
+    ));
+}
+
+#[test]
+fn test_lar_bfield() {
+    let qfactor = UnityQfactor;
+    let bfield = LarBfield::new(&qfactor);
+    let _ = bfield.qfactor();
+    println!("{bfield:?}");
+
+    let path = PathBuf::from(STUB_TEST_NETCDF_PATH);
+    let qfactor = NcQfactorBuilder::new(&path, "steffen").build().unwrap();
+    let bfield = LarBfield::new(&qfactor);
+    let _ = bfield.qfactor();
+    println!("{bfield:?}");
+}
+
+#[test]
+fn test_lar_bfield_analytical_qfactor_evals() {
+    let qfactor = UnityQfactor;
+    let bfield = LarBfield::new(&qfactor);
+
+    let psip = 0.05;
+    let theta = 3.14;
+    let mut xacc = Accelerator::new();
+    let mut yacc = Accelerator::new();
+    let mut cache = Cache::new();
+
+    // Normal
+    assert!(
+        bfield
+            .b(psip, theta, &mut xacc, &mut yacc, &mut cache)
+            .unwrap()
+            .is_finite()
+    );
+    assert!(
+        bfield
+            .db_dpsip(psip, theta, &mut xacc, &mut yacc, &mut cache)
+            .unwrap()
+            .is_finite()
+    );
+    assert!(
+        bfield
+            .db_dtheta(psip, theta, &mut xacc, &mut yacc, &mut cache)
+            .unwrap()
+            .is_finite()
+    );
+
+    // Big θ
+    assert!(
+        bfield
+            .b(psip, 10000.0, &mut xacc, &mut yacc, &mut cache)
+            .unwrap()
+            .is_finite()
+    );
+    assert!(
+        bfield
+            .db_dpsip(psip, 10000.0, &mut xacc, &mut yacc, &mut cache)
+            .unwrap()
+            .is_finite()
+    );
+    assert!(
+        bfield
+            .db_dtheta(psip, 10000.0, &mut xacc, &mut yacc, &mut cache)
+            .unwrap()
+            .is_finite()
+    );
+}
+
+#[test]
+fn test_lar_bfield_numerical_qfactor_evals() {
+    let path = PathBuf::from(STUB_TEST_NETCDF_PATH);
+    let qfactor = NcQfactorBuilder::new(&path, "steffen").build().unwrap();
+    let bfield = LarBfield::new(&qfactor);
+
+    let psip = 0.05;
+    let theta = 3.14;
+    let mut xacc = Accelerator::new();
+    let mut yacc = Accelerator::new();
+    let mut cache = Cache::new();
+
+    // Normal
+    assert!(
+        bfield
+            .b(psip, theta, &mut xacc, &mut yacc, &mut cache)
+            .unwrap()
+            .is_finite()
+    );
+    assert!(
+        bfield
+            .db_dpsip(psip, theta, &mut xacc, &mut yacc, &mut cache)
+            .unwrap()
+            .is_finite()
+    );
+    assert!(
+        bfield
+            .db_dtheta(psip, theta, &mut xacc, &mut yacc, &mut cache)
+            .unwrap()
+            .is_finite()
+    );
+
+    // Big θ
+    assert!(
+        bfield
+            .b(psip, 10000.0, &mut xacc, &mut yacc, &mut cache)
+            .unwrap()
+            .is_finite()
+    );
+    assert!(
+        bfield
+            .db_dpsip(psip, 10000.0, &mut xacc, &mut yacc, &mut cache)
+            .unwrap()
+            .is_finite()
+    );
+    assert!(
+        bfield
+            .db_dtheta(psip, 10000.0, &mut xacc, &mut yacc, &mut cache)
+            .unwrap()
+            .is_finite()
+    );
     // Out of bounds
     assert!(matches!(
         bfield.b(100000.0, theta, &mut xacc, &mut yacc, &mut cache),

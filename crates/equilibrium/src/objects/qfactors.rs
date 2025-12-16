@@ -26,9 +26,9 @@ impl NcQfactorBuilder {
     /// # Example
     /// ```
     /// # use std::path::PathBuf;
-    /// # use equilibrium::qfactors;
+    /// # use equilibrium::*;
     /// let path = PathBuf::from("./netcdf.nc");
-    /// let builder = qfactors::NcQfactorBuilder::new(&path, "cubic");
+    /// let builder = NcQfactorBuilder::new(&path, "cubic");
     /// ```
     pub fn new(path: &Path, typ: &str) -> Self {
         Self {
@@ -42,9 +42,9 @@ impl NcQfactorBuilder {
     /// # Example
     /// ```
     /// # use std::path::PathBuf;
-    /// # use equilibrium::qfactors;
+    /// # use equilibrium::*;
     /// let path = PathBuf::from("./netcdf.nc");
-    /// let qfactor = qfactors::NcQfactorBuilder::new(&path, "cubic").build()?;
+    /// let qfactor = NcQfactorBuilder::new(&path, "cubic").build()?;
     /// # Ok::<_, equilibrium::EqError>(())
     /// ```
     pub fn build(self) -> Result<NcQfactor> {
@@ -163,19 +163,39 @@ impl std::fmt::Debug for NcQfactor {
     }
 }
 
+impl Clone for NcQfactor {
+    fn clone(&self) -> Self {
+        Self {
+            path: self.path.clone(),
+            typ: self.typ.clone(),
+            psip_data: self.psip_data.clone(),
+            q_data: self.q_data.clone(),
+            psi_data: self.psi_data.clone(),
+            q_interp: make_interp_type(&self.typ())
+                .expect("already succeeded")
+                .build(&self.psip_data().to_vec(), &self.q_data().to_vec())
+                .expect("already succeeded"),
+            psi_interp: make_interp_type(&self.typ())
+                .expect("already succeeded")
+                .build(&self.psip_data().to_vec(), &self.psi_data().to_vec())
+                .expect("already succeeded"),
+        }
+    }
+}
+
 // ===============================================================================================
 
 /// Analytical q-factor profile with `q=1`.
 ///
 /// # Example
 /// ```
-/// # use equilibrium::qfactors;
-/// let qfactor = qfactors::Unity;
+/// # use equilibrium::*;
+/// let qfactor = UnityQfactor;
 /// ```
-#[derive(Debug)]
-pub struct Unity;
+#[derive(Debug, Clone)]
+pub struct UnityQfactor;
 
-impl Qfactor for Unity {
+impl Qfactor for UnityQfactor {
     /// Always returns `1.0`.
     #[allow(unused_variables)]
     fn q(&self, psip: f64, acc: &mut Accelerator) -> Result<f64> {

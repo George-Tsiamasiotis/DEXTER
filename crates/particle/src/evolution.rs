@@ -1,77 +1,90 @@
+//! Stores the time evolution of a Particle.
+
 use std::fmt::Debug;
 use std::time::Duration;
 
-use config::EVOLUTION_INIT_CAPACITY;
-use utils::array1D_getter_impl;
-
-use crate::State;
-use crate::{CanonicalMomentum, Energy, Flux, Length, Radians, Time};
-
+use common::{array1D_getter_impl, primitive_getter_impl};
 use ndarray::Array1;
 
+use crate::State;
+
+/// The initial capacity of the time series Vecs.
+const EVOLUTION_INIT_CAPACITY: usize = 2000;
+
 /// Time series for a Particle's orbit.
+///
+/// All values are in *Normalized units*.
 #[derive(Clone)]
 pub struct Evolution {
-    pub time: Vec<Time>,
+    /// The integration time steps.
+    pub(crate) time: Vec<f64>,
     /// The `θ` angle time series.
-    pub theta: Vec<Radians>,
+    pub(crate) theta: Vec<f64>,
     /// The poloidal flux `ψp` time series.
-    pub psip: Vec<Flux>,
+    pub(crate) psip: Vec<f64>,
     /// The parallel gyroradius `ρ_{||}` time series.
-    pub rho: Vec<Length>,
+    pub(crate) rho: Vec<f64>,
     /// The `ζ` angle time series.
-    pub zeta: Vec<Radians>,
+    pub(crate) zeta: Vec<f64>,
     /// The toroidal flux `ψ` time series.
-    pub psi: Vec<Flux>,
+    pub(crate) psi: Vec<f64>,
     /// The canonical momentum `Pθ` time series.
-    pub ptheta: Vec<CanonicalMomentum>,
+    pub(crate) ptheta: Vec<f64>,
     /// The canonical momentum `Pζ` time series.
-    pub pzeta: Vec<CanonicalMomentum>,
+    pub(crate) pzeta: Vec<f64>,
     /// The energy time series.
-    pub energy: Vec<Energy>,
+    pub(crate) energy: Vec<f64>,
     /// The duration of the integration.
-    pub duration: Duration,
+    pub(crate) duration: Duration,
     /// The total steps of the integration.
-    pub steps_taken: usize,
+    pub(crate) steps_taken: usize,
     /// The steps stored in the time series.
     steps_stored: usize,
     /// Relative standard deviation of the energy time series (σ/μ).
-    pub energy_std: f64,
+    energy_std: f64,
+}
+
+/// Getters
+#[rustfmt::skip::macros(primitive_getter_impl)]
+impl Evolution {
+    array1D_getter_impl!(time, time);
+    array1D_getter_impl!(theta, theta);
+    array1D_getter_impl!(psip, psip);
+    array1D_getter_impl!(rho, rho);
+    array1D_getter_impl!(zeta, zeta);
+    array1D_getter_impl!(psi, psi);
+    array1D_getter_impl!(ptheta, ptheta);
+    array1D_getter_impl!(pzeta, pzeta);
+    array1D_getter_impl!(energy, energy);
+
+    primitive_getter_impl!(energy_std, f64, "Returns the relative standard deviation of the energy time series (σ/μ).");
+    primitive_getter_impl!(steps_taken, usize, "Returns the total steps of the integration.");
+    primitive_getter_impl!(steps_stored, usize, "Returns the number of steps stored in the time series.");
+
+    /// Returns the final stored time.
+    pub(crate) fn final_time(&self) -> Option<f64> {
+        self.time.last().copied()
+    }
 }
 
 impl Evolution {
     /// Creates an [`Evolution`], initializing the vecs with `capacity`.
-    pub(crate) fn with_capacity(capacity: usize) -> Self {
+    pub(crate) fn new() -> Self {
         Self {
-            time: Vec::with_capacity(capacity),
-            theta: Vec::with_capacity(capacity),
-            psip: Vec::with_capacity(capacity),
-            rho: Vec::with_capacity(capacity),
-            zeta: Vec::with_capacity(capacity),
-            psi: Vec::with_capacity(capacity),
-            ptheta: Vec::with_capacity(capacity),
-            pzeta: Vec::with_capacity(capacity),
-            energy: Vec::with_capacity(capacity),
+            time: Vec::with_capacity(EVOLUTION_INIT_CAPACITY),
+            theta: Vec::with_capacity(EVOLUTION_INIT_CAPACITY),
+            psip: Vec::with_capacity(EVOLUTION_INIT_CAPACITY),
+            rho: Vec::with_capacity(EVOLUTION_INIT_CAPACITY),
+            zeta: Vec::with_capacity(EVOLUTION_INIT_CAPACITY),
+            psi: Vec::with_capacity(EVOLUTION_INIT_CAPACITY),
+            ptheta: Vec::with_capacity(EVOLUTION_INIT_CAPACITY),
+            pzeta: Vec::with_capacity(EVOLUTION_INIT_CAPACITY),
+            energy: Vec::with_capacity(EVOLUTION_INIT_CAPACITY),
             energy_std: f64::NAN,
             duration: Duration::default(),
             steps_taken: 0,
             steps_stored: 0,
         }
-    }
-
-    /// Returns the total steps of the integration.
-    pub fn steps_taken(&self) -> usize {
-        self.steps_taken
-    }
-
-    /// Returns the number of steps stored in each time series.
-    pub fn steps_stored(&self) -> usize {
-        self.steps_stored
-    }
-
-    /// Returns the final stored time.
-    pub fn final_time(&self) -> Option<Time> {
-        self.time.last().copied()
     }
 
     /// Pushes the variables of a [`State`] to the time series vecs.
@@ -105,8 +118,6 @@ impl Evolution {
     }
 
     /// Resets all arrays to the empty defaults, keeping all the other fields.
-    ///
-    /// Use this to free memory when dealing with many particles.
     pub fn discard(&mut self) {
         self.time = Vec::default();
         self.theta = Vec::default();
@@ -118,16 +129,6 @@ impl Evolution {
         self.pzeta = Vec::default();
         self.energy = Vec::default();
     }
-
-    array1D_getter_impl!(time, time, Time);
-    array1D_getter_impl!(theta, theta, Radians);
-    array1D_getter_impl!(psip, psip, Flux);
-    array1D_getter_impl!(rho, rho, Length);
-    array1D_getter_impl!(zeta, zeta, Radians);
-    array1D_getter_impl!(psi, psi, Flux);
-    array1D_getter_impl!(ptheta, ptheta, CanonicalMomentum);
-    array1D_getter_impl!(pzeta, pzeta, CanonicalMomentum);
-    array1D_getter_impl!(energy, energy, Energy);
 }
 
 impl Debug for Evolution {
@@ -137,20 +138,14 @@ impl Debug for Evolution {
                 "time",
                 &format!(
                     "[{:.5}, {:.5}]",
-                    self.time.first().unwrap_or(&Time::NAN),
-                    self.time.last().unwrap_or(&Time::NAN),
+                    self.time.first().unwrap_or(&f64::NAN),
+                    self.time.last().unwrap_or(&f64::NAN),
                 ),
             )
             .field("duration", &self.duration)
-            .field("energy_std", &format!("{:.5}", self.energy_std))
+            .field("energy_std", &format!("{:.8}", self.energy_std))
             .field("steps taken", &self.steps_taken())
             .field("steps stored", &self.steps_stored())
             .finish()
-    }
-}
-
-impl Default for Evolution {
-    fn default() -> Self {
-        Self::with_capacity(EVOLUTION_INIT_CAPACITY)
     }
 }

@@ -32,9 +32,9 @@ impl NcGeometryBuilder {
     /// # Example
     /// ```
     /// # use std::path::PathBuf;
-    /// # use equilibrium::geometries;
+    /// # use equilibrium::*;
     /// let path = PathBuf::from("./netcdf.nc");
-    /// let builder = geometries::NcGeometryBuilder::new(&path, "akima", "bicubic");
+    /// let builder = NcGeometryBuilder::new(&path, "akima", "bicubic");
     /// ```
     pub fn new(path: &Path, typ1d: &str, typ2d: &str) -> Self {
         Self {
@@ -49,9 +49,9 @@ impl NcGeometryBuilder {
     /// # Example
     /// ```
     /// # use std::path::PathBuf;
-    /// # use equilibrium::geometries;
+    /// # use equilibrium::*;
     /// let path = PathBuf::from("./netcdf.nc");
-    /// let geometry = geometries::NcGeometryBuilder::new(&path, "akima", "bicubic").build()?;
+    /// let geometry = NcGeometryBuilder::new(&path, "akima", "bicubic").build()?;
     /// # Ok::<_, equilibrium::EqError>(())
     /// ```
     pub fn build(self) -> Result<NcGeometry> {
