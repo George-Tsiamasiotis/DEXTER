@@ -2,9 +2,8 @@
 
 use std::f64::consts::{PI, TAU};
 
-use equilibrium::{Bfield, Currents, Perturbation, Qfactor};
+use equilibrium::{Bfield, Current, Perturbation, Qfactor};
 
-use crate::Radians;
 use crate::Result;
 use crate::{MappingParameters, PoincareSection};
 use crate::{State, Stepper};
@@ -75,15 +74,15 @@ pub(crate) fn calculate_mod_step(
 /// Performs 1 step on the modified system (6) to calculate mod_state2, which sits exactly on the
 /// intersection suface, **but corresponds to the modified system**.
 pub(crate) fn calculate_mod_state2(
-    qfactor: &Qfactor,
-    bfield: &Bfield,
-    currents: &Currents,
-    perturbation: &Perturbation,
+    qfactor: &impl Qfactor,
+    current: &impl Current,
+    bfield: &impl Bfield,
+    perturbation: &impl Perturbation,
     mod_state1: State,
     dtau: f64,
 ) -> Result<State> {
     let mut mod_stepper = Stepper::new(&mod_state1);
-    mod_stepper.start(dtau, qfactor, bfield, currents, perturbation)?;
+    mod_stepper.start(dtau, qfactor, current, bfield, perturbation)?;
     {
         // NOTE: I am not sure why we must do this, but we must.
         // Probably equivalent to re-adjusting the step-size `h`, but only for the modified
@@ -101,10 +100,10 @@ pub(crate) fn calculate_mod_state2(
 /// Calculates the state of the original system exactly on the intersection surface, by converting
 /// mod_state2 back on the original system.
 pub(crate) fn calculate_intersection_state(
-    qfactor: &Qfactor,
-    bfield: &Bfield,
-    current: &Currents,
-    perturbation: &Perturbation,
+    qfactor: &impl Qfactor,
+    current: &impl Current,
+    bfield: &impl Bfield,
+    perturbation: &impl Perturbation,
     params: &MappingParameters,
     mod_state2: State,
 ) -> Result<State> {
@@ -149,7 +148,7 @@ pub(crate) fn calculate_intersection_state(
 
 /// Checks when an angle has intersected with the surface at `angle`.
 /// (source: seems to work)
-pub(crate) fn intersected(old_angle: Radians, new_angle: Radians, surface_angle: Radians) -> bool {
+pub(crate) fn intersected(old_angle: f64, new_angle: f64, surface_angle: f64) -> bool {
     let diff1 = new_angle - surface_angle;
     let diff2 = old_angle - surface_angle;
     // NOTE: Use `<=` here for the case `surface_angle == 0`, since the sine of angles very close

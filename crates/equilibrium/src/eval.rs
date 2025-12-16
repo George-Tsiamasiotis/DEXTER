@@ -704,4 +704,12 @@ pub trait Perturbation {
         acc: &mut Accelerator,
         caches: &mut [HarmonicCache],
     ) -> Result<f64>;
+
+    /// Returns the number of harmonics.
+    fn len(&self) -> usize;
+
+    /// Returns true if the perturbation has no harmonics (== no perturbation).
+    fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
 }

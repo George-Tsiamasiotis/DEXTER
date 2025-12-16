@@ -1,7 +1,6 @@
 use self::tableau::*;
 use crate::*;
-use config::*;
-use equilibrium::{Bfield, Currents, Perturbation, Qfactor};
+use equilibrium::{Bfield, Current, Perturbation, Qfactor};
 
 /// Runge-kutta-Fehlberg method coefficients (Wikipedia)
 mod tableau {
@@ -80,17 +79,17 @@ impl Stepper {
     pub(crate) fn start(
         &mut self,
         h: f64,
-        qfactor: &Qfactor,
-        bfield: &Bfield,
-        currents: &Currents,
-        perturbation: &Perturbation,
+        qfactor: &impl Qfactor,
+        current: &impl Current,
+        bfield: &impl Bfield,
+        perturbation: &impl Perturbation,
     ) -> Result<()> {
         self.calculate_k1();
-        self.calculate_state_k2(h, qfactor, bfield, currents, perturbation)?;
-        self.calculate_state_k3(h, qfactor, bfield, currents, perturbation)?;
-        self.calculate_state_k4(h, qfactor, bfield, currents, perturbation)?;
-        self.calculate_state_k5(h, qfactor, bfield, currents, perturbation)?;
-        self.calculate_state_k6(h, qfactor, bfield, currents, perturbation)?;
+        self.calculate_state_k2(h, qfactor, current, bfield, perturbation)?;
+        self.calculate_state_k3(h, qfactor, current, bfield, perturbation)?;
+        self.calculate_state_k4(h, qfactor, current, bfield, perturbation)?;
+        self.calculate_state_k5(h, qfactor, current, bfield, perturbation)?;
+        self.calculate_state_k6(h, qfactor, current, bfield, perturbation)?;
         self.calculate_embedded_weights();
         self.calculate_errors();
         // Check if any NaNs where produced/propagated during the evaluations. `self.errors`
@@ -123,10 +122,10 @@ impl Stepper {
     pub(crate) fn calculate_state_k2(
         &mut self,
         h: f64,
-        qfactor: &Qfactor,
-        bfield: &Bfield,
-        currents: &Currents,
-        perturbations: &Perturbation,
+        qfactor: &impl Qfactor,
+        current: &impl Current,
+        bfield: &impl Bfield,
+        perturbations: &impl Perturbation,
     ) -> Result<()> {
         let coef = [
             A21 * self.k1[0],
@@ -147,7 +146,7 @@ impl Stepper {
         self.state2.yacc = self.state1.yacc;
         self.state2.hcache = self.state1.hcache.clone();
         self.state2
-            .evaluate(qfactor, currents, bfield, perturbations)?;
+            .evaluate(qfactor, current, bfield, perturbations)?;
         self.k2 = [
             self.state2.theta_dot,
             self.state2.psip_dot,
@@ -160,10 +159,10 @@ impl Stepper {
     pub(crate) fn calculate_state_k3(
         &mut self,
         h: f64,
-        qfactor: &Qfactor,
-        bfield: &Bfield,
-        currents: &Currents,
-        perturbation: &Perturbation,
+        qfactor: &impl Qfactor,
+        current: &impl Current,
+        bfield: &impl Bfield,
+        perturbation: &impl Perturbation,
     ) -> Result<()> {
         let coef = [
             A31 * self.k1[0] + A32 * self.k2[0],
@@ -182,7 +181,7 @@ impl Stepper {
         self.state3.yacc = self.state2.yacc;
         self.state3.hcache = self.state2.hcache.clone();
         self.state3
-            .evaluate(qfactor, currents, bfield, perturbation)?;
+            .evaluate(qfactor, current, bfield, perturbation)?;
         self.k3 = [
             self.state3.theta_dot,
             self.state3.psip_dot,
@@ -195,10 +194,10 @@ impl Stepper {
     pub(crate) fn calculate_state_k4(
         &mut self,
         h: f64,
-        qfactor: &Qfactor,
-        bfield: &Bfield,
-        currents: &Currents,
-        perturbation: &Perturbation,
+        qfactor: &impl Qfactor,
+        current: &impl Current,
+        bfield: &impl Bfield,
+        perturbation: &impl Perturbation,
     ) -> Result<()> {
         let coef = [
             A41 * self.k1[0] + A42 * self.k2[0] + A43 * self.k3[0],
@@ -217,7 +216,7 @@ impl Stepper {
         self.state4.yacc = self.state3.yacc;
         self.state4.hcache = self.state3.hcache.clone();
         self.state4
-            .evaluate(qfactor, currents, bfield, perturbation)?;
+            .evaluate(qfactor, current, bfield, perturbation)?;
         self.k4 = [
             self.state4.theta_dot,
             self.state4.psip_dot,
@@ -230,10 +229,10 @@ impl Stepper {
     pub(crate) fn calculate_state_k5(
         &mut self,
         h: f64,
-        qfactor: &Qfactor,
-        bfield: &Bfield,
-        currents: &Currents,
-        perturbation: &Perturbation,
+        qfactor: &impl Qfactor,
+        current: &impl Current,
+        bfield: &impl Bfield,
+        perturbation: &impl Perturbation,
     ) -> Result<()> {
         let coef = [
             A51 * self.k1[0] + A52 * self.k2[0] + A53 * self.k3[0] + A54 * self.k4[0],
@@ -252,7 +251,7 @@ impl Stepper {
         self.state5.yacc = self.state4.yacc;
         self.state5.hcache = self.state4.hcache.clone();
         self.state5
-            .evaluate(qfactor, currents, bfield, perturbation)?;
+            .evaluate(qfactor, current, bfield, perturbation)?;
         self.k5 = [
             self.state5.theta_dot,
             self.state5.psip_dot,
@@ -265,10 +264,10 @@ impl Stepper {
     pub(crate) fn calculate_state_k6(
         &mut self,
         h: f64,
-        qfactor: &Qfactor,
-        bfield: &Bfield,
-        currents: &Currents,
-        perturbation: &Perturbation,
+        qfactor: &impl Qfactor,
+        current: &impl Current,
+        bfield: &impl Bfield,
+        perturbation: &impl Perturbation,
     ) -> Result<()> {
         #[rustfmt::skip]
             let coef = [
@@ -288,7 +287,7 @@ impl Stepper {
         self.state6.yacc = self.state5.yacc;
         self.state6.hcache = self.state5.hcache.clone();
         self.state6
-            .evaluate(qfactor, currents, bfield, perturbation)?;
+            .evaluate(qfactor, current, bfield, perturbation)?;
         self.k6 = [
             self.state6.theta_dot,
             self.state6.psip_dot,
@@ -319,33 +318,42 @@ impl Stepper {
         }
     }
 
+    pub(crate) fn calculate_optimal_step(
+        &self,
+        h: f64,
+        config: &impl StepperConfig,
+    ) -> Result<f64> {
+        match config.method() {
+            SteppingMethod::EnergyAdaptiveStep => self.energy_method_optimal_step(h, config),
+            SteppingMethod::ErrorAdaptiveStep => self.error_method_optimal_step(h, config),
+        }
+    }
+
     /// Adjust the error by calculating the relative difference in the energy at every step.
     ///
     /// Source:
     /// https://www.uni-muenster.de/imperia/md/content/physik_tp/lectures/ss2017/numerische_Methoden_fuer_komplexe_Systeme_II/rkm-1.pdf
-    #[cfg(feature = "energy-adaptive-step")]
-    pub(crate) fn calculate_optimal_step(&mut self, h: f64) -> Result<f64> {
+    fn error_method_optimal_step(&self, h: f64, config: &impl StepperConfig) -> Result<f64> {
         let initial_energy = self.state1.energy();
         let final_energy = self.state6.energy();
         // When the energy diff happens to be smaller than REL_TOL, the optimal step keeps getting
         // smaller due to the `REL_TOL/energy_diff` factor, so we need to bound it
         let energy_diff = ((initial_energy - final_energy) / initial_energy)
             .abs()
-            .max(ENERGY_REL_TOL / 2.0);
-        let exp = if energy_diff >= ENERGY_REL_TOL {
+            .max(config.energy_abs_tol());
+        let exp = if energy_diff >= config.energy_rel_tol() {
             0.2
         } else {
             0.25
         };
-        Ok(SAFETY_FACTOR * h * (ENERGY_REL_TOL / energy_diff).powf(exp))
+        Ok(config.safety_factor() * h * (config.energy_rel_tol() / energy_diff).powf(exp))
     }
 
     /// Adjust the error by calculating the local truncation error.
     ///
     /// Source:
     /// https://www.uni-muenster.de/imperia/md/content/physik_tp/lectures/ss2017/numerische_Methoden_fuer_komplexe_Systeme_II/rkm-1.pdf
-    #[cfg(not(feature = "energy-adaptive-step"))]
-    pub(crate) fn calculate_optimal_step(&mut self, h: f64) -> Result<f64> {
+    fn energy_method_optimal_step(&self, h: f64, config: &impl StepperConfig) -> Result<f64> {
         // Using the max error vs each variable's error is equivalent.
 
         // The only way this could fail was if `self.errors` contained any non-finite values,
@@ -359,11 +367,15 @@ impl Stepper {
 
         // When all errors happen to be smaller than REL_TOL, the optimal step keeps getting
         // smaller due to the `REL_TOL/max_error` factor, so we need to bound it
-        max_error = max_error.max(STEP_REL_TOL / 2.0);
+        max_error = max_error.max(config.error_abs_tol());
 
         // 0.2 = 1/*(p+1), where p the order
-        let exp = if max_error >= STEP_REL_TOL { 0.2 } else { 0.25 };
-        Ok(SAFETY_FACTOR * h * (STEP_REL_TOL / max_error).powf(exp))
+        let exp = if max_error >= config.error_rel_tol() {
+            0.2
+        } else {
+            0.25
+        };
+        Ok(config.safety_factor() * h * (config.error_rel_tol() / max_error).powf(exp))
     }
 
     pub(crate) fn next_state(&mut self, h: f64) -> State {

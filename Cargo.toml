@@ -15,13 +15,9 @@ criterion = "0.7.0"
 safe_unwrap = "0.4.1"
 rsl-interpolation = { git = "https://github.com/George-Tsiamasiotis/rsl-interpolation.git", branch = "dev-0.1.16-pre", features = ["openblas-system"]}
 
-config = { path = "crates/config", default-features = false }
-utils = { path = "crates/utils", default-features = false }
-
 common = { path = "crates/common", default-features = false }
 equilibrium = { path = "crates/equilibrium", default-features = false }
 particle = { path = "crates/particle", default-features = false }
-heap = { path = "crates/heap", default-features = false }
 dexter = { path = "crates/dexter", default-features = false }
 
 [workspace.package]

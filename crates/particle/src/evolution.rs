@@ -1,34 +1,34 @@
 use std::fmt::Debug;
 use std::time::Duration;
 
-use config::EVOLUTION_INIT_CAPACITY;
-use utils::array1D_getter_impl;
+use common::array1D_getter_impl;
+use ndarray::Array1;
 
 use crate::State;
-use crate::{CanonicalMomentum, Energy, Flux, Length, Radians, Time};
 
-use ndarray::Array1;
+/// The initial capacity of the time series Vecs.
+const EVOLUTION_INIT_CAPACITY: usize = 2000;
 
 /// Time series for a Particle's orbit.
 #[derive(Clone)]
 pub struct Evolution {
-    pub time: Vec<Time>,
+    pub time: Vec<f64>,
     /// The `θ` angle time series.
-    pub theta: Vec<Radians>,
+    pub theta: Vec<f64>,
     /// The poloidal flux `ψp` time series.
-    pub psip: Vec<Flux>,
+    pub psip: Vec<f64>,
     /// The parallel gyroradius `ρ_{||}` time series.
-    pub rho: Vec<Length>,
+    pub rho: Vec<f64>,
     /// The `ζ` angle time series.
-    pub zeta: Vec<Radians>,
+    pub zeta: Vec<f64>,
     /// The toroidal flux `ψ` time series.
-    pub psi: Vec<Flux>,
+    pub psi: Vec<f64>,
     /// The canonical momentum `Pθ` time series.
-    pub ptheta: Vec<CanonicalMomentum>,
+    pub ptheta: Vec<f64>,
     /// The canonical momentum `Pζ` time series.
-    pub pzeta: Vec<CanonicalMomentum>,
+    pub pzeta: Vec<f64>,
     /// The energy time series.
-    pub energy: Vec<Energy>,
+    pub energy: Vec<f64>,
     /// The duration of the integration.
     pub duration: Duration,
     /// The total steps of the integration.
@@ -70,7 +70,7 @@ impl Evolution {
     }
 
     /// Returns the final stored time.
-    pub fn final_time(&self) -> Option<Time> {
+    pub fn final_time(&self) -> Option<f64> {
         self.time.last().copied()
     }
 
@@ -119,15 +119,15 @@ impl Evolution {
         self.energy = Vec::default();
     }
 
-    array1D_getter_impl!(time, time, Time);
-    array1D_getter_impl!(theta, theta, Radians);
-    array1D_getter_impl!(psip, psip, Flux);
-    array1D_getter_impl!(rho, rho, Length);
-    array1D_getter_impl!(zeta, zeta, Radians);
-    array1D_getter_impl!(psi, psi, Flux);
-    array1D_getter_impl!(ptheta, ptheta, CanonicalMomentum);
-    array1D_getter_impl!(pzeta, pzeta, CanonicalMomentum);
-    array1D_getter_impl!(energy, energy, Energy);
+    array1D_getter_impl!(time, time);
+    array1D_getter_impl!(theta, theta);
+    array1D_getter_impl!(psip, psip);
+    array1D_getter_impl!(rho, rho);
+    array1D_getter_impl!(zeta, zeta);
+    array1D_getter_impl!(psi, psi);
+    array1D_getter_impl!(ptheta, ptheta);
+    array1D_getter_impl!(pzeta, pzeta);
+    array1D_getter_impl!(energy, energy);
 }
 
 impl Debug for Evolution {
@@ -137,8 +137,8 @@ impl Debug for Evolution {
                 "time",
                 &format!(
                     "[{:.5}, {:.5}]",
-                    self.time.first().unwrap_or(&Time::NAN),
-                    self.time.last().unwrap_or(&Time::NAN),
+                    self.time.first().unwrap_or(&f64::NAN),
+                    self.time.last().unwrap_or(&f64::NAN),
                 ),
             )
             .field("duration", &self.duration)

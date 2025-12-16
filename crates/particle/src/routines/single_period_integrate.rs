@@ -3,15 +3,16 @@
 use std::f64::consts::PI;
 use std::time::Instant;
 
+use equilibrium::{Bfield, Current, Perturbation, Qfactor};
+
 use crate::routines::henon::{
     calculate_intersection_state, calculate_mod_state1, calculate_mod_state2, calculate_mod_step,
     intersected,
 };
-use crate::{Evolution, MappingParameters, Particle, PoincareSection, State, Stepper};
+use crate::{
+    Evolution, MappingParameters, Particle, PoincareSection, SinglePeriodConfig, State, Stepper,
+};
 use crate::{ParticleError, Result};
-use config::{RKF45_FIRST_STEP, SINGLE_PERIOD_MAX_STEPS};
-
-use equilibrium::{Bfield, Currents, Perturbation, Qfactor};
 
 /// A particle's `ωθ`, `ωζ` and `qkinetic`.
 #[derive(Default, Clone)]
@@ -84,21 +85,23 @@ impl Frequencies {
 /// Integrates the particle for 1 `θ-ψp` period.
 pub(crate) fn close_theta_period(
     particle: &mut Particle,
-    qfactor: &Qfactor,
-    bfield: &Bfield,
-    currents: &Currents,
-    perturbation: &Perturbation,
+    qfactor: &impl Qfactor,
+    current: &impl Current,
+    bfield: &impl Bfield,
+    perturbation: &impl Perturbation,
+    config: &SinglePeriodConfig,
 ) -> Result<()> {
     // ==================== Setup
 
+    let res: Result<()>;
     let start = Instant::now();
     particle.evolution = Evolution::default();
     particle
         .initial_state
-        .evaluate(qfactor, currents, bfield, perturbation)?;
+        .evaluate(qfactor, current, bfield, perturbation)?;
     let mut state1 = particle.initial_state.clone();
     let mut state2: State;
-    let mut dt = RKF45_FIRST_STEP;
+    let mut dt = config.first_step;
 
     let theta0 = particle.initial_state.theta;
     let psip0 = particle.initial_state.psip;
@@ -110,17 +113,18 @@ pub(crate) fn close_theta_period(
     // ==================== Main loop
 
     loop {
-        if particle.evolution.steps_taken() == SINGLE_PERIOD_MAX_STEPS {
-            return Err(ParticleError::TimedOut(start.elapsed()));
+        if particle.evolution.steps_taken() == config.max_steps {
+            res = Err(ParticleError::TimedOut(start.elapsed()));
+            break;
         }
 
         // Perform a step.
         let mut stepper = Stepper::new(&state1);
-        stepper.start(dt, qfactor, bfield, currents, perturbation)?;
-        dt = stepper.calculate_optimal_step(dt)?;
+        stepper.start(dt, qfactor, current, bfield, perturbation)?;
+        dt = stepper.calculate_optimal_step(dt, config)?;
         state2 = stepper
             .next_state(dt)
-            .into_evaluated(qfactor, currents, bfield, perturbation)?;
+            .into_evaluated(qfactor, current, bfield, perturbation)?;
         particle.evolution.steps_taken += 1;
 
         // Prevent particle from stopping at the first step
@@ -178,11 +182,11 @@ pub(crate) fn close_theta_period(
             let mod_state1 = calculate_mod_state1(&state1, &params.section);
             let dtau = calculate_mod_step(&state1, &state2, &params);
             let mod_state2 =
-                calculate_mod_state2(qfactor, bfield, currents, perturbation, mod_state1, dtau)?;
+                calculate_mod_state2(qfactor, current, bfield, perturbation, mod_state1, dtau)?;
             let intersection_state = calculate_intersection_state(
                 qfactor,
+                current,
                 bfield,
-                currents,
                 perturbation,
                 &params,
                 mod_state2,
@@ -191,8 +195,8 @@ pub(crate) fn close_theta_period(
             // ================ Frequencies calculation
 
             // NOTE:
-            // >>> The orbit frequency ωζ corresponds to the bounce/transit averaged rate of
-            // >>> toroidal precession Δζ/Tω.
+            // The orbit frequency ωζ corresponds to the bounce/transit averaged rate of
+            // toroidal precession Δζ/Tω.
             let omega_period = intersection_state.time - time0;
             let omega_theta = 2.0 * PI / omega_period;
             let dzeta = intersection_state.zeta - zeta0;
@@ -202,6 +206,7 @@ pub(crate) fn close_theta_period(
             particle.frequencies.update_omega_zeta(omega_zeta);
             particle.evolution.push_state(&intersection_state);
             particle.final_state = intersection_state;
+            res = Ok(());
             break;
         }
         // Keep going if not close to a period.
@@ -211,11 +216,11 @@ pub(crate) fn close_theta_period(
 
     // ==================== Finalization
 
-    particle.final_state = state1.into_evaluated(qfactor, currents, bfield, perturbation)?;
+    particle.final_state = state1.into_evaluated(qfactor, current, bfield, perturbation)?;
     particle.evolution.finish();
     particle.calculate_orbit_type();
     particle.evolution.duration = start.elapsed();
-    Ok(())
+    res
 }
 
 // ===============================================================================================

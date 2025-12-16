@@ -15,7 +15,6 @@ ndarray.workspace = true
 thiserror.workspace = true
 safe_unwrap.workspace = true
 utils= {path = "../utils"}
-config = {path = "../config"}
 equilibrium = {path = "../equilibrium"}
 particle = {path = "../particle"}
 indicatif = { version = "0.18.3", features = ["rayon"] }

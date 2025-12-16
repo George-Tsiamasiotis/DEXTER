@@ -104,13 +104,8 @@ impl Perturbation for NcPerturbation {
                 .map(|v| p + v)
         })
     }
-}
 
-/// Getters
-impl NcPerturbation {
-    /// Returns the number of harmonics.
-    #[allow(clippy::len_without_is_empty)]
-    pub fn len(&self) -> usize {
+    fn len(&self) -> usize {
         self.harmonics.len()
     }
 }
