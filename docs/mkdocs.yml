@@ -81,8 +81,6 @@ extra_javascript:
 nav:
   - Home: index.md
   - NetCDF: netcdf.md
-  - API Reference: 
+  - API Reference:
     - Types: reference/types.md
-    - Equilibirum: reference/equilibrium.md
-    - Particle: reference/particle.md
-    - Heap: reference/heap.md
+    - Equilibrium: reference/equilibrium.md

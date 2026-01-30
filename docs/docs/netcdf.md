@@ -53,6 +53,7 @@ Original SI data (not used in any calculations):
 
 Optional file attributes to avoid confusion.
 
+* `description`: A short description.
 * `date`: The file's creation date.
 * `script`: The script used to create the file.
 * `version`: The *convention* version, using [Semantic Versioning].

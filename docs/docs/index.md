@@ -4,14 +4,14 @@ A code for performing calculations and simulations of particles and magnetic fie
 
 The data must be in [netCDF] format.
 
-The bulk computations are implemented in *[Rust]*. The Rust code consists of standalone *[crates]* that can be used independently and *as is*.  
+The bulk computations are implemented in *[Rust]*. The Rust code consists of standalone *[crates]* that can be used independently and *as is*.
 
 The Python interface directly exposes all underlying objects and routines in the form of a single python package:
 
 ```python
->>> import dexter as dx
+>>> import dexter as dex
 >>>
->>> qfactor = dx.Qfactor(path="./data.nc", typ="cubic")
+>>> #qfactor = dex.Qfactor(path="./data.nc", typ="cubic") #FIXME:
 
 ```
 

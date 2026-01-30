@@ -1,0 +1,27 @@
+[package]
+name = "py-dexter"
+version = "0.0.1"
+license.workspace = true
+edition.workspace = true
+authors.workspace = true
+homepage.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+documentation.workspace = true
+
+[lib]
+name = "dexter"
+crate-type = ["cdylib"]
+test = false # linker issues, not needed anyway
+bench = false
+
+[dependencies]
+dexter.workspace = true
+rsl-interpolation.workspace = true
+pyo3 = { version = "0.27.2", features = ["extension-module", "abi3-py314", "multiple-pymethods"] }
+numpy = { version = "0.27.1" }
+
+[features]
+default = []
+openblas-static = ["dexter/openblas-static"]
+netcdf-static = ["dexter/netcdf-static"]

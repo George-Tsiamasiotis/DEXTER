@@ -8,6 +8,9 @@
 docs/book_build
 docs/site
 
+# Appears in doctests
+crates/dexter-equilibrium/netcdf.nc
+
 # Python
 .venv/
 *.py[cod]

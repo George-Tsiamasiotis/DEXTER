@@ -1,20 +1,22 @@
 [workspace]
 resolver = "3"
 members = [
-    "config",
-    "utils",
-    "equilibrium",
-    "particle",
-    "heap",
-    "dexter-python"
+    "crates/dexter-equilibrium",
+    "crates/dexter",
+    "py-dexter",
+]
+default-members = [
+    "crates/*",
 ]
 
 [workspace.dependencies]
 ndarray = "0.17.2"
 thiserror = "2.0.18"
 criterion = "0.7.0"
-safe_unwrap = "0.4.1"
 rsl-interpolation = { git = "https://github.com/George-Tsiamasiotis/rsl-interpolation.git", branch = "dev-0.1.16-pre", features = ["openblas-system"]}
+
+dexter = { path = "crates/dexter" }
+dexter-equilibrium = { path = "crates/dexter-equilibrium" }
 
 [workspace.package]
 authors = ["George Tsiamasiotis"]
@@ -25,6 +27,9 @@ homepage = "https://github.com/George-Tsiamasiotis/DEXTER"
 repository = "https://github.com/George-Tsiamasiotis/DEXTER"
 documentation = "https://github.com/George-Tsiamasiotis/DEXTER"
 description = "Calculations and simulations in reconstructed equilibria of toroidal fusion devices."
+
+[workspace.metadata]
+netcdf_version = "0.0.1"
 
 [profile.release-lto]
 inherits = "release"
