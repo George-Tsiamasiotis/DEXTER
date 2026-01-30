@@ -23,16 +23,8 @@ utils = {path = "../utils"}
 equilibrium = {path = "../equilibrium"}
 particle = {path = "../particle"}
 heap = {path = "../heap"}
-pyo3 = { version = "0.27.1", features = ["extension-module", "abi3-py314", "multiple-pymethods"] }
-# Fix until 0.27.0 is actually released
-# At the moment of writing, git numpy supports ndarray ">=0.15, <=0.17", while
-# crates.io only supports ">=0.15, <0.17", even though both say "0.27.0".
-# Even with the git dependency, cargo still used ndarray 0.16.1 for numpy, even
-# though all the other crates and dependecies in the workspaces used 0.17.1, so
-# I had to manually run:
-#   cargo update --package ndarray:0.16.1 --precise 0.17.1
-# as recommended by the numpy crate
-numpy = { version = "0.27.0", git  = "https://github.com/PyO3/rust-numpy.git", branch = "main"}
+pyo3 = { version = "0.27.2", features = ["extension-module", "abi3-py314"] }
+numpy = "0.27.1"
 
 [features]
 default = []
