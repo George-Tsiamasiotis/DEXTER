@@ -1,5 +1,6 @@
 from dexter.types import (
     Interp1DType,
+    FluxState,
     Array1,
 )
 
@@ -22,6 +23,10 @@ class NcCurrent:
         The value of the toroidal flux at the wall (if it exists).
     psip_wall
         The value of the poloidal flux at the wall (if it exists).
+    psi_state
+        The state of the toroidal flux coordinate.
+    psip_state
+        The state of the poloidal flux coordinate.
     psi_array
         The NetCDF $\psi$ data used to construct the $q(\psi)$ and $I(\psi)$ splines.
     psip_array
@@ -36,6 +41,8 @@ class NcCurrent:
     typ: Interp1DType
     psi_wall: float | None
     psip_wall: float | None
+    psi_state: FluxState
+    psip_state: FluxState
     psi_array: Array1
     psip_array: Array1
     g_array: Array1

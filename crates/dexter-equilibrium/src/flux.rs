@@ -6,8 +6,8 @@ use crate::extract::extract_1d_array;
 use crate::extract::netcdf_fields::*;
 
 /// Defines whether or not a Flux coordinate can be used for evaluations.
-#[derive(Debug, PartialEq)]
-pub(crate) enum NcFluxState {
+#[derive(Debug, PartialEq, Clone)]
+pub enum NcFluxState {
     /// Good coordinate: values exist and are increasing. Can be used as an x coordinate for
     /// evaluations.
     Good,
@@ -34,7 +34,8 @@ impl NcFluxState {
 /// Moreover, the logic on the evaluation sites checks the state anyway, so an extra `is_some()`
 /// would be redundant. Finally, even if an evaluation is called, the empty vec would cause a
 /// panic, which is what we want.
-pub(crate) struct NcFlux {
+#[derive(Clone)]
+pub struct NcFlux {
     pub(crate) values: Vec<f64>,
     pub(crate) state: NcFluxState,
 }
@@ -77,5 +78,23 @@ impl std::fmt::Debug for NcFlux {
             .field("len", &self.values.len())
             .field("wall value", &self.wall_value())
             .finish()
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use std::path::PathBuf;
+
+    use crate::extract::{TEST_NETCDF_PATH, open};
+
+    use super::*;
+
+    #[test]
+    fn non_existing_flux_variable() {
+        let path = PathBuf::from(TEST_NETCDF_PATH);
+        let file = open(&path).unwrap();
+        let noflux = NcFlux::build(&file, "NOT_A_FIELD");
+        assert_eq!(noflux.state, NcFluxState::None);
+        assert!(noflux.values.is_empty());
     }
 }

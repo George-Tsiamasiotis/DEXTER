@@ -6,5 +6,7 @@ skip-clean = true
 output-dir = "./htmlcov/"
 out = ["Html"]
 no-fail-fast = true
+ignore-panics = true
 fail-immediately = true
 color = "Always"
+engine = "Llvm"

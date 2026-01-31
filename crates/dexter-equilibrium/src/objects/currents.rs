@@ -1,6 +1,6 @@
 //! Representation of an equilibrium's plasma current.
 
-use crate::{fluxes_wall_value_getter_impl, vec_to_array1D_getter_impl};
+use crate::{fluxes_state_getter_impl, fluxes_wall_value_getter_impl, vec_to_array1D_getter_impl};
 use ndarray::Array1;
 use rsl_interpolation::{Accelerator, DynInterpolation, InterpType, make_interp_type};
 use std::path::{Path, PathBuf};
@@ -62,9 +62,6 @@ impl NcCurrentBuilder {
 pub struct NcCurrent {
     /// Path to the netCDF file.
     path: PathBuf,
-    /// 1D [`Interpolation type`], in case-insensitive string format.
-    ///
-    /// [`Interpolation type`]: ../rsl_interpolation/trait.InterpType.html#implementors
     typ: String,
 
     psi: NcFlux,
@@ -90,10 +87,10 @@ impl NcCurrent {
         let path = std::path::absolute(builder.path)?;
         let f = open(&path)?;
 
-        let g_values = extract_1d_array(&f, G_NORM)?.to_vec();
-        let i_values = extract_1d_array(&f, I_NORM)?.to_vec();
         let psi = NcFlux::toroidal(&f);
         let psip = NcFlux::poloidal(&f);
+        let g_values = extract_1d_array(&f, G_NORM)?.to_vec();
+        let i_values = extract_1d_array(&f, I_NORM)?.to_vec();
 
         // Create interpolators, if possible
         use NcFluxState::Good;
@@ -133,67 +130,67 @@ impl NcCurrent {
 /// Evaluations
 impl Current for NcCurrent {
     fn g_of_psi(&self, psi: f64, acc: &mut Accelerator) -> Result<f64> {
-        debug_assert!(self.psi.state == NcFluxState::Good);
-        match &self.g_of_psi_interp {
-            Some(interp) => Ok(interp.eval(&self.psi.values, &self.g_values, psi, acc)?),
-            None => panic!("Flux coordinate ψ is not well defined."),
-        }
+        Ok(self
+            .g_of_psi_interp
+            .as_ref()
+            .expect("g(ψ) is not defined.")
+            .eval(&self.psi.values, &self.g_values, psi, acc)?)
     }
 
     fn g_of_psip(&self, psip: f64, acc: &mut Accelerator) -> Result<f64> {
-        debug_assert!(self.psip.state == NcFluxState::Good);
-        match &self.g_of_psip_interp {
-            Some(interp) => Ok(interp.eval(&self.psip.values, &self.g_values, psip, acc)?),
-            None => panic!("Flux coordinate ψp is not well defined."),
-        }
+        Ok(self
+            .g_of_psip_interp
+            .as_ref()
+            .expect("g(ψp) is not defined.")
+            .eval(&self.psip.values, &self.g_values, psip, acc)?)
     }
 
     fn i_of_psi(&self, psi: f64, acc: &mut Accelerator) -> Result<f64> {
-        debug_assert!(self.psi.state == NcFluxState::Good);
-        match &self.i_of_psi_interp {
-            Some(interp) => Ok(interp.eval(&self.psi.values, &self.i_values, psi, acc)?),
-            None => panic!("Flux coordinate ψ is not well defined."),
-        }
+        Ok(self
+            .i_of_psi_interp
+            .as_ref()
+            .expect("I(ψ) is not defined.")
+            .eval(&self.psi.values, &self.i_values, psi, acc)?)
     }
 
     fn i_of_psip(&self, psip: f64, acc: &mut Accelerator) -> Result<f64> {
-        debug_assert!(self.psip.state == NcFluxState::Good);
-        match &self.i_of_psip_interp {
-            Some(interp) => Ok(interp.eval(&self.psip.values, &self.i_values, psip, acc)?),
-            None => panic!("Flux coordinate ψp is not well defined."),
-        }
+        Ok(self
+            .i_of_psip_interp
+            .as_ref()
+            .expect("I(ψp) is not defined.")
+            .eval(&self.psip.values, &self.i_values, psip, acc)?)
     }
 
     fn dg_dpsi(&self, psi: f64, acc: &mut Accelerator) -> Result<f64> {
-        debug_assert!(self.psi.state == NcFluxState::Good);
-        match &self.g_of_psi_interp {
-            Some(interp) => Ok(interp.eval_deriv(&self.psi.values, &self.g_values, psi, acc)?),
-            None => panic!("Flux coordinate ψ is not well defined."),
-        }
+        Ok(self
+            .g_of_psi_interp
+            .as_ref()
+            .expect("dg(ψ)/dψ is not defined.")
+            .eval_deriv(&self.psi.values, &self.g_values, psi, acc)?)
     }
 
     fn dg_dpsip(&self, psip: f64, acc: &mut Accelerator) -> Result<f64> {
-        debug_assert!(self.psip.state == NcFluxState::Good);
-        match &self.g_of_psip_interp {
-            Some(interp) => Ok(interp.eval_deriv(&self.psip.values, &self.g_values, psip, acc)?),
-            None => panic!("Flux coordinate ψp is not well defined."),
-        }
+        Ok(self
+            .g_of_psip_interp
+            .as_ref()
+            .expect("dg(ψp)/dψp is not defined.")
+            .eval_deriv(&self.psip.values, &self.g_values, psip, acc)?)
     }
 
     fn di_dpsi(&self, psi: f64, acc: &mut Accelerator) -> Result<f64> {
-        debug_assert!(self.psi.state == NcFluxState::Good);
-        match &self.i_of_psi_interp {
-            Some(interp) => Ok(interp.eval_deriv(&self.psi.values, &self.i_values, psi, acc)?),
-            None => panic!("Flux coordinate ψ is not well defined."),
-        }
+        Ok(self
+            .i_of_psi_interp
+            .as_ref()
+            .expect("dI(ψ)/dψ is not defined.")
+            .eval_deriv(&self.psi.values, &self.i_values, psi, acc)?)
     }
 
     fn di_dpsip(&self, psip: f64, acc: &mut Accelerator) -> Result<f64> {
-        debug_assert!(self.psip.state == NcFluxState::Good);
-        match &self.i_of_psip_interp {
-            Some(interp) => Ok(interp.eval_deriv(&self.psip.values, &self.i_values, psip, acc)?),
-            None => panic!("Flux coordinate ψp is not well defined."),
-        }
+        Ok(self
+            .i_of_psip_interp
+            .as_ref()
+            .expect("dI(ψp)/dψp is not defined.")
+            .eval_deriv(&self.psip.values, &self.i_values, psip, acc)?)
     }
 }
 
@@ -214,6 +211,7 @@ impl NcCurrent {
         self.g_values.len()
     }
 
+    fluxes_state_getter_impl!();
     fluxes_wall_value_getter_impl!();
     vec_to_array1D_getter_impl!(psi_array, psi.values);
     vec_to_array1D_getter_impl!(psip_array, psip.values);
@@ -229,5 +227,127 @@ impl std::fmt::Debug for NcCurrent {
             .field("psi", &self.psi)
             .field("psip", &self.psip)
             .finish()
+    }
+}
+
+#[cfg(test)]
+mod test_evals_with_bad_psip {
+    use crate::extract::TOROIDAL_TEST_NETCDF_PATH;
+
+    use super::*;
+
+    fn create_toroidal_nc_current() -> NcCurrent {
+        let path = PathBuf::from(TOROIDAL_TEST_NETCDF_PATH);
+        let builder = NcCurrentBuilder::new(&path, "steffen");
+        builder.build().unwrap()
+    }
+
+    #[test]
+    fn flux_and_interp_states() {
+        let current = create_toroidal_nc_current();
+        assert_eq!(current.psi_state(), NcFluxState::Good);
+        assert_eq!(current.psip_state(), NcFluxState::Bad);
+        assert!(current.g_of_psi_interp.is_some());
+        assert!(current.i_of_psi_interp.is_some());
+        assert!(current.g_of_psip_interp.is_none());
+        assert!(current.i_of_psip_interp.is_none());
+    }
+
+    #[test]
+    fn psi_evals() {
+        let current = create_toroidal_nc_current();
+        current.g_of_psi(0.01, &mut Accelerator::new()).unwrap();
+        current.i_of_psi(0.01, &mut Accelerator::new()).unwrap();
+        current.dg_dpsi(0.01, &mut Accelerator::new()).unwrap();
+        current.di_dpsi(0.01, &mut Accelerator::new()).unwrap();
+    }
+
+    #[test]
+    #[should_panic]
+    fn undefined_g_of_psip() {
+        let current = create_toroidal_nc_current();
+        current.g_of_psip(0.01, &mut Accelerator::new()).unwrap();
+    }
+
+    #[test]
+    #[should_panic]
+    fn undefined_i_of_psip() {
+        let current = create_toroidal_nc_current();
+        current.i_of_psip(0.01, &mut Accelerator::new()).unwrap();
+    }
+
+    #[test]
+    #[should_panic]
+    fn undefined_dg_dpsip() {
+        let current = create_toroidal_nc_current();
+        current.dg_dpsip(0.01, &mut Accelerator::new()).unwrap();
+    }
+
+    #[test]
+    #[should_panic]
+    fn undefined_di_dpsip() {
+        let current = create_toroidal_nc_current();
+        current.di_dpsip(0.01, &mut Accelerator::new()).unwrap();
+    }
+}
+
+#[cfg(test)]
+mod test_evals_with_bad_psi {
+    use crate::extract::POLOIDAL_TEST_NETCDF_PATH;
+
+    use super::*;
+
+    fn create_poloidal_nc_current() -> NcCurrent {
+        let path = PathBuf::from(POLOIDAL_TEST_NETCDF_PATH);
+        let builder = NcCurrentBuilder::new(&path, "steffen");
+        builder.build().unwrap()
+    }
+
+    #[test]
+    fn flux_and_interp_states() {
+        let current = create_poloidal_nc_current();
+        assert_eq!(current.psi_state(), NcFluxState::Bad);
+        assert_eq!(current.psip_state(), NcFluxState::Good);
+        assert!(current.g_of_psi_interp.is_none());
+        assert!(current.g_of_psi_interp.is_none());
+        assert!(current.g_of_psip_interp.is_some());
+        assert!(current.i_of_psip_interp.is_some());
+    }
+
+    #[test]
+    fn psip_evals() {
+        let current = create_poloidal_nc_current();
+        current.g_of_psip(0.01, &mut Accelerator::new()).unwrap();
+        current.i_of_psip(0.01, &mut Accelerator::new()).unwrap();
+        current.dg_dpsip(0.01, &mut Accelerator::new()).unwrap();
+        current.di_dpsip(0.01, &mut Accelerator::new()).unwrap();
+    }
+
+    #[test]
+    #[should_panic]
+    fn undefined_g_of_psi() {
+        let current = create_poloidal_nc_current();
+        current.g_of_psi(0.01, &mut Accelerator::new()).unwrap();
+    }
+
+    #[test]
+    #[should_panic]
+    fn undefined_i_of_psi() {
+        let current = create_poloidal_nc_current();
+        current.i_of_psi(0.01, &mut Accelerator::new()).unwrap();
+    }
+
+    #[test]
+    #[should_panic]
+    fn undefined_dg_dpsi() {
+        let current = create_poloidal_nc_current();
+        current.dg_dpsi(0.01, &mut Accelerator::new()).unwrap();
+    }
+
+    #[test]
+    #[should_panic]
+    fn undefined_di_dpsi() {
+        let current = create_poloidal_nc_current();
+        current.di_dpsi(0.01, &mut Accelerator::new()).unwrap();
     }
 }

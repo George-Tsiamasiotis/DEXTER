@@ -31,11 +31,10 @@ mod eval;
 mod flux;
 mod objects;
 
-pub(crate) use flux::*;
-
 pub mod extract;
 
 pub use eval::Current;
+pub use flux::{NcFlux, NcFluxState};
 pub use objects::*;
 
 pub use error::{EqError, NcError};

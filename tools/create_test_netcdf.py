@@ -7,13 +7,14 @@
 # ]
 # ///
 
-"""Creates a netCDF file to be used for extraction tests in the "dexter-equilibrium" crate.
+"""Creates a test netCDF file with a LAR equilibrium.
 
-Quantities are expressed as functions of both the toroidal flux ψ and the poloidal flux ψp.
+Flux coordinates behavior:
 
-Data is produced from the analytical LAR formulas, with a parabolic q-factor profile.
-2 trivial perturbations are added, with specifically injected values to ensure each array is
-extracted correctly.
+    1. -c = "both": equispaced ψ values, q=1 and ψp = ψ.
+    2. -c = "toroidal": equispaced ψ values, ψp = sin(2πψ), and q(ψ) = dψp/dψ.
+    3. -c = "poloidal": equispaced ψp values, ψ = sin(2πψp), and q(ψ) = dψp/dψ = 1/(dψ/dψ).
+
 """
 
 import argparse
@@ -23,21 +24,36 @@ import tomllib
 from semver import Version
 from pathlib import Path
 from datetime import datetime
+from typing import assert_never
 
+with open("./Cargo.toml", "rb") as f:
+    VERSION = Version.parse(tomllib.load(f)["workspace"]["metadata"]["netcdf_version"])
 
-parser = argparse.ArgumentParser(description=__doc__)
+parser = argparse.ArgumentParser(
+    description=__doc__,
+    formatter_class=argparse.RawDescriptionHelpFormatter,
+    epilog=f"netCDF version {VERSION}",
+)
 parser.add_argument(
-    "output",
-    help="the output file name",
+    "-o",
+    "--output",
+    help="the output file name (leave empty when running interactively)",
+    type=str,
+    default="",  # when run interactively
+)
+parser.add_argument(
+    "-c",
+    "--coord",
+    help="the good (monotonic) flux coordinate(s)",
+    type=str,
+    default="both",
+    choices=["both", "toroidal", "poloidal"],
 )
 args = parser.parse_args()
 
 # ==========================================================================
 
 OUTPUT = Path(args.output)
-
-with open("./Cargo.toml", "rb") as f:
-    VERSION = Version.parse(tomllib.load(f)["workspace"]["metadata"]["netcdf_version"])
 
 #########
 # Scalars
@@ -47,72 +63,49 @@ baxis = 1.5
 raxis = 1.75
 zaxis = 0
 rgeo = 1.7
+a = 0.5  # "small radius"
 
-a = 2  # minor radius in meters
-psi_wall_norm = (a / raxis) ** 2 / 2
+flux_wall_value_norm = 0.5  # can be either ψ_wall or ψp_wall
 
-#############
-# Coordinates
-#############
+##################################
+# Coordinates, Fluxes and q-factor
+##################################
 
 FLUX_SURFACES = 100
 THETAS = 200
 
-psi_norm = np.linspace(0, psi_wall_norm, FLUX_SURFACES)
 theta = np.linspace(0, 2 * np.pi, THETAS)
 m = np.asarray([2, 3])
 n = np.asarray([1, 2])
 
-###################
-# Parabolic Qfactor
-###################
-
-q0 = 1.1
-qwall = 3  # include the 2/1 resonance
-
-
-def parabolic_q(psi: np.ndarray) -> np.ndarray:
-    return q0 + (qwall - q0) * (psi / psi_wall_norm) ** 2
-
-
-q = parabolic_q(psi_norm)
-
-##################
-# Poloidal flux ψp
-##################
-
-
-def parabolic_psip_norm(psi: np.ndarray) -> np.ndarray:
-    num = psi_wall_norm / np.sqrt(q0 * (qwall - q0))
-    atan = np.atan(psi * np.sqrt(qwall - q0) / (psi_wall_norm * np.sqrt(q0)))
-    return num * atan
+match args.coord:
+    case "both":  # q = 1
+        psi_norm = np.linspace(0, flux_wall_value_norm, FLUX_SURFACES)
+        psip_norm = psi_norm
+        q = np.ones(psi_norm.shape)
+    case "toroidal":  # equispaced ψ values, ψp = sin(2πψ), and q(ψ) = dψp/dψ.
+        psi_norm = np.linspace(0, flux_wall_value_norm, FLUX_SURFACES)
+        psip_norm = np.sin(2 * np.pi * psi_norm)  # no longer monotonic in [0, psi_wall]
+        q = np.gradient(psip_norm, psi_norm)
+        assert not np.all(np.diff(psip_norm) > 0)
+    case "poloidal":  # equispaced ψp values, ψ = sin(2πψp), and q(ψ) = 1/(dψ/dψ).
+        psip_norm = np.linspace(0, flux_wall_value_norm, FLUX_SURFACES)
+        psi_norm = np.sin(2 * np.pi * psip_norm)  # no longer monotonic in [0, psi_wall]
+        q = np.gradient(psi_norm, psip_norm)  # inverse
+        assert not np.all(np.diff(psi_norm) > 0)
+    case _:
+        assert_never(args.coord)
 
 
-psip_norm = parabolic_psip_norm(psi_norm)
-
-##########
 # Currents
-##########
-
 g_norm = np.ones(FLUX_SURFACES)
 i_norm = np.zeros(FLUX_SURFACES)
 
-############
 # LAR Bfield
-############
-
-
-def lar_bfield(psi: np.ndarray, theta: np.ndarray) -> np.ndarray:
-    return 1 - np.sqrt(2 * psi) * np.cos(theta)
-
-
 psi_norm_grid, theta_grid = np.meshgrid(psi_norm, theta, indexing="ij")
-b_norm = lar_bfield(psi_norm_grid, theta_grid)
+b_norm = 1 - np.sqrt(2 * psi_norm_grid) * np.cos(theta_grid)
 
-#################
 # Lab coordinates
-#################
-
 rlab = raxis + psi_norm_grid * np.cos(theta_grid)
 zlab = psi_norm_grid * np.sin(theta_grid)
 
@@ -126,10 +119,7 @@ p12 = p13 = p22 = p23 = np.sin(10 * psip_norm)
 alphas_norm = np.asarray([[a12, a23], [a13, a23]])
 phases = np.asarray([[p12, p23], [p13, p23]])
 
-#################
 # Value Injection
-#################
-
 # Inject the (2, 2) mode with specific values to test that the extraction
 # is done correctly. If either the indexes or the values change, the test
 # must be updated accordingly.
@@ -143,10 +133,11 @@ alphas_norm[0, 1, -1] = 11111
 # Misc quantities
 #################
 
-r_norm = np.sqrt(2 * psi_norm)
+# `r` is somewhat artificial, since we cannot always calculate it from the fluxes
+r_norm = np.linspace(0, a, FLUX_SURFACES)
 psi = psi_norm * (baxis * raxis**2)
 psip = psip_norm * (baxis * raxis**2)
-r = np.sqrt(2 * psi_norm) * raxis
+r = r_norm * raxis
 g = g_norm * baxis * raxis
 i = i_norm * baxis * raxis
 b = b_norm / baxis
@@ -369,8 +360,18 @@ VARIABLES = {
     "alphas_norm": alphas_norm_var,
 }
 
+match args.coord:
+    case "both":
+        description = "LAR testing equilibrium with monotonic ψ and ψp"
+    case "toroidal":
+        description = "LAR testing equilibrium with monotonic ψ and non-monotonic ψp"
+    case "poloidal":
+        description = "LAR testing equilibrium with non-monotonic ψ and monotonic ψp"
+    case _:
+        assert_never(args.coord)
+
 ATTRS = {
-    "description": "LAR Equilibrium, expressed as a function of the toroidal flux ψ.",
+    "description": description,
     "date": str(datetime.now().astimezone().replace(microsecond=0).isoformat()),
     "script": str(Path(__file__).stem),
     "version": str(VERSION),
@@ -382,10 +383,11 @@ dataset = xr.Dataset(
     attrs=ATTRS,
 )
 
-dataset.to_netcdf(OUTPUT)
+
+if args.output != "":
+    dataset.to_netcdf(OUTPUT)
+    GREEN = "\033[92m"
+    print(f"{GREEN}Stored dataset at '{OUTPUT.absolute()}'")
+
 dataset.close()
-
-GREEN = "\033[92m"
-print(f"{GREEN}Stored dataset at '{OUTPUT.absolute()}'")
-
 raise SystemExit

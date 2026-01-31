@@ -83,3 +83,17 @@ macro_rules! py_export_getter {
         }
     };
 }
+
+/// Generates a python getter that returns the debug String ("{:?}") of an enum
+#[macro_export]
+macro_rules! py_get_enum_string {
+    ($py_object:ident, $getter:ident) => {
+        #[pymethods]
+        impl $py_object {
+            #[getter]
+            pub fn $getter(&self) -> String {
+                format!("{:?}", self.0.$getter())
+            }
+        }
+    };
+}

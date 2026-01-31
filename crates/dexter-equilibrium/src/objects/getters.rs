@@ -26,3 +26,19 @@ macro_rules! fluxes_wall_value_getter_impl {
         }
     };
 }
+
+/// Generates getters for the fluxes' states.
+#[macro_export]
+macro_rules! fluxes_state_getter_impl {
+    () => {
+        /// Returns the toroidal flux's state.
+        pub fn psi_state(&self) -> NcFluxState {
+            self.psi.state.clone()
+        }
+
+        /// Returns the poloidal flux's state.
+        pub fn psip_state(&self) -> NcFluxState {
+            self.psip.state.clone()
+        }
+    };
+}
