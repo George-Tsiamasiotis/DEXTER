@@ -9,5 +9,6 @@ use pyo3::prelude::*;
 fn _core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     // Equilibrium
     m.add_class::<pylibrium::PyNcCurrent>()?;
+    m.add_class::<pylibrium::PyNcGeometry>()?;
     Ok(())
 }

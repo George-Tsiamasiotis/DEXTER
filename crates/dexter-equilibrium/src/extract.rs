@@ -15,10 +15,10 @@
 pub const TEST_NETCDF_PATH: &str = "test_netcdf.nc";
 
 /// Test netcdf file with ψ the only good coordinate.
-#[allow(dead_code)]
+#[cfg(test)]
 pub(crate) const TOROIDAL_TEST_NETCDF_PATH: &str = "toroidal_test_netcdf.nc";
 /// Test netcdf file with ψp the only good coordinate.
-#[allow(dead_code)]
+#[cfg(test)]
 pub(crate) const POLOIDAL_TEST_NETCDF_PATH: &str = "poloidal_test_netcdf.nc";
 
 /// The names each variable is expected to appear in the netCDF file.
@@ -108,7 +108,7 @@ pub mod netcdf_fields {
 use std::path::PathBuf;
 
 use ndarray::{Array, Array1, Array2, Array3};
-use netcdf::{Extents, File, NcTypeDescriptor, Variable};
+use netcdf::{Extents, NcTypeDescriptor, Variable};
 use semver::Version;
 
 use crate::NcError;
@@ -138,7 +138,7 @@ impl NcType for i32 {}
 /// # Errors
 ///
 /// Returns an [`NcError`] if the path is not found or the NetCDF could not be opened.
-pub fn open(path: &PathBuf) -> Result<File> {
+pub fn open(path: &PathBuf) -> Result<netcdf::File> {
     if !path.exists() {
         return Err(NcError::FileNotFound(path.clone()));
     }
@@ -204,7 +204,7 @@ pub fn extract_attribute(f: &netcdf::File, name: &str) -> Result<String> {
 /// [`Semantic Version`].
 ///
 /// [`Semantic Version`]: https://semver.org/
-pub fn extract_version<'f>(f: &'f File) -> Result<Version> {
+pub fn extract_version(f: &netcdf::File) -> Result<Version> {
     let attr = extract_attribute(f, netcdf_fields::CONVENTION_VERSION)?;
     match Version::parse(&attr) {
         Ok(version) => Ok(version),
@@ -240,7 +240,7 @@ fn check_if_empty(var: &Variable) -> Result<()> {
 /// # Errors
 ///
 /// Returns an [`NcError`] if the [`Variable`] is not found.
-pub fn extract_variable<'f>(f: &'f File, name: &str) -> Result<Variable<'f>> {
+pub fn extract_variable<'file>(f: &'file netcdf::File, name: &str) -> Result<Variable<'file>> {
     f.variable(name)
         .ok_or(NcError::VariableNotFound(name.into()))
 }
@@ -249,7 +249,7 @@ pub fn extract_variable<'f>(f: &'f File, name: &str) -> Result<Variable<'f>> {
 
 /// Returns an [`Array<T, D>`] with the values of the [`Variable`] named `name`, in standard
 /// layout.
-fn extract_array<T, D>(f: &File, name: &str) -> Result<Array<T, D>>
+fn extract_array<T, D>(f: &netcdf::File, name: &str) -> Result<Array<T, D>>
 where
     T: NcType,
     D: ndarray::Dimension,
@@ -291,7 +291,7 @@ where
 /// # Errors
 ///
 /// Returns an [`NcError`] if the [`Variable`] is not found, is empty, or has a different shape.
-pub fn extract_scalar<T: NcType>(f: &File, name: &str) -> Result<T> {
+pub fn extract_scalar<T: NcType>(f: &netcdf::File, name: &str) -> Result<T> {
     Ok(extract_array(f, name)?.into_scalar())
 }
 
@@ -317,7 +317,7 @@ pub fn extract_scalar<T: NcType>(f: &File, name: &str) -> Result<T> {
 /// # Errors
 ///
 /// Returns an [`NcError`] if the [`Variable`] is not found, is empty, or has a different shape.
-pub fn extract_1d_array<T: NcType>(f: &File, name: &str) -> Result<Array1<T>> {
+pub fn extract_1d_array<T: NcType>(f: &netcdf::File, name: &str) -> Result<Array1<T>> {
     extract_array(f, name)
 }
 
@@ -343,7 +343,7 @@ pub fn extract_1d_array<T: NcType>(f: &File, name: &str) -> Result<Array1<T>> {
 /// # Errors
 ///
 /// Returns an [`NcError`] if the [`Variable`] is not found, is empty, or has a different shape.
-pub fn extract_2d_array<T: NcType>(f: &File, name: &str) -> Result<Array2<T>> {
+pub fn extract_2d_array<T: NcType>(f: &netcdf::File, name: &str) -> Result<Array2<T>> {
     extract_array(f, name)
 }
 
@@ -369,7 +369,7 @@ pub fn extract_2d_array<T: NcType>(f: &File, name: &str) -> Result<Array2<T>> {
 /// # Errors
 ///
 /// Returns an [`NcError`] if the [`Variable`] is not found, is empty, or has a different shape.
-pub fn extract_3d_array<T: NcType>(f: &File, name: &str) -> Result<Array3<T>> {
+pub fn extract_3d_array<T: NcType>(f: &netcdf::File, name: &str) -> Result<Array3<T>> {
     extract_array(f, name)
 }
 
@@ -395,7 +395,7 @@ pub fn extract_3d_array<T: NcType>(f: &File, name: &str) -> Result<Array3<T>> {
 ///
 /// Returns an [`NcError`] if the NetCDF file does not contain the {`m`, `n`} harmonic.
 pub fn extract_harmonic_arrays<T: NcType>(
-    f: &File,
+    f: &netcdf::File,
     m: i64,
     n: i64,
 ) -> Result<(Array1<T>, Array1<T>)> {
@@ -425,7 +425,7 @@ pub fn extract_harmonic_arrays<T: NcType>(
 /// So for the mode m=1, we want the 2nd entry on the 3D array (m_index = 2).
 ///
 /// It is agreed that the mode numbers are stored in an increasing order to avoid ambiguities
-fn get_logical_index(f: &File, mode: i64, field: &str) -> Result<usize> {
+fn get_logical_index(f: &netcdf::File, mode: i64, field: &str) -> Result<usize> {
     let coord = extract_1d_array::<i64>(f, field)?;
     let map: Vec<(usize, &i64)> = coord.indexed_iter().collect(); // create mapping
     let pair = map

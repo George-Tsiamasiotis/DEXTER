@@ -17,11 +17,21 @@ macro_rules! py_eval1D {
             }
         }
     };
-    ($py_object:ident, $eval_method:ident, "no-acc") => {
+}
+
+/// Generates a 2D eval method from the wrapped Rust object.
+#[macro_export]
+macro_rules! py_eval2D {
+    ($py_object:ident, $eval_method:ident) => {
         #[pymethods]
         impl $py_object {
-            pub fn $eval_method(&self, psip: f64) -> Result<f64, PyEqError> {
-                Ok(self.0.$eval_method(psip)?)
+            pub fn $eval_method(&self, psip: f64, theta: f64) -> Result<f64, PyEqError> {
+                let mut xacc = Accelerator::new();
+                let mut yacc = Accelerator::new();
+                let mut cache = Cache::new();
+                Ok(self
+                    .0
+                    .$eval_method(psip, theta, &mut xacc, &mut yacc, &mut cache)?)
             }
         }
     };

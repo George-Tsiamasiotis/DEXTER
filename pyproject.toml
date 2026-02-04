@@ -50,3 +50,5 @@ testpaths = ["./py-dexter/pytests", "./py-dexter/dexter/", "./docs/docs/"] # Run
 addopts = "--durations 2 --doctest-glob='*.md' --doctest-glob='*.pyi'"
 
 [project.scripts]
+jacobian-plot = "dexter.tools:jacobian_plot"
+current-plot = "dexter.tools:current_plot"

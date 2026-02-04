@@ -96,18 +96,21 @@ match args.coord:
     case _:
         assert_never(args.coord)
 
+# `r` is somewhat artificial, since we cannot always calculate it from the fluxes
+r_norm = np.linspace(0, a, FLUX_SURFACES)
+
 
 # Currents
 g_norm = np.ones(FLUX_SURFACES)
 i_norm = np.zeros(FLUX_SURFACES)
 
 # LAR Bfield
-psi_norm_grid, theta_grid = np.meshgrid(psi_norm, theta, indexing="ij")
-b_norm = 1 - np.sqrt(2 * psi_norm_grid) * np.cos(theta_grid)
+r_norm_grid, theta_grid = np.meshgrid(r_norm, theta, indexing="ij")
+b_norm = 1 - r_norm_grid * np.cos(theta_grid)
 
 # Lab coordinates
-rlab = raxis + psi_norm_grid * np.cos(theta_grid)
-zlab = psi_norm_grid * np.sin(theta_grid)
+rlab = raxis + r_norm_grid * np.cos(theta_grid)
+zlab = r_norm_grid * np.sin(theta_grid)
 
 ###############
 # Perturbations
@@ -133,8 +136,6 @@ alphas_norm[0, 1, -1] = 11111
 # Misc quantities
 #################
 
-# `r` is somewhat artificial, since we cannot always calculate it from the fluxes
-r_norm = np.linspace(0, a, FLUX_SURFACES)
 psi = psi_norm * (baxis * raxis**2)
 psip = psip_norm * (baxis * raxis**2)
 r = r_norm * raxis

@@ -1,7 +1,4 @@
-pub mod getters;
+pub(crate) mod getters;
 
-pub mod currents;
-pub mod geometries;
-
-pub use currents::*;
-pub use geometries::*;
+pub(crate) mod currents;
+pub(crate) mod geometries;

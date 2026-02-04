@@ -22,7 +22,7 @@ fn nc_geometry() {
     let raxis: f64 = geometry.raxis();
     let zaxis: f64 = geometry.zaxis();
     let rgeo: f64 = geometry.rgeo();
-    let r_wall: f64 = geometry.r_wall().unwrap();
+    let rwall: f64 = geometry.rwall().unwrap();
     let shape: (usize, usize) = geometry.shape();
     let psi_state: NcFluxState = geometry.psi_state();
     let psip_state: NcFluxState = geometry.psip_state();

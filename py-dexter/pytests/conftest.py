@@ -4,6 +4,7 @@ import dexter
 from dexter import (
     _TEST_NETCDF_PATH as netcdf_path,
     NcCurrent,
+    NcGeometry,
 )
 
 
@@ -15,5 +16,11 @@ def add_np(doctest_namespace):
 
 @pytest.fixture(scope="session")
 def nc_current() -> NcCurrent:
-    """Creates an NcCurrent object from a netCDF file."""
+    """Creates an NcCurrent object from the test netCDF file."""
     return NcCurrent(netcdf_path, "Steffen")
+
+
+@pytest.fixture(scope="session")
+def nc_geometry() -> NcGeometry:
+    """Creates an NcGeometry object from the test netCDF file."""
+    return NcGeometry(netcdf_path, "Steffen", "Bicubic")

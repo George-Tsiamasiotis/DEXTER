@@ -39,11 +39,20 @@ mod eval;
 mod flux;
 mod objects;
 
+// ============== Public API
+
 pub mod extract;
 
-pub use eval::*;
-pub use flux::{NcFlux, NcFluxState};
-pub use objects::*;
-
-pub use error::{EqError, NcError};
+pub type EqError = error::EqError;
+pub type NcError = error::NcError;
 pub type Result<T> = std::result::Result<T, EqError>;
+
+pub type NcFlux = flux::NcFlux;
+pub type NcFluxState = flux::NcFluxState;
+
+pub use eval::{Current, Geometry};
+
+pub type NcGeometryBuilder = objects::geometries::NcGeometryBuilder;
+pub type NcCurrentBuilder = objects::currents::NcCurrentBuilder;
+pub type NcGeometry = objects::geometries::NcGeometry;
+pub type NcCurrent = objects::currents::NcCurrent;

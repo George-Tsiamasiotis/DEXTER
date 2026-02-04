@@ -1,0 +1,59 @@
+"""Plots an Equilibrium's Jacobian J(R, Z)."""
+
+import argparse
+from typing import get_args
+from dexter.types import Interp2DType
+
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument(
+    "nc_file",
+    help="the netCDF file",
+)
+parser.add_argument(
+    "-t",
+    "--typ",
+    help="the interpolation type (default=bicubic)",
+    choices=get_args(Interp2DType),
+    default="bicubic",
+)
+parser.add_argument(
+    "-l",
+    "--levels",
+    help="the number of contour lines (default=20)",
+    type=int,
+    default=20,
+)
+args = parser.parse_args()
+
+# ==========================================================================
+
+import matplotlib.pyplot as plt
+from dexter import NcGeometry
+
+
+geometry = NcGeometry(args.nc_file, "Linear", args.typ)
+print(geometry)
+
+fig = plt.figure(figsize=(8, 7), layout="constrained")
+fig.suptitle(r"$Jacobian$ $J(\psi_p,\theta)$")
+subplot_kw = {"aspect": "equal"}
+ax = fig.subplots(1, subplot_kw=subplot_kw)
+
+# ==========================================================================
+
+rlab_array = geometry.rlab_array
+zlab_array = geometry.zlab_array
+jacobian_array = geometry.jacobian_array
+
+ax.set_xlabel(r"$R[m]$")
+ax.set_ylabel(r"$Z[m]$")
+
+contour_kw = {"levels": args.levels, "cmap": "plasma"}
+
+contour = ax.contourf(rlab_array, zlab_array, jacobian_array, **contour_kw)
+plt.colorbar(contour, ax=ax, cax=None)
+
+ax.plot(rlab_array[-1], zlab_array[-1], "k-", linewidth=2)
+
+plt.show()
+raise SystemExit

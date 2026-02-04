@@ -9,6 +9,9 @@ Interp1DType: TypeAlias = Literal[
 ]
 """Availiable 1D Interpolation types (case-insensitive)."""
 
+Interp2DType: TypeAlias = Literal["Bilinear", "Bicubic"]
+"""Availiable 2D Interpolation types (case-insensitive)."""
+
 FluxState: TypeAlias = Literal["Good", "Bad", "None"]
 """Flux coordinate state.
 
@@ -22,3 +25,6 @@ ArrayShape: TypeAlias = tuple[int, ...]
 
 Array1: TypeAlias = np.ndarray[tuple[int], np.dtype[np.float64]]
 """1D numpy array. """
+
+Array2: TypeAlias = np.ndarray[tuple[int, int], np.dtype[np.float64]]
+"""2D numpy array. """

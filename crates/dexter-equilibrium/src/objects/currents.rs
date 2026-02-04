@@ -5,7 +5,8 @@ use ndarray::Array1;
 use rsl_interpolation::{Accelerator, DynInterpolation, InterpType, make_interp_type};
 use std::path::{Path, PathBuf};
 
-use crate::{Current, NcFlux, NcFluxState, Result};
+use crate::flux::{NcFlux, NcFluxState};
+use crate::{Current, Result};
 
 /// Used to create a [`NcCurrent`].
 ///

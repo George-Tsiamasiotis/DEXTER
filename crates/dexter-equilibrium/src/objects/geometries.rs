@@ -2,7 +2,8 @@
 
 use std::path::{Path, PathBuf};
 
-use crate::{Geometry, NcFlux, NcFluxState, Result};
+use crate::flux::{NcFlux, NcFluxState};
+use crate::{Geometry, Result};
 use crate::{
     fluxes_state_getter_impl, fluxes_wall_value_getter_impl, fortran_vec_to_carray2d_impl,
     vec_to_array1D_getter_impl,
@@ -496,7 +497,7 @@ impl NcGeometry {
     }
 
     /// Returns the `r` coordinate's value at the wall **in \[m\]**, if it exists.
-    pub fn r_wall(&self) -> Option<f64> {
+    pub fn rwall(&self) -> Option<f64> {
         self.r_values.last().copied()
     }
 
@@ -539,7 +540,7 @@ impl std::fmt::Debug for NcGeometry {
             .field("raxis [m]", &self.raxis)
             .field("zaxis [m]", &self.zaxis)
             .field("rgeo [m]", &self.rgeo)
-            .field("rwall [m]", &self.r_wall())
+            .field("rwall [m]", &self.rwall())
             .field("shape (ψ/ψp, θ)", &self.shape())
             .field("psi_wall", &self.psi_wall())
             .field("psip_wall", &self.psip_wall())
