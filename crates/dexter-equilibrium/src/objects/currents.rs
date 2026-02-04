@@ -213,10 +213,10 @@ impl NcCurrent {
 
     fluxes_state_getter_impl!();
     fluxes_wall_value_getter_impl!();
-    vec_to_array1D_getter_impl!(psi_array, psi.values);
-    vec_to_array1D_getter_impl!(psip_array, psip.values);
-    vec_to_array1D_getter_impl!(g_array, g_values);
-    vec_to_array1D_getter_impl!(i_array, i_values);
+    vec_to_array1D_getter_impl!(psi_array, psi.values, ψ);
+    vec_to_array1D_getter_impl!(psip_array, psip.values, ψp);
+    vec_to_array1D_getter_impl!(g_array, g_values, g);
+    vec_to_array1D_getter_impl!(i_array, i_values, I);
 }
 
 impl std::fmt::Debug for NcCurrent {

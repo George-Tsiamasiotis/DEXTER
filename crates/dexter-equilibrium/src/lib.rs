@@ -7,6 +7,12 @@
 //!
 //! TODO:
 //!
+//! ## Geometry object
+//!
+//! + [`Geometry`]: Representation of an equilibrium's general geometry. Provides interpolation methods
+//! between `ψ`, `ψp`, `r`, `R`, `Z` and `J`.
+//!     - [`NcGeometry`]: Geometry of the netCDF equilibrium
+//!
 //! ## Data extraction
 //!
 //! The [`extract`] module provides methods for extracting data arrays and
@@ -33,7 +39,7 @@ mod objects;
 
 pub mod extract;
 
-pub use eval::Current;
+pub use eval::*;
 pub use flux::{NcFlux, NcFluxState};
 pub use objects::*;
 
