@@ -1,4 +1,6 @@
-from dexter._core import NcCurrent, NcGeometry
+from dexter._core import NcGeometry
+from dexter._core import UnityQfactor, ParabolicQfactor, NcQfactor
+from dexter._core import LarCurrent, NcCurrent
 import matplotlib.pyplot
 
 _TEST_NETCDF_PATH = "./crates/dexter-equilibrium/test_netcdf.nc"
@@ -11,6 +13,10 @@ __all__ = [
     "_TOROIDAL_TEST_NETCDF_PATH",
     "_POLOIDAL_TEST_NETCDF_PATH",
     "_TEST_NETCDF_PATH",
-    "NcCurrent",
     "NcGeometry",
+    "UnityQfactor",
+    "ParabolicQfactor",
+    "NcQfactor",
+    "LarCurrent",
+    "NcCurrent",
 ]

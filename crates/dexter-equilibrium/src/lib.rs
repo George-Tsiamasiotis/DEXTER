@@ -2,15 +2,21 @@
 //!
 //! # Equilibrium objects
 //!
+//! + [`Qfactor`]: Representation of the q-factor profile
+//!     - [`NcQfactor`]: q-factor reconstructed from a netCDF file.
+//!     - [`UnityQfactor`]: q-factor profile of q = 1 and ψ=ψp.
+//!     - [`ParabolicQfactor`]: q-factor of parabolic q(ψ) profile.
+//!
 //! + [`Current`]: Representation of the plasma currents
 //!     - [`NcCurrent`]: Plasma current reconstructed from a netCDF file.
+//!     - [`LarCurrent`]: Large Aspect Ration plasma current with g=1 and I=0.
 //!
 //! TODO:
 //!
 //! ## Geometry object
 //!
 //! + [`Geometry`]: Representation of an equilibrium's general geometry. Provides interpolation methods
-//! between `ψ`, `ψp`, `r`, `R`, `Z` and `J`.
+//! between `ψ`, `ψp`, `r`, `R`, `Z`, `J`.
 //!     - [`NcGeometry`]: Geometry of the netCDF equilibrium
 //!
 //! ## Data extraction
@@ -28,7 +34,7 @@
 //! arrays.
 //! + [`extract::extract_variable`]: Extraction of a variable as a [`Variable`](netcdf::Variable).
 //! + [`extract::extract_attribute`]: Extraction of a file's attribute as a String.
-//! + [`extract::extract_version`]: Extraction of a files convetion [`Semantic Version`](https://semver.org/)
+//! + [`extract::extract_version`]: Extraction of a files convention [`Semantic Version`](https://semver.org/)
 //!
 //! ## Caching
 //!
@@ -43,16 +49,25 @@ mod objects;
 
 pub mod extract;
 
-pub type EqError = error::EqError;
-pub type NcError = error::NcError;
+pub use error::EqError;
+pub use error::NcError;
 pub type Result<T> = std::result::Result<T, EqError>;
 
-pub type NcFlux = flux::NcFlux;
-pub type NcFluxState = flux::NcFluxState;
+pub use objects::EquilibriumType;
 
-pub use eval::{Current, Geometry};
+pub use flux::NcFlux;
+pub use flux::NcFluxState;
 
-pub type NcGeometryBuilder = objects::geometries::NcGeometryBuilder;
-pub type NcCurrentBuilder = objects::currents::NcCurrentBuilder;
-pub type NcGeometry = objects::geometries::NcGeometry;
-pub type NcCurrent = objects::currents::NcCurrent;
+pub use eval::{Current, Geometry, Qfactor};
+
+pub use objects::geometries::NcGeometry;
+pub use objects::geometries::NcGeometryBuilder;
+
+pub use objects::qfactors::NcQfactor;
+pub use objects::qfactors::NcQfactorBuilder;
+pub use objects::qfactors::ParabolicQfactor;
+pub use objects::qfactors::UnityQfactor;
+
+pub use objects::currents::LarCurrent;
+pub use objects::currents::NcCurrent;
+pub use objects::currents::NcCurrentBuilder;

@@ -122,7 +122,7 @@ impl NcType for f32 {}
 impl NcType for i64 {}
 impl NcType for i32 {}
 
-/// Opens a [`File`] from a given path.
+/// Opens a [`File`](netcdf::File) from a given path.
 ///
 /// # Example
 /// ```
@@ -220,7 +220,7 @@ fn check_if_empty(var: &Variable) -> Result<()> {
     }
 }
 
-/// Extracts a [`Variable`] named `name` from a [`File`].
+/// Extracts a [`Variable`] named `name` from a [`File`](netcdf::File).
 ///
 /// # Example
 /// ```
@@ -271,7 +271,7 @@ where
     Ok(dyn_array)
 }
 
-/// Extracts a scalar value of type `T` from a [`File`].
+/// Extracts a scalar value of type `T` from a [`File`](netcdf::File).
 ///
 /// # Example
 /// ```
@@ -295,7 +295,7 @@ pub fn extract_scalar<T: NcType>(f: &netcdf::File, name: &str) -> Result<T> {
     Ok(extract_array(f, name)?.into_scalar())
 }
 
-/// Extracts an [`Array1<T>`] value from a [`File`].
+/// Extracts an [`Array1<T>`] value from a [`File`](netcdf::File).
 ///
 /// The array is returned in [`standard layout`](method@ndarray::ArrayRef::as_standard_layout).
 ///
@@ -321,7 +321,7 @@ pub fn extract_1d_array<T: NcType>(f: &netcdf::File, name: &str) -> Result<Array
     extract_array(f, name)
 }
 
-/// Extracts an [`Array2<T>`] value from a [`File`].
+/// Extracts an [`Array2<T>`] value from a [`File`](netcdf::File).
 ///
 /// The array is returned in [`standard layout`](method@ndarray::ArrayRef::as_standard_layout).
 ///
@@ -347,7 +347,7 @@ pub fn extract_2d_array<T: NcType>(f: &netcdf::File, name: &str) -> Result<Array
     extract_array(f, name)
 }
 
-/// Extracts an [`Array3<T>`] value from a [`File`].
+/// Extracts an [`Array3<T>`] value from a [`File`](netcdf::File).
 ///
 /// The array is returned in [`standard layout`](method@ndarray::ArrayRef::as_standard_layout).
 ///

@@ -7,6 +7,160 @@ use rsl_interpolation::{Accelerator, Cache};
 
 use crate::Result;
 
+pub trait Qfactor {
+    /// Calculates `q(ψ)`
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use dexter_equilibrium::*;
+    /// # use std::path::PathBuf;
+    /// # use rsl_interpolation::Accelerator;
+    /// #
+    /// # let path = PathBuf::from("./netcdf.nc");
+    /// # let qfactor = NcQfactorBuilder::new(&path, "steffen").build()?;
+    /// #
+    /// let mut acc = Accelerator::new();
+    /// let q_of_psi = qfactor.q_of_psi(0.01, &mut acc)?;
+    /// # Ok::<_, EqError>(())
+    /// ```
+    fn q_of_psi(&self, psi: f64, acc: &mut Accelerator) -> Result<f64>;
+
+    /// Calculates `q(ψp)`
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use dexter_equilibrium::*;
+    /// # use std::path::PathBuf;
+    /// # use rsl_interpolation::Accelerator;
+    /// #
+    /// # let path = PathBuf::from("./netcdf.nc");
+    /// # let qfactor = NcQfactorBuilder::new(&path, "steffen").build()?;
+    /// #
+    /// let mut acc = Accelerator::new();
+    /// let q_of_psip = qfactor.q_of_psip(0.015, &mut acc)?;
+    /// # Ok::<_, EqError>(())
+    /// ```
+    fn q_of_psip(&self, psip: f64, acc: &mut Accelerator) -> Result<f64>;
+
+    /// Calculates `ψp(ψ)`
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use dexter_equilibrium::*;
+    /// # use std::path::PathBuf;
+    /// # use rsl_interpolation::Accelerator;
+    /// #
+    /// # let path = PathBuf::from("./netcdf.nc");
+    /// # let qfactor = NcQfactorBuilder::new(&path, "steffen").build()?;
+    /// #
+    /// let mut acc = Accelerator::new();
+    /// let psip_of_psi = qfactor.psip_of_psi(0.01, &mut acc)?;
+    /// # Ok::<_, EqError>(())
+    /// ```
+    fn psip_of_psi(&self, psi: f64, acc: &mut Accelerator) -> Result<f64>;
+
+    /// Calculates `ψ(ψp)`
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use dexter_equilibrium::*;
+    /// # use std::path::PathBuf;
+    /// # use rsl_interpolation::Accelerator;
+    /// #
+    /// # let path = PathBuf::from("./netcdf.nc");
+    /// # let qfactor = NcQfactorBuilder::new(&path, "steffen").build()?;
+    /// #
+    /// let mut acc = Accelerator::new();
+    /// let psi_of_psip = qfactor.psi_of_psip(0.015, &mut acc)?;
+    /// # Ok::<_, EqError>(())
+    /// ```
+    fn psi_of_psip(&self, psip: f64, acc: &mut Accelerator) -> Result<f64>;
+
+    /// Calculates the derivative `dψp(ψ)/dψ`.
+    ///
+    /// It's a good check that the values coincide with `qfactor.iota_of_psi(psi)`.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use dexter_equilibrium::*;
+    /// # use std::path::PathBuf;
+    /// # use rsl_interpolation::Accelerator;
+    /// #
+    /// # let path = PathBuf::from("./netcdf.nc");
+    /// # let qfactor = NcQfactorBuilder::new(&path, "steffen").build()?;
+    /// #
+    /// let mut acc = Accelerator::new();
+    /// let dpsip_dpsi = qfactor.dpsip_dpsi(0.01, &mut acc)?;
+    /// # Ok::<_, EqError>(())
+    /// ```
+    fn dpsip_dpsi(&self, psi: f64, acc: &mut Accelerator) -> Result<f64>;
+
+    /// Calculates the derivative `dψ(ψp)/dψp`.
+    ///
+    /// It's a good check that the values coincide with `qfactor.q_of_psip(psip)`.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use dexter_equilibrium::*;
+    /// # use std::path::PathBuf;
+    /// # use rsl_interpolation::Accelerator;
+    /// #
+    /// # let path = PathBuf::from("./netcdf.nc");
+    /// # let qfactor = NcQfactorBuilder::new(&path, "steffen").build()?;
+    /// #
+    /// let mut acc = Accelerator::new();
+    /// let dpsi_dpsip = qfactor.dpsi_dpsip(0.01, &mut acc)?;
+    /// # Ok::<_, EqError>(())
+    /// ```
+    fn dpsi_dpsip(&self, psip: f64, acc: &mut Accelerator) -> Result<f64>;
+
+    /// Calculates `i(ψ) = 1/q(ψ)`
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use dexter_equilibrium::*;
+    /// # use std::path::PathBuf;
+    /// # use rsl_interpolation::Accelerator;
+    /// #
+    /// # let path = PathBuf::from("./netcdf.nc");
+    /// # let qfactor = NcQfactorBuilder::new(&path, "steffen").build()?;
+    /// #
+    /// let mut acc = Accelerator::new();
+    /// let iota_of_psi = qfactor.iota_of_psi(0.01, &mut acc)?;
+    /// # Ok::<_, EqError>(())
+    /// ```
+    fn iota_of_psi(&self, psi: f64, acc: &mut Accelerator) -> Result<f64> {
+        Ok(self.q_of_psi(psi, acc)?.recip())
+    }
+
+    /// Calculates `i(ψp) = 1/q(ψp)`
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use dexter_equilibrium::*;
+    /// # use std::path::PathBuf;
+    /// # use rsl_interpolation::Accelerator;
+    /// #
+    /// # let path = PathBuf::from("./netcdf.nc");
+    /// # let qfactor = NcQfactorBuilder::new(&path, "steffen").build()?;
+    /// #
+    /// let mut acc = Accelerator::new();
+    /// let iota_of_psip = qfactor.iota_of_psip(0.015, &mut acc)?;
+    /// # Ok::<_, EqError>(())
+    /// ```
+    fn iota_of_psip(&self, psip: f64, acc: &mut Accelerator) -> Result<f64> {
+        Ok(self.q_of_psip(psip, acc)?.recip())
+    }
+}
+
 /// Plasma current related quantities computation.
 pub trait Current {
     /// Calculates `g(ψ)`

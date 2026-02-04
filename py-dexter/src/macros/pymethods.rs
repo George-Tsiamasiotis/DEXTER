@@ -46,19 +46,6 @@ macro_rules! py_get_path {
     };
 }
 
-/// Generates a `__len__` method, corresponding to the inner type's `len()` method.
-#[macro_export]
-macro_rules! py_len_impl {
-    ($py_object:ident) => {
-        #[pymethods]
-        impl $py_object {
-            pub fn __len__(&self) -> usize {
-                self.0.len()
-            }
-        }
-    };
-}
-
 /// Exports a getter method on the exposed python wrapper
 #[macro_export]
 macro_rules! py_export_getter {
@@ -93,6 +80,20 @@ macro_rules! py_get_enum_string {
             #[getter]
             pub fn $getter(&self) -> String {
                 format!("{:?}", self.0.$getter())
+            }
+        }
+    };
+}
+
+/// Generates a python getter that returns the netCDF convention version as a String
+#[macro_export]
+macro_rules! py_get_netcdf_version {
+    ($py_object:ident) => {
+        #[pymethods]
+        impl $py_object {
+            #[getter]
+            pub fn get_netcdf_version(&self) -> String {
+                self.0.netcdf_version().to_string()
             }
         }
     };

@@ -3,9 +3,10 @@ from dexter import NcGeometry, _TOROIDAL_TEST_NETCDF_PATH, _POLOIDAL_TEST_NETCDF
 
 
 def test_nc_geometry_getters(nc_geometry: NcGeometry):
+    assert nc_geometry.equilibrium_type == "Numerical"
     assert isinstance(nc_geometry.path, str)
-    assert isinstance(nc_geometry.typ1d, str)
-    assert isinstance(nc_geometry.typ2d, str)
+    assert isinstance(nc_geometry.interp1d_type, str)
+    assert isinstance(nc_geometry.interp1d_type, str)
     assert isinstance(nc_geometry.baxis, float)
     assert isinstance(nc_geometry.raxis, float)
     assert isinstance(nc_geometry.zaxis, float)

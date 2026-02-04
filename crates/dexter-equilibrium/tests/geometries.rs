@@ -2,7 +2,7 @@
 
 use std::path::PathBuf;
 
-use dexter_equilibrium::{Geometry, NcFluxState, NcGeometryBuilder};
+use dexter_equilibrium::{EquilibriumType, Geometry, NcFluxState, NcGeometryBuilder};
 use ndarray::{Array1, Array2};
 use rsl_interpolation::{Accelerator, Cache};
 
@@ -15,9 +15,11 @@ fn nc_geometry() {
     let builder = NcGeometryBuilder::new(&path, typ1d, typ2d);
     let geometry = dbg!(builder.build().unwrap());
 
+    let equilibrium_type: EquilibriumType = geometry.equilibrium_type();
+    let netcdf_version: semver::Version = geometry.netcdf_version();
     let path: PathBuf = geometry.path();
-    let typ1d: String = geometry.typ1d();
-    let typ2d: String = geometry.typ2d();
+    let interp1d_type: String = geometry.interp1d_type();
+    let interp2d_type: String = geometry.interp2d_type();
     let baxis: f64 = geometry.baxis();
     let raxis: f64 = geometry.raxis();
     let zaxis: f64 = geometry.zaxis();

@@ -1,10 +1,18 @@
 import pytest
-from dexter import NcCurrent, _TOROIDAL_TEST_NETCDF_PATH, _POLOIDAL_TEST_NETCDF_PATH
+from dexter import (
+    _TOROIDAL_TEST_NETCDF_PATH,
+    _POLOIDAL_TEST_NETCDF_PATH,
+    NcCurrent,
+    LarCurrent,
+)
 
 
 def test_nc_current_getters(nc_current: NcCurrent):
+    assert nc_current.equilibrium_type == "Numerical"
     assert isinstance(nc_current.path, str)
-    assert isinstance(nc_current.typ, str)
+    assert isinstance(nc_current.netcdf_version, str)
+    assert isinstance(nc_current.equilibrium_type, str)
+    assert isinstance(nc_current.interp_type, str)
     assert isinstance(nc_current.psi_wall, float)
     assert isinstance(nc_current.psip_wall, float)
     assert nc_current.psi_state == "Good"
@@ -13,7 +21,6 @@ def test_nc_current_getters(nc_current: NcCurrent):
     assert nc_current.psip_array.ndim == 1
     assert nc_current.g_array.ndim == 1
     assert nc_current.i_array.ndim == 1
-    assert len(nc_current) == len(nc_current.psi_array)
     assert isinstance(nc_current.__str__(), str)
     assert isinstance(nc_current.__repr__(), str)
 
@@ -65,3 +72,16 @@ def test_poloidal_nc_current():
         nc_current.dg_dpsi(0.01)
     with pytest.raises(BaseException):
         nc_current.di_dpsi(0.01)
+
+
+def test_lar_current():
+    current = LarCurrent()
+    assert current.equilibrium_type == "Analytical"
+    assert current.g_of_psi(0.01) == 1
+    assert current.g_of_psip(0.01) == 1
+    assert current.i_of_psi(0.01) == 0
+    assert current.i_of_psip(0.01) == 0
+    assert current.dg_dpsi(0.01) == 0
+    assert current.dg_dpsip(0.01) == 0
+    assert current.di_dpsi(0.01) == 0
+    assert current.di_dpsip(0.01) == 0

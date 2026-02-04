@@ -30,7 +30,7 @@ impl NcFluxState {
 /// Contains the Flux's values and state.
 ///
 /// Even if the state is None (error trying to extract the values), we set the values as an empty
-/// vec instead of defining it as an Option<Vec<f64>>, since this greatly simplifies the code.
+/// vec instead of defining it as an `Option<Vec<f64>>`, since this greatly simplifies the code.
 /// Moreover, the logic on the evaluation sites checks the state anyway, so an extra `is_some()`
 /// would be redundant. Finally, even if an evaluation is called, the empty vec would cause a
 /// panic, which is what we want.

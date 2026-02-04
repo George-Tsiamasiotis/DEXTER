@@ -1,16 +1,21 @@
-r"""Type Aliases used thoughout the package."""
+r"""Type Aliases used throughout the package."""
 
 import numpy as np
 from typing import Literal, TypeAlias
 
+NetCDFVersion: TypeAlias = str
+"""The netCDF convention version (SemVer)."""
+
+EquilibriumType: TypeAlias = Literal["Numerical", "Analytical"]
+"""Described the type of equilibrium the object represents."""
 
 Interp1DType: TypeAlias = Literal[
     "Linear", "Cubic", "Cubic Periodic", "Akima", "Akima Periodic", "Steffen"
 ]
-"""Availiable 1D Interpolation types (case-insensitive)."""
+"""Available 1D Interpolation types (case-insensitive)."""
 
 Interp2DType: TypeAlias = Literal["Bilinear", "Bicubic"]
-"""Availiable 2D Interpolation types (case-insensitive)."""
+"""Available 2D Interpolation types (case-insensitive)."""
 
 FluxState: TypeAlias = Literal["Good", "Bad", "None"]
 """Flux coordinate state.

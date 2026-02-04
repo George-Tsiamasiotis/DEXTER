@@ -65,3 +65,64 @@ macro_rules! fluxes_state_getter_impl {
         }
     };
 }
+
+/// Generates a getter for the object's equilibrium type.
+#[doc(hidden)]
+#[macro_export]
+macro_rules! equilibrium_type_getter_impl {
+    () => {
+        /// Returns the object's [`EquilibriumType`].
+        pub fn equilibrium_type(&self) -> EquilibriumType {
+            self.equilibrium_type.clone()
+        }
+    };
+}
+
+/// Generates a getter for the object's path to netCDF file.
+#[doc(hidden)]
+#[macro_export]
+macro_rules! netcdf_path_getter_impl {
+    () => {
+        /// Returns the netCDF file's path.
+        pub fn path(&self) -> PathBuf {
+            self.path.clone()
+        }
+    };
+}
+
+/// Generates a getter for the object's Interpolation types
+#[doc(hidden)]
+#[macro_export]
+macro_rules! interp_type_getter_impl {
+    // 1D Interpolation
+    (1) => {
+        /// Returns the interpolation type.
+        pub fn interp_type(&self) -> String {
+            self.interp_type.clone()
+        }
+    };
+    // 2D Interpolation
+    (2) => {
+        /// Returns the 1D interpolation type.
+        pub fn interp1d_type(&self) -> String {
+            self.interp1d_type.clone()
+        }
+
+        /// Returns the 2D interpolation type.
+        pub fn interp2d_type(&self) -> String {
+            self.interp2d_type.clone()
+        }
+    };
+}
+
+/// Generates a getter for the object's netCDF convention version.
+#[doc(hidden)]
+#[macro_export]
+macro_rules! netcdf_version_getter_impl {
+    () => {
+        /// Returns the object's [`Version`](semver::Version).
+        pub fn netcdf_version(&self) -> semver::Version {
+            self.netcdf_version.clone()
+        }
+    };
+}

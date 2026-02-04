@@ -9,6 +9,8 @@ plugins:
     handlers:
       python:
         options:
+          show_bases: false
+          merge_init_into_class: true
           type_parameter_headings: true
           show_symbol_type_toc: true
           show_root_heading: true
@@ -25,8 +27,6 @@ plugins:
           annotations_path: source
           modernize_annotations: true
           show_signature_annotations: true
-          filters:
-            - "!__len__"
 
 theme:
   name: material
@@ -51,6 +51,7 @@ theme:
   features:
     - navigation.path
     - navigation.top
+    - navigation.sections
     - content.tooltips
     - content.code.copy
     - content.code.select
@@ -58,6 +59,9 @@ theme:
     - toc.follow
 
 markdown_extensions:
+  - toc:
+      permalink: true
+      toc_depth: 2
   # Math
   - pymdownx.arithmatex:
       generic: true

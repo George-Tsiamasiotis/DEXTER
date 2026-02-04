@@ -3,10 +3,11 @@
 use std::path::{Path, PathBuf};
 
 use crate::flux::{NcFlux, NcFluxState};
-use crate::{Geometry, Result};
+use crate::{EquilibriumType, Geometry, Result};
 use crate::{
-    fluxes_state_getter_impl, fluxes_wall_value_getter_impl, fortran_vec_to_carray2d_impl,
-    vec_to_array1D_getter_impl,
+    equilibrium_type_getter_impl, fluxes_state_getter_impl, fluxes_wall_value_getter_impl,
+    fortran_vec_to_carray2d_impl, interp_type_getter_impl, netcdf_path_getter_impl,
+    netcdf_version_getter_impl, vec_to_array1D_getter_impl,
 };
 use ndarray::{Array1, Array2, Order::ColumnMajor};
 use rsl_interpolation::{
@@ -22,9 +23,9 @@ pub struct NcGeometryBuilder {
     /// Path to the netCDF file.
     path: PathBuf,
     /// 1D [`DynInterpolation`], in case-insensitive string format.
-    typ1d: String,
+    interp1d_type: String,
     /// 2D [`DynInterpolation2d`], in case-insensitive string format.
-    typ2d: String,
+    interp2d_type: String,
 }
 
 impl NcGeometryBuilder {
@@ -38,11 +39,11 @@ impl NcGeometryBuilder {
     /// let path = PathBuf::from("./netcdf.nc");
     /// let builder = NcGeometryBuilder::new(&path, "akima", "bicubic");
     /// ```
-    pub fn new(path: &Path, typ1d: &str, typ2d: &str) -> Self {
+    pub fn new(path: &Path, interp1d_type: &str, interp2d_type: &str) -> Self {
         Self {
             path: path.to_path_buf(),
-            typ1d: typ1d.into(),
-            typ2d: typ2d.into(),
+            interp1d_type: interp1d_type.into(),
+            interp2d_type: interp2d_type.into(),
         }
     }
 
@@ -72,10 +73,13 @@ impl NcGeometryBuilder {
 pub struct NcGeometry {
     /// Path to the netCDF file.
     path: PathBuf,
+    netcdf_version: semver::Version,
+
+    equilibrium_type: EquilibriumType,
     /// Interpolation type of the 1D quantities
-    typ1d: String,
+    interp1d_type: String,
     /// Interpolation type of the 2D quantities
-    typ2d: String,
+    interp2d_type: String,
 
     /// Magnetic field strength on the axis `B0` in [T].
     baxis: f64,
@@ -133,6 +137,7 @@ impl NcGeometry {
         // Make path absolute for display purposes.
         let path = std::path::absolute(builder.path)?;
         let f = open(&path)?;
+        let netcdf_version = extract_version(&f)?;
 
         let theta_values = extract_1d_array(&f, THETA)?.to_vec();
         let psi = NcFlux::toroidal(&f);
@@ -156,20 +161,24 @@ impl NcGeometry {
         // Create interpolators, if possible
         use NcFluxState::Good;
         let psip_of_psi_interp = match psi.state {
-            Good => Some(make_interp_type(&builder.typ1d)?.build(&psi.values, &psip.values)?),
+            Good => {
+                Some(make_interp_type(&builder.interp1d_type)?.build(&psi.values, &psip.values)?)
+            }
             _ => None,
         };
         let psi_of_psip_interp = match psip.state {
-            Good => Some(make_interp_type(&builder.typ1d)?.build(&psip.values, &psi.values)?),
+            Good => {
+                Some(make_interp_type(&builder.interp1d_type)?.build(&psip.values, &psi.values)?)
+            }
             _ => None,
         };
 
         let r_of_psi_interp = match psi.state {
-            Good => Some(make_interp_type(&builder.typ1d)?.build(&psi.values, &r_values)?),
+            Good => Some(make_interp_type(&builder.interp1d_type)?.build(&psi.values, &r_values)?),
             _ => None,
         };
         let r_of_psip_interp = match psip.state {
-            Good => Some(make_interp_type(&builder.typ1d)?.build(&psip.values, &r_values)?),
+            Good => Some(make_interp_type(&builder.interp1d_type)?.build(&psip.values, &r_values)?),
             _ => None,
         };
 
@@ -177,15 +186,15 @@ impl NcGeometry {
         // might no exist.
         let psi_of_r_interp = match psi.state {
             NcFluxState::None => None,
-            _ => Some(make_interp_type(&builder.typ1d)?.build(&r_values, &psi.values)?),
+            _ => Some(make_interp_type(&builder.interp1d_type)?.build(&r_values, &psi.values)?),
         };
         let psip_of_r_interp = match psip.state {
             NcFluxState::None => None,
-            _ => Some(make_interp_type(&builder.typ1d)?.build(&r_values, &psip.values)?),
+            _ => Some(make_interp_type(&builder.interp1d_type)?.build(&r_values, &psip.values)?),
         };
 
         let rlab_of_psi_interp = match psi.state {
-            Good => Some(make_interp2d_type(&builder.typ2d)?.build(
+            Good => Some(make_interp2d_type(&builder.interp2d_type)?.build(
                 &psi.values,
                 &theta_values,
                 &rlab_values_fortran_flat,
@@ -193,7 +202,7 @@ impl NcGeometry {
             _ => None,
         };
         let rlab_of_psip_interp = match psip.state {
-            Good => Some(make_interp2d_type(&builder.typ2d)?.build(
+            Good => Some(make_interp2d_type(&builder.interp2d_type)?.build(
                 &psip.values,
                 &theta_values,
                 &rlab_values_fortran_flat,
@@ -201,7 +210,7 @@ impl NcGeometry {
             _ => None,
         };
         let zlab_of_psi_interp = match psi.state {
-            Good => Some(make_interp2d_type(&builder.typ2d)?.build(
+            Good => Some(make_interp2d_type(&builder.interp2d_type)?.build(
                 &psi.values,
                 &theta_values,
                 &zlab_values_fortran_flat,
@@ -209,7 +218,7 @@ impl NcGeometry {
             _ => None,
         };
         let zlab_of_psip_interp = match psip.state {
-            Good => Some(make_interp2d_type(&builder.typ2d)?.build(
+            Good => Some(make_interp2d_type(&builder.interp2d_type)?.build(
                 &psip.values,
                 &theta_values,
                 &zlab_values_fortran_flat,
@@ -218,7 +227,7 @@ impl NcGeometry {
         };
 
         let jacobian_of_psi_interp = match psi.state {
-            Good => Some(make_interp2d_type(&builder.typ2d)?.build(
+            Good => Some(make_interp2d_type(&builder.interp2d_type)?.build(
                 &psi.values,
                 &theta_values,
                 &jacobian_values_fortran_flat,
@@ -226,7 +235,7 @@ impl NcGeometry {
             _ => None,
         };
         let jacobian_of_psip_interp = match psip.state {
-            Good => Some(make_interp2d_type(&builder.typ2d)?.build(
+            Good => Some(make_interp2d_type(&builder.interp2d_type)?.build(
                 &psip.values,
                 &theta_values,
                 &jacobian_values_fortran_flat,
@@ -235,9 +244,11 @@ impl NcGeometry {
         };
 
         Ok(Self {
+            equilibrium_type: EquilibriumType::Numerical,
+            netcdf_version,
             path,
-            typ1d: builder.typ1d,
-            typ2d: builder.typ2d,
+            interp1d_type: builder.interp1d_type,
+            interp2d_type: builder.interp2d_type,
             theta_values,
             psi,
             psip,
@@ -461,32 +472,22 @@ impl Geometry for NcGeometry {
 
 /// Getters
 impl NcGeometry {
-    /// Returns the netCDF file's path.
-    pub fn path(&self) -> PathBuf {
-        self.path.clone()
-    }
-
-    /// Returns the 1D interpolation type.
-    pub fn typ1d(&self) -> String {
-        self.typ1d.clone()
-    }
-
-    /// Returns the 2D interpolation type.
-    pub fn typ2d(&self) -> String {
-        self.typ2d.clone()
-    }
+    netcdf_path_getter_impl!();
+    netcdf_version_getter_impl!();
+    equilibrium_type_getter_impl!();
+    interp_type_getter_impl!(2);
 
     /// Returns the magnetic field strength on the axis `B0` **in \[T\]**.
     pub fn baxis(&self) -> f64 {
         self.baxis
     }
 
-    /// Retruns the horizontal position of the magnetic axis `R0` **in \[m\]**.
+    /// Returns the horizontal position of the magnetic axis `R0` **in \[m\]**.
     pub fn raxis(&self) -> f64 {
         self.raxis
     }
 
-    /// Retruns the vertical position of the magnetic axis **in \[m\]**.
+    /// Returns the vertical position of the magnetic axis **in \[m\]**.
     pub fn zaxis(&self) -> f64 {
         self.zaxis
     }
@@ -519,8 +520,8 @@ impl NcGeometry {
         (xlen, self.theta_values.len())
     }
 
-    fluxes_state_getter_impl!();
     fluxes_wall_value_getter_impl!();
+    fluxes_state_getter_impl!();
     vec_to_array1D_getter_impl!(psi_array, psi.values, ψ);
     vec_to_array1D_getter_impl!(psip_array, psip.values, ψp);
     vec_to_array1D_getter_impl!(theta_array, theta_values, θ);
@@ -533,9 +534,11 @@ impl NcGeometry {
 impl std::fmt::Debug for NcGeometry {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("NcGeometry")
-            .field("path", &self.path)
-            .field("typ1d", &self.typ1d)
-            .field("typ2d", &self.typ2d)
+            .field("netCDF path", &self.path())
+            .field("netCDF version", &self.netcdf_version().to_string())
+            .field("equilibrium type", &self.equilibrium_type())
+            .field("1D interpolation type", &self.interp1d_type())
+            .field("2D interpolation type", &self.interp2d_type())
             .field("baxis [m]", &self.baxis)
             .field("raxis [m]", &self.raxis)
             .field("zaxis [m]", &self.zaxis)

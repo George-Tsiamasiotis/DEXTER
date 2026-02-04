@@ -2,3 +2,17 @@ pub(crate) mod getters;
 
 pub(crate) mod currents;
 pub(crate) mod geometries;
+pub(crate) mod qfactors;
+
+/// Describes the type of equilibrium the object represents.
+#[derive(Clone, Debug, PartialEq)]
+pub enum EquilibriumType {
+    /// Equilibrium reconstructed from numerical data.
+    ///
+    /// Evaluations are calculated by interpolation.
+    Numerical,
+    /// Equilibrium described by analytical formulas.
+    ///
+    /// Evaluations are calculated by simply evaluating the formulas.
+    Analytical,
+}
