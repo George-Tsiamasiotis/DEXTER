@@ -172,6 +172,7 @@ dependencies = [
  "ndarray",
  "netcdf",
  "rsl-interpolation",
+ "semver",
  "thiserror",
 ]
 

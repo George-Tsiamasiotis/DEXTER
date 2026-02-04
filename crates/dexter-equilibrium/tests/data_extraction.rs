@@ -12,6 +12,10 @@ fn main() {
     let path = PathBuf::from(TEST_NETCDF_PATH);
     let file = open(&path).unwrap();
 
+    let description = extract_attribute(&file, DESCRIPTION).unwrap();
+    let date = extract_attribute(&file, DATE).unwrap();
+    let version: semver::Version = extract_version(&file).unwrap();
+
     let baxis: f64 = extract_scalar(&file, BAXIS).unwrap();
     let psis: Array1<f64> = extract_1d_array(&file, PSI).unwrap();
     let b_norm: Array2<f64> = extract_2d_array(&file, B_NORM).unwrap();

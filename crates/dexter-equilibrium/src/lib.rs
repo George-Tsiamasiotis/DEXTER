@@ -27,6 +27,8 @@
 //! Modes are indexed by their mode numbers, rather than the logical index they appear on the data
 //! arrays.
 //! + [`extract::extract_variable`]: Extraction of a variable as a [`Variable`](netcdf::Variable).
+//! + [`extract::extract_attribute`]: Extraction of a file's attribute as a String.
+//! + [`extract::extract_version`]: Extraction of a files convetion [`Semantic Version`](https://semver.org/)
 //!
 //! ## Caching
 //!

@@ -384,10 +384,13 @@ dataset = xr.Dataset(
 )
 
 
+GREEN = "\033[92m"
 if args.output != "":
     dataset.to_netcdf(OUTPUT)
-    GREEN = "\033[92m"
     print(f"{GREEN}Stored dataset at '{OUTPUT.absolute()}'")
+else:
+    print(f"{GREEN}Created dataset (not stored)")
+
 
 dataset.close()
 raise SystemExit

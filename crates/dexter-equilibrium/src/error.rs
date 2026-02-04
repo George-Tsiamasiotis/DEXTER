@@ -34,6 +34,14 @@ pub enum NcError {
     #[error("Error opening '{path}' ({err})")]
     FileOpenError { path: PathBuf, err: netcdf::Error },
 
+    /// Attribute not found.
+    #[error("Attribute '{0}' not found")]
+    AttributeNotFound(Box<str>),
+
+    /// Error extracting netCDF Convention Version
+    #[error("Error extracting netCDF convention version: {0}")]
+    VersionError(#[from] semver::Error),
+
     /// Error extracting values from a [`netcdf::Variable`].
     #[error("Error extracting values from variable {name}: {err}")]
     GetValues { name: String, err: netcdf::Error },

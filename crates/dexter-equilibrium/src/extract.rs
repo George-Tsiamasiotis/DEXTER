@@ -26,6 +26,15 @@ pub(crate) const POLOIDAL_TEST_NETCDF_PATH: &str = "poloidal_test_netcdf.nc";
 /// If the naming convention changes, this is the only file we must update.
 pub mod netcdf_fields {
 
+    // ================== Attributes ==================
+
+    /// The netCDF's description attribute.
+    pub const DESCRIPTION: &str = "description";
+    /// The netCDF's creation date.
+    pub const DATE: &str = "date";
+    /// The netCDF's convention version.
+    pub const CONVENTION_VERSION: &str = "version";
+
     // ================== Scalars ==================
 
     /// Magnetic field strength on the axis `B0` **in \[T\]**.
@@ -100,6 +109,7 @@ use std::path::PathBuf;
 
 use ndarray::{Array, Array1, Array2, Array3};
 use netcdf::{Extents, File, NcTypeDescriptor, Variable};
+use semver::Version;
 
 use crate::NcError;
 
@@ -138,6 +148,67 @@ pub fn open(path: &PathBuf) -> Result<File> {
             path: path.clone(),
             err,
         }),
+    }
+}
+
+/// Extracts an Attribute's value as a String.
+///
+/// # Example
+/// ```
+/// # use dexter_equilibrium::extract::*;
+/// # use dexter_equilibrium::*;
+/// # use std::path::PathBuf;
+/// #
+/// let path = PathBuf::from("netcdf.nc");
+/// let f = open(&path)?;
+/// let date: String = extract_attribute(&f, netcdf_fields::DATE)?;
+/// # Ok::<_, EqError>(())
+/// ```
+///
+/// # Errors
+///
+/// Returns an [`NcError`] if the [`netcdf::Attribute`] is not found.
+pub fn extract_attribute(f: &netcdf::File, name: &str) -> Result<String> {
+    let attr = match f.attribute(name) {
+        Some(attr) => attr,
+        None => return Err(NcError::AttributeNotFound(name.into())),
+    };
+
+    // Even though all attributes are stored as strings, if there are any non-ascii characters,
+    // they are stored as a vec containing a single string for some reason
+    use netcdf::AttributeValue::*;
+    match attr.value().unwrap() {
+        Strs(items) => Ok(items.concat()),
+        Str(item) => Ok(item),
+        _ => unreachable!("Attribute values are always Strings"),
+    }
+}
+
+/// Extracts the netCDF file's convention [`Semantic Version`].
+///
+/// # Example
+/// ```
+/// # use dexter_equilibrium::extract::*;
+/// # use dexter_equilibrium::*;
+/// # use std::path::PathBuf;
+/// #
+/// let path = PathBuf::from("netcdf.nc");
+/// let f = open(&path)?;
+/// let version: semver::Version = extract_version(&f)?;
+/// # Ok::<_, EqError>(())
+/// ```
+///
+/// # Errors
+///
+/// Returns an [`NcError`] if the [`netcdf::Attribute`] is not found, or the version is not a valid
+/// [`Semantic Version`].
+///
+/// [`Semantic Version`]: https://semver.org/
+pub fn extract_version<'f>(f: &'f File) -> Result<Version> {
+    let attr = extract_attribute(f, netcdf_fields::CONVENTION_VERSION)?;
+    match Version::parse(&attr) {
+        Ok(version) => Ok(version),
+        Err(err) => Err(NcError::VersionError(err)),
     }
 }
 
@@ -385,12 +456,12 @@ mod test {
     }
 
     #[test]
-    fn test_netcdf_open() {
+    fn netcdf_open() {
         open_test_file();
     }
 
     #[test]
-    fn test_extract_raw_variable() {
+    fn extract_raw_variable() {
         let f = open_test_file();
 
         let var = extract_variable(&f, BAXIS).unwrap();
@@ -405,7 +476,7 @@ mod test {
     }
 
     #[test]
-    fn test_netcdf_all_scalars_extraction() {
+    fn netcdf_all_scalars_extraction() {
         let f = open_test_file();
 
         extract_scalar::<f64>(&f, BAXIS).unwrap();
@@ -415,7 +486,7 @@ mod test {
     }
 
     #[test]
-    fn test_netcdf_all_1d_arrays_extraction() {
+    fn netcdf_all_1d_arrays_extraction() {
         let f = open_test_file();
 
         extract_1d_array::<f64>(&f, THETA).unwrap();
@@ -436,7 +507,7 @@ mod test {
     }
 
     #[test]
-    fn test_netcdf_all_2d_arrays_extraction() {
+    fn netcdf_all_2d_arrays_extraction() {
         let f = open_test_file();
 
         extract_2d_array::<f64>(&f, B).unwrap();
@@ -447,7 +518,7 @@ mod test {
     }
 
     #[test]
-    fn test_netcdf_all_3d_arrays_extraction() {
+    fn netcdf_all_3d_arrays_extraction() {
         let f = open_test_file();
 
         extract_3d_array::<f64>(&f, ALPHAS_NORM).unwrap();
@@ -458,7 +529,7 @@ mod test {
     /// WARN: Make sure this test is up to date with the stub netcdf file.
     /// We inspect the (2,2) mode, which corresponds to the indices (0, 1).
     #[test]
-    fn test_netcdf_harmonic_extraction_values() {
+    fn netcdf_harmonic_extraction_values() {
         let f = open_test_file();
 
         let alpha_3d = extract_3d_array::<f64>(&f, ALPHAS_NORM).unwrap();
@@ -532,7 +603,7 @@ mod test {
     }
 
     #[test]
-    fn test_netcdf_errors() {
+    fn netcdf_errors() {
         let f = open_test_file();
 
         assert!(matches!(
