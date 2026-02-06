@@ -120,6 +120,7 @@ py_get_enum_string!(PyParabolicQfactor, equilibrium_type);
 py_export_getter!(PyParabolicQfactor, qaxis, f64);
 py_export_getter!(PyParabolicQfactor, qwall, f64);
 py_export_getter!(PyParabolicQfactor, psi_wall, f64);
+py_export_getter!(PyParabolicQfactor, psip_wall, f64);
 py_eval1D!(PyParabolicQfactor, q_of_psi);
 py_eval1D!(PyParabolicQfactor, q_of_psip);
 py_eval1D!(PyParabolicQfactor, psip_of_psi);

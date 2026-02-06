@@ -2,6 +2,30 @@ r"""Type Aliases used throughout the package."""
 
 import numpy as np
 from typing import Literal, TypeAlias
+from dexter import NcGeometry
+from dexter import UnityQfactor, ParabolicQfactor, NcQfactor
+from dexter import LarCurrent, NcCurrent
+
+Geometry: TypeAlias = NcGeometry
+"""Geometry Objects.
+
+Corresponds to objects that implement the 'Geometry' trait.
+"""
+
+Qfactor: TypeAlias = UnityQfactor | ParabolicQfactor | NcQfactor
+"""Qfactor Object.
+
+Corresponds to objects that implement the 'Qfactor' trait.
+"""
+
+Current: TypeAlias = LarCurrent | NcCurrent
+"""Current Object.
+
+Corresponds to objects that implement the 'Current' trait.
+"""
+
+FluxCoordinate: TypeAlias = Literal["Toroidal", "Poloidal"]
+r"""Magnetic flux coordinates $\psi$ and $\psi_p$."""
 
 NetCDFVersion: TypeAlias = str
 """The netCDF convention version (SemVer)."""

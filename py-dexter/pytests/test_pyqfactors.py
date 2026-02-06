@@ -96,6 +96,7 @@ def test_parabolic_qfactor():
     assert qfactor.qaxis == 1.1
     assert qfactor.qwall == 3.8
     assert qfactor.psi_wall == 0.45
+    assert isinstance(qfactor.psip_wall, float)
     assert isinstance(qfactor.q_of_psi(0.01), float)
     assert isinstance(qfactor.q_of_psip(0.01), float)
     assert isinstance(qfactor.psip_of_psi(0.01), float)

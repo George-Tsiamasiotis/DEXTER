@@ -21,6 +21,9 @@ from dexter.types import (
     NetCDFVersion,
 )
 
+from dexter.plotters.qfactor_plotter import _QfactorPlotter
+from dexter.plotters.current_plotter import _CurrentPlotter
+
 class Geometry(ABC):
     """Geometries base class.
 
@@ -414,7 +417,7 @@ class NcGeometry(Geometry):
         ```
         """
 
-class UnityQfactor(Qfactor):
+class UnityQfactor(Qfactor, _QfactorPlotter):
     r"""Analytical q-factor profile of $q=1$ and $\psi=\psi_p$.
 
     Provides methods for calculating the quantities:
@@ -444,7 +447,8 @@ class UnityQfactor(Qfactor):
         ```
         """
 
-class ParabolicQfactor(Qfactor):
+class ParabolicQfactor(Qfactor, _QfactorPlotter):
+    # FIXME:
     r"""Analytical q-factor of parabolic q(ψ) profile.
 
     Provides methods for calculating the quantities,
@@ -524,7 +528,7 @@ class ParabolicQfactor(Qfactor):
         ```
         """
 
-class NcQfactor(Qfactor):
+class NcQfactor(Qfactor, _QfactorPlotter):
     r"""Numerical q-factor reconstructed from a NetCDF file.
 
     Provides methods for calculating the quantities:
@@ -597,7 +601,7 @@ class NcQfactor(Qfactor):
         ```
         """
 
-class LarCurrent(Current):
+class LarCurrent(Current, _CurrentPlotter):
     """Analytical Large Aspect Ratio Current with $g=1$ and $I=0$.
 
     Attributes
@@ -619,7 +623,7 @@ class LarCurrent(Current):
         ```
         """
 
-class NcCurrent(Current):
+class NcCurrent(Current, _CurrentPlotter):
     r"""Numerical plasma reconstructed from a NetCDF file.
 
     Provides methods for calculating the quantities:

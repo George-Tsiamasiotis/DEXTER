@@ -1,6 +1,6 @@
 [project]
 name = "dexter"
-version = "0.0.1"
+version = "0.0.1-pre.10"
 description = "Calculations and simulations in analytical and reconstructed equilibria of toroidal fusion devices."
 readme = "README.md"
 authors = [
@@ -46,8 +46,14 @@ docs = [
 ]
 
 [tool.pytest.ini_options]
-testpaths = ["./py-dexter/pytests", "./py-dexter/dexter/", "./docs/docs/"] # Run from workspace root
-addopts = "--durations 2 --doctest-glob='*.md' --doctest-glob='*.pyi'"
+testpaths = [
+    "./py-dexter/pytests",
+    "./py-dexter/dexter/_core.pyi",
+    "./py-dexter/dexter/plots",
+    "./docs/docs/",
+] # Run from workspace root
+addopts = "--durations 2 --doctest-glob='*.md' --doctest-glob='*.pyi' --doctest-glob='*.py' --doctest-modules"
+filterwarnings = ['ignore:.*Figure.*'] # matplotlib
 
 [project.scripts]
 jacobian-plot = "dexter.tools:jacobian_plot"

@@ -1,5 +1,6 @@
 import pytest
 import dexter
+import matplotlib
 
 from dexter import (
     _TEST_NETCDF_PATH as netcdf_path,
@@ -11,6 +12,7 @@ from dexter import (
 
 @pytest.fixture(autouse=True)
 def add_np(doctest_namespace):
+    matplotlib.use("agg")  # Disable interactive plots
     doctest_namespace["path"] = netcdf_path
     doctest_namespace["dex"] = dexter
 
