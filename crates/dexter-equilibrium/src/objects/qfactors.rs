@@ -10,7 +10,7 @@ use rsl_interpolation::{Accelerator, DynInterpolation, InterpType, make_interp_t
 use std::path::{Path, PathBuf};
 
 use crate::flux::{NcFlux, NcFluxState};
-use crate::{EquilibriumType, Qfactor, Result};
+use crate::{EqError, EquilibriumType, Qfactor, Result};
 
 // ===============================================================================================
 
@@ -42,6 +42,7 @@ impl UnityQfactor {
     equilibrium_type_getter_impl!();
 }
 
+/// Evaluations
 #[allow(unused_variables)]
 impl Qfactor for UnityQfactor {
     fn q_of_psi(&self, psi: f64, acc: &mut Accelerator) -> Result<f64> {
@@ -135,6 +136,7 @@ impl ParabolicQfactor {
     }
 }
 
+/// Evaluations
 #[allow(unused_variables)]
 // TODO: Cache reoccurring values when sure the formulas are correct.
 impl Qfactor for ParabolicQfactor {
@@ -145,7 +147,7 @@ impl Qfactor for ParabolicQfactor {
     fn q_of_psip(&self, psip: f64, acc: &mut Accelerator) -> Result<f64> {
         let psi = self.psi_of_psip(psip, acc)?;
         // Create a new Accelerator for `psi` else the `psip` Accelerator looses its state.
-        Ok(self.q_of_psi(psi, &mut Accelerator::new())?)
+        self.q_of_psi(psi, &mut Accelerator::new())
     }
 
     fn psip_of_psi(&self, psi: f64, acc: &mut Accelerator) -> Result<f64> {
@@ -307,54 +309,49 @@ impl NcQfactor {
 /// Evaluations
 impl Qfactor for NcQfactor {
     fn q_of_psi(&self, psi: f64, acc: &mut Accelerator) -> Result<f64> {
-        Ok(self
-            .q_of_psi_interp
-            .as_ref()
-            .expect("q(ψ) is not defined.")
-            .eval(&self.psi.values, &self.q_values, psi, acc)?)
+        match self.q_of_psi_interp.as_ref() {
+            Some(i) => Ok(i.eval(&self.psi.values, &self.q_values, psi, acc)?),
+            None => Err(EqError::UndefinedEvaluation("q(ψ)".into())),
+        }
     }
 
     fn q_of_psip(&self, psip: f64, acc: &mut Accelerator) -> Result<f64> {
-        Ok(self
-            .q_of_psip_interp
-            .as_ref()
-            .expect("q(ψp) is not defined.")
-            .eval(&self.psip.values, &self.q_values, psip, acc)?)
+        match self.q_of_psip_interp.as_ref() {
+            Some(i) => Ok(i.eval(&self.psip.values, &self.q_values, psip, acc)?),
+            None => Err(EqError::UndefinedEvaluation("q(ψp)".into())),
+        }
     }
 
     fn psip_of_psi(&self, psi: f64, acc: &mut Accelerator) -> Result<f64> {
-        Ok(self
-            .psip_of_psi_interp
-            .as_ref()
-            .expect("ψp(ψ) is not defined.")
-            .eval(&self.psi.values, &self.psip.values, psi, acc)?)
+        match self.psip_of_psi_interp.as_ref() {
+            Some(i) => Ok(i.eval(&self.psi.values, &self.psip.values, psi, acc)?),
+            None => Err(EqError::UndefinedEvaluation("ψp(ψ)".into())),
+        }
     }
 
     fn psi_of_psip(&self, psip: f64, acc: &mut Accelerator) -> Result<f64> {
-        Ok(self
-            .psi_of_psip_interp
-            .as_ref()
-            .expect("ψ(ψp) is not defined.")
-            .eval(&self.psip.values, &self.psi.values, psip, acc)?)
+        match self.psi_of_psip_interp.as_ref() {
+            Some(i) => Ok(i.eval(&self.psip.values, &self.psi.values, psip, acc)?),
+            None => Err(EqError::UndefinedEvaluation("ψ(ψp)".into())),
+        }
     }
 
     fn dpsip_dpsi(&self, psi: f64, acc: &mut Accelerator) -> Result<f64> {
-        Ok(self
-            .psip_of_psi_interp
-            .as_ref()
-            .expect("ψp(ψ) is not defined.")
-            .eval_deriv(&self.psi.values, &self.psip.values, psi, acc)?)
+        match self.psip_of_psi_interp.as_ref() {
+            Some(i) => Ok(i.eval_deriv(&self.psi.values, &self.psip.values, psi, acc)?),
+            None => Err(EqError::UndefinedEvaluation("dψp(ψ)/dψ".into())),
+        }
     }
 
     fn dpsi_dpsip(&self, psip: f64, acc: &mut Accelerator) -> Result<f64> {
-        Ok(self
-            .psi_of_psip_interp
-            .as_ref()
-            .expect("ψ(ψp) is not defined.")
-            .eval_deriv(&self.psip.values, &self.psi.values, psip, acc)?)
+        match self.psi_of_psip_interp.as_ref() {
+            Some(i) => Ok(i.eval_deriv(&self.psip.values, &self.psi.values, psip, acc)?),
+            None => Err(EqError::UndefinedEvaluation("dψ(ψp)/dψp".into())),
+        }
     }
 }
 
+/// Getters
 impl NcQfactor {
     netcdf_path_getter_impl!();
     netcdf_version_getter_impl!();
@@ -396,38 +393,17 @@ impl std::fmt::Debug for NcQfactor {
 }
 
 #[cfg(test)]
-mod test_parabolic_qfactor {
+mod test_utils {
     use super::*;
 
-    fn create_parabolic_qfactor() -> ParabolicQfactor {
-        ParabolicQfactor::new(1.1, 3.8, 0.45)
-    }
-
-    #[test]
-    fn parabolic_qfactor_derivatives() {
-        let _ = create_parabolic_qfactor();
-        // TODO:
-    }
-}
-
-#[cfg(test)]
-mod test_nc_qfactor_derivatives {
-    use crate::extract::TEST_NETCDF_PATH;
-
-    use super::*;
-
-    fn create_nc_qfactor() -> NcQfactor {
-        let path = PathBuf::from(TEST_NETCDF_PATH);
+    pub(super) fn create_nc_qfactor(path_str: &str) -> NcQfactor {
+        let path = PathBuf::from(&path_str);
         let builder = NcQfactorBuilder::new(&path, "steffen");
         builder.build().unwrap()
     }
 
-    #[test]
     /// Make sure that dψ(ψp)/dψp and q(ψ) are close enough.
-    fn dpsi_dpsip_q_closeness() {
-        let qfactor = create_nc_qfactor();
-        let psip_wall = qfactor.psip_wall().unwrap();
-        let qwall = qfactor.qwall();
+    pub(super) fn test_dpsi_dpsip_q_closeness(qfactor: &impl Qfactor, psip_wall: f64, qwall: f64) {
         // Do not go to close to the edges, since the interpolation might deviate a bit
         let psips = Array1::linspace(0.02 * psip_wall, 0.98 * psip_wall, 100);
 
@@ -442,12 +418,12 @@ mod test_nc_qfactor_derivatives {
         }
     }
 
-    #[test]
     /// Make sure that dψp(ψ)/dψ and i(ψ) are close enough.
-    fn dpsip_dpsi_iota_closeness() {
-        let qfactor = create_nc_qfactor();
-        let psi_wall = qfactor.psi_wall().unwrap();
-        let qwall = qfactor.qwall();
+    pub(super) fn test_dpsip_dpsi_iota_closeness(
+        qfactor: &impl Qfactor,
+        psi_wall: f64,
+        qwall: f64,
+    ) {
         // Do not go to close to the edges, since the interpolation might deviate a bit
         let psis = Array1::linspace(0.02 * psi_wall, 0.98 * psi_wall, 100);
 
@@ -464,20 +440,67 @@ mod test_nc_qfactor_derivatives {
 }
 
 #[cfg(test)]
-mod test_nc_evals_with_bad_psip {
-    use crate::extract::TOROIDAL_TEST_NETCDF_PATH;
+mod test_derivatives_closeness {
+    use crate::extract::TEST_NETCDF_PATH;
 
+    use super::test_utils::*;
     use super::*;
 
-    fn create_toroidal_nc_qfactor() -> NcQfactor {
-        let path = PathBuf::from(TOROIDAL_TEST_NETCDF_PATH);
-        let builder = NcQfactorBuilder::new(&path, "steffen");
-        builder.build().unwrap()
+    #[test]
+    fn unity_qfactor_dpsi_dpsip_q_closeness() {
+        let qfactor = UnityQfactor::new();
+        test_dpsi_dpsip_q_closeness(&qfactor, 0.45, 3.9);
     }
 
     #[test]
+    fn unity_qfactor_dpsip_dpsi_iota_closeness() {
+        let qfactor = UnityQfactor::new();
+        test_dpsip_dpsi_iota_closeness(&qfactor, 0.45, 3.9);
+    }
+
+    #[test]
+    fn parabolic_qfactor_dpsi_dpsip_q_closeness() {
+        let qfactor = ParabolicQfactor::new(1.1, 3.9, 0.45);
+        let psip_wall = qfactor.psip_wall();
+        let qwall = qfactor.qwall();
+        test_dpsi_dpsip_q_closeness(&qfactor, psip_wall, qwall);
+    }
+
+    #[test]
+    fn parabolic_qfactor_dpsip_dpsi_iota_closeness() {
+        let qfactor = ParabolicQfactor::new(1.1, 3.9, 0.45);
+        let psip_wall = qfactor.psip_wall();
+        let qwall = qfactor.qwall();
+        test_dpsip_dpsi_iota_closeness(&qfactor, psip_wall, qwall);
+    }
+
+    #[test]
+    fn nc_qfactor_dpsi_dpsip_q_closeness() {
+        let qfactor = create_nc_qfactor(TEST_NETCDF_PATH);
+        let psip_wall = qfactor.psip_wall().unwrap();
+        let qwall = qfactor.qwall();
+        test_dpsi_dpsip_q_closeness(&qfactor, psip_wall, qwall);
+    }
+
+    #[test]
+    fn nc_qfactor_dpsip_dpsi_iota_closeness() {
+        let qfactor = create_nc_qfactor(TEST_NETCDF_PATH);
+        let psi_wall = qfactor.psi_wall().unwrap();
+        let qwall = qfactor.qwall();
+        test_dpsip_dpsi_iota_closeness(&qfactor, psi_wall, qwall);
+    }
+}
+
+#[cfg(test)]
+mod test_toroidal_nc_evals {
+    use crate::extract::TOROIDAL_TEST_NETCDF_PATH;
+
+    use super::test_utils::*;
+    use super::*;
+
+    #[test]
     fn flux_and_interp_states() {
-        let qfactor = create_toroidal_nc_qfactor();
+        let qfactor = create_nc_qfactor(TOROIDAL_TEST_NETCDF_PATH);
         assert_eq!(qfactor.psi_state(), NcFluxState::Good);
         assert_eq!(qfactor.psip_state(), NcFluxState::Bad);
         assert!(qfactor.q_of_psi_interp.is_some());
@@ -487,58 +510,37 @@ mod test_nc_evals_with_bad_psip {
     }
 
     #[test]
-    fn psi_evals() {
-        let qfactor = create_toroidal_nc_qfactor();
-        qfactor.q_of_psi(0.01, &mut Accelerator::new()).unwrap();
-        qfactor.iota_of_psi(0.01, &mut Accelerator::new()).unwrap();
-        qfactor.psip_of_psi(0.01, &mut Accelerator::new()).unwrap();
-        qfactor.dpsip_dpsi(0.01, &mut Accelerator::new()).unwrap();
+    fn good_psi_evals() {
+        let qfactor = create_nc_qfactor(TOROIDAL_TEST_NETCDF_PATH);
+        let mut acc = Accelerator::new();
+        qfactor.q_of_psi(0.01, &mut acc).unwrap();
+        qfactor.iota_of_psi(0.01, &mut acc).unwrap();
+        qfactor.psip_of_psi(0.01, &mut acc).unwrap();
+        qfactor.dpsip_dpsi(0.01, &mut acc).unwrap();
     }
 
     #[test]
-    #[should_panic]
-    fn undefined_q_of_psip() {
-        let qfactor = create_toroidal_nc_qfactor();
-        qfactor.q_of_psip(0.01, &mut Accelerator::new()).unwrap();
-    }
-
-    #[test]
-    #[should_panic]
-    fn undefined_i_of_psip() {
-        let qfactor = create_toroidal_nc_qfactor();
-        qfactor.iota_of_psip(0.01, &mut Accelerator::new()).unwrap();
-    }
-
-    #[test]
-    #[should_panic]
-    fn undefined_psi_of_psip() {
-        let qfactor = create_toroidal_nc_qfactor();
-        qfactor.psi_of_psip(0.01, &mut Accelerator::new()).unwrap();
-    }
-
-    #[test]
-    #[should_panic]
-    fn undefined_dpsi_dpsip() {
-        let qfactor = create_toroidal_nc_qfactor();
-        qfactor.dpsi_dpsip(0.01, &mut Accelerator::new()).unwrap();
+    fn bad_psip_evals() {
+        let qfactor = create_nc_qfactor(TOROIDAL_TEST_NETCDF_PATH);
+        let mut acc = Accelerator::new();
+        use EqError::UndefinedEvaluation as err;
+        matches!(qfactor.q_of_psip(0.01, &mut acc), Err(err(..)));
+        matches!(qfactor.iota_of_psip(0.01, &mut acc), Err(err(..)));
+        matches!(qfactor.psi_of_psip(0.01, &mut acc), Err(err(..)));
+        matches!(qfactor.dpsi_dpsip(0.01, &mut acc), Err(err(..)));
     }
 }
 
 #[cfg(test)]
-mod test_nc_evals_with_bad_psi {
+mod test_poloidal_nc_evals {
     use crate::extract::POLOIDAL_TEST_NETCDF_PATH;
 
+    use super::test_utils::*;
     use super::*;
-
-    fn create_poloidal_nc_qfactor() -> NcQfactor {
-        let path = PathBuf::from(POLOIDAL_TEST_NETCDF_PATH);
-        let builder = NcQfactorBuilder::new(&path, "steffen");
-        builder.build().unwrap()
-    }
 
     #[test]
     fn flux_and_interp_states() {
-        let qfactor = create_poloidal_nc_qfactor();
+        let qfactor = create_nc_qfactor(POLOIDAL_TEST_NETCDF_PATH);
         assert_eq!(qfactor.psi_state(), NcFluxState::Bad);
         assert_eq!(qfactor.psip_state(), NcFluxState::Good);
         assert!(qfactor.q_of_psi_interp.is_none());
@@ -548,39 +550,23 @@ mod test_nc_evals_with_bad_psi {
     }
 
     #[test]
-    fn psip_evals() {
-        let qfactor = create_poloidal_nc_qfactor();
-        qfactor.q_of_psip(0.01, &mut Accelerator::new()).unwrap();
-        qfactor.iota_of_psip(0.01, &mut Accelerator::new()).unwrap();
-        qfactor.psi_of_psip(0.01, &mut Accelerator::new()).unwrap();
-        qfactor.dpsi_dpsip(0.01, &mut Accelerator::new()).unwrap();
+    fn good_psip_evals() {
+        let qfactor = create_nc_qfactor(POLOIDAL_TEST_NETCDF_PATH);
+        let mut acc = Accelerator::new();
+        qfactor.q_of_psip(0.01, &mut acc).unwrap();
+        qfactor.iota_of_psip(0.01, &mut acc).unwrap();
+        qfactor.psi_of_psip(0.01, &mut acc).unwrap();
+        qfactor.dpsi_dpsip(0.01, &mut acc).unwrap();
     }
 
     #[test]
-    #[should_panic]
-    fn undefined_q_of_psi() {
-        let qfactor = create_poloidal_nc_qfactor();
-        qfactor.q_of_psi(0.01, &mut Accelerator::new()).unwrap();
-    }
-
-    #[test]
-    #[should_panic]
-    fn undefined_i_of_psi() {
-        let qfactor = create_poloidal_nc_qfactor();
-        qfactor.iota_of_psi(0.01, &mut Accelerator::new()).unwrap();
-    }
-
-    #[test]
-    #[should_panic]
-    fn undefined_psip_of_psi() {
-        let qfactor = create_poloidal_nc_qfactor();
-        qfactor.psip_of_psi(0.01, &mut Accelerator::new()).unwrap();
-    }
-
-    #[test]
-    #[should_panic]
-    fn undefined_dpsip_dpsi() {
-        let qfactor = create_poloidal_nc_qfactor();
-        qfactor.dpsip_dpsi(0.01, &mut Accelerator::new()).unwrap();
+    fn bad_psi_evals() {
+        let qfactor = create_nc_qfactor(POLOIDAL_TEST_NETCDF_PATH);
+        let mut acc = Accelerator::new();
+        use EqError::UndefinedEvaluation as err;
+        matches!(qfactor.q_of_psi(0.01, &mut acc), Err(err(..)));
+        matches!(qfactor.iota_of_psi(0.01, &mut acc), Err(err(..)));
+        matches!(qfactor.psip_of_psi(0.01, &mut acc), Err(err(..)));
+        matches!(qfactor.dpsip_dpsi(0.01, &mut acc), Err(err(..)));
     }
 }

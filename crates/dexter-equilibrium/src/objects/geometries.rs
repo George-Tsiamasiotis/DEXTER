@@ -1,9 +1,5 @@
 //! Representation of an equilibrium's general geometry.
 
-use std::path::{Path, PathBuf};
-
-use crate::flux::{NcFlux, NcFluxState};
-use crate::{EquilibriumType, Geometry, Result};
 use crate::{
     equilibrium_type_getter_impl, fluxes_state_getter_impl, fluxes_wall_value_getter_impl,
     fortran_vec_to_carray2d_impl, interp_type_getter_impl, netcdf_path_getter_impl,
@@ -14,6 +10,10 @@ use rsl_interpolation::{
     Accelerator, Cache, DynInterpolation, DynInterpolation2d, Interp2dType, InterpType,
     make_interp_type, make_interp2d_type,
 };
+use std::path::{Path, PathBuf};
+
+use crate::flux::{NcFlux, NcFluxState};
+use crate::{EqError, EquilibriumType, Geometry, Result};
 
 /// Used to create an [`NcGeometry`].
 ///
@@ -276,53 +276,48 @@ impl NcGeometry {
     }
 }
 
+/// Evaluations
 impl Geometry for NcGeometry {
     fn psip_of_psi(&self, psi: f64, acc: &mut Accelerator) -> Result<f64> {
-        Ok(self
-            .psip_of_psi_interp
-            .as_ref()
-            .expect("ψp(ψ) is not defined.")
-            .eval(&self.psi.values, &self.psip.values, psi, acc)?)
+        match self.psip_of_psi_interp.as_ref() {
+            Some(i) => Ok(i.eval(&self.psi.values, &self.psip.values, psi, acc)?),
+            None => Err(EqError::UndefinedEvaluation("ψp(ψ)".into())),
+        }
     }
 
     fn psi_of_psip(&self, psip: f64, acc: &mut Accelerator) -> Result<f64> {
-        Ok(self
-            .psi_of_psip_interp
-            .as_ref()
-            .expect("ψ(ψp) is not defined.")
-            .eval(&self.psip.values, &self.psi.values, psip, acc)?)
+        match self.psi_of_psip_interp.as_ref() {
+            Some(i) => Ok(i.eval(&self.psip.values, &self.psi.values, psip, acc)?),
+            None => Err(EqError::UndefinedEvaluation("ψ(ψp)".into())),
+        }
     }
 
     fn r_of_psi(&self, psi: f64, acc: &mut Accelerator) -> Result<f64> {
-        Ok(self
-            .r_of_psi_interp
-            .as_ref()
-            .expect("r(ψ) is not defined.")
-            .eval(&self.psi.values, &self.r_values, psi, acc)?)
+        match self.r_of_psi_interp.as_ref() {
+            Some(i) => Ok(i.eval(&self.psi.values, &self.r_values, psi, acc)?),
+            None => Err(EqError::UndefinedEvaluation("r(ψ)".into())),
+        }
     }
 
     fn r_of_psip(&self, psip: f64, acc: &mut Accelerator) -> Result<f64> {
-        Ok(self
-            .r_of_psip_interp
-            .as_ref()
-            .expect("r(ψp) is not defined.")
-            .eval(&self.psip.values, &self.r_values, psip, acc)?)
+        match self.r_of_psip_interp.as_ref() {
+            Some(i) => Ok(i.eval(&self.psip.values, &self.r_values, psip, acc)?),
+            None => Err(EqError::UndefinedEvaluation("r(ψp)".into())),
+        }
     }
 
     fn psi_of_r(&self, r: f64, acc: &mut Accelerator) -> Result<f64> {
-        Ok(self
-            .psi_of_r_interp
-            .as_ref()
-            .expect("ψ(r) is not defined.")
-            .eval(&self.r_values, &self.psi.values, r, acc)?)
+        match self.psi_of_r_interp.as_ref() {
+            Some(i) => Ok(i.eval(&self.r_values, &self.psi.values, r, acc)?),
+            None => Err(EqError::UndefinedEvaluation("ψ(r)".into())),
+        }
     }
 
     fn psip_of_r(&self, r: f64, acc: &mut Accelerator) -> Result<f64> {
-        Ok(self
-            .psip_of_r_interp
-            .as_ref()
-            .expect("ψp(r) is not defined.")
-            .eval(&self.r_values, &self.psip.values, r, acc)?)
+        match self.psip_of_r_interp.as_ref() {
+            Some(i) => Ok(i.eval(&self.r_values, &self.psip.values, r, acc)?),
+            None => Err(EqError::UndefinedEvaluation("ψp(r)".into())),
+        }
     }
 
     fn rlab_of_psi(
@@ -333,11 +328,8 @@ impl Geometry for NcGeometry {
         theta_acc: &mut Accelerator,
         cache: &mut Cache<f64>,
     ) -> Result<f64> {
-        Ok(self
-            .rlab_of_psi_interp
-            .as_ref()
-            .expect("R(ψ, θ) is not defined.")
-            .eval(
+        match self.rlab_of_psi_interp.as_ref() {
+            Some(i) => Ok(i.eval(
                 &self.psi.values,
                 &self.theta_values,
                 &self.rlab_values_fortran_flat,
@@ -346,7 +338,9 @@ impl Geometry for NcGeometry {
                 psi_acc,
                 theta_acc,
                 cache,
-            )?)
+            )?),
+            None => Err(EqError::UndefinedEvaluation("R(ψ, θ)".into())),
+        }
     }
 
     fn rlab_of_psip(
@@ -357,11 +351,8 @@ impl Geometry for NcGeometry {
         theta_acc: &mut Accelerator,
         cache: &mut Cache<f64>,
     ) -> Result<f64> {
-        Ok(self
-            .rlab_of_psip_interp
-            .as_ref()
-            .expect("R(ψp, θ) is not defined.")
-            .eval(
+        match self.rlab_of_psip_interp.as_ref() {
+            Some(i) => Ok(i.eval(
                 &self.psip.values,
                 &self.theta_values,
                 &self.rlab_values_fortran_flat,
@@ -370,7 +361,9 @@ impl Geometry for NcGeometry {
                 psi_acc,
                 theta_acc,
                 cache,
-            )?)
+            )?),
+            None => Err(EqError::UndefinedEvaluation("R(ψp, θ)".into())),
+        }
     }
 
     fn zlab_of_psi(
@@ -381,11 +374,8 @@ impl Geometry for NcGeometry {
         theta_acc: &mut Accelerator,
         cache: &mut Cache<f64>,
     ) -> Result<f64> {
-        Ok(self
-            .zlab_of_psi_interp
-            .as_ref()
-            .expect("Z(ψ, θ) is not defined.")
-            .eval(
+        match self.zlab_of_psi_interp.as_ref() {
+            Some(i) => Ok(i.eval(
                 &self.psi.values,
                 &self.theta_values,
                 &self.zlab_values_fortran_flat,
@@ -394,7 +384,9 @@ impl Geometry for NcGeometry {
                 psi_acc,
                 theta_acc,
                 cache,
-            )?)
+            )?),
+            None => Err(EqError::UndefinedEvaluation("Z(ψ, θ)".into())),
+        }
     }
 
     fn zlab_of_psip(
@@ -405,11 +397,8 @@ impl Geometry for NcGeometry {
         theta_acc: &mut Accelerator,
         cache: &mut Cache<f64>,
     ) -> Result<f64> {
-        Ok(self
-            .zlab_of_psip_interp
-            .as_ref()
-            .expect("Z(ψp, θ) is not defined.")
-            .eval(
+        match self.zlab_of_psip_interp.as_ref() {
+            Some(i) => Ok(i.eval(
                 &self.psip.values,
                 &self.theta_values,
                 &self.zlab_values_fortran_flat,
@@ -418,7 +407,9 @@ impl Geometry for NcGeometry {
                 psi_acc,
                 theta_acc,
                 cache,
-            )?)
+            )?),
+            None => Err(EqError::UndefinedEvaluation("Z(ψp, θ)".into())),
+        }
     }
 
     fn jacobian_of_psi(
@@ -429,11 +420,8 @@ impl Geometry for NcGeometry {
         theta_acc: &mut Accelerator,
         cache: &mut Cache<f64>,
     ) -> Result<f64> {
-        Ok(self
-            .jacobian_of_psi_interp
-            .as_ref()
-            .expect("J(ψ, θ) is not defined.")
-            .eval(
+        match self.jacobian_of_psi_interp.as_ref() {
+            Some(i) => Ok(i.eval(
                 &self.psi.values,
                 &self.theta_values,
                 &self.jacobian_values_fortran_flat,
@@ -442,7 +430,9 @@ impl Geometry for NcGeometry {
                 psi_acc,
                 theta_acc,
                 cache,
-            )?)
+            )?),
+            None => Err(EqError::UndefinedEvaluation("J(ψ, θ)".into())),
+        }
     }
 
     fn jacobian_of_psip(
@@ -453,11 +443,8 @@ impl Geometry for NcGeometry {
         theta_acc: &mut Accelerator,
         cache: &mut Cache<f64>,
     ) -> Result<f64> {
-        Ok(self
-            .jacobian_of_psip_interp
-            .as_ref()
-            .expect("J(ψp, θ) is not defined.")
-            .eval(
+        match self.jacobian_of_psip_interp.as_ref() {
+            Some(i) => Ok(i.eval(
                 &self.psip.values,
                 &self.theta_values,
                 &self.jacobian_values_fortran_flat,
@@ -466,7 +453,9 @@ impl Geometry for NcGeometry {
                 psi_acc,
                 theta_acc,
                 cache,
-            )?)
+            )?),
+            None => Err(EqError::UndefinedEvaluation("J(ψp, θ)".into())),
+        }
     }
 }
 
@@ -552,20 +541,26 @@ impl std::fmt::Debug for NcGeometry {
 }
 
 #[cfg(test)]
-mod test_evals_with_bad_psip {
-    use crate::extract::TOROIDAL_TEST_NETCDF_PATH;
-
+mod test_utils {
     use super::*;
 
-    fn create_toroidal_nc_geometry() -> NcGeometry {
-        let path = PathBuf::from(TOROIDAL_TEST_NETCDF_PATH);
+    pub(super) fn create_nc_geometry(path_str: &str) -> NcGeometry {
+        let path = PathBuf::from(&path_str);
         let builder = NcGeometryBuilder::new(&path, "steffen", "bicubic");
         builder.build().unwrap()
     }
+}
+
+#[cfg(test)]
+mod test_toroidal_nc_evals {
+    use crate::extract::TOROIDAL_TEST_NETCDF_PATH;
+
+    use super::test_utils::*;
+    use super::*;
 
     #[test]
     fn flux_and_interp_states() {
-        let geometry = create_toroidal_nc_geometry();
+        let geometry = create_nc_geometry(TOROIDAL_TEST_NETCDF_PATH);
         assert_eq!(geometry.psi_state(), NcFluxState::Good);
         assert_eq!(geometry.psip_state(), NcFluxState::Bad);
         assert!(geometry.psip_of_psi_interp.is_some());
@@ -585,99 +580,50 @@ mod test_evals_with_bad_psip {
     }
 
     #[test]
-    fn psi_evals() {
-        let geometry = create_toroidal_nc_geometry();
-        let mut psi_acc = Accelerator::new();
-        let mut theta_acc = Accelerator::new();
-        let mut cache = Cache::<f64>::new();
-        geometry.psip_of_psi(0.01, &mut psi_acc).unwrap();
-        geometry.r_of_psi(0.01, &mut psi_acc).unwrap();
-        geometry
-            .rlab_of_psi(0.01, 3.14, &mut psi_acc, &mut theta_acc, &mut cache)
-            .unwrap();
-        geometry
-            .zlab_of_psi(0.01, 3.14, &mut psi_acc, &mut theta_acc, &mut cache)
-            .unwrap();
-        geometry
-            .jacobian_of_psi(0.01, 3.14, &mut psi_acc, &mut theta_acc, &mut cache)
-            .unwrap();
+    fn good_psi_evals() {
+        let g = create_nc_geometry(TOROIDAL_TEST_NETCDF_PATH);
+        let mut a1 = Accelerator::new();
+        let mut a2 = Accelerator::new();
+        let mut c = Cache::new();
+        let p = 0.01;
+        let t = 3.14;
+        g.psip_of_psi(p, &mut a1).unwrap();
+        g.r_of_psi(p, &mut a1).unwrap();
+        g.rlab_of_psi(p, t, &mut a1, &mut a2, &mut c).unwrap();
+        g.zlab_of_psi(p, t, &mut a1, &mut a2, &mut c).unwrap();
+        g.jacobian_of_psi(p, t, &mut a1, &mut a2, &mut c).unwrap();
     }
 
     #[test]
-    #[should_panic]
-    fn undefined_psi_of_psip() {
-        let geometry = create_toroidal_nc_geometry();
-        geometry.psi_of_psip(0.01, &mut Accelerator::new()).unwrap();
-    }
-
-    #[test]
-    #[should_panic]
-    fn undefined_r_of_psip() {
-        let geometry = create_toroidal_nc_geometry();
-        geometry.r_of_psip(0.01, &mut Accelerator::new()).unwrap();
-    }
-
-    #[test]
-    #[should_panic]
-    fn undefined_rlab_of_psip() {
-        let geometry = create_toroidal_nc_geometry();
-        geometry
-            .rlab_of_psip(
-                0.01,
-                3.14,
-                &mut Accelerator::new(),
-                &mut Accelerator::new(),
-                &mut Cache::new(),
-            )
-            .unwrap();
-    }
-
-    #[test]
-    #[should_panic]
-    fn undefined_zlab_of_psip() {
-        let geometry = create_toroidal_nc_geometry();
-        geometry
-            .zlab_of_psip(
-                0.01,
-                3.14,
-                &mut Accelerator::new(),
-                &mut Accelerator::new(),
-                &mut Cache::new(),
-            )
-            .unwrap();
-    }
-
-    #[test]
-    #[should_panic]
-    fn undefined_jacobian_of_psip() {
-        let geometry = create_toroidal_nc_geometry();
-        geometry
-            .jacobian_of_psip(
-                0.01,
-                3.14,
-                &mut Accelerator::new(),
-                &mut Accelerator::new(),
-                &mut Cache::new(),
-            )
-            .unwrap();
+    fn bad_psip_evals() {
+        let g = create_nc_geometry(TOROIDAL_TEST_NETCDF_PATH);
+        let mut a1 = Accelerator::new();
+        let mut a2 = Accelerator::new();
+        let mut c = Cache::new();
+        let p = 0.01;
+        let t = 3.14;
+        use EqError::UndefinedEvaluation as err;
+        matches!(g.psi_of_psip(p, &mut a1), Err(err(..)));
+        matches!(g.r_of_psip(p, &mut a1), Err(err(..)));
+        matches!(g.rlab_of_psip(p, t, &mut a1, &mut a2, &mut c), Err(err(..)));
+        matches!(g.zlab_of_psip(p, t, &mut a1, &mut a2, &mut c), Err(err(..)));
+        matches!(
+            g.jacobian_of_psip(p, t, &mut a1, &mut a2, &mut c),
+            Err(err(..))
+        );
     }
 }
 
 #[cfg(test)]
-mod test_evals_with_bad_psi {
+mod test_poloidal_nc_evals {
     use crate::extract::POLOIDAL_TEST_NETCDF_PATH;
 
+    use super::test_utils::*;
     use super::*;
-
-    fn create_poloidal_nc_geometry() -> NcGeometry {
-        let path = PathBuf::from(POLOIDAL_TEST_NETCDF_PATH);
-        let builder = NcGeometryBuilder::new(&path, "steffen", "bicubic");
-        builder.build().unwrap()
-    }
 
     #[test]
     fn flux_and_interp_states() {
-        let geometry = create_poloidal_nc_geometry();
+        let geometry = create_nc_geometry(POLOIDAL_TEST_NETCDF_PATH);
         assert_eq!(geometry.psi_state(), NcFluxState::Bad);
         assert_eq!(geometry.psip_state(), NcFluxState::Good);
         assert!(geometry.psip_of_psi_interp.is_none());
@@ -697,80 +643,36 @@ mod test_evals_with_bad_psi {
     }
 
     #[test]
-    fn psip_evals() {
-        let geometry = create_poloidal_nc_geometry();
-        let mut psip_acc = Accelerator::new();
-        let mut theta_acc = Accelerator::new();
-        let mut cache = Cache::<f64>::new();
-        geometry.psi_of_psip(0.01, &mut psip_acc).unwrap();
-        geometry.r_of_psip(0.01, &mut psip_acc).unwrap();
-        geometry
-            .rlab_of_psip(0.01, 3.14, &mut psip_acc, &mut theta_acc, &mut cache)
-            .unwrap();
-        geometry
-            .zlab_of_psip(0.01, 3.14, &mut psip_acc, &mut theta_acc, &mut cache)
-            .unwrap();
-        geometry
-            .jacobian_of_psip(0.01, 3.14, &mut psip_acc, &mut theta_acc, &mut cache)
-            .unwrap();
+    fn good_psip_evals() {
+        let g = create_nc_geometry(POLOIDAL_TEST_NETCDF_PATH);
+        let mut a1 = Accelerator::new();
+        let mut a2 = Accelerator::new();
+        let mut c = Cache::new();
+        let p = 0.01;
+        let t = 3.14;
+        g.psi_of_psip(p, &mut a1).unwrap();
+        g.r_of_psip(p, &mut a1).unwrap();
+        g.rlab_of_psip(p, t, &mut a1, &mut a2, &mut c).unwrap();
+        g.zlab_of_psip(p, t, &mut a1, &mut a2, &mut c).unwrap();
+        g.jacobian_of_psip(p, t, &mut a1, &mut a2, &mut c).unwrap();
     }
 
     #[test]
-    #[should_panic]
-    fn undefined_psip_of_psi() {
-        let geometry = create_poloidal_nc_geometry();
-        geometry.psip_of_psi(0.01, &mut Accelerator::new()).unwrap();
-    }
-
-    #[test]
-    #[should_panic]
-    fn undefined_r_of_psi() {
-        let geometry = create_poloidal_nc_geometry();
-        geometry.r_of_psi(0.01, &mut Accelerator::new()).unwrap();
-    }
-
-    #[test]
-    #[should_panic]
-    fn undefined_rlab_of_psi() {
-        let geometry = create_poloidal_nc_geometry();
-        geometry
-            .rlab_of_psi(
-                0.01,
-                3.14,
-                &mut Accelerator::new(),
-                &mut Accelerator::new(),
-                &mut Cache::new(),
-            )
-            .unwrap();
-    }
-
-    #[test]
-    #[should_panic]
-    fn undefined_zlab_of_psi() {
-        let geometry = create_poloidal_nc_geometry();
-        geometry
-            .zlab_of_psi(
-                0.01,
-                3.14,
-                &mut Accelerator::new(),
-                &mut Accelerator::new(),
-                &mut Cache::new(),
-            )
-            .unwrap();
-    }
-
-    #[test]
-    #[should_panic]
-    fn undefined_jacobian_of_psi() {
-        let geometry = create_poloidal_nc_geometry();
-        geometry
-            .jacobian_of_psi(
-                0.01,
-                3.14,
-                &mut Accelerator::new(),
-                &mut Accelerator::new(),
-                &mut Cache::new(),
-            )
-            .unwrap();
+    fn bad_psi_evals() {
+        let g = create_nc_geometry(POLOIDAL_TEST_NETCDF_PATH);
+        let mut a1 = Accelerator::new();
+        let mut a2 = Accelerator::new();
+        let mut c = Cache::new();
+        let p = 0.01;
+        let t = 3.14;
+        use EqError::UndefinedEvaluation as err;
+        matches!(g.psip_of_psi(p, &mut a1), Err(err(..)));
+        matches!(g.r_of_psi(p, &mut a1), Err(err(..)));
+        matches!(g.rlab_of_psi(p, t, &mut a1, &mut a2, &mut c), Err(err(..)));
+        matches!(g.zlab_of_psi(p, t, &mut a1, &mut a2, &mut c), Err(err(..)));
+        matches!(
+            g.jacobian_of_psi(p, t, &mut a1, &mut a2, &mut c),
+            Err(err(..))
+        );
     }
 }

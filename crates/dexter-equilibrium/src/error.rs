@@ -18,6 +18,10 @@ pub enum EqError {
     #[error("Interpolation domain error: {0}")]
     DomainError(#[from] rsl_interpolation::DomainError),
 
+    /// Called undefined evaluation method.
+    #[error("Call to undefined evaluation method '{0}'")]
+    UndefinedEvaluation(Box<str>),
+
     /// From [`NcError`].
     #[error("NetCDF error: {0}")]
     NcError(#[from] NcError),
