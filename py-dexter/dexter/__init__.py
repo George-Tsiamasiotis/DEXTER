@@ -2,6 +2,7 @@ from dexter._core import NcGeometry
 from dexter._core import UnityQfactor, ParabolicQfactor, NcQfactor
 from dexter._core import LarCurrent, NcCurrent
 
+from dexter.plotters.flux_plotter import _FluxPlotter
 from dexter.plotters.qfactor_plotter import _QfactorPlotter
 from dexter.plotters.current_plotter import _CurrentPlotter
 import matplotlib.pyplot
@@ -14,11 +15,15 @@ matplotlib.pyplot.rcParams["text.usetex"] = True
 
 # =============== Attach plotting methods
 
+for geometry in [NcGeometry]:
+    setattr(geometry, "plot_psip_of_psi", _FluxPlotter.plot_psip_of_psi)
+    setattr(geometry, "plot_psi_of_psip", _FluxPlotter.plot_psi_of_psip)
+
 for qfactor in [UnityQfactor, ParabolicQfactor, NcQfactor]:
     setattr(qfactor, "plot_q_of_psi", _QfactorPlotter.plot_q_of_psi)
     setattr(qfactor, "plot_q_of_psip", _QfactorPlotter.plot_q_of_psip)
-    setattr(qfactor, "plot_psip_of_psi", _QfactorPlotter.plot_psip_of_psi)
-    setattr(qfactor, "plot_psi_of_psip", _QfactorPlotter.plot_psi_of_psip)
+    setattr(qfactor, "plot_psip_of_psi", _FluxPlotter.plot_psip_of_psi)
+    setattr(qfactor, "plot_psi_of_psip", _FluxPlotter.plot_psi_of_psip)
     setattr(qfactor, "plot_dpsip_dpsi", _QfactorPlotter.plot_dpsip_dpsi)
     setattr(qfactor, "plot_dpsi_dpsip", _QfactorPlotter.plot_dpsi_dpsip)
     setattr(qfactor, "plot_iota_of_psi", _QfactorPlotter.plot_iota_of_psi)

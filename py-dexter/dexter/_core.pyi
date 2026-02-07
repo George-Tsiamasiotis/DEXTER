@@ -21,6 +21,7 @@ from dexter.types import (
     NetCDFVersion,
 )
 
+from dexter.plotters.flux_plotter import _FluxPlotter
 from dexter.plotters.qfactor_plotter import _QfactorPlotter
 from dexter.plotters.current_plotter import _CurrentPlotter
 
@@ -30,24 +31,6 @@ class Geometry(ABC):
     Defines all the evaluation methods.
     Corresponds to the 'Geometry' Trait from the Rust API.
     """
-
-    def psip_of_psi(self, psi: float) -> float:
-        r"""The $\psi_p(\psi)$ value in Normalized Units.
-
-        Parameters
-        ----------
-        psi
-            The toroidal flux $\psi$ in Normalized Units.
-        """
-
-    def psi_of_psip(self, psip: float) -> float:
-        r"""The $\psi(\psi_p)$ value in Normalized Units.
-
-        Parameters
-        ----------
-        psip
-            The poloidal flux $\psi_p$ in Normalized Units.
-        """
 
     def r_of_psi(self, psi: float) -> float:
         r"""The $r(\psi)$ value in $[m]$.
@@ -176,24 +159,6 @@ class Qfactor(ABC):
             The poloidal flux $\psi_p$ in Normalized Units.
         """
 
-    def psip_of_psi(self, psi: float) -> float:
-        r"""The $\psi_p(\psi)$ value.
-
-        Parameters
-        ----------
-        psi
-            The toroidal flux $\psi$ in Normalized Units.
-        """
-
-    def psi_of_psip(self, psip: float) -> float:
-        r"""The $\psi(\psi_p)$ value.
-
-        Parameters
-        ----------
-        psip
-            The poloidal flux $\psi_p$ in Normalized Units.
-        """
-
     def dpsi_dpsip(self, psip: float) -> float:
         r"""The derivative $d\psi(\psi_p)/d\psi_p$ value.
 
@@ -315,7 +280,7 @@ class Current(ABC):
 
 # ================================================================================================
 
-class NcGeometry(Geometry):
+class NcGeometry(Geometry, _FluxPlotter):
     r"""Object describing the general geometry of a numerical equilibrium.
 
     Stores relates scalars and arrays, and provides interpolation methods for converting
@@ -417,7 +382,7 @@ class NcGeometry(Geometry):
         ```
         """
 
-class UnityQfactor(Qfactor, _QfactorPlotter):
+class UnityQfactor(Qfactor, _FluxPlotter, _QfactorPlotter):
     r"""Analytical q-factor profile of $q=1$ and $\psi=\psi_p$.
 
     Provides methods for calculating the quantities:
@@ -447,7 +412,7 @@ class UnityQfactor(Qfactor, _QfactorPlotter):
         ```
         """
 
-class ParabolicQfactor(Qfactor, _QfactorPlotter):
+class ParabolicQfactor(Qfactor, _FluxPlotter, _QfactorPlotter):
     # FIXME:
     r"""Analytical q-factor of parabolic q(ψ) profile.
 
@@ -528,7 +493,7 @@ class ParabolicQfactor(Qfactor, _QfactorPlotter):
         ```
         """
 
-class NcQfactor(Qfactor, _QfactorPlotter):
+class NcQfactor(Qfactor, _FluxPlotter, _QfactorPlotter):
     r"""Numerical q-factor reconstructed from a NetCDF file.
 
     Provides methods for calculating the quantities:

@@ -42,7 +42,6 @@ impl LarCurrent {
     equilibrium_type_getter_impl!();
 }
 
-/// Evaluations
 #[allow(unused_variables)]
 impl Current for LarCurrent {
     fn g_of_psi(&self, psi: f64, acc: &mut Accelerator) -> Result<f64> {
@@ -213,7 +212,6 @@ impl NcCurrent {
     }
 }
 
-/// Evaluations
 impl Current for NcCurrent {
     fn g_of_psi(&self, psi: f64, acc: &mut Accelerator) -> Result<f64> {
         match self.g_of_psi_interp.as_ref() {

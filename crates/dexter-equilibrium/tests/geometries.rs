@@ -2,7 +2,7 @@
 
 use std::path::PathBuf;
 
-use dexter_equilibrium::{EquilibriumType, Geometry, NcFluxState, NcGeometryBuilder};
+use dexter_equilibrium::{EquilibriumType, FluxCommute, Geometry, NcFluxState, NcGeometryBuilder};
 use ndarray::{Array1, Array2};
 use rsl_interpolation::{Accelerator, Cache};
 

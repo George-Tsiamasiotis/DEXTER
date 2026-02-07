@@ -2,22 +2,26 @@
 //!
 //! # Equilibrium objects
 //!
-//! + [`Qfactor`]: Representation of the q-factor profile
+//! + Representations of an equilibrium's general geometry. Provides interpolation methods between `ψ`, `ψp`, `r`, `R`, `Z`, `J`.
+//!     - [`NcGeometry`]: Geometry of the netCDF equilibrium
+//!
+//! + Representations of the q-factor profile:
 //!     - [`NcQfactor`]: q-factor reconstructed from a netCDF file.
 //!     - [`UnityQfactor`]: q-factor profile of q = 1 and ψ=ψp.
 //!     - [`ParabolicQfactor`]: q-factor of parabolic q(ψ) profile.
 //!
-//! + [`Current`]: Representation of the plasma currents
+//! + Representations of the plasma currents;
 //!     - [`NcCurrent`]: Plasma current reconstructed from a netCDF file.
 //!     - [`LarCurrent`]: Large Aspect Ration plasma current with g=1 and I=0.
 //!
+//! ## Evaluations:
+//!
+//! + [`Geometry`]: Conversions to laboratory quantities.
+//! + [`FluxCommute`]: Conversion between the two flux coordinates `ψ` and `ψp`
+//! + [`Qfactor`]: Evaluation of q-factor related quantities.
+//! + [`Current`]: Evaluation of plasma current related quantities.
+//!
 //! TODO:
-//!
-//! ## Geometry object
-//!
-//! + [`Geometry`]: Representation of an equilibrium's general geometry. Provides interpolation methods
-//! between `ψ`, `ψp`, `r`, `R`, `Z`, `J`.
-//!     - [`NcGeometry`]: Geometry of the netCDF equilibrium
 //!
 //! ## Data extraction
 //!
@@ -58,7 +62,7 @@ pub use objects::EquilibriumType;
 pub use flux::NcFlux;
 pub use flux::NcFluxState;
 
-pub use eval::{Current, Geometry, Qfactor};
+pub use eval::{Current, FluxCommute, Geometry, Qfactor};
 
 pub use objects::geometries::NcGeometry;
 pub use objects::geometries::NcGeometryBuilder;

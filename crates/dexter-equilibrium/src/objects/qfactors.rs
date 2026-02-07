@@ -10,7 +10,7 @@ use rsl_interpolation::{Accelerator, DynInterpolation, InterpType, make_interp_t
 use std::path::{Path, PathBuf};
 
 use crate::flux::{NcFlux, NcFluxState};
-use crate::{EqError, EquilibriumType, Qfactor, Result};
+use crate::{EqError, EquilibriumType, FluxCommute, Qfactor, Result};
 
 // ===============================================================================================
 
@@ -42,7 +42,17 @@ impl UnityQfactor {
     equilibrium_type_getter_impl!();
 }
 
-/// Evaluations
+#[allow(unused_variables)]
+impl FluxCommute for UnityQfactor {
+    fn psip_of_psi(&self, psi: f64, acc: &mut Accelerator) -> Result<f64> {
+        Ok(psi)
+    }
+
+    fn psi_of_psip(&self, psip: f64, acc: &mut Accelerator) -> Result<f64> {
+        Ok(psip)
+    }
+}
+
 #[allow(unused_variables)]
 impl Qfactor for UnityQfactor {
     fn q_of_psi(&self, psi: f64, acc: &mut Accelerator) -> Result<f64> {
@@ -51,14 +61,6 @@ impl Qfactor for UnityQfactor {
 
     fn q_of_psip(&self, psip: f64, acc: &mut Accelerator) -> Result<f64> {
         Ok(1.0)
-    }
-
-    fn psip_of_psi(&self, psi: f64, acc: &mut Accelerator) -> Result<f64> {
-        Ok(psi)
-    }
-
-    fn psi_of_psip(&self, psip: f64, acc: &mut Accelerator) -> Result<f64> {
-        Ok(psip)
     }
 
     fn dpsip_dpsi(&self, psi: f64, acc: &mut Accelerator) -> Result<f64> {
@@ -136,7 +138,21 @@ impl ParabolicQfactor {
     }
 }
 
-/// Evaluations
+#[allow(unused_variables)]
+impl FluxCommute for ParabolicQfactor {
+    fn psip_of_psi(&self, psi: f64, acc: &mut Accelerator) -> Result<f64> {
+        let atan_arg = psi * (self.qwall - self.qaxis).sqrt() / (self.psi_wall * self.qaxis.sqrt());
+        let coef = self.psi_wall / (self.qaxis * (self.qwall - self.qaxis)).sqrt();
+        Ok(coef * atan_arg.atan())
+    }
+
+    fn psi_of_psip(&self, psip: f64, acc: &mut Accelerator) -> Result<f64> {
+        let tan_arg = (self.qaxis * (self.qwall - self.qaxis)).sqrt() * psip / self.psi_wall;
+        let coef = self.psi_wall * self.qaxis.sqrt() / (self.qwall - self.qaxis).sqrt();
+        Ok(coef * tan_arg.tan())
+    }
+}
+
 #[allow(unused_variables)]
 // TODO: Cache reoccurring values when sure the formulas are correct.
 impl Qfactor for ParabolicQfactor {
@@ -148,18 +164,6 @@ impl Qfactor for ParabolicQfactor {
         let psi = self.psi_of_psip(psip, acc)?;
         // Create a new Accelerator for `psi` else the `psip` Accelerator looses its state.
         self.q_of_psi(psi, &mut Accelerator::new())
-    }
-
-    fn psip_of_psi(&self, psi: f64, acc: &mut Accelerator) -> Result<f64> {
-        let atan_arg = psi * (self.qwall - self.qaxis).sqrt() / (self.psi_wall * self.qaxis.sqrt());
-        let coef = self.psi_wall / (self.qaxis * (self.qwall - self.qaxis)).sqrt();
-        Ok(coef * atan_arg.atan())
-    }
-
-    fn psi_of_psip(&self, psip: f64, acc: &mut Accelerator) -> Result<f64> {
-        let tan_arg = (self.qaxis * (self.qwall - self.qaxis)).sqrt() * psip / self.psi_wall;
-        let coef = self.psi_wall * self.qaxis.sqrt() / (self.qwall - self.qaxis).sqrt();
-        Ok(coef * tan_arg.tan())
     }
 
     fn dpsip_dpsi(&self, psi: f64, acc: &mut Accelerator) -> Result<f64> {
@@ -306,7 +310,22 @@ impl NcQfactor {
     }
 }
 
-/// Evaluations
+impl FluxCommute for NcQfactor {
+    fn psip_of_psi(&self, psi: f64, acc: &mut Accelerator) -> Result<f64> {
+        match self.psip_of_psi_interp.as_ref() {
+            Some(i) => Ok(i.eval(&self.psi.values, &self.psip.values, psi, acc)?),
+            None => Err(EqError::UndefinedEvaluation("ψp(ψ)".into())),
+        }
+    }
+
+    fn psi_of_psip(&self, psip: f64, acc: &mut Accelerator) -> Result<f64> {
+        match self.psi_of_psip_interp.as_ref() {
+            Some(i) => Ok(i.eval(&self.psip.values, &self.psi.values, psip, acc)?),
+            None => Err(EqError::UndefinedEvaluation("ψ(ψp)".into())),
+        }
+    }
+}
+
 impl Qfactor for NcQfactor {
     fn q_of_psi(&self, psi: f64, acc: &mut Accelerator) -> Result<f64> {
         match self.q_of_psi_interp.as_ref() {
@@ -319,20 +338,6 @@ impl Qfactor for NcQfactor {
         match self.q_of_psip_interp.as_ref() {
             Some(i) => Ok(i.eval(&self.psip.values, &self.q_values, psip, acc)?),
             None => Err(EqError::UndefinedEvaluation("q(ψp)".into())),
-        }
-    }
-
-    fn psip_of_psi(&self, psi: f64, acc: &mut Accelerator) -> Result<f64> {
-        match self.psip_of_psi_interp.as_ref() {
-            Some(i) => Ok(i.eval(&self.psi.values, &self.psip.values, psi, acc)?),
-            None => Err(EqError::UndefinedEvaluation("ψp(ψ)".into())),
-        }
-    }
-
-    fn psi_of_psip(&self, psip: f64, acc: &mut Accelerator) -> Result<f64> {
-        match self.psi_of_psip_interp.as_ref() {
-            Some(i) => Ok(i.eval(&self.psip.values, &self.psi.values, psip, acc)?),
-            None => Err(EqError::UndefinedEvaluation("ψ(ψp)".into())),
         }
     }
 

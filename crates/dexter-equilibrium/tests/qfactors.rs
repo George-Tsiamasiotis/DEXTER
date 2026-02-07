@@ -3,7 +3,8 @@
 use std::path::PathBuf;
 
 use dexter_equilibrium::{
-    EquilibriumType, NcFluxState, NcQfactorBuilder, ParabolicQfactor, Qfactor, UnityQfactor,
+    EquilibriumType, FluxCommute, NcFluxState, NcQfactorBuilder, ParabolicQfactor, Qfactor,
+    UnityQfactor,
 };
 use ndarray::Array1;
 use rsl_interpolation::Accelerator;

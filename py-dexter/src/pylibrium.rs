@@ -1,5 +1,6 @@
 //! `dexter-equilibrium` newtypes, constructors and method exports.
 
+use dexter::dexter_equilibrium::FluxCommute;
 use dexter::dexter_equilibrium::{Current, LarCurrent, NcCurrent, NcCurrentBuilder};
 use dexter::dexter_equilibrium::{Geometry, NcGeometry, NcGeometryBuilder};
 use dexter::dexter_equilibrium::{

@@ -13,7 +13,7 @@ use rsl_interpolation::{
 use std::path::{Path, PathBuf};
 
 use crate::flux::{NcFlux, NcFluxState};
-use crate::{EqError, EquilibriumType, Geometry, Result};
+use crate::{EqError, EquilibriumType, FluxCommute, Geometry, Result};
 
 /// Used to create an [`NcGeometry`].
 ///
@@ -276,8 +276,7 @@ impl NcGeometry {
     }
 }
 
-/// Evaluations
-impl Geometry for NcGeometry {
+impl FluxCommute for NcGeometry {
     fn psip_of_psi(&self, psi: f64, acc: &mut Accelerator) -> Result<f64> {
         match self.psip_of_psi_interp.as_ref() {
             Some(i) => Ok(i.eval(&self.psi.values, &self.psip.values, psi, acc)?),
@@ -291,7 +290,9 @@ impl Geometry for NcGeometry {
             None => Err(EqError::UndefinedEvaluation("ψ(ψp)".into())),
         }
     }
+}
 
+impl Geometry for NcGeometry {
     fn r_of_psi(&self, psi: f64, acc: &mut Accelerator) -> Result<f64> {
         match self.r_of_psi_interp.as_ref() {
             Some(i) => Ok(i.eval(&self.psi.values, &self.r_values, psi, acc)?),
