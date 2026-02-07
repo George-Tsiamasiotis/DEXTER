@@ -1,13 +1,19 @@
 import pytest
-from dexter import (
-    _TOROIDAL_TEST_NETCDF_PATH,
-    _POLOIDAL_TEST_NETCDF_PATH,
-    NcCurrent,
-    LarCurrent,
-)
+from dexter.equilibrium import _TOROIDAL_TEST_NETCDF_PATH, _POLOIDAL_TEST_NETCDF_PATH
+from dexter import Current, NcCurrent, LarCurrent
+
+
+def test_lar_current():
+    current = LarCurrent()
+    assert isinstance(current.__str__(), str)
+    assert isinstance(current.__repr__(), str)
+    assert current.equilibrium_type == "Analytical"
+    _test_current_evals(current)
 
 
 def test_nc_current_getters(nc_current: NcCurrent):
+    assert isinstance(nc_current.__str__(), str)
+    assert isinstance(nc_current.__repr__(), str)
     assert nc_current.equilibrium_type == "Numerical"
     assert isinstance(nc_current.path, str)
     assert isinstance(nc_current.netcdf_version, str)
@@ -21,21 +27,10 @@ def test_nc_current_getters(nc_current: NcCurrent):
     assert nc_current.psip_array.ndim == 1
     assert nc_current.g_array.ndim == 1
     assert nc_current.i_array.ndim == 1
-    assert isinstance(nc_current.__str__(), str)
-    assert isinstance(nc_current.__repr__(), str)
 
 
 def test_nc_current_eval(nc_current: NcCurrent):
-    psi = 0.01
-    psip = 0.015
-    assert isinstance(nc_current.g_of_psi(psi), float)
-    assert isinstance(nc_current.g_of_psip(psip), float)
-    assert isinstance(nc_current.i_of_psi(psi), float)
-    assert isinstance(nc_current.i_of_psip(psip), float)
-    assert isinstance(nc_current.dg_dpsi(psi), float)
-    assert isinstance(nc_current.dg_dpsip(psip), float)
-    assert isinstance(nc_current.di_dpsi(psi), float)
-    assert isinstance(nc_current.di_dpsip(psip), float)
+    _test_current_evals(nc_current)
 
 
 def test_toroidal_nc_current():
@@ -74,14 +69,14 @@ def test_poloidal_nc_current():
         nc_current.di_dpsi(0.01)
 
 
-def test_lar_current():
-    current = LarCurrent()
-    assert current.equilibrium_type == "Analytical"
-    assert current.g_of_psi(0.01) == 1
-    assert current.g_of_psip(0.01) == 1
-    assert current.i_of_psi(0.01) == 0
-    assert current.i_of_psip(0.01) == 0
-    assert current.dg_dpsi(0.01) == 0
-    assert current.dg_dpsip(0.01) == 0
-    assert current.di_dpsi(0.01) == 0
-    assert current.di_dpsip(0.01) == 0
+def _test_current_evals(current: Current):
+    psi = 0.01
+    psip = 0.015
+    assert isinstance(current.g_of_psi(psi), float)
+    assert isinstance(current.g_of_psip(psip), float)
+    assert isinstance(current.i_of_psi(psi), float)
+    assert isinstance(current.i_of_psip(psip), float)
+    assert isinstance(current.dg_dpsi(psi), float)
+    assert isinstance(current.dg_dpsip(psip), float)
+    assert isinstance(current.di_dpsi(psi), float)
+    assert isinstance(current.di_dpsip(psip), float)

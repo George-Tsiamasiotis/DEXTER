@@ -2,33 +2,25 @@ r"""Type Aliases used throughout the package."""
 
 import numpy as np
 from typing import Literal, TypeAlias
-from dexter import NcGeometry
-from dexter import UnityQfactor, ParabolicQfactor, NcQfactor
-from dexter import LarCurrent, NcCurrent
 
-Geometry: TypeAlias = NcGeometry
-"""Geometry Objects.
+# =================== Common
 
-Corresponds to objects that implement the 'Geometry' trait.
-"""
+ArrayShape: TypeAlias = tuple[int, ...]
+"""Shape of a numpy array."""
 
-Qfactor: TypeAlias = UnityQfactor | ParabolicQfactor | NcQfactor
-"""Qfactor Object.
+Array1: TypeAlias = np.ndarray[tuple[int], np.dtype[np.float64]]
+"""1D numpy array. """
 
-Corresponds to objects that implement the 'Qfactor' trait.
-"""
+Array2: TypeAlias = np.ndarray[tuple[int, int], np.dtype[np.float64]]
+"""2D numpy array. """
 
-Current: TypeAlias = LarCurrent | NcCurrent
-"""Current Object.
-
-Corresponds to objects that implement the 'Current' trait.
-"""
-
-FluxCoordinate: TypeAlias = Literal["Toroidal", "Poloidal"]
-r"""Magnetic flux coordinates $\psi$ and $\psi_p$."""
+# =================== Equilibrium
 
 NetCDFVersion: TypeAlias = str
 """The netCDF convention version (SemVer)."""
+
+FluxCoordinate: TypeAlias = Literal["Toroidal", "Poloidal"]
+r"""Magnetic flux coordinates $\psi$ and $\psi_p$."""
 
 EquilibriumType: TypeAlias = Literal["Numerical", "Analytical"]
 """Described the type of equilibrium the object represents."""
@@ -48,12 +40,3 @@ FluxState: TypeAlias = Literal["Good", "Bad", "None"]
     - Bad: values exist but are not monotonic. Can only be used as y-data.
     - None: Variable does not exist or is empty.
 """
-
-ArrayShape: TypeAlias = tuple[int, ...]
-"""Shape of a numpy array."""
-
-Array1: TypeAlias = np.ndarray[tuple[int], np.dtype[np.float64]]
-"""1D numpy array. """
-
-Array2: TypeAlias = np.ndarray[tuple[int, int], np.dtype[np.float64]]
-"""2D numpy array. """

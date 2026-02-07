@@ -19,7 +19,7 @@ use crate::{
 // ===============================================================================================
 // ===============================================================================================
 
-#[pyclass(name = "NcGeometry", frozen)]
+#[pyclass(name = "_PyNcGeometry", subclass, frozen)]
 pub struct PyNcGeometry(NcGeometry);
 
 #[pymethods]
@@ -77,7 +77,7 @@ py_eval2D!(PyNcGeometry, jacobian_of_psip);
 // ===============================================================================================
 // ===============================================================================================
 
-#[pyclass(name = "UnityQfactor", frozen)]
+#[pyclass(name = "_PyUnityQfactor", subclass, frozen)]
 pub struct PyUnityQfactor(UnityQfactor);
 
 #[pymethods]
@@ -103,7 +103,7 @@ py_eval1D!(PyUnityQfactor, iota_of_psip);
 
 // ===============================================================================================
 
-#[pyclass(name = "ParabolicQfactor", frozen)]
+#[pyclass(name = "_PyParabolicQfactor", subclass, frozen)]
 pub struct PyParabolicQfactor(ParabolicQfactor);
 
 #[pymethods]
@@ -133,7 +133,7 @@ py_eval1D!(PyParabolicQfactor, iota_of_psip);
 
 // ===============================================================================================
 
-#[pyclass(name = "NcQfactor", frozen)]
+#[pyclass(name = "_PyNcQfactor", subclass, frozen)]
 pub struct PyNcQfactor(NcQfactor);
 
 #[pymethods]
@@ -174,7 +174,33 @@ py_eval1D!(PyNcQfactor, iota_of_psip);
 // ===============================================================================================
 // ===============================================================================================
 
-#[pyclass(name = "NcCurrent", frozen)]
+#[pyclass(name = "_PyLarCurrent", subclass, frozen)]
+pub struct PyLarCurrent(LarCurrent);
+
+#[pymethods]
+impl PyLarCurrent {
+    #[new]
+    #[pyo3(signature = ())]
+    pub fn new() -> Self {
+        Self(LarCurrent::new())
+    }
+}
+
+py_debug_impl!(PyLarCurrent);
+py_repr_impl!(PyLarCurrent);
+py_get_enum_string!(PyLarCurrent, equilibrium_type);
+py_eval1D!(PyLarCurrent, g_of_psi);
+py_eval1D!(PyLarCurrent, g_of_psip);
+py_eval1D!(PyLarCurrent, dg_dpsi);
+py_eval1D!(PyLarCurrent, dg_dpsip);
+py_eval1D!(PyLarCurrent, i_of_psi);
+py_eval1D!(PyLarCurrent, i_of_psip);
+py_eval1D!(PyLarCurrent, di_dpsi);
+py_eval1D!(PyLarCurrent, di_dpsip);
+
+// ===============================================================================================
+
+#[pyclass(name = "_PyNcCurrent", subclass, frozen)]
 pub struct PyNcCurrent(NcCurrent);
 
 #[pymethods]
@@ -210,29 +236,3 @@ py_eval1D!(PyNcCurrent, i_of_psi);
 py_eval1D!(PyNcCurrent, i_of_psip);
 py_eval1D!(PyNcCurrent, di_dpsi);
 py_eval1D!(PyNcCurrent, di_dpsip);
-
-// ===============================================================================================
-
-#[pyclass(name = "LarCurrent", frozen)]
-pub struct PyLarCurrent(LarCurrent);
-
-#[pymethods]
-impl PyLarCurrent {
-    #[new]
-    #[pyo3(signature = ())]
-    pub fn new() -> Self {
-        Self(LarCurrent::new())
-    }
-}
-
-py_debug_impl!(PyLarCurrent);
-py_repr_impl!(PyLarCurrent);
-py_get_enum_string!(PyLarCurrent, equilibrium_type);
-py_eval1D!(PyLarCurrent, g_of_psi);
-py_eval1D!(PyLarCurrent, g_of_psip);
-py_eval1D!(PyLarCurrent, dg_dpsi);
-py_eval1D!(PyLarCurrent, dg_dpsip);
-py_eval1D!(PyLarCurrent, i_of_psi);
-py_eval1D!(PyLarCurrent, i_of_psip);
-py_eval1D!(PyLarCurrent, di_dpsi);
-py_eval1D!(PyLarCurrent, di_dpsip);

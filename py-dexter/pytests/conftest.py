@@ -2,8 +2,8 @@ import pytest
 import dexter
 import matplotlib
 
+from dexter.equilibrium import _TEST_NETCDF_PATH as netcdf_path
 from dexter import (
-    _TEST_NETCDF_PATH as netcdf_path,
     NcGeometry,
     NcQfactor,
     NcCurrent,

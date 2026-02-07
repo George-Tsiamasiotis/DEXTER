@@ -9,24 +9,30 @@ plugins:
     handlers:
       python:
         options:
+          # general
           show_bases: false
-          merge_init_into_class: true
-          type_parameter_headings: true
-          show_symbol_type_toc: true
+          show_inheritance_diagram: false
+          show_source: false
+          # headings
           show_root_heading: true
-          show_symbol_type_heading: true
+          show_root_members_full_path: false
           show_object_full_path: true
+          show_symbol_type_heading: true
+          show_symbol_type_toc: true
+          type_parameter_headings: true
           # docstrings
           docstring_style: numpy
           docstring_options:
             ignore_init_summary: false
             trim_doctest_flags: true
-          docstring_section_style: list
+          merge_init_into_class: true
           members_order: source
           # Signatures
           annotations_path: source
-          modernize_annotations: true
-          show_signature_annotations: true
+          modernize_annotations: false
+          show_signature_annotations: false
+          # Members
+          show_labels: false
 
 theme:
   name: material

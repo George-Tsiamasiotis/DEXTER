@@ -1,6 +1,6 @@
 [project]
 name = "dexter"
-version = "0.0.1-pre.10"
+version = "0.0.1-pre.11"
 description = "Calculations and simulations in analytical and reconstructed equilibria of toroidal fusion devices."
 readme = "README.md"
 authors = [
@@ -32,12 +32,12 @@ dev = [
     "ipython>=9.6.0",
     "maturin-import-hook>=0.3.0",
     "patchelf>=0.17.2.4",
-    "pygobject>=3.54.5",
-    "pytest>=8.4.2",
-    "mypy>=1.18.2",
     "xarray>=2025.10.1",
     "netcdf4>=1.7.3",
-    "semver>=3.0.4",
+]
+test = [
+    "pytest>=8.4.2",
+    "pytest-cov>=7.0.0",
 ]
 docs = [
     "mkdocs>=1.6.1",
@@ -46,15 +46,18 @@ docs = [
 ]
 
 [tool.pytest.ini_options]
+filterwarnings = ['ignore:.*Figure.*'] # matplotlib
 testpaths = [
     "./py-dexter/pytests",
     "./py-dexter/dexter/_core.pyi",
     "./py-dexter/dexter/plots",
     "./docs/docs/",
 ] # Run from workspace root
-addopts = "--durations 2 --doctest-glob='*.md' --doctest-glob='*.pyi' --doctest-glob='*.py' --doctest-modules"
-filterwarnings = ['ignore:.*Figure.*'] # matplotlib
-
-[project.scripts]
-jacobian-plot = "dexter.tools:jacobian_plot"
-current-plot = "dexter.tools:current_plot"
+addopts = """
+    --durations 2
+    --doctest-glob='*.md'
+    --doctest-glob='*.pyi'
+    --doctest-glob='*.py'
+    --doctest-modules
+     --cov=dexter --cov-report term --cov-report html
+"""

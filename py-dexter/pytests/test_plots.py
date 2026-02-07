@@ -1,4 +1,4 @@
-from dexter import _TEST_NETCDF_PATH as netcdf_path
+from dexter.equilibrium import _TEST_NETCDF_PATH as netcdf_path
 from dexter import (
     UnityQfactor,
     ParabolicQfactor,
@@ -7,7 +7,7 @@ from dexter import (
     NcCurrent,
     NcGeometry,
 )
-from dexter.types import Current, Qfactor, Geometry
+from dexter import Current, Qfactor, Geometry
 
 
 def test_nc_geometry():
