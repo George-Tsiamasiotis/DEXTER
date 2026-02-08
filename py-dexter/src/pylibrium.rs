@@ -13,7 +13,8 @@ use rsl_interpolation::{Accelerator, Cache};
 use crate::pyerror::PyEqError;
 use crate::{
     py_debug_impl, py_eval1D, py_eval2D, py_export_getter, py_get_enum_string,
-    py_get_netcdf_version, py_get_numpy1D, py_get_numpy2D, py_get_path, py_repr_impl,
+    py_get_netcdf_version, py_get_numpy1D, py_get_numpy1D_fallible, py_get_numpy2D, py_get_path,
+    py_repr_impl,
 };
 
 // ===============================================================================================
@@ -49,13 +50,13 @@ py_export_getter!(PyNcGeometry, baxis, f64);
 py_export_getter!(PyNcGeometry, raxis, f64);
 py_export_getter!(PyNcGeometry, zaxis, f64);
 py_export_getter!(PyNcGeometry, rgeo, f64);
-py_export_getter!(PyNcGeometry, rwall, Option<f64>);
+py_export_getter!(PyNcGeometry, rwall, f64);
 py_export_getter!(PyNcGeometry, psi_wall, Option<f64>);
 py_export_getter!(PyNcGeometry, psip_wall, Option<f64>);
 py_get_enum_string!(PyNcGeometry, psi_state);
 py_get_enum_string!(PyNcGeometry, psip_state);
-py_get_numpy1D!(PyNcGeometry, psi_array);
-py_get_numpy1D!(PyNcGeometry, psip_array);
+py_get_numpy1D_fallible!(PyNcGeometry, psi_array);
+py_get_numpy1D_fallible!(PyNcGeometry, psip_array);
 py_get_numpy1D!(PyNcGeometry, theta_array);
 py_get_numpy1D!(PyNcGeometry, r_array);
 py_get_numpy2D!(PyNcGeometry, rlab_array);
@@ -159,8 +160,8 @@ py_export_getter!(PyNcQfactor, psi_wall, Option<f64>);
 py_export_getter!(PyNcQfactor, psip_wall, Option<f64>);
 py_get_enum_string!(PyNcQfactor, psi_state);
 py_get_enum_string!(PyNcQfactor, psip_state);
-py_get_numpy1D!(PyNcQfactor, psi_array);
-py_get_numpy1D!(PyNcQfactor, psip_array);
+py_get_numpy1D_fallible!(PyNcQfactor, psi_array);
+py_get_numpy1D_fallible!(PyNcQfactor, psip_array);
 py_get_numpy1D!(PyNcQfactor, q_array);
 py_eval1D!(PyNcQfactor, q_of_psi);
 py_eval1D!(PyNcQfactor, q_of_psip);
@@ -224,8 +225,8 @@ py_export_getter!(PyNcCurrent, psi_wall, Option<f64>);
 py_export_getter!(PyNcCurrent, psip_wall, Option<f64>);
 py_get_enum_string!(PyNcCurrent, psi_state);
 py_get_enum_string!(PyNcCurrent, psip_state);
-py_get_numpy1D!(PyNcCurrent, psi_array);
-py_get_numpy1D!(PyNcCurrent, psip_array);
+py_get_numpy1D_fallible!(PyNcCurrent, psi_array);
+py_get_numpy1D_fallible!(PyNcCurrent, psip_array);
 py_get_numpy1D!(PyNcCurrent, g_array);
 py_get_numpy1D!(PyNcCurrent, i_array);
 py_eval1D!(PyNcCurrent, g_of_psi);

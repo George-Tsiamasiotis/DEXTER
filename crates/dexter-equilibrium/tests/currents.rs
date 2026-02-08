@@ -22,8 +22,8 @@ fn nc_current() {
     let psip_state: NcFluxState = current.psip_state();
     let psi_wall: f64 = current.psi_wall().unwrap();
     let psip_wall: f64 = current.psip_wall().unwrap();
-    let psi_array: Array1<f64> = current.psi_array();
-    let psip_array: Array1<f64> = current.psip_array();
+    let psi_array: Array1<f64> = current.psi_array().unwrap();
+    let psip_array: Array1<f64> = current.psip_array().unwrap();
     let g_array: Array1<f64> = current.g_array();
     let i_array: Array1<f64> = current.i_array();
 

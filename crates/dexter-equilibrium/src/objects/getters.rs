@@ -32,6 +32,27 @@ macro_rules! fortran_vec_to_carray2d_impl {
     }
 }
 
+/// Generates getters for the fluxes' values.
+#[doc(hidden)]
+#[macro_export]
+macro_rules! fluxes_values_array_getter_impl {
+    () => {
+        /// Returns the toroidal flux's values as a 1D array, if they exist.
+        pub fn psi_array(&self) -> Option<Array1<f64>> {
+            self.psi
+                .values()
+                .map(|values| Array1::from(Vec::from(values)))
+        }
+
+        /// Returns the poloidal flux's values as a 1D array, if they exist.
+        pub fn psip_array(&self) -> Option<Array1<f64>> {
+            self.psip
+                .values()
+                .map(|values| Array1::from(Vec::from(values)))
+        }
+    };
+}
+
 /// Generates getters for the fluxes' values at the wall
 #[doc(hidden)]
 #[macro_export]

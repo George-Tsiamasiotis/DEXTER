@@ -24,14 +24,14 @@ fn nc_geometry() {
     let raxis: f64 = geometry.raxis();
     let zaxis: f64 = geometry.zaxis();
     let rgeo: f64 = geometry.rgeo();
-    let rwall: f64 = geometry.rwall().unwrap();
+    let rwall: f64 = geometry.rwall();
     let shape: (usize, usize) = geometry.shape();
     let psi_state: NcFluxState = geometry.psi_state();
     let psip_state: NcFluxState = geometry.psip_state();
     let psi_wall: f64 = geometry.psi_wall().unwrap();
     let psip_wall: f64 = geometry.psip_wall().unwrap();
-    let psi_array: Array1<f64> = geometry.psi_array();
-    let psip_array: Array1<f64> = geometry.psip_array();
+    let psi_array: Array1<f64> = geometry.psi_array().unwrap();
+    let psip_array: Array1<f64> = geometry.psip_array().unwrap();
     let theta_array: Array1<f64> = geometry.theta_array();
     let r_array: Array1<f64> = geometry.r_array();
     let rlab_array: Array2<f64> = geometry.rlab_array();

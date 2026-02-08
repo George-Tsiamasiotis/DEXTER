@@ -28,15 +28,9 @@ impl NcFluxState {
 }
 
 /// Contains the Flux's values and state.
-///
-/// Even if the state is None (error trying to extract the values), we set the values as an empty
-/// vec instead of defining it as an `Option<Vec<f64>>`, since this greatly simplifies the code.
-/// Moreover, the logic on the evaluation sites checks the state anyway, so an extra `is_some()`
-/// would be redundant. Finally, even if an evaluation is called, the empty vec would cause a
-/// panic, which is what we want.
 #[derive(Clone)]
 pub struct NcFlux {
-    pub(crate) values: Vec<f64>,
+    values: Option<Vec<f64>>,
     pub(crate) state: NcFluxState,
 }
 
@@ -55,27 +49,52 @@ impl NcFlux {
     fn build(file: &netcdf::File, netcdf_field: &str) -> Self {
         match extract_1d_array(file, netcdf_field) {
             Ok(arr) => Self {
-                values: arr.to_vec(),
+                values: Some(arr.to_vec()),
                 state: NcFluxState::from_array(arr.view()),
             },
             Err(_) => Self {
-                values: Vec::new(),
+                values: None,
                 state: NcFluxState::None,
             },
         }
     }
 
+    /// Returns the flux values, if the exist.
+    pub(crate) fn values(&self) -> Option<&[f64]> {
+        self.values.as_deref()
+    }
+
+    /// Returns a slice to the wrapped values, panicking if they do not exist.
+    ///
+    /// Since the values are referenced by the interpolators all the time, we do the unwrapping
+    /// here to avoid messing up the interpolation calls
+    ///
+    /// This method should only be used in places where we know the values exists, for example
+    /// under an `state != NcFluxState::None` guard.
+    pub(crate) fn uvalues(&self) -> &[f64] {
+        match self.values.as_ref() {
+            Some(values) => values,
+            None => unreachable!("Should only be called when values are guaranteed to exist"),
+        }
+    }
+
     /// Returns the flux's value at the wall, if it exists.
     pub(crate) fn wall_value(&self) -> Option<f64> {
-        self.values.last().copied()
+        self.values
+            .as_ref()
+            .and_then(|values| values.last().copied())
     }
 }
 
 impl std::fmt::Debug for NcFlux {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let len = match self.values.as_ref() {
+            Some(values) => format!("{}", values.len()),
+            None => String::from("No values"),
+        };
         f.debug_struct("Flux")
             .field("state", &self.state)
-            .field("len", &self.values.len())
+            .field("len", &len)
             .field("wall value", &self.wall_value())
             .finish()
     }
@@ -89,12 +108,32 @@ mod test {
 
     use super::*;
 
+    fn create_empty_flux() -> NcFlux {
+        NcFlux {
+            values: None,
+            state: NcFluxState::None,
+        }
+    }
+
+    #[test]
+    #[should_panic]
+    fn get_uvalues_empty() {
+        let flux = create_empty_flux();
+        flux.uvalues();
+    }
+
+    #[test]
+    fn get_values_empty() {
+        let flux = create_empty_flux();
+        assert!(flux.values().is_none());
+    }
+
     #[test]
     fn non_existing_flux_variable() {
         let path = PathBuf::from(TEST_NETCDF_PATH);
         let file = open(&path).unwrap();
         let noflux = NcFlux::build(&file, "NOT_A_FIELD");
         assert_eq!(noflux.state, NcFluxState::None);
-        assert!(noflux.values.is_empty());
+        assert!(noflux.values.is_none());
     }
 }

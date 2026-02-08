@@ -44,6 +44,8 @@
 //!
 //! TODO:
 
+#![allow(mixed_script_confusables)]
+
 mod error;
 mod eval;
 mod flux;

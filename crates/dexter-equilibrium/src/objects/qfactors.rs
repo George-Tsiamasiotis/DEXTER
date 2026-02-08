@@ -1,9 +1,9 @@
 //! Representation of an equilibrium's q-factor profile.
 
 use crate::{
-    equilibrium_type_getter_impl, fluxes_state_getter_impl, fluxes_wall_value_getter_impl,
-    interp_type_getter_impl, netcdf_path_getter_impl, netcdf_version_getter_impl,
-    vec_to_array1D_getter_impl,
+    equilibrium_type_getter_impl, fluxes_state_getter_impl, fluxes_values_array_getter_impl,
+    fluxes_wall_value_getter_impl, interp_type_getter_impl, netcdf_path_getter_impl,
+    netcdf_version_getter_impl, vec_to_array1D_getter_impl,
 };
 use ndarray::Array1;
 use rsl_interpolation::{Accelerator, DynInterpolation, InterpType, make_interp_type};
@@ -276,21 +276,25 @@ impl NcQfactor {
 
         // Create interpolators, if possible
         use NcFluxState::Good;
+        #[rustfmt::skip]
         let psip_of_psi_interp = match psi.state {
-            Good => Some(make_interp_type(&builder.interp_type)?.build(&psi.values, &psip.values)?),
+            Good => Some(make_interp_type(&builder.interp_type)?.build(psi.uvalues(), psip.uvalues())?),
             _ => None,
         };
+        #[rustfmt::skip]
         let psi_of_psip_interp = match psip.state {
-            Good => Some(make_interp_type(&builder.interp_type)?.build(&psip.values, &psi.values)?),
+            Good => Some(make_interp_type(&builder.interp_type)?.build(psip.uvalues(), psi.uvalues())?),
             _ => None,
         };
 
+        #[rustfmt::skip]
         let q_of_psi_interp = match psi.state {
-            Good => Some(make_interp_type(&builder.interp_type)?.build(&psi.values, &q_values)?),
+            Good => Some(make_interp_type(&builder.interp_type)?.build(psi.uvalues(), &q_values)?),
             _ => None,
         };
+        #[rustfmt::skip]
         let q_of_psip_interp = match psip.state {
-            Good => Some(make_interp_type(&builder.interp_type)?.build(&psip.values, &q_values)?),
+            Good => Some(make_interp_type(&builder.interp_type)?.build(psip.uvalues(), &q_values)?),
             _ => None,
         };
 
@@ -313,14 +317,14 @@ impl NcQfactor {
 impl FluxCommute for NcQfactor {
     fn psip_of_psi(&self, psi: f64, acc: &mut Accelerator) -> Result<f64> {
         match self.psip_of_psi_interp.as_ref() {
-            Some(i) => Ok(i.eval(&self.psi.values, &self.psip.values, psi, acc)?),
+            Some(i) => Ok(i.eval(self.psi.uvalues(), self.psip.uvalues(), psi, acc)?),
             None => Err(EqError::UndefinedEvaluation("ψp(ψ)".into())),
         }
     }
 
     fn psi_of_psip(&self, psip: f64, acc: &mut Accelerator) -> Result<f64> {
         match self.psi_of_psip_interp.as_ref() {
-            Some(i) => Ok(i.eval(&self.psip.values, &self.psi.values, psip, acc)?),
+            Some(i) => Ok(i.eval(self.psip.uvalues(), self.psi.uvalues(), psip, acc)?),
             None => Err(EqError::UndefinedEvaluation("ψ(ψp)".into())),
         }
     }
@@ -329,28 +333,28 @@ impl FluxCommute for NcQfactor {
 impl Qfactor for NcQfactor {
     fn q_of_psi(&self, psi: f64, acc: &mut Accelerator) -> Result<f64> {
         match self.q_of_psi_interp.as_ref() {
-            Some(i) => Ok(i.eval(&self.psi.values, &self.q_values, psi, acc)?),
+            Some(i) => Ok(i.eval(self.psi.uvalues(), &self.q_values, psi, acc)?),
             None => Err(EqError::UndefinedEvaluation("q(ψ)".into())),
         }
     }
 
     fn q_of_psip(&self, psip: f64, acc: &mut Accelerator) -> Result<f64> {
         match self.q_of_psip_interp.as_ref() {
-            Some(i) => Ok(i.eval(&self.psip.values, &self.q_values, psip, acc)?),
+            Some(i) => Ok(i.eval(self.psip.uvalues(), &self.q_values, psip, acc)?),
             None => Err(EqError::UndefinedEvaluation("q(ψp)".into())),
         }
     }
 
     fn dpsip_dpsi(&self, psi: f64, acc: &mut Accelerator) -> Result<f64> {
         match self.psip_of_psi_interp.as_ref() {
-            Some(i) => Ok(i.eval_deriv(&self.psi.values, &self.psip.values, psi, acc)?),
+            Some(i) => Ok(i.eval_deriv(self.psi.uvalues(), self.psip.uvalues(), psi, acc)?),
             None => Err(EqError::UndefinedEvaluation("dψp(ψ)/dψ".into())),
         }
     }
 
     fn dpsi_dpsip(&self, psip: f64, acc: &mut Accelerator) -> Result<f64> {
         match self.psi_of_psip_interp.as_ref() {
-            Some(i) => Ok(i.eval_deriv(&self.psip.values, &self.psi.values, psip, acc)?),
+            Some(i) => Ok(i.eval_deriv(self.psip.uvalues(), self.psi.uvalues(), psip, acc)?),
             None => Err(EqError::UndefinedEvaluation("dψ(ψp)/dψp".into())),
         }
     }
@@ -375,8 +379,7 @@ impl NcQfactor {
 
     fluxes_wall_value_getter_impl!();
     fluxes_state_getter_impl!();
-    vec_to_array1D_getter_impl!(psi_array, psi.values, ψ);
-    vec_to_array1D_getter_impl!(psip_array, psip.values, ψp);
+    fluxes_values_array_getter_impl!();
     vec_to_array1D_getter_impl!(q_array, q_values, q);
 }
 
@@ -512,6 +515,9 @@ mod test_toroidal_nc_evals {
         assert!(qfactor.q_of_psip_interp.is_none());
         assert!(qfactor.psip_of_psi_interp.is_some());
         assert!(qfactor.psi_of_psip_interp.is_none());
+
+        assert!(qfactor.psi_array().is_some());
+        assert!(qfactor.psip_array().is_some());
     }
 
     #[test]
@@ -552,6 +558,9 @@ mod test_poloidal_nc_evals {
         assert!(qfactor.q_of_psip_interp.is_some());
         assert!(qfactor.psip_of_psi_interp.is_none());
         assert!(qfactor.psi_of_psip_interp.is_some());
+
+        assert!(qfactor.psi_array().is_some());
+        assert!(qfactor.psip_array().is_some());
     }
 
     #[test]

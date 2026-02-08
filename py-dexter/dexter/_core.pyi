@@ -24,7 +24,6 @@ from dexter.types import (
     NetCDFVersion,
 )
 
-# TODO: test abstractmethod
 from abc import ABC
 
 class _FluxCommuteTrait(ABC):
@@ -305,10 +304,10 @@ class _PyNcGeometry(_FluxCommuteTrait, _GeometryTrait):
     rgeo: float
     rwall: float
     shape: ArrayShape
-    psi_state: FluxState
-    psip_state: FluxState
     psi_wall: float
     psip_wall: float
+    psi_state: FluxState
+    psip_state: FluxState
     psi_array: Array1
     psip_array: Array1
     theta_array: Array1
@@ -332,7 +331,6 @@ class _PyUnityQfactor(_FluxCommuteTrait, _QfactorTrait):
     equilibrium_type: EquilibriumType
 
 class _PyParabolicQfactor(_FluxCommuteTrait, _QfactorTrait):
-    # FIXME:
     """PyO3 export of `ParabolicQfactor`. Containes the full behavior of the wrapped object."""
 
     equilibrium_type: EquilibriumType

@@ -27,8 +27,8 @@ fn nc_qfactor() {
     let qwall: f64 = qfactor.qwall();
     let psi_wall: f64 = qfactor.psi_wall().unwrap();
     let psip_wall: f64 = qfactor.psip_wall().unwrap();
-    let psi_array: Array1<f64> = qfactor.psi_array();
-    let psip_array: Array1<f64> = qfactor.psip_array();
+    let psi_array: Array1<f64> = qfactor.psi_array().unwrap();
+    let psip_array: Array1<f64> = qfactor.psip_array().unwrap();
     let q_array: Array1<f64> = qfactor.q_array();
 
     let mut acc = Accelerator::new();

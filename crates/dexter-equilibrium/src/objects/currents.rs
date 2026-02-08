@@ -1,9 +1,9 @@
 //! Representation of an equilibrium's plasma current.
 
 use crate::{
-    equilibrium_type_getter_impl, fluxes_state_getter_impl, fluxes_wall_value_getter_impl,
-    interp_type_getter_impl, netcdf_path_getter_impl, netcdf_version_getter_impl,
-    vec_to_array1D_getter_impl,
+    equilibrium_type_getter_impl, fluxes_state_getter_impl, fluxes_values_array_getter_impl,
+    fluxes_wall_value_getter_impl, interp_type_getter_impl, netcdf_path_getter_impl,
+    netcdf_version_getter_impl, vec_to_array1D_getter_impl,
 };
 use ndarray::Array1;
 use rsl_interpolation::{Accelerator, DynInterpolation, InterpType, make_interp_type};
@@ -177,21 +177,25 @@ impl NcCurrent {
 
         // Create interpolators, if possible
         use NcFluxState::Good;
+        #[rustfmt::skip]
         let g_of_psi_interp = match psi.state {
-            Good => Some(make_interp_type(&builder.interp_type)?.build(&psi.values, &g_values)?),
+            Good => Some(make_interp_type(&builder.interp_type)?.build(psi.uvalues(), &g_values)?),
             _ => None,
         };
+        #[rustfmt::skip]
         let i_of_psi_interp = match psi.state {
-            Good => Some(make_interp_type(&builder.interp_type)?.build(&psi.values, &i_values)?),
+            Good => Some(make_interp_type(&builder.interp_type)?.build(psi.uvalues(), &i_values)?),
             _ => None,
         };
 
+        #[rustfmt::skip]
         let g_of_psip_interp = match psip.state {
-            Good => Some(make_interp_type(&builder.interp_type)?.build(&psip.values, &g_values)?),
+            Good => Some(make_interp_type(&builder.interp_type)?.build(psip.uvalues(), &g_values)?),
             _ => None,
         };
+        #[rustfmt::skip]
         let i_of_psip_interp = match psip.state {
-            Good => Some(make_interp_type(&builder.interp_type)?.build(&psip.values, &i_values)?),
+            Good => Some(make_interp_type(&builder.interp_type)?.build(psip.uvalues(), &i_values)?),
             _ => None,
         };
 
@@ -215,56 +219,56 @@ impl NcCurrent {
 impl Current for NcCurrent {
     fn g_of_psi(&self, psi: f64, acc: &mut Accelerator) -> Result<f64> {
         match self.g_of_psi_interp.as_ref() {
-            Some(i) => Ok(i.eval(&self.psi.values, &self.g_values, psi, acc)?),
+            Some(i) => Ok(i.eval(self.psi.uvalues(), &self.g_values, psi, acc)?),
             None => Err(EqError::UndefinedEvaluation("g(ψ)".into())),
         }
     }
 
     fn g_of_psip(&self, psip: f64, acc: &mut Accelerator) -> Result<f64> {
         match self.g_of_psip_interp.as_ref() {
-            Some(i) => Ok(i.eval(&self.psip.values, &self.g_values, psip, acc)?),
+            Some(i) => Ok(i.eval(self.psip.uvalues(), &self.g_values, psip, acc)?),
             None => Err(EqError::UndefinedEvaluation("g(ψp)".into())),
         }
     }
 
     fn i_of_psi(&self, psi: f64, acc: &mut Accelerator) -> Result<f64> {
         match self.i_of_psi_interp.as_ref() {
-            Some(i) => Ok(i.eval(&self.psi.values, &self.i_values, psi, acc)?),
+            Some(i) => Ok(i.eval(self.psi.uvalues(), &self.i_values, psi, acc)?),
             None => Err(EqError::UndefinedEvaluation("I(ψ)".into())),
         }
     }
 
     fn i_of_psip(&self, psip: f64, acc: &mut Accelerator) -> Result<f64> {
         match self.i_of_psip_interp.as_ref() {
-            Some(i) => Ok(i.eval(&self.psip.values, &self.i_values, psip, acc)?),
+            Some(i) => Ok(i.eval(self.psip.uvalues(), &self.i_values, psip, acc)?),
             None => Err(EqError::UndefinedEvaluation("I(ψp)".into())),
         }
     }
 
     fn dg_dpsi(&self, psi: f64, acc: &mut Accelerator) -> Result<f64> {
         match self.g_of_psi_interp.as_ref() {
-            Some(i) => Ok(i.eval_deriv(&self.psi.values, &self.g_values, psi, acc)?),
+            Some(i) => Ok(i.eval_deriv(self.psi.uvalues(), &self.g_values, psi, acc)?),
             None => Err(EqError::UndefinedEvaluation("dg(ψ)/dψ".into())),
         }
     }
 
     fn dg_dpsip(&self, psip: f64, acc: &mut Accelerator) -> Result<f64> {
         match self.g_of_psip_interp.as_ref() {
-            Some(i) => Ok(i.eval_deriv(&self.psip.values, &self.g_values, psip, acc)?),
+            Some(i) => Ok(i.eval_deriv(self.psip.uvalues(), &self.g_values, psip, acc)?),
             None => Err(EqError::UndefinedEvaluation("dg(ψp)/dψp".into())),
         }
     }
 
     fn di_dpsi(&self, psi: f64, acc: &mut Accelerator) -> Result<f64> {
         match self.i_of_psi_interp.as_ref() {
-            Some(i) => Ok(i.eval_deriv(&self.psi.values, &self.i_values, psi, acc)?),
+            Some(i) => Ok(i.eval_deriv(self.psi.uvalues(), &self.i_values, psi, acc)?),
             None => Err(EqError::UndefinedEvaluation("dI(ψ)/dψ".into())),
         }
     }
 
     fn di_dpsip(&self, psip: f64, acc: &mut Accelerator) -> Result<f64> {
         match self.i_of_psip_interp.as_ref() {
-            Some(i) => Ok(i.eval_deriv(&self.psip.values, &self.i_values, psip, acc)?),
+            Some(i) => Ok(i.eval_deriv(self.psip.uvalues(), &self.i_values, psip, acc)?),
             None => Err(EqError::UndefinedEvaluation("dI(ψp)/dψp".into())),
         }
     }
@@ -278,8 +282,7 @@ impl NcCurrent {
     interp_type_getter_impl!(1);
     fluxes_wall_value_getter_impl!();
     fluxes_state_getter_impl!();
-    vec_to_array1D_getter_impl!(psi_array, psi.values, ψ);
-    vec_to_array1D_getter_impl!(psip_array, psip.values, ψp);
+    fluxes_values_array_getter_impl!();
     vec_to_array1D_getter_impl!(g_array, g_values, g);
     vec_to_array1D_getter_impl!(i_array, i_values, I);
 }
@@ -324,6 +327,9 @@ mod test_toroidal_nc_evals {
         assert!(current.i_of_psi_interp.is_some());
         assert!(current.g_of_psip_interp.is_none());
         assert!(current.i_of_psip_interp.is_none());
+
+        assert!(current.psi_array().is_some());
+        assert!(current.psip_array().is_some());
     }
 
     #[test]
@@ -364,6 +370,9 @@ mod test_poloidal_nc_evals {
         assert!(current.i_of_psi_interp.is_none());
         assert!(current.g_of_psip_interp.is_some());
         assert!(current.i_of_psip_interp.is_some());
+
+        assert!(current.psi_array().is_some());
+        assert!(current.psip_array().is_some());
     }
 
     #[test]
