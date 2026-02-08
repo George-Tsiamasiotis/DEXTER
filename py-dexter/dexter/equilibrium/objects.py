@@ -1,10 +1,10 @@
 from dexter._core import _PyNcGeometry
 from dexter._core import _PyUnityQfactor, _PyParabolicQfactor, _PyNcQfactor
 from dexter._core import _PyLarCurrent, _PyNcCurrent
-from .plotters import _FluxPlotter, _QfactorPlotter, _CurrentPlotter
+from .plotters import _FluxPlotter, _QfactorPlotter, _CurrentPlotter, _GeometryPlotter
 
 
-class NcGeometry(_PyNcGeometry, _FluxPlotter):
+class NcGeometry(_PyNcGeometry, _FluxPlotter, _GeometryPlotter):
     r"""Object describing the general geometry of a numerical equilibrium.
 
     Stores relates scalars and arrays, and provides interpolation methods for converting

@@ -9,13 +9,13 @@ from .objects import UnityQfactor, ParabolicQfactor, NcQfactor
 from .objects import LarCurrent, NcCurrent
 
 Geometry: TypeAlias = NcGeometry
-""" Availiable 'Geometry' Objects"""
+""" Available 'Geometry' Objects"""
 
 Qfactor: TypeAlias = UnityQfactor | ParabolicQfactor | NcQfactor
-""" Availiable 'Qfactor' Objects"""
+""" Available 'Qfactor' Objects"""
 
 Current: TypeAlias = LarCurrent | NcCurrent
-""" Availiable 'Current' Objects"""
+""" Available 'Current' Objects"""
 
 __all__ = [
     "_TOROIDAL_TEST_NETCDF_PATH",

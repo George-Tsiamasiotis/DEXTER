@@ -13,6 +13,7 @@ from dexter import Current, Qfactor, Geometry
 def test_nc_geometry():
     geometry = NcGeometry(netcdf_path, "Steffen", "Bicubic")
     _test_all_flux_plots(geometry)
+    _test_all_geometry_plots(geometry)
 
 
 def test_unity_qfactor():
@@ -75,3 +76,16 @@ def _test_all_current_plots(current: Current):
     current.plot_dg_dpsip(points=50)
     current.plot_di_dpsi(points=50)
     current.plot_di_dpsip(points=50)
+
+
+def _test_all_geometry_plots(geometry: Geometry):
+    geometry.plot_r_of_psi(points=50, data=True)
+    geometry.plot_r_of_psi(points=50, data=False)
+    geometry.plot_r_of_psip(points=50, data=True)
+    geometry.plot_r_of_psip(points=50, data=False)
+    geometry.plot_psi_of_r(points=50, data=True)
+    geometry.plot_psi_of_r(points=50, data=False)
+    geometry.plot_psip_of_r(points=50, data=True)
+    geometry.plot_psip_of_r(points=50, data=False)
+    geometry.plot_flux_surfaces()
+    geometry.plot_jacobian()

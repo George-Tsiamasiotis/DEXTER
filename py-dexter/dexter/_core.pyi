@@ -291,7 +291,7 @@ class _CurrentTrait(ABC):
 # ================================================================================================
 
 class _PyNcGeometry(_FluxCommuteTrait, _GeometryTrait):
-    """PyO3 export of `NcGeometry`. Containes the full behavior of the wrapped object."""
+    """PyO3 export of `NcGeometry`. Contains the full behavior of the wrapped object."""
 
     path: str
     netcdf_version: NetCDFVersion
@@ -326,12 +326,12 @@ class _PyNcGeometry(_FluxCommuteTrait, _GeometryTrait):
 # ================================================================================================
 
 class _PyUnityQfactor(_FluxCommuteTrait, _QfactorTrait):
-    """PyO3 export of `UnityQfactor`. Containes the full behavior of the wrapped object."""
+    """PyO3 export of `UnityQfactor`. Contains the full behavior of the wrapped object."""
 
     equilibrium_type: EquilibriumType
 
 class _PyParabolicQfactor(_FluxCommuteTrait, _QfactorTrait):
-    """PyO3 export of `ParabolicQfactor`. Containes the full behavior of the wrapped object."""
+    """PyO3 export of `ParabolicQfactor`. Contains the full behavior of the wrapped object."""
 
     equilibrium_type: EquilibriumType
     qaxis: float
@@ -342,7 +342,7 @@ class _PyParabolicQfactor(_FluxCommuteTrait, _QfactorTrait):
     def __init__(self, qaxis: float, qwall: float, psi_wall: float) -> None: ...
 
 class _PyNcQfactor(_FluxCommuteTrait, _QfactorTrait):
-    """PyO3 export of `NcQfactor`. Containes the full behavior of the wrapped object."""
+    """PyO3 export of `NcQfactor`. Contains the full behavior of the wrapped object."""
 
     path: str
     netcdf_version: NetCDFVersion
@@ -363,14 +363,14 @@ class _PyNcQfactor(_FluxCommuteTrait, _QfactorTrait):
 # ================================================================================================
 
 class _PyLarCurrent(_CurrentTrait):
-    """PyO3 export of `LarCurrent`. Containes the full behavior of the wrapped object."""
+    """PyO3 export of `LarCurrent`. Contains the full behavior of the wrapped object."""
 
     equilibrium_type: EquilibriumType
 
     def __init__(self) -> None: ...
 
 class _PyNcCurrent(_CurrentTrait):
-    """PyO3 export of `NcCurrent`. Containes the full behavior of the wrapped object."""
+    """PyO3 export of `NcCurrent`. Contains the full behavior of the wrapped object."""
 
     path: str
     netcdf_version: NetCDFVersion

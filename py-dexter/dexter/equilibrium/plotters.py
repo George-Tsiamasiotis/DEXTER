@@ -1,10 +1,11 @@
 """Plotter Parent classes that provide simple plotting methods."""
 
-from dexter.types import Array1, EquilibriumType
+from dexter.types import Array1, Array2, ArrayShape, EquilibriumType
 import numpy as np
 import matplotlib.pyplot as plt
 
 from abc import ABC
+from math import sqrt
 from collections.abc import Callable
 
 FIG_KW = {"figsize": (7, 6), "dpi": 120, "layout": "constrained"}
@@ -12,6 +13,10 @@ SUBPLOT_KW = {"xmargin": 0, "ymargin": 0}
 PLOT_KW = {"c": "r", "linewidth": 1}
 OVERLAY_PLOT_KW = PLOT_KW | {"c": "b", "linestyle": "--"}
 SCATTER_KW = {"c": "k", "s": 4, "zorder": 2}
+XAXIS_KW = {"c": "k", "linewidth": 1.5}
+FLUX_SURFACE_KW = {"c": "b", "zorder": 2}
+JACOBIAN_KW = {"levels": None, "cmap": "plasma", "zorder": 2}
+WALL_KW = {"c": "k", "linewidth": 2, "linestyle": "-", "zorder": 2}
 PSI_WALL_BOUND = 0.5
 PSIP_WALL_BOUND = 0.5
 
@@ -59,7 +64,7 @@ class _FluxPlotter(ABC):
                 **SCATTER_KW,
             )
 
-        ax.spines["bottom"].set_position("zero")
+        ax.axhline(y=0, **XAXIS_KW)
         ax.grid(True)
         ax.legend()
         plt.show()
@@ -94,9 +99,256 @@ class _FluxPlotter(ABC):
                 **SCATTER_KW,
             )
 
-        ax.spines["bottom"].set_position("zero")
+        ax.axhline(y=0, **XAXIS_KW)
         ax.grid(True)
         ax.legend()
+        plt.show()
+
+
+class _GeometryPlotter:
+    """Provides plotting functions for a Geometry's evaluation methods."""
+
+    equilibrium_type: EquilibriumType
+    r_of_psi: Callable
+    r_of_psip: Callable
+    psi_of_r: Callable
+    psip_of_r: Callable
+    rlab_of_psi: Callable
+    rlab_of_psip: Callable
+    zlab_of_psi: Callable
+    zlab_of_psip: Callable
+    jacobian_of_psi: Callable
+    jacobian_of_psip: Callable
+
+    raxis: float
+    zaxis: float
+    rgeo: float
+    psi_wall: float
+    psip_wall: float
+    shape: ArrayShape
+    psi_array: Array1
+    psip_array: Array1
+    r_array: Array1
+    rlab_array: Array2
+    zlab_array: Array2
+    jacobian_array: Array2
+
+    def plot_r_of_psi(self, points: int = 1000, data: bool = False):
+        r"""Plots $r(\psi)$, where $r$ is in $[m]$.
+
+        Parameters
+        ----------
+        points
+            The number of points in which to evaluate $r(\psi)$. Defaults to 1000.
+        data
+            Whether or not to plot the data array points (numerical equilibria only). Defaults to False.
+        """
+
+        psi_wall = getattr(self, "psi_wall")
+        psis = np.linspace(0, psi_wall, points)
+        rs = np.asarray([self.r_of_psi(psi) for psi in psis])
+
+        fig = plt.figure(**FIG_KW)
+        ax = fig.add_subplot(**SUBPLOT_KW)
+        ax.set_title(r"$r(\psi)$ $profile$")
+        ax.set_xlabel(r"$\psi$ $[Normalized]$")
+        ax.set_ylabel(r"$r(\psi)$ $[Normalized]$")
+
+        ax.plot(psis, rs, label=ax.get_ylabel(), **PLOT_KW)
+        if self.equilibrium_type == "Numerical" and data:
+            ax.scatter(
+                self.psi_array,
+                self.r_array,
+                label=r"$data$ $points$",
+                **SCATTER_KW,
+            )
+
+        ax.axhline(y=0, **XAXIS_KW)
+        ax.grid(True)
+        ax.legend()
+        plt.show()
+
+    def plot_r_of_psip(self, points: int = 1000, data: bool = False):
+        r"""Plots $r(\psi_p)$, where $r$ is in $[m]$.
+
+        Parameters
+        ----------
+        points
+            The number of points in which to evaluate $r(\psi_p)$. Defaults to 1000.
+        data
+            Whether or not to plot the data array points (numerical equilibria only). Defaults to False.
+        """
+
+        psip_wall = getattr(self, "psip_wall")
+        psips = np.linspace(0, psip_wall, points)
+        rs = np.asarray([self.r_of_psip(psip) for psip in psips])
+
+        fig = plt.figure(**FIG_KW)
+        ax = fig.add_subplot(**SUBPLOT_KW)
+        ax.set_title(r"$r(\psi_p)$ $profile$")
+        ax.set_xlabel(r"$\psi_p$ $[Normalized]$")
+        ax.set_ylabel(r"$r(\psi_p)$ $[Normalized]$")
+
+        ax.plot(psips, rs, label=ax.get_ylabel(), **PLOT_KW)
+        if self.equilibrium_type == "Numerical" and data:
+            ax.scatter(
+                self.psip_array,
+                self.r_array,
+                label=r"$data$ $points$",
+                **SCATTER_KW,
+            )
+
+        ax.axhline(y=0, **XAXIS_KW)
+        ax.grid(True)
+        ax.legend()
+        plt.show()
+
+    def plot_psi_of_r(self, points: int = 1000, data: bool = False):
+        r"""Plots $\psi(r)$, where $r$ is in $[m]$.
+
+        Parameters
+        ----------
+        points
+            The number of points in which to evaluate $\psi(r)$. Defaults to 1000.
+        data
+            Whether or not to plot the data array points (numerical equilibria only). Defaults to False.
+        """
+
+        rwall = getattr(self, "rwall")
+        rs = np.linspace(0, rwall, points)
+        psis = np.asarray([self.psi_of_r(r) for r in rs])
+
+        fig = plt.figure(**FIG_KW)
+        ax = fig.add_subplot(**SUBPLOT_KW)
+        ax.set_title(r"$\psi(r)$ $profile$")
+        ax.set_xlabel(r"$r$ $[m]$")
+        ax.set_ylabel(r"$\psi(r)$ $[Normalized]$")
+
+        ax.plot(rs, psis, label=ax.get_ylabel(), **PLOT_KW)
+        if self.equilibrium_type == "Numerical" and data:
+            ax.scatter(
+                self.r_array,
+                self.psi_array,
+                label=r"$data$ $points$",
+                **SCATTER_KW,
+            )
+
+        ax.axhline(y=0, **XAXIS_KW)
+        ax.grid(True)
+        ax.legend()
+        plt.show()
+
+    def plot_psip_of_r(self, points: int = 1000, data: bool = False):
+        r"""Plots $\psi_p(r)$, where $r$ is in $[m]$.
+
+        Parameters
+        ----------
+        points
+            The number of points in which to evaluate $\psi_p(r)$. Defaults to 1000.
+        data
+            Whether or not to plot the data array points (numerical equilibria only). Defaults to False.
+        """
+
+        rwall = getattr(self, "rwall")
+        rs = np.linspace(0, rwall, points)
+        psips = np.asarray([self.psip_of_r(r) for r in rs])
+
+        fig = plt.figure(**FIG_KW)
+        ax = fig.add_subplot(**SUBPLOT_KW)
+        ax.set_title(r"$\psi_p(r)$ $profile$")
+        ax.set_xlabel(r"$r$ $[m]$")
+        ax.set_ylabel(r"$\psi_p(r)$ $[Normalized]$")
+
+        ax.plot(rs, psips, label=ax.get_ylabel(), **PLOT_KW)
+        if self.equilibrium_type == "Numerical" and data:
+            ax.scatter(
+                self.r_array,
+                self.psip_array,
+                label=r"$data$ $points$",
+                **SCATTER_KW,
+            )
+
+        ax.axhline(y=0, **XAXIS_KW)
+        ax.grid(True)
+        ax.legend()
+        plt.show()
+
+    def plot_flux_surfaces(self, number: int = 20):
+        r"""Plots the flux surfaces in the $R-Z$ frame.
+
+        Parameters
+        ----------
+        number
+            The number of flux surfaces to (try to) plot. Defaults to 20.
+        """
+
+        if self.equilibrium_type != "Numerical":
+            raise Exception("This method is only available for numerical equilibria")
+
+        rlab_array = self.rlab_array
+        zlab_array = self.zlab_array
+
+        step = max([1, int(self.shape[0] / number)])
+        print(f"Displaying {int(self.shape[0] / step)} surfaces.")
+
+        fig = plt.figure(**FIG_KW)
+        ax = fig.add_subplot(**SUBPLOT_KW | {"aspect": "equal"})
+        ax.set_title(r"$Flux$ $surfaces$")
+        ax.set_xlabel(r"$R[m]$")
+        ax.set_ylabel(r"$Z[m]$")
+
+        for i in range(0, self.shape[0], step):
+            ax.plot(rlab_array[i], zlab_array[i], **FLUX_SURFACE_KW)
+
+        geom_center = (self.rgeo, self.zaxis)
+        axis = (self.raxis, self.zaxis)
+
+        ax.plot(*geom_center, "ko", markersize=4, label="$R_{axis}$")
+        ax.plot(*axis, "ro", markersize=4, label="$R_{geo}$")
+
+        def format_coord(x, y):
+            r = sqrt((axis[0] - x) ** 2 + (axis[1] - y) ** 2)
+            return f"(R, Z) = ({x:.5g}, {y:.5g}), r={r:.5g}[m]"
+
+        setattr(ax, "format_coord", format_coord)
+
+        ax.grid(True)
+        ax.legend()
+        plt.show()
+
+    def plot_jacobian(self, levels: int = 20):
+        r"""Plots the Jacobian $J(R, Z)$
+
+        Parameters
+        ----------
+        levels
+            The number of contour levels. Defaults to 20.
+        """
+
+        if self.equilibrium_type != "Numerical":
+            raise Exception("This method is only available for numerical equilibria")
+
+        rlab_array = self.rlab_array
+        zlab_array = self.zlab_array
+        jacobian_array = self.jacobian_array
+
+        fig = plt.figure(**FIG_KW)
+        ax = fig.add_subplot(**SUBPLOT_KW | {"aspect": "equal"})
+        ax.set_title(r"$Jacobian$")
+        ax.set_xlabel(r"$R[m]$")
+        ax.set_ylabel(r"$Z[m]$")
+
+        c = ax.contourf(
+            rlab_array,
+            zlab_array,
+            jacobian_array,
+            **JACOBIAN_KW | {"levels": levels},
+        )
+        plt.colorbar(c, ax=ax)
+
+        ax.plot(rlab_array[-1], zlab_array[-1], **WALL_KW)
+
+        ax.grid(True)
         plt.show()
 
 
@@ -106,8 +358,6 @@ class _QfactorPlotter:
     equilibrium_type: EquilibriumType
     q_of_psi: Callable
     q_of_psip: Callable
-    psip_of_psi: Callable
-    psi_of_psip: Callable
     dpsip_dpsi: Callable
     dpsi_dpsip: Callable
     iota_of_psi: Callable
@@ -150,7 +400,7 @@ class _QfactorPlotter:
                 **SCATTER_KW,
             )
 
-        ax.spines["bottom"].set_position("zero")
+        ax.axhline(y=0, **XAXIS_KW)
         ax.grid(True)
         ax.legend()
         plt.show()
@@ -185,7 +435,7 @@ class _QfactorPlotter:
                 **SCATTER_KW,
             )
 
-        ax.spines["bottom"].set_position("zero")
+        ax.axhline(y=0, **XAXIS_KW)
         ax.grid(True)
         ax.legend()
         plt.show()
@@ -215,7 +465,7 @@ class _QfactorPlotter:
         ax.plot(psis, ds, label=r"$d\psi_p(\psi)/d\psi$", **PLOT_KW)
         ax.plot(psis, iotas, label=r"$\iota(\psi)$", **OVERLAY_PLOT_KW)
 
-        ax.spines["bottom"].set_position("zero")
+        ax.axhline(y=0, **XAXIS_KW)
         ax.grid(True)
         ax.legend()
         plt.show()
@@ -245,7 +495,7 @@ class _QfactorPlotter:
         ax.plot(psips, ds, label=r"$d\psi(\psi_p)/d\psi_p$", **PLOT_KW)
         ax.plot(psips, qs, label=r"$q(\psi_p)$", **OVERLAY_PLOT_KW)
 
-        ax.spines["bottom"].set_position("zero")
+        ax.axhline(y=0, **XAXIS_KW)
         ax.grid(True)
         ax.legend()
         plt.show()
@@ -271,7 +521,7 @@ class _QfactorPlotter:
 
         ax.plot(psis, iotas, label=ax.get_ylabel(), **PLOT_KW)
 
-        ax.spines["bottom"].set_position("zero")
+        ax.axhline(y=0, **XAXIS_KW)
         ax.grid(True)
         ax.legend()
         plt.show()
@@ -297,7 +547,7 @@ class _QfactorPlotter:
 
         ax.plot(psips, iotas, label=ax.get_ylabel(), **PLOT_KW)
 
-        ax.spines["bottom"].set_position("zero")
+        ax.axhline(y=0, **XAXIS_KW)
         ax.grid(True)
         ax.legend()
         plt.show()
@@ -351,7 +601,7 @@ class _CurrentPlotter:
                 self.psi_array, self.g_array, label=r"$data$ $points$", **SCATTER_KW
             )
 
-        ax.spines["bottom"].set_position("zero")
+        ax.axhline(y=0, **XAXIS_KW)
         ax.grid(True)
         ax.legend()
         plt.show()
@@ -383,7 +633,7 @@ class _CurrentPlotter:
                 self.psip_array, self.g_array, label=r"$data$ $points$", **SCATTER_KW
             )
 
-        ax.spines["bottom"].set_position("zero")
+        ax.axhline(y=0, **XAXIS_KW)
         ax.grid(True)
         ax.legend()
         plt.show()
@@ -415,7 +665,7 @@ class _CurrentPlotter:
                 self.psi_array, self.i_array, label=r"$data$ $points$", **SCATTER_KW
             )
 
-        ax.spines["bottom"].set_position("zero")
+        ax.axhline(y=0, **XAXIS_KW)
         ax.grid(True)
         ax.legend()
         plt.show()
@@ -447,7 +697,7 @@ class _CurrentPlotter:
                 self.psip_array, self.i_array, label=r"$data$ $points$", **SCATTER_KW
             )
 
-        ax.spines["bottom"].set_position("zero")
+        ax.axhline(y=0, **XAXIS_KW)
         ax.grid(True)
         ax.legend()
         plt.show()
