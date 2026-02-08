@@ -97,7 +97,6 @@ class UnityQfactor(_PyUnityQfactor, _FluxPlotter, _QfactorPlotter):
 
 
 class ParabolicQfactor(_PyParabolicQfactor, _FluxPlotter, _QfactorPlotter):
-    # FIXME:
     r"""Analytical q-factor of parabolic q(ψ) profile.
 
     Described by the following formulas:
@@ -113,13 +112,12 @@ class ParabolicQfactor(_PyParabolicQfactor, _FluxPlotter, _QfactorPlotter):
     $$
 
     $$
-    \psi(\psi_p) = \dfrac{\sqrt{q_{axis}}}{\psi_{wall}\sqrt{q_{wall} - q_{axis}}}
+    \psi(\psi_p) = \dfrac{\psi_{wall}\sqrt{q_{axis}}}{\sqrt{q_{wall} - q_{axis}}}
         \tan\bigg[ \dfrac{\sqrt{q_{axis}(q_{wall} - q_{axis})}}{\psi_{wall}}\psi_p \bigg]
     $$
 
     $$
-    \dfrac{d\psi_p(\psi)}{d\psi} =
-        \dfrac{\psi_{wall}}{q_{axis}\psi_{wall}^2 + (q_{wall} - q_{axis})\psi^2 }
+    \dfrac{d\psi_p(\psi)}{d\psi} = ... = \dfrac{1}{q(\psi)} = \iota(\psi)
     $$
 
     $$
@@ -127,11 +125,22 @@ class ParabolicQfactor(_PyParabolicQfactor, _FluxPlotter, _QfactorPlotter):
         \dfrac{q_{axis}}{\cos^2 \bigg[
         \dfrac{\sqrt{q_{axis}(q_{wall} - q_{axis})}}{\psi_{wall}}\psi_p
         \bigg]}
+        \overset{*}{=}
+        q(\psi_p)
     $$
 
     $$
-    q(\psi_p) = q(\psi(\psi_p))
+    q(\psi_p) = q_{axis} + q_{axis} \tan^2
+        \bigg[ \dfrac{\sqrt{q_{axis}(q_{wall}-q_{axis})}}{\psi_{wall}} \psi_p \bigg]
     $$
+
+    $^*$ Identity: $\dfrac{1}{\cos^2\theta} = 1 + \tan^2\theta$
+
+    Note
+    ----
+
+    A ParabolicQfactor is defined with the help of the [`FluxWall`](types.md/#dexter.types.FluxWall)
+    helper type, which changes the position where qwall is met.
 
     Parameters
     ----------
@@ -139,8 +148,8 @@ class ParabolicQfactor(_PyParabolicQfactor, _FluxPlotter, _QfactorPlotter):
         The value of $q$ on the magnetic axis.
     qwall
         The value of $q$ on the wall.
-    psi_wall
-        The value of the toroidal flux at the wall.
+    flux_wall
+        Helper type to define a ParabolicQfactor with respect to one of the two fluxes’ values at the wall.
 
     Attributes
     ----------
@@ -159,7 +168,9 @@ class ParabolicQfactor(_PyParabolicQfactor, _FluxPlotter, _QfactorPlotter):
     -------
 
     ```python title="UnityQfactor creation"
-    >>> qfactor = dex.ParabolicQfactor(qaxis=1.1, qwall=3.8, psi_wall=0.45)
+    >>> # Define q(ψ=ψwall=0.45) = qwall = 3.8
+    >>> flux_wall: dex.types.FluxWall = ("Toroidal", 0.45)
+    >>> qfactor = dex.ParabolicQfactor(qaxis=1.1, qwall=3.8, flux_wall=flux_wall)
 
     ```
     """

@@ -40,3 +40,6 @@ FluxState: TypeAlias = Literal["Good", "Bad", "None"]
     - Bad: values exist but are not monotonic. Can only be used as y-data.
     - None: Variable does not exist or is empty.
 """
+
+FluxWall: TypeAlias = tuple[Literal["Toroidal"] | Literal["Poloidal"], float]
+"""Helper type to define a ParabolicQfactor with respect to one of the two fluxes’ values at the wall."""

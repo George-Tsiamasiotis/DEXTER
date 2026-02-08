@@ -8,6 +8,7 @@ from dexter import (
     NcGeometry,
 )
 from dexter import Current, Qfactor, Geometry
+from dexter.types import FluxWall
 
 
 def test_nc_geometry():
@@ -23,7 +24,8 @@ def test_unity_qfactor():
 
 
 def test_parabolic_qfactor():
-    qfactor = ParabolicQfactor(1.1, 3.9, 0.45)
+    flux_wall: FluxWall = ("Toroidal", 0.45)
+    qfactor = ParabolicQfactor(1.1, 3.8, flux_wall)
     _test_all_qfactor_plots(qfactor)
     _test_all_flux_plots(qfactor)
 

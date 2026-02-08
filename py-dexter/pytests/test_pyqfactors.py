@@ -1,6 +1,7 @@
 import pytest
 from dexter.equilibrium import _TOROIDAL_TEST_NETCDF_PATH, _POLOIDAL_TEST_NETCDF_PATH
 from dexter import Qfactor, UnityQfactor, ParabolicQfactor, NcQfactor
+from dexter.types import FluxWall
 
 
 def test_unity_qfactor():
@@ -12,7 +13,8 @@ def test_unity_qfactor():
 
 
 def test_parabolic_qfactor():
-    qfactor = ParabolicQfactor(1.1, 3.8, 0.45)
+    flux_wall: FluxWall = ("Toroidal", 0.45)
+    qfactor = ParabolicQfactor(1.1, 3.8, flux_wall)
     assert isinstance(qfactor.__str__(), str)
     assert isinstance(qfactor.__repr__(), str)
     assert qfactor.equilibrium_type == "Analytical"

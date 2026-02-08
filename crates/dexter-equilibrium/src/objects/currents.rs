@@ -296,7 +296,7 @@ impl std::fmt::Debug for NcCurrent {
             .field("interpolation type", &self.interp_type())
             .field("psi", &self.psi)
             .field("psip", &self.psip)
-            .finish_non_exhaustive()
+            .finish()
     }
 }
 

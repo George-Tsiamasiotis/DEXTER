@@ -1,13 +1,14 @@
 //! `dexter-equilibrium` newtypes, constructors and method exports.
 
-use dexter::dexter_equilibrium::FluxCommute;
 use dexter::dexter_equilibrium::{Current, LarCurrent, NcCurrent, NcCurrentBuilder};
+use dexter::dexter_equilibrium::{FluxCommute, FluxWall};
 use dexter::dexter_equilibrium::{Geometry, NcGeometry, NcGeometryBuilder};
 use dexter::dexter_equilibrium::{
     NcQfactor, NcQfactorBuilder, ParabolicQfactor, Qfactor, UnityQfactor,
 };
 use numpy::{IntoPyArray, PyArray1, PyArray2};
 use pyo3::prelude::*;
+use pyo3::types::PyTuple;
 use rsl_interpolation::{Accelerator, Cache};
 
 use crate::pyerror::PyEqError;
@@ -110,9 +111,19 @@ pub struct PyParabolicQfactor(ParabolicQfactor);
 #[pymethods]
 impl PyParabolicQfactor {
     #[new]
-    #[pyo3(signature = (qaxis, qwall, psi_wall))]
-    pub fn new(qaxis: f64, qwall: f64, psi_wall: f64) -> Self {
-        Self(ParabolicQfactor::new(qaxis, qwall, psi_wall))
+    #[pyo3(signature = (qaxis, qwall, flux_wall))]
+    pub fn new<'py>(qaxis: f64, qwall: f64, flux_wall: Bound<'py, PyTuple>) -> Self {
+        let e = "Input type must be a tuple of the form (str, float)";
+        let flux: String = flux_wall.get_item(0).expect(e).extract().expect(e);
+        let value: f64 = flux_wall.get_item(1).expect(e).extract().expect(e);
+        let flux_wall: FluxWall;
+        match flux.to_lowercase().as_str() {
+            "toroidal" => flux_wall = FluxWall::Toroidal(value),
+            "poloidal" => flux_wall = FluxWall::Poloidal(value),
+            _ => panic!("Flux coordinate must be either 'Toroidal' or 'Poloidal'"),
+        }
+
+        Self(ParabolicQfactor::new(qaxis, qwall, flux_wall))
     }
 }
 

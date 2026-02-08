@@ -3,8 +3,8 @@
 use std::path::PathBuf;
 
 use dexter_equilibrium::{
-    EquilibriumType, FluxCommute, NcFluxState, NcQfactorBuilder, ParabolicQfactor, Qfactor,
-    UnityQfactor,
+    EquilibriumType, FluxCommute, FluxWall, NcFluxState, NcQfactorBuilder, ParabolicQfactor,
+    Qfactor, UnityQfactor,
 };
 use ndarray::Array1;
 use rsl_interpolation::Accelerator;
@@ -62,7 +62,7 @@ fn unity_qfactor() {
 #[test]
 #[allow(unused_variables)]
 fn parabolic_qfactor() {
-    let qfactor = dbg!(ParabolicQfactor::new(1.1, 3.8, 0.45));
+    let qfactor = dbg!(ParabolicQfactor::new(1.1, 3.8, FluxWall::Toroidal(0.45)));
 
     let qaxis: f64 = qfactor.qaxis();
     let qwall: f64 = qfactor.qwall();

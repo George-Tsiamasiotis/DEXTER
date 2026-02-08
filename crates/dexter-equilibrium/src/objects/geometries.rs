@@ -536,9 +536,9 @@ impl std::fmt::Debug for NcGeometry {
             .field("rgeo [m]", &self.rgeo)
             .field("rwall [m]", &self.rwall())
             .field("shape (ψ/ψp, θ)", &self.shape())
-            .field("psi_wall", &self.psi_wall())
-            .field("psip_wall", &self.psip_wall())
-            .finish_non_exhaustive()
+            .field("psi", &self.psi)
+            .field("psip", &self.psip)
+            .finish()
     }
 }
 

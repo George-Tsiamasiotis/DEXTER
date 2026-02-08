@@ -92,10 +92,14 @@ impl std::fmt::Debug for NcFlux {
             Some(values) => format!("{}", values.len()),
             None => String::from("No values"),
         };
+        let wall = match self.wall_value() {
+            Some(value) => format!("{}", value),
+            None => String::from("No value"),
+        };
         f.debug_struct("Flux")
             .field("state", &self.state)
             .field("len", &len)
-            .field("wall value", &self.wall_value())
+            .field("wall value", &wall)
             .finish()
     }
 }

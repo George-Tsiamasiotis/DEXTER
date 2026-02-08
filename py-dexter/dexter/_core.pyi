@@ -15,6 +15,7 @@ Attributes are documented on the wrapper for documentation building purposes.
 
 from dexter.types import (
     EquilibriumType,
+    FluxWall,
     Interp1DType,
     Interp2DType,
     FluxState,
@@ -339,7 +340,7 @@ class _PyParabolicQfactor(_FluxCommuteTrait, _QfactorTrait):
     psi_wall: float
     psip_wall: float
 
-    def __init__(self, qaxis: float, qwall: float, psi_wall: float) -> None: ...
+    def __init__(self, qaxis: float, qwall: float, flux_wall: FluxWall) -> None: ...
 
 class _PyNcQfactor(_FluxCommuteTrait, _QfactorTrait):
     """PyO3 export of `NcQfactor`. Contains the full behavior of the wrapped object."""

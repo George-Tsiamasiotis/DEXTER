@@ -19,4 +19,5 @@
 ::: dexter.types.Interp2DType
 ::: dexter.types.FluxCoordinate
 ::: dexter.types.FluxState
+::: dexter.types.FluxWall
 ::: dexter.types.NetCDFVersion

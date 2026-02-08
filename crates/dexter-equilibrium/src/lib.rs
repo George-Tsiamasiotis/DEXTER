@@ -71,8 +71,8 @@ pub use objects::geometries::NcGeometryBuilder;
 
 pub use objects::qfactors::NcQfactor;
 pub use objects::qfactors::NcQfactorBuilder;
-pub use objects::qfactors::ParabolicQfactor;
 pub use objects::qfactors::UnityQfactor;
+pub use objects::qfactors::{FluxWall, ParabolicQfactor};
 
 pub use objects::currents::LarCurrent;
 pub use objects::currents::NcCurrent;
