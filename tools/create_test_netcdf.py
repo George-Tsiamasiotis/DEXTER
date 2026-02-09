@@ -111,6 +111,7 @@ b_norm = 1 - r_norm_grid * np.cos(theta_grid)
 # Lab coordinates
 rlab = raxis + r_norm_grid * np.cos(theta_grid)
 zlab = r_norm_grid * np.sin(theta_grid)
+jacobian = ((g_norm.T + i_norm.T / q.T) / b_norm.T**2).T  # Unsure
 
 ###############
 # Perturbations
@@ -263,7 +264,7 @@ b_var = xr.Variable(
 )
 
 jacobian_var = xr.Variable(
-    data=b_norm,  # TODO:
+    data=jacobian,
     dims=["psip_norm", "theta"],
     attrs=dict(description="VMEC to Boozer Jacobian", units="[m/T]"),
 )

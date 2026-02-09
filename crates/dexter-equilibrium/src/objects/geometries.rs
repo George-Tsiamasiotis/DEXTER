@@ -16,6 +16,208 @@ use std::path::{Path, PathBuf};
 use crate::flux::{NcFlux, NcFluxState};
 use crate::{EqError, EquilibriumType, FluxCommute, Geometry, Result};
 
+// ===============================================================================================
+
+/// Analytical Large Aspect Ratio Geometry of a circular device.
+///
+/// The definitions are not very strict at the moment.
+///
+/// # Note
+///
+/// No ψ/ψp bounds checks are performed in evaluations.
+#[non_exhaustive]
+pub struct LarGeometry {
+    equilibrium_type: EquilibriumType,
+    /// Magnetic field strength on the axis `B0` in [T].
+    baxis: f64,
+    /// The horizontal position of the magnetic axis `R0` in [m].
+    raxis: f64,
+    /// The minor radius `rwall` in [m].
+    rwall: f64,
+    /// The toroidal flux's value at the wall `ψ_wall` in Normalized units.
+    psi_wall: f64,
+}
+
+impl LarGeometry {
+    /// Creates a new `LarCurrent`.
+    ///
+    /// # Example
+    /// ```
+    /// # use dexter_equilibrium::*;
+    /// let geometry = LarGeometry::new(2.0, 1.75, 0.5);
+    /// ```
+    #[allow(clippy::new_without_default, reason = "Just confuses things")]
+    pub fn new(baxis: f64, raxis: f64, rwall: f64) -> Self {
+        let psi_wall = (rwall / raxis).powi(2) / 2.0; // Normalized
+        Self {
+            equilibrium_type: EquilibriumType::Analytical,
+            baxis,
+            raxis,
+            rwall,
+            psi_wall,
+        }
+    }
+}
+
+#[allow(unused_variables)]
+impl Geometry for LarGeometry {
+    fn r_of_psi(&self, psi: f64, acc: &mut Accelerator) -> Result<f64> {
+        Ok((2.0 * psi).sqrt())
+    }
+
+    fn r_of_psip(&self, psip: f64, acc: &mut Accelerator) -> Result<f64> {
+        Err(EqError::UndefinedEvaluation(
+            "r(ψp) (defined through q)".into(),
+        ))
+    }
+
+    fn psi_of_r(&self, r: f64, acc: &mut Accelerator) -> Result<f64> {
+        Ok(r.powi(2) / 2.0)
+    }
+
+    fn psip_of_r(&self, r: f64, acc: &mut Accelerator) -> Result<f64> {
+        Err(EqError::UndefinedEvaluation(
+            "ψp(r) (defined through q)".into(),
+        ))
+    }
+
+    fn rlab_of_psi(
+        &self,
+        psi: f64,
+        theta: f64,
+        psip_acc: &mut Accelerator,
+        theta_acc: &mut Accelerator,
+        cache: &mut Cache<f64>,
+    ) -> Result<f64> {
+        Ok(self.raxis + self.raxis * (2.0 * psi).sqrt() * theta.cos())
+    }
+
+    fn rlab_of_psip(
+        &self,
+        psip: f64,
+        theta: f64,
+        psip_acc: &mut Accelerator,
+        theta_acc: &mut Accelerator,
+        cache: &mut Cache<f64>,
+    ) -> Result<f64> {
+        Err(EqError::UndefinedEvaluation(
+            "R(ψp, θ) (defined through q)".into(),
+        ))
+    }
+
+    fn zlab_of_psi(
+        &self,
+        psi: f64,
+        theta: f64,
+        psip_acc: &mut Accelerator,
+        theta_acc: &mut Accelerator,
+        cache: &mut Cache<f64>,
+    ) -> Result<f64> {
+        Ok(self.raxis * (2.0 * psi).sqrt() * theta.sin())
+    }
+
+    fn zlab_of_psip(
+        &self,
+        psip: f64,
+        theta: f64,
+        psip_acc: &mut Accelerator,
+        theta_acc: &mut Accelerator,
+        cache: &mut Cache<f64>,
+    ) -> Result<f64> {
+        Err(EqError::UndefinedEvaluation(
+            "Z(ψp, θ) (defined through q)".into(),
+        ))
+    }
+
+    fn jacobian_of_psi(
+        &self,
+        psi: f64,
+        theta: f64,
+        psi_acc: &mut Accelerator,
+        theta_acc: &mut Accelerator,
+        cache: &mut Cache<f64>,
+    ) -> Result<f64> {
+        Err(EqError::UndefinedEvaluation(
+            "J(ψ, θ) (defined through q, g, I and B)".into(),
+        ))
+    }
+
+    fn jacobian_of_psip(
+        &self,
+        psip: f64,
+        theta: f64,
+        psip_acc: &mut Accelerator,
+        theta_acc: &mut Accelerator,
+        cache: &mut Cache<f64>,
+    ) -> Result<f64> {
+        Err(EqError::UndefinedEvaluation(
+            "J(ψp, θ) (defined through q, g, I and B)".into(),
+        ))
+    }
+
+    fn rlab_wall(&self) -> Array1<f64> {
+        use core::f64::consts::PI;
+        let arr = Array1::linspace(0.0, 2.0 * PI, 1000);
+        let mut a1 = Accelerator::new();
+        let mut a2 = Accelerator::new();
+        let mut c = Cache::new();
+        arr.mapv(|theta| {
+            self.rlab_of_psi(self.psi_wall, theta, &mut a1, &mut a2, &mut c)
+                .expect("Expression is analytical, cannot fail")
+        })
+    }
+
+    fn zlab_wall(&self) -> Array1<f64> {
+        use core::f64::consts::PI;
+        let arr = Array1::linspace(0.0, 2.0 * PI, 1000);
+        let mut a1 = Accelerator::new();
+        let mut a2 = Accelerator::new();
+        let mut c = Cache::new();
+        arr.mapv(|theta| {
+            self.zlab_of_psi(self.psi_wall, theta, &mut a1, &mut a2, &mut c)
+                .expect("Expression is analytical, cannot fail")
+        })
+    }
+}
+
+impl LarGeometry {
+    equilibrium_type_getter_impl!();
+
+    /// Returns the magnetic field strength on the axis `B0` **in \[T\]**.
+    pub fn baxis(&self) -> f64 {
+        self.baxis
+    }
+
+    /// Returns the horizontal position of the magnetic axis `R0` **in \[m\]**.
+    pub fn raxis(&self) -> f64 {
+        self.raxis
+    }
+
+    /// Returns the `r` coordinate's value at the wall **in \[m\]**.
+    pub fn rwall(&self) -> f64 {
+        self.rwall
+    }
+
+    /// Returns the todoidal flux's `ψ` value at the wall.
+    pub fn psi_wall(&self) -> f64 {
+        self.psi_wall
+    }
+}
+
+impl std::fmt::Debug for LarGeometry {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("LarGeometry")
+            .field("equilibrium_type", &self.equilibrium_type)
+            .field("baxis", &self.baxis)
+            .field("raxis", &self.raxis)
+            .field("rwall", &self.rwall)
+            .field("psi_wall", &self.psi_wall)
+            .finish()
+    }
+}
+
+// ===============================================================================================
+
 /// Used to create an [`NcGeometry`].
 ///
 /// Exists for future configuration flexibility.
@@ -460,6 +662,16 @@ impl Geometry for NcGeometry {
             )?),
             None => Err(EqError::UndefinedEvaluation("J(ψp, θ)".into())),
         }
+    }
+
+    fn rlab_wall(&self) -> Array1<f64> {
+        // Get the last row of the C-ordered `rlab_array`
+        self.rlab_array().row(self.shape().0 - 1).to_owned()
+    }
+
+    fn zlab_wall(&self) -> Array1<f64> {
+        // Get the last row of the C-ordered `zlab_array`
+        self.zlab_array().row(self.shape().0 - 1).to_owned()
     }
 }
 

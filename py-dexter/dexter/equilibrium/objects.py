@@ -1,8 +1,46 @@
-from dexter._core import _PyNcGeometry
+from dexter._core import _PyLarGeometry, _PyNcGeometry
 from dexter._core import _PyUnityQfactor, _PyParabolicQfactor, _PyNcQfactor
 from dexter._core import _PyLarCurrent, _PyNcCurrent
 from dexter._core import _PyLarBfield, _PyNcBfield
-from .plotters import _FluxPlotter, _QfactorPlotter, _CurrentPlotter, _GeometryPlotter
+from ._plotters import _FluxPlotter, _QfactorPlotter, _CurrentPlotter, _GeometryPlotter
+
+
+class LarGeometry(_PyLarGeometry, _GeometryPlotter):
+    r"""Analytical Large Aspect Ratio Geometry of a circular device.
+
+    Parameters
+    ----------
+    baxis
+        The magnetic field strength on the magnetic axis $B_0$ in $[T]$.
+    raxis
+        The horizontal position of the magnetic axis $R_0$ in $[m]$.
+    rwall
+        The value of the $r_{wall}$ coordinate at the wall in $[m]$.
+
+    Attributes
+    ----------
+    equilibrium_type
+        The Equilibrium's type.
+    baxis
+        The magnetic field strength on the magnetic axis $B_0$ in $[T]$.
+    raxis
+        The horizontal position of the magnetic axis $R_0$ in $[m]$.
+    rwall
+        The value of the $r_{wall}$ coordinate at the wall in $[m]$.
+    psi_wall
+        The toroidal flux value at the wall $\psi_{wall}$ in Normalized Units.
+    rlab_wall
+        Last $R_{lab}$ values that correspond to the device's walls.
+    zlab_wall
+        Last $Z_{lab}$ values that correspond to the device's walls.
+
+    Example
+    -------
+    ```python title="LarGeometry creation"
+    >>> geometry = dex.LarGeometry(baxis=2, raxis=1.75, rwall=0.5)
+
+    ```
+    """
 
 
 class NcGeometry(_PyNcGeometry, _FluxPlotter, _GeometryPlotter):
@@ -68,6 +106,10 @@ class NcGeometry(_PyNcGeometry, _FluxPlotter, _GeometryPlotter):
         The $Z_{lab}$ data array.
     jacobian_array
         The Jacobian $J$ data array.
+    rlab_wall
+        Last $R_{lab}$ values that correspond to the device's walls.
+    zlab_wall
+        Last $Z_{lab}$ values that correspond to the device's walls.
 
     Example
     -------

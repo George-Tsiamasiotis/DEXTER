@@ -3,6 +3,7 @@
 //! # Equilibrium objects
 //!
 //! + Representations of an equilibrium's general geometry. Provides interpolation methods between `ψ`, `ψp`, `r`, `R`, `Z`, `J`.
+//!     - [`LarGeometry`]: Analytical Large Aspect Ratio Geometry of a circular device.
 //!     - [`NcGeometry`]: Geometry of the netCDF equilibrium
 //!
 //! + Representations of the q-factor profile:
@@ -71,6 +72,7 @@ pub use flux::NcFluxState;
 
 pub use eval::{Bfield, Current, FluxCommute, Geometry, Qfactor};
 
+pub use objects::geometries::LarGeometry;
 pub use objects::geometries::NcGeometry;
 pub use objects::geometries::NcGeometryBuilder;
 

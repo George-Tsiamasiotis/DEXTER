@@ -5,10 +5,16 @@ from dexter import (
     NcQfactor,
     LarCurrent,
     NcCurrent,
+    # LarGeometry,
     NcGeometry,
 )
 from dexter import Current, Qfactor, Geometry
 from dexter.types import FluxWall
+
+# Unsure
+# def test_lar_geometry():
+#     geometry = LarGeometry(baxis=2, raxis=1.75, rwall=0.5)
+#     _test_all_geometry_plots(geometry)
 
 
 def test_nc_geometry():
@@ -46,7 +52,7 @@ def test_nc_current():
     _test_all_current_plots(current)
 
 
-def _test_all_flux_plots(obj: Qfactor | Geometry):
+def _test_all_flux_plots(obj: Qfactor | NcGeometry):
     obj.plot_psip_of_psi(points=50, data=True)
     obj.plot_psip_of_psi(points=50, data=False)
     obj.plot_psi_of_psip(points=50, data=True)

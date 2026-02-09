@@ -360,6 +360,19 @@ class _BfieldTrait(ABC):
 
 # ================================================================================================
 
+class _PyLarGeometry(_GeometryTrait):
+    """PyO3 export of `LarGeometry`. Contains the full behavior of the wrapped object."""
+
+    equilibrium_type: EquilibriumType
+    baxis: float
+    raxis: float
+    rwall: float
+    psi_wall: float
+    rlab_wall: Array1
+    zlab_wall: Array1
+
+    def __init__(self, baxis: float, raxis: float, rwall: float) -> None: ...
+
 class _PyNcGeometry(_FluxCommuteTrait, _GeometryTrait):
     """PyO3 export of `NcGeometry`. Contains the full behavior of the wrapped object."""
 
@@ -385,6 +398,8 @@ class _PyNcGeometry(_FluxCommuteTrait, _GeometryTrait):
     rlab_array: Array2
     zlab_array: Array2
     jacobian_array: Array2
+    rlab_wall: Array1
+    zlab_wall: Array1
 
     def __init__(
         self,

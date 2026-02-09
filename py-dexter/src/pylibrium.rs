@@ -3,7 +3,7 @@
 use dexter::dexter_equilibrium::{Bfield, LarBfield, NcBfield, NcBfieldBuilder};
 use dexter::dexter_equilibrium::{Current, LarCurrent, NcCurrent, NcCurrentBuilder};
 use dexter::dexter_equilibrium::{FluxCommute, FluxWall};
-use dexter::dexter_equilibrium::{Geometry, NcGeometry, NcGeometryBuilder};
+use dexter::dexter_equilibrium::{Geometry, LarGeometry, NcGeometry, NcGeometryBuilder};
 use dexter::dexter_equilibrium::{
     NcQfactor, NcQfactorBuilder, ParabolicQfactor, Qfactor, UnityQfactor,
 };
@@ -20,6 +20,40 @@ use crate::{
 };
 
 // ===============================================================================================
+// ===============================================================================================
+
+#[pyclass(name = "_PyLarGeometry", subclass, frozen)]
+pub struct PyLarGeometry(LarGeometry);
+
+#[pymethods]
+impl PyLarGeometry {
+    #[new]
+    #[pyo3(signature = (baxis, raxis, rwall))]
+    pub fn new(baxis: f64, raxis: f64, rwall: f64) -> Self {
+        Self(LarGeometry::new(baxis, raxis, rwall))
+    }
+}
+
+py_debug_impl!(PyLarGeometry);
+py_repr_impl!(PyLarGeometry);
+py_get_enum_string!(PyLarGeometry, equilibrium_type);
+py_export_getter!(PyLarGeometry, baxis, f64);
+py_export_getter!(PyLarGeometry, raxis, f64);
+py_export_getter!(PyLarGeometry, rwall, f64);
+py_export_getter!(PyLarGeometry, psi_wall, f64);
+py_get_numpy1D!(PyLarGeometry, rlab_wall);
+py_get_numpy1D!(PyLarGeometry, zlab_wall);
+py_eval1D!(PyLarGeometry, r_of_psi);
+py_eval1D!(PyLarGeometry, r_of_psip);
+py_eval1D!(PyLarGeometry, psi_of_r);
+py_eval1D!(PyLarGeometry, psip_of_r);
+py_eval2D!(PyLarGeometry, rlab_of_psi);
+py_eval2D!(PyLarGeometry, rlab_of_psip);
+py_eval2D!(PyLarGeometry, zlab_of_psi);
+py_eval2D!(PyLarGeometry, zlab_of_psip);
+py_eval2D!(PyLarGeometry, jacobian_of_psi);
+py_eval2D!(PyLarGeometry, jacobian_of_psip);
+
 // ===============================================================================================
 
 #[pyclass(name = "_PyNcGeometry", subclass, frozen)]
@@ -64,6 +98,8 @@ py_get_numpy1D!(PyNcGeometry, r_array);
 py_get_numpy2D!(PyNcGeometry, rlab_array);
 py_get_numpy2D!(PyNcGeometry, zlab_array);
 py_get_numpy2D!(PyNcGeometry, jacobian_array);
+py_get_numpy1D!(PyNcGeometry, rlab_wall);
+py_get_numpy1D!(PyNcGeometry, zlab_wall);
 py_eval1D!(PyNcGeometry, psip_of_psi);
 py_eval1D!(PyNcGeometry, psi_of_psip);
 py_eval1D!(PyNcGeometry, r_of_psi);

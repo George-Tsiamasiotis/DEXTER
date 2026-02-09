@@ -1,8 +1,10 @@
-//! Test NcGeometry functionality.
+//! Test Geometry functionality.
 
 use std::path::PathBuf;
 
-use dexter_equilibrium::{EquilibriumType, FluxCommute, Geometry, NcFluxState, NcGeometryBuilder};
+use dexter_equilibrium::{
+    EquilibriumType, FluxCommute, Geometry, LarGeometry, NcFluxState, NcGeometryBuilder,
+};
 use ndarray::{Array1, Array2};
 use rsl_interpolation::{Accelerator, Cache};
 
@@ -37,6 +39,8 @@ fn nc_geometry() {
     let rlab_array: Array2<f64> = geometry.rlab_array();
     let zlab_array: Array2<f64> = geometry.rlab_array();
     let jacobian_array: Array2<f64> = geometry.rlab_array();
+    let rlab_wall: Array1<f64> = geometry.rlab_wall();
+    let zlab_wall: Array1<f64> = geometry.zlab_wall();
 
     let mut r_acc = Accelerator::new();
     let mut psi_acc = Accelerator::new();
@@ -72,4 +76,62 @@ fn nc_geometry() {
     let jacobian_of_psip = geometry
         .jacobian_of_psip(psip, theta, &mut psip_acc, &mut theta_acc, &mut cache)
         .unwrap();
+}
+
+#[test]
+#[allow(unused_variables)]
+fn lar_geometry() {
+    let geometry = dbg!(LarGeometry::new(2.0, 1.75, 0.5));
+
+    let equilibrium_type: EquilibriumType = geometry.equilibrium_type();
+    let baxis: f64 = geometry.baxis();
+    let raxis: f64 = geometry.raxis();
+    let rwall: f64 = geometry.rwall();
+    let psi_wall: f64 = geometry.psi_wall();
+    let rlab_wall: Array1<f64> = geometry.rlab_wall();
+    let zlab_wall: Array1<f64> = geometry.zlab_wall();
+
+    let mut r_acc = Accelerator::new();
+    let mut psi_acc = Accelerator::new();
+    let mut psip_acc = Accelerator::new();
+    let mut theta_acc = Accelerator::new();
+    let mut cache = Cache::<f64>::new();
+    let r = 0.2;
+    let psi = 0.01;
+    let psip = 0.015;
+    let theta = 3.14;
+
+    let r_of_psi = geometry.r_of_psi(psi, &mut psi_acc).unwrap();
+    let psi_of_r = geometry.psi_of_r(r, &mut r_acc).unwrap();
+    let rlab_of_psi = geometry
+        .rlab_of_psi(psi, theta, &mut psi_acc, &mut theta_acc, &mut cache)
+        .unwrap();
+    let zlab_of_psi = geometry
+        .zlab_of_psi(psi, theta, &mut psi_acc, &mut theta_acc, &mut cache)
+        .unwrap();
+
+    assert!(matches!(
+        geometry.r_of_psip(psip, &mut psip_acc),
+        Err(dexter_equilibrium::EqError::UndefinedEvaluation(..))
+    ));
+    assert!(matches!(
+        geometry.psip_of_r(r, &mut r_acc),
+        Err(dexter_equilibrium::EqError::UndefinedEvaluation(..))
+    ));
+    assert!(matches!(
+        geometry.rlab_of_psip(psip, theta, &mut psip_acc, &mut theta_acc, &mut cache),
+        Err(dexter_equilibrium::EqError::UndefinedEvaluation(..))
+    ));
+    assert!(matches!(
+        geometry.zlab_of_psip(psip, theta, &mut psip_acc, &mut theta_acc, &mut cache),
+        Err(dexter_equilibrium::EqError::UndefinedEvaluation(..))
+    ));
+    assert!(matches!(
+        geometry.jacobian_of_psi(psi, theta, &mut psi_acc, &mut theta_acc, &mut cache),
+        Err(dexter_equilibrium::EqError::UndefinedEvaluation(..))
+    ));
+    assert!(matches!(
+        geometry.jacobian_of_psip(psip, theta, &mut psip_acc, &mut theta_acc, &mut cache),
+        Err(dexter_equilibrium::EqError::UndefinedEvaluation(..))
+    ));
 }

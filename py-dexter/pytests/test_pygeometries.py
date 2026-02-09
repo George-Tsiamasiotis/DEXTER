@@ -1,6 +1,28 @@
 import pytest
 from dexter.equilibrium import _TOROIDAL_TEST_NETCDF_PATH, _POLOIDAL_TEST_NETCDF_PATH
-from dexter import Geometry, NcGeometry
+from dexter import LarGeometry, NcGeometry
+
+
+def test_lar_geometry():
+    geometry = LarGeometry(baxis=2, raxis=1.75, rwall=0.5)
+    assert isinstance(geometry.__str__(), str)
+    assert isinstance(geometry.__repr__(), str)
+    assert isinstance(geometry.r_of_psi(0.01), float)
+    assert isinstance(geometry.psi_of_r(0.01), float)
+    assert isinstance(geometry.rlab_of_psi(0.01, 3.14), float)
+    assert isinstance(geometry.zlab_of_psi(0.01, 3.14), float)
+    with pytest.raises(BaseException):
+        geometry.r_of_psip(0.01)
+    with pytest.raises(BaseException):
+        geometry.psip_of_r(0.01)
+    with pytest.raises(BaseException):
+        geometry.rlab_of_psip(0.01, 3.14)
+    with pytest.raises(BaseException):
+        geometry.zlab_of_psip(0.01, 3.14)
+    with pytest.raises(BaseException):
+        geometry.jacobian_of_psi(0.01, 3.14)
+    with pytest.raises(BaseException):
+        geometry.jacobian_of_psip(0.01, 3.14)
 
 
 def test_nc_geometry_getters(nc_geometry: NcGeometry):
@@ -80,7 +102,7 @@ def test_poloidal_nc_geometry():
         nc_geometry.jacobian_of_psi(0.01, 3.14)
 
 
-def _test_geometry_evals(geometry: Geometry):
+def _test_geometry_evals(geometry: NcGeometry):
     r = 0.02
     psi = 0.01
     psip = 0.015

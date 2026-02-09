@@ -3,6 +3,7 @@
 //! For analytical equilibria, this is achieved by evaluation of analytical formulas, while for
 //! numerical equilibria by interpolation over the reconstructed data arrays.
 
+use ndarray::Array1;
 use rsl_interpolation::{Accelerator, Cache};
 
 use crate::Result;
@@ -242,6 +243,12 @@ pub trait Geometry {
         theta_acc: &mut Accelerator,
         cache: &mut Cache<f64>,
     ) -> Result<f64>;
+
+    /// Returns the last `Rlab` values that correspond to the device's wall.
+    fn rlab_wall(&self) -> Array1<f64>;
+
+    /// Returns the last `Zlab` values that correspond to the device's wall.
+    fn zlab_wall(&self) -> Array1<f64>;
 }
 
 /// Conversion between the two flux coordinates `ψ` and `ψp`

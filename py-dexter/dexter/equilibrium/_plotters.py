@@ -1,4 +1,10 @@
-"""Plotter Parent classes that provide simple plotting methods."""
+"""Plotter Parent classes that provide simple plotting methods
+
+Method are inherited by the final rust wrapped objects.
+
+These plotting methods are restricted to whatever resources each wrapped type has and are meant
+for quick and simple diagnostic plots. They should not count to external objects to work.
+"""
 
 from dexter.types import Array1, Array2, ArrayShape, EquilibriumType
 import numpy as np
@@ -132,6 +138,8 @@ class _GeometryPlotter:
     rlab_array: Array2
     zlab_array: Array2
     jacobian_array: Array2
+    rlab_wall: Array1
+    zlab_wall: Array1
 
     def plot_r_of_psi(self, points: int = 1000, data: bool = False):
         r"""Plots $r(\psi)$, where $r$ is in $[m]$.
@@ -347,6 +355,23 @@ class _GeometryPlotter:
         plt.colorbar(c, ax=ax)
 
         ax.plot(rlab_array[-1], zlab_array[-1], **WALL_KW)
+
+        ax.grid(True)
+        plt.show()
+
+    def plot_wall(self):
+        r"""Plots the device's wall in the $R, Z$ frame."""
+
+        fig = plt.figure(**FIG_KW)
+        ax = fig.add_subplot(**SUBPLOT_KW | {"aspect": "equal"})
+        ax.set_title(r"$Wall$")
+        ax.set_xlabel(r"$R[m]$")
+        ax.set_ylabel(r"$Z[m]$")
+
+        zlab_wall = self.zlab_wall
+        rlab_wall = self.rlab_wall
+
+        ax.plot(rlab_wall, zlab_wall, **WALL_KW)
 
         ax.grid(True)
         plt.show()

@@ -4,6 +4,14 @@
 
 ## Geometries
 
+::: dexter.LarGeometry
+    options:
+        inherited_members: true
+        docstring_section_style: list
+        summary:
+            functions: true
+            attributes: true
+
 ::: dexter.NcGeometry
     options:
         inherited_members: true
