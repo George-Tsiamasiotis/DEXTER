@@ -6,13 +6,17 @@
 //!     - [`NcGeometry`]: Geometry of the netCDF equilibrium
 //!
 //! + Representations of the q-factor profile:
-//!     - [`NcQfactor`]: q-factor reconstructed from a netCDF file.
 //!     - [`UnityQfactor`]: q-factor profile of q = 1 and ψ=ψp.
 //!     - [`ParabolicQfactor`]: q-factor of parabolic q(ψ) profile.
+//!     - [`NcQfactor`]: q-factor reconstructed from a netCDF file.
 //!
-//! + Representations of the plasma currents;
-//!     - [`NcCurrent`]: Plasma current reconstructed from a netCDF file.
+//! + Representations of the plasma currents:
 //!     - [`LarCurrent`]: Large Aspect Ration plasma current with g=1 and I=0.
+//!     - [`NcCurrent`]: Plasma current reconstructed from a netCDF file.
+//!
+//! + Representations of the magnetic field:
+//!     - [`LarBfield`]: Large Aspect Ratio magnetic field with B(ψ, θ) = 1 - sqrt(2ψ)cos(θ).
+//!     - [`NcBfield`]: Magnetic reconstructed from a netCDF file.
 //!
 //! ## Evaluations:
 //!
@@ -20,6 +24,7 @@
 //! + [`FluxCommute`]: Conversion between the two flux coordinates `ψ` and `ψp`
 //! + [`Qfactor`]: Evaluation of q-factor related quantities.
 //! + [`Current`]: Evaluation of plasma current related quantities.
+//! + [`Bfield`]: Evaluation of magnetic field related quantities.
 //!
 //! TODO:
 //!
@@ -64,7 +69,7 @@ pub use objects::EquilibriumType;
 pub use flux::NcFlux;
 pub use flux::NcFluxState;
 
-pub use eval::{Current, FluxCommute, Geometry, Qfactor};
+pub use eval::{Bfield, Current, FluxCommute, Geometry, Qfactor};
 
 pub use objects::geometries::NcGeometry;
 pub use objects::geometries::NcGeometryBuilder;
@@ -77,3 +82,7 @@ pub use objects::qfactors::{FluxWall, ParabolicQfactor};
 pub use objects::currents::LarCurrent;
 pub use objects::currents::NcCurrent;
 pub use objects::currents::NcCurrentBuilder;
+
+pub use objects::bfield::LarBfield;
+pub use objects::bfield::NcBfield;
+pub use objects::bfield::NcBfieldBuilder;

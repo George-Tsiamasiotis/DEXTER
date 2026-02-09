@@ -244,6 +244,7 @@ pub trait Geometry {
     ) -> Result<f64>;
 }
 
+/// Conversion between the two flux coordinates `ψ` and `ψp`
 pub trait FluxCommute {
     /// Calculates `ψp(ψ)`
     ///
@@ -280,6 +281,171 @@ pub trait FluxCommute {
     /// # Ok::<_, EqError>(())
     /// ```
     fn psi_of_psip(&self, psip: f64, acc: &mut Accelerator) -> Result<f64>;
+}
+
+/// Magnetic field related quantities computation
+pub trait Bfield {
+    /// Calculates `B(ψ, θ)`.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use dexter_equilibrium::*;
+    /// # use rsl_interpolation::*;
+    /// # use std::path::PathBuf;
+    /// #
+    /// # let path = PathBuf::from("./netcdf.nc");
+    /// # let bfield = NcBfieldBuilder::new(&path, "bicubic").build()?;
+    /// #
+    /// let mut psi_acc = Accelerator::new();
+    /// let mut theta_acc = Accelerator::new();
+    /// let mut cache = Cache::new();
+    /// let b_of_psi = bfield.b_of_psi(0.01, 3.14, &mut psi_acc, &mut theta_acc, &mut cache)?;
+    /// # Ok::<_, EqError>(())
+    /// ```
+    fn b_of_psi(
+        &self,
+        psi: f64,
+        theta: f64,
+        psi_acc: &mut Accelerator,
+        theta_acc: &mut Accelerator,
+        cache: &mut Cache<f64>,
+    ) -> Result<f64>;
+
+    /// Calculates `B(ψp, θ)`.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use dexter_equilibrium::*;
+    /// # use rsl_interpolation::*;
+    /// # use std::path::PathBuf;
+    /// #
+    /// # let path = PathBuf::from("./netcdf.nc");
+    /// # let bfield = NcBfieldBuilder::new(&path, "bicubic").build()?;
+    /// #
+    /// let mut psi_acc = Accelerator::new();
+    /// let mut theta_acc = Accelerator::new();
+    /// let mut cache = Cache::new();
+    /// let b_of_psip = bfield.b_of_psip(0.01, 3.14, &mut psi_acc, &mut theta_acc, &mut cache)?;
+    /// # Ok::<_, EqError>(())
+    /// ```
+    fn b_of_psip(
+        &self,
+        psip: f64,
+        theta: f64,
+        psi_acc: &mut Accelerator,
+        theta_acc: &mut Accelerator,
+        cache: &mut Cache<f64>,
+    ) -> Result<f64>;
+
+    /// Calculates `dB(ψ, θ)/dψ`.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use dexter_equilibrium::*;
+    /// # use rsl_interpolation::*;
+    /// # use std::path::PathBuf;
+    /// #
+    /// # let path = PathBuf::from("./netcdf.nc");
+    /// # let bfield = NcBfieldBuilder::new(&path, "bicubic").build()?;
+    /// #
+    /// let mut psi_acc = Accelerator::new();
+    /// let mut theta_acc = Accelerator::new();
+    /// let mut cache = Cache::new();
+    /// let db_dpsi = bfield.db_dpsi(0.01, 3.14, &mut psi_acc, &mut theta_acc, &mut cache)?;
+    /// # Ok::<_, EqError>(())
+    /// ```
+    fn db_dpsi(
+        &self,
+        psi: f64,
+        theta: f64,
+        psi_acc: &mut Accelerator,
+        theta_acc: &mut Accelerator,
+        cache: &mut Cache<f64>,
+    ) -> Result<f64>;
+
+    /// Calculates `dB(ψp, θ)/dψp`.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use dexter_equilibrium::*;
+    /// # use rsl_interpolation::*;
+    /// # use std::path::PathBuf;
+    /// #
+    /// # let path = PathBuf::from("./netcdf.nc");
+    /// # let bfield = NcBfieldBuilder::new(&path, "bicubic").build()?;
+    /// #
+    /// let mut psi_acc = Accelerator::new();
+    /// let mut theta_acc = Accelerator::new();
+    /// let mut cache = Cache::new();
+    /// let db_dpsip = bfield.db_dpsip(0.01, 3.14, &mut psi_acc, &mut theta_acc, &mut cache)?;
+    /// # Ok::<_, EqError>(())
+    /// ```
+    fn db_dpsip(
+        &self,
+        psip: f64,
+        theta: f64,
+        psi_acc: &mut Accelerator,
+        theta_acc: &mut Accelerator,
+        cache: &mut Cache<f64>,
+    ) -> Result<f64>;
+
+    /// Calculates `dB(ψ, θ)/dθ`.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use dexter_equilibrium::*;
+    /// # use rsl_interpolation::*;
+    /// # use std::path::PathBuf;
+    /// #
+    /// # let path = PathBuf::from("./netcdf.nc");
+    /// # let bfield = NcBfieldBuilder::new(&path, "bicubic").build()?;
+    /// #
+    /// let mut psi_acc = Accelerator::new();
+    /// let mut theta_acc = Accelerator::new();
+    /// let mut cache = Cache::new();
+    /// let db_of_psi_dtheta = bfield.db_of_psi_dtheta(0.01, 3.14, &mut psi_acc, &mut theta_acc, &mut cache)?;
+    /// # Ok::<_, EqError>(())
+    /// ```
+    fn db_of_psi_dtheta(
+        &self,
+        psi: f64,
+        theta: f64,
+        psi_acc: &mut Accelerator,
+        theta_acc: &mut Accelerator,
+        cache: &mut Cache<f64>,
+    ) -> Result<f64>;
+
+    /// Calculates `dB(ψp, θ)/dθ`.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use dexter_equilibrium::*;
+    /// # use rsl_interpolation::*;
+    /// # use std::path::PathBuf;
+    /// #
+    /// # let path = PathBuf::from("./netcdf.nc");
+    /// # let bfield = NcBfieldBuilder::new(&path, "bicubic").build()?;
+    /// #
+    /// let mut psi_acc = Accelerator::new();
+    /// let mut theta_acc = Accelerator::new();
+    /// let mut cache = Cache::new();
+    /// let db_of_psip_dtheta = bfield.db_of_psip_dtheta(0.01, 3.14, &mut psi_acc, &mut theta_acc, &mut cache)?;
+    /// # Ok::<_, EqError>(())
+    /// ```
+    fn db_of_psip_dtheta(
+        &self,
+        psip: f64,
+        theta: f64,
+        psi_acc: &mut Accelerator,
+        theta_acc: &mut Accelerator,
+        cache: &mut Cache<f64>,
+    ) -> Result<f64>;
 }
 
 /// q-factor related quantities computation.

@@ -264,8 +264,8 @@ pub struct NcQfactorBuilder {
 }
 
 impl NcQfactorBuilder {
-    /// Creates a new [`NcQfactorBuilder`] from a netCDF file at `path`, with `typ` interpolation
-    /// type.
+    /// Creates a new [`NcQfactorBuilder`] from a netCDF file at `path`, with `interp_type`
+    /// interpolation type.
     ///
     /// # Example
     /// ```

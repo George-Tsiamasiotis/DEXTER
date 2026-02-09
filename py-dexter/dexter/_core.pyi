@@ -289,6 +289,75 @@ class _CurrentTrait(ABC):
             The poloidal flux $\psi$ in Normalized Units.
         """
 
+class _BfieldTrait(ABC):
+    """Documents the methods provided by the 'Bfield' trait."""
+
+    def b_of_psi(self, psi: float, theta: float) -> float:
+        r"""The $B(\psi, \theta)$ value in Normalized Units.
+
+        Parameters
+        ----------
+        psi
+            The toroidal flux $\psi$ in Normalized Units.
+        theta
+            The $\theta$ angle in $[rads]$.
+        """
+
+    def b_of_psip(self, psip: float, theta: float) -> float:
+        r"""The $B(\psi_p, \theta)$ value in Normalized Units.
+
+        Parameters
+        ----------
+        psip
+            The poloidal flux $\psi_p$ in Normalized Units.
+        theta
+            The $\theta$ angle in $[rads]$.
+        """
+
+    def db_dpsi(self, psi: float, theta: float) -> float:
+        r"""The $dB(\psi, \theta)/d\psi$ value in Normalized Units.
+
+        Parameters
+        ----------
+        psi
+            The toroidal flux $\psi$ in Normalized Units.
+        theta
+            The $\theta$ angle in $[rads]$.
+        """
+
+    def db_dpsip(self, psip: float, theta: float) -> float:
+        r"""The $dB(\psi_p, \theta)/d\psi_p$ value in Normalized Units.
+
+        Parameters
+        ----------
+        psip
+            The poloidal flux $\psi_p$ in Normalized Units.
+        theta
+            The $\theta$ angle in $[rads]$.
+        """
+
+    def db_of_psi_dtheta(self, psi: float, theta: float) -> float:
+        r"""The $dB(\psi, \theta)/d\theta$ value in Normalized Units.
+
+        Parameters
+        ----------
+        psi
+            The toroidal flux $\psi$ in Normalized Units.
+        theta
+            The $\theta$ angle in $[rads]$.
+        """
+
+    def db_of_psip_dtheta(self, psip: float, theta: float) -> float:
+        r"""The $dB(\psi_p, \theta)/d\theta$ value in Normalized Units.
+
+        Parameters
+        ----------
+        psip
+            The poloidal flux $\psi_p$ in Normalized Units.
+        theta
+            The $\theta$ angle in $[rads]$.
+        """
+
 # ================================================================================================
 
 class _PyNcGeometry(_FluxCommuteTrait, _GeometryTrait):
@@ -387,3 +456,36 @@ class _PyNcCurrent(_CurrentTrait):
     i_array: Array1
 
     def __init__(self, path: str, interp_type: Interp1DType) -> None: ...
+
+# ================================================================================================
+
+class _PyLarBfield(_BfieldTrait):
+    """PyO3 export of `LarBfield`. Contains the full behavior of the wrapped object."""
+
+    equilibrium_type: EquilibriumType
+
+    def __init__(self) -> None: ...
+
+class _PyNcBfield(_BfieldTrait):
+    """PyO3 export of `NcBfield`. Contains the full behavior of the wrapped object."""
+
+    path: str
+    netcdf_version: NetCDFVersion
+    equilibrium_type: EquilibriumType
+    interp_type: Interp1DType
+    baxis: float
+    shape: ArrayShape
+    psi_wall: float
+    psip_wall: float
+    psi_state: FluxState
+    psip_state: FluxState
+    psi_array: Array1
+    psip_array: Array1
+    theta_array: Array1
+    b_array: Array2
+
+    def __init__(
+        self,
+        path: str,
+        interp_type: Interp2DType,
+    ) -> None: ...

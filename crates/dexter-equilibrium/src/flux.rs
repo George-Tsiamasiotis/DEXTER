@@ -123,12 +123,14 @@ mod test {
     #[should_panic]
     fn get_uvalues_empty() {
         let flux = create_empty_flux();
+        let _ = format!("{flux:?}");
         flux.uvalues();
     }
 
     #[test]
     fn get_values_empty() {
         let flux = create_empty_flux();
+        let _ = format!("{flux:?}");
         assert!(flux.values().is_none());
     }
 

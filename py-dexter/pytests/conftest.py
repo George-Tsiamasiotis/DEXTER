@@ -7,6 +7,7 @@ from dexter import (
     NcGeometry,
     NcQfactor,
     NcCurrent,
+    NcBfield,
 )
 
 
@@ -33,3 +34,9 @@ def nc_qfactor() -> NcQfactor:
 def nc_current() -> NcCurrent:
     """Creates an NcCurrent object from the test netCDF file."""
     return NcCurrent(netcdf_path, "Steffen")
+
+
+@pytest.fixture(scope="session")
+def nc_bfield() -> NcBfield:
+    """Creates an NcBfield object from the test netCDF file."""
+    return NcBfield(netcdf_path, "Bicubic")

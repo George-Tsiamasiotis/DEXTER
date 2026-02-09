@@ -1,5 +1,6 @@
 pub(crate) mod getters;
 
+pub(crate) mod bfield;
 pub(crate) mod currents;
 pub(crate) mod geometries;
 pub(crate) mod qfactors;

@@ -5,6 +5,7 @@ matplotlib.pyplot.rcParams["text.usetex"] = True
 from dexter.equilibrium import Geometry, NcGeometry
 from dexter.equilibrium import Qfactor, UnityQfactor, ParabolicQfactor, NcQfactor
 from dexter.equilibrium import Current, LarCurrent, NcCurrent
+from dexter.equilibrium import Bfield, LarBfield, NcBfield
 
 
 __all__ = [
@@ -12,10 +13,13 @@ __all__ = [
     "Geometry",
     "Qfactor",
     "Current",
+    "Bfield",
     "NcGeometry",
     "UnityQfactor",
     "ParabolicQfactor",
     "NcQfactor",
     "LarCurrent",
     "NcCurrent",
+    "LarBfield",
+    "NcBfield",
 ]

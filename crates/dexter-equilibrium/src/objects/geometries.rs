@@ -3,7 +3,8 @@
 use crate::{
     equilibrium_type_getter_impl, fluxes_state_getter_impl, fluxes_values_array_getter_impl,
     fluxes_wall_value_getter_impl, fortran_vec_to_carray2d_impl, interp_type_getter_impl,
-    netcdf_path_getter_impl, netcdf_version_getter_impl, vec_to_array1D_getter_impl,
+    netcdf_path_getter_impl, netcdf_version_getter_impl, shape2d_getter_impl,
+    vec_to_array1D_getter_impl,
 };
 use ndarray::{Array1, Array2, Order::ColumnMajor};
 use rsl_interpolation::{
@@ -30,7 +31,7 @@ pub struct NcGeometryBuilder {
 
 impl NcGeometryBuilder {
     /// Creates a new [`NcGeometryBuilder`] from a netCDF file at `path`, with 1D interpolation
-    /// type `typ1d` and 2D interpolation type `typ2d`.
+    /// type `interp1d_type` and 2D interpolation type `interp2d_type`.
     ///
     /// # Example
     /// ```
@@ -494,24 +495,7 @@ impl NcGeometry {
         self.r_values.last().copied().expect("Non empty")
     }
 
-    /// Returns the the (ψ/ψp, θ) shape of the 2D arrays, depending on the state of each
-    /// flux coordinate. If both coordinates are "good", they are guaranteed to be of the same
-    /// length.
-    pub fn shape(&self) -> (usize, usize) {
-        // One of the 2 is guaranteed to be non-zero.
-        let psi_len = match self.psi.state {
-            NcFluxState::None => 0,
-            _ => self.psi.uvalues().len(),
-        };
-        let psip_len = match self.psip.state {
-            NcFluxState::None => 0,
-            _ => self.psip.uvalues().len(),
-        };
-        // If they both exist, they are guaranteed to have the same length.
-        let xlen = psi_len.max(psip_len);
-        (xlen, self.theta_values.len())
-    }
-
+    shape2d_getter_impl!();
     fluxes_wall_value_getter_impl!();
     fluxes_state_getter_impl!();
     fluxes_values_array_getter_impl!();
@@ -530,7 +514,7 @@ impl std::fmt::Debug for NcGeometry {
             .field("equilibrium type", &self.equilibrium_type())
             .field("1D interpolation type", &self.interp1d_type())
             .field("2D interpolation type", &self.interp2d_type())
-            .field("baxis [m]", &self.baxis)
+            .field("baxis [T]", &self.baxis)
             .field("raxis [m]", &self.raxis)
             .field("zaxis [m]", &self.zaxis)
             .field("rgeo [m]", &self.rgeo)

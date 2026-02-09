@@ -622,6 +622,11 @@ mod test {
         ));
 
         assert!(matches!(
+            dbg!(extract_attribute(&f, "not an attribute")),
+            Err(NcError::AttributeNotFound(..))
+        ));
+
+        assert!(matches!(
             dbg!(dbg!(extract_1d_array::<f64>(&f, B_NORM))),
             Err(NcError::NdArray { .. })
         ));

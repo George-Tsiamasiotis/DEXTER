@@ -1,6 +1,7 @@
 from dexter._core import _PyNcGeometry
 from dexter._core import _PyUnityQfactor, _PyParabolicQfactor, _PyNcQfactor
 from dexter._core import _PyLarCurrent, _PyNcCurrent
+from dexter._core import _PyLarBfield, _PyNcBfield
 from .plotters import _FluxPlotter, _QfactorPlotter, _CurrentPlotter, _GeometryPlotter
 
 
@@ -9,6 +10,8 @@ class NcGeometry(_PyNcGeometry, _FluxPlotter, _GeometryPlotter):
 
     Stores relates scalars and arrays, and provides interpolation methods for converting
     between different variables and coordinate systems.
+
+    Related quantities are computed by interpolating over the data arrays.
 
     Parameters
     ----------
@@ -34,7 +37,7 @@ class NcGeometry(_PyNcGeometry, _FluxPlotter, _GeometryPlotter):
     baxis
         The magnetic field strength on the magnetic axis $B_0$ in $[T]$.
     raxis
-        The horizontal position of the magnetic axis $R0$ in $[m]$.
+        The horizontal position of the magnetic axis $R_0$ in $[m]$.
     zaxis
         The vertical position of the magnetic axis in $[m]$.
     rgeo
@@ -179,6 +182,8 @@ class ParabolicQfactor(_PyParabolicQfactor, _FluxPlotter, _QfactorPlotter):
 class NcQfactor(_PyNcQfactor, _FluxPlotter, _QfactorPlotter):
     r"""Numerical q-factor reconstructed from a NetCDF file.
 
+    Related quantities are computed by interpolating over the data arrays.
+
     Parameters
     ----------
     path
@@ -239,13 +244,16 @@ class LarCurrent(_PyLarCurrent, _CurrentPlotter):
     Example
     -------
     ```python title="LarCurrent creation"
-    >>> geometry = dex.LarCurrent()
+    >>> current = dex.LarCurrent()
 
+    ```
     """
 
 
 class NcCurrent(_PyNcCurrent, _CurrentPlotter):
-    r"""Numerical plasma reconstructed from a NetCDF file.
+    r"""Numerical plasma current reconstructed from a NetCDF file.
+
+    Related quantities are computed by interpolating over the data arrays.
 
     Parameters
     ----------
@@ -285,6 +293,79 @@ class NcCurrent(_PyNcCurrent, _CurrentPlotter):
     -------
     ```python title="NcCurrent creation"
     >>> current = dex.NcCurrent(path, "Steffen")
+
+    ```
+    """
+
+
+# ================================================================================================
+
+
+class LarBfield(_PyLarBfield):
+    """Analytical Large Aspect Ratio magnetic field with B(ψ, θ) = 1 - sqrt(2ψ)cos(θ).
+
+    Attributes
+    ----------
+    equilibrium_type
+        The Equilibrium's type.
+
+    Example
+    -------
+    ```python title="LarBfield creation"
+    >>> bfield = dex.LarBfield()
+
+    ```
+    """
+
+
+class NcBfield(_PyNcBfield):
+    r"""Numerical magnetic field profile reconstructed from a netCDF file.
+
+    Related quantities are computed by interpolating over the data arrays.
+
+    Parameters
+    ----------
+    path
+        The path to the NetCDF file.
+    interp_type
+        The type of 2D Interpolation.
+
+    Attributes
+    ----------
+    path
+        The path of the netCDF file.
+    netcdf_version
+        The netCDF convention version (SemVer).
+    equilibrium_type
+        The Equilibrium's type.
+    interp_type
+        The 2D Interpolation type.
+    baxis
+        The magnetic field strength on the magnetic axis $B_0$ in $[T]$.
+    shape
+        The shape of the 2 dimensional data arrays, as in $(len(\psi/\psi_p), len(\theta))$.
+    psi_wall
+        The toroidal flux value at the wall $\psi_{wall}$ in Normalized Units.
+    psip_wall
+        The poloidal flux value at the wall $\psi_{p,wall}$ in Normalized Units.
+    psi_state
+        The state of the toroidal flux coordinate.
+    psip_state
+        The state of the poloidal flux coordinate.
+    psi_array
+        The NetCDF $\psi$ data.
+    psip_array
+        The NetCDF $\psi_p$ data.
+    theta_array
+        The NetCDF $\theta$ data,
+    b_array
+        The $B$ data array.
+
+    Example
+    -------
+
+    ```python title="NcBfield creation"
+    >>> bfield = dex.NcBfield(path, "Bicubic")
 
     ```
     """

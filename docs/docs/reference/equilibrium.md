@@ -55,3 +55,21 @@
         summary:
             functions: true
             attributes: true
+
+## Bfields
+
+::: dexter.LarBfield
+    options:
+        inherited_members: true
+        docstring_section_style: list
+        summary:
+            functions: true
+            attributes: true
+
+::: dexter.NcBfield
+    options:
+        inherited_members: true
+        docstring_section_style: list
+        summary:
+            functions: true
+            attributes: true
