@@ -289,7 +289,7 @@ impl NcQfactorBuilder {
     /// # use dexter_equilibrium::*;
     /// let path = PathBuf::from("./netcdf.nc");
     /// let qfactor = NcQfactorBuilder::new(&path, "cubic").build()?;
-    /// Ok::<_, EqError>(())
+    /// # Ok::<_, EqError>(())
     /// ```
     pub fn build(self) -> Result<NcQfactor> {
         NcQfactor::build(self)

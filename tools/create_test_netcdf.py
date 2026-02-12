@@ -88,9 +88,11 @@ match args.coord:
         psip_norm = np.sin(2 * np.pi * psi_norm)  # no longer monotonic in [0, psi_wall]
         q = np.gradient(psip_norm, psi_norm)
         assert not np.all(np.diff(psip_norm) > 0)
-    case "poloidal":  # equispaced ψp values, ψ = sin(2πψp), and q(ψ) = 1/(dψ/dψ).
+    case "poloidal":  # equispaced ψp values, ψ = sin(2πψp), and q(ψ) = 1/(dψp/dψ).
         psip_norm = np.linspace(0, flux_wall_value_norm, FLUX_SURFACES)
-        psi_norm = np.sin(2 * np.pi * psip_norm)  # no longer monotonic in [0, psi_wall]
+        psi_norm = 1.0 - np.sin(
+            2 * np.pi * psip_norm
+        )  # no longer monotonic in [0, psi_wall]
         q = np.gradient(psi_norm, psip_norm)  # inverse
         assert not np.all(np.diff(psi_norm) > 0)
     case _:

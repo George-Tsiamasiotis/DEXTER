@@ -87,6 +87,42 @@ macro_rules! fluxes_state_getter_impl {
     };
 }
 
+/// Generates getters for a Harmonic's `m` and `n` mode numbers.
+#[doc(hidden)]
+#[macro_export]
+macro_rules! harmonic_mode_number_getter_impl {
+    () => {
+        /// Returns the poloidal mode number `m`.
+        pub fn m(&self) -> i64 {
+            self.m
+        }
+
+        /// Returns the toroidal mode number `n`.
+        pub fn n(&self) -> i64 {
+            self.n
+        }
+    };
+}
+
+/// Generates getters for a [`HarmonicCache`] implementor's hits and misses
+#[doc(hidden)]
+#[macro_export]
+macro_rules! harmonic_cache_counts_getter_impl {
+    ($obj: ident) => {
+        impl $obj {
+            /// Returns the Cache's hit count.
+            pub fn hits(&self) -> usize {
+                self.hits
+            }
+
+            /// Returns the Cache's miss count.
+            pub fn misses(&self) -> usize {
+                self.misses
+            }
+        }
+    };
+}
+
 /// Generates a getter for the object's equilibrium type.
 #[doc(hidden)]
 #[macro_export]

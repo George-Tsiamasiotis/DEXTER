@@ -19,6 +19,11 @@
 //!     - [`LarBfield`]: Large Aspect Ratio magnetic field with B(ψ, θ) = 1 - sqrt(2ψ)cos(θ).
 //!     - [`NcBfield`]: Magnetic reconstructed from a netCDF file.
 //!
+//! + Representations of single perturbation harmonics:
+//!     - [`CosHarmonic`]: Simple analytical harmonic of the form `α*cos(mθ-nζ+φ)`.
+//!     - [`NcHarmonic`]: Single perturbation harmonic from a netCDF file of the form
+//!     `α(ψ/ψp) * cos(mθ-nζ+φ(ψ/ψp))`
+//!
 //! ## Evaluations:
 //!
 //! + [`Geometry`]: Conversions to laboratory quantities.
@@ -26,8 +31,18 @@
 //! + [`Qfactor`]: Evaluation of q-factor related quantities.
 //! + [`Current`]: Evaluation of plasma current related quantities.
 //! + [`Bfield`]: Evaluation of magnetic field related quantities.
+//! + [`Harmonic`]: Single perturbation harmonic related quantities computation.
 //!
-//! TODO:
+//! ## Caching
+//!
+//! The trait [`Harmonic`] requires a [`HarmonicCache`] object to be passed as a parameter. Such an
+//! object caches values such as angles' modulos and their sines/cosines, or amplitudes/phases
+//! calculated with interpolation. Since many evaluation methods are called with the same arguments
+//! sequentially (like in the case of the perturbed equations of motion), it makes sense to cache
+//! values that appear many times in these methods and can be expensive in tight loops.
+//!
+//! + [`CosHarmonicCache`]: Cache for [`CosHarmonic`]
+//! + [`NcHarmonicCache`]: Cache for [`NcHarmonic`]
 //!
 //! ## Data extraction
 //!
@@ -45,10 +60,6 @@
 //! + [`extract::extract_variable`]: Extraction of a variable as a [`Variable`](netcdf::Variable).
 //! + [`extract::extract_attribute`]: Extraction of a file's attribute as a String.
 //! + [`extract::extract_version`]: Extraction of a files convention [`Semantic Version`](https://semver.org/)
-//!
-//! ## Caching
-//!
-//! TODO:
 
 #![allow(mixed_script_confusables)]
 
@@ -70,7 +81,8 @@ pub use objects::EquilibriumType;
 pub use flux::NcFlux;
 pub use flux::NcFluxState;
 
-pub use eval::{Bfield, Current, FluxCommute, Geometry, Qfactor};
+pub use eval::HarmonicCache;
+pub use eval::{Bfield, Current, FluxCommute, Geometry, Harmonic, Qfactor};
 
 pub use objects::geometries::LarGeometry;
 pub use objects::geometries::NcGeometry;
@@ -88,3 +100,6 @@ pub use objects::currents::NcCurrentBuilder;
 pub use objects::bfield::LarBfield;
 pub use objects::bfield::NcBfield;
 pub use objects::bfield::NcBfieldBuilder;
+
+pub use objects::cos_harmonic::{CosHarmonic, CosHarmonicCache};
+pub use objects::nc_harmonic::{NcHarmonic, NcHarmonicBuilder, NcHarmonicCache, PhaseMethod};
