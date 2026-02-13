@@ -22,6 +22,7 @@ from dexter.types import (
     Array1,
     Array2,
     ArrayShape,
+    PhaseMethod,
     NetCDFVersion,
 )
 
@@ -358,6 +359,233 @@ class _BfieldTrait(ABC):
             The $\theta$ angle in $[rads]$.
         """
 
+class _HarmonicTrait(ABC):
+    """Documents the methods provided by the 'Harmonic' trait."""
+
+    def ampl_of_psi(self, psi: float, theta: float, zeta: float, t: float) -> float:
+        r"""The harmonic's amplitude $\alpha(\psi, \theta, \zeta, t)$ value in Normalized Units.
+
+        Parameters
+        ----------
+        psi
+            The toroidal flux $\psi$ in Normalized Units.
+        theta
+            The $\theta$ angle in $[rads]$.
+        zeta
+            The $\zeta$ angle in $[rads]$.
+        t
+            The time in Normalized Units
+        """
+
+    def ampl_of_psip(self, psip: float, theta: float, zeta: float, t: float) -> float:
+        r"""The harmonic's amplitude $\alpha(\psi_p, \theta, \zeta, t)$ value in Normalized Units.
+
+        Parameters
+        ----------
+        psip
+            The poloidal flux $\psi_p$ in Normalized Units.
+        theta
+            The $\theta$ angle in $[rads]$.
+        zeta
+            The $\zeta$ angle in $[rads]$.
+        t
+            The time in Normalized Units
+        """
+
+    def phase_of_psi(self, psi: float, theta: float, zeta: float, t: float) -> float:
+        r"""The harmonic's phase $\phi(\psi, \theta, \zeta, t)$ value in Normalized Units.
+
+        Parameters
+        ----------
+        psi
+            The toroidal flux $\psi$ in Normalized Units.
+        theta
+            The $\theta$ angle in $[rads]$.
+        zeta
+            The $\zeta$ angle in $[rads]$.
+        t
+            The time in Normalized Units
+        """
+
+    def phase_of_psip(self, psip: float, theta: float, zeta: float, t: float) -> float:
+        r"""The harmonic's phase $\phi(\psi_p, \theta, \zeta, t)$ value in Normalized Units.
+
+        Parameters
+        ----------
+        psip
+            The poloidal flux $\psi_p$ in Normalized Units.
+        theta
+            The $\theta$ angle in $[rads]$.
+        zeta
+            The $\zeta$ angle in $[rads]$.
+        t
+            The time in Normalized Units
+        """
+
+    def h_of_psi(self, psi: float, theta: float, zeta: float, t: float) -> float:
+        r"""The full harmonic's value $h(\psi, \theta, \zeta, t)$ value in Normalized Units.
+
+        Parameters
+        ----------
+        psi
+            The toroidal flux $\psi$ in Normalized Units.
+        theta
+            The $\theta$ angle in $[rads]$.
+        zeta
+            The $\zeta$ angle in $[rads]$.
+        t
+            The time in Normalized Units
+        """
+
+    def h_of_psip(self, psip: float, theta: float, zeta: float, t: float) -> float:
+        r"""The full harmonic's value $h(\psi_p, \theta, \zeta, t)$ value in Normalized Units.
+
+        Parameters
+        ----------
+        psip
+            The poloidal flux $\psi_p$ in Normalized Units.
+        theta
+            The $\theta$ angle in $[rads]$.
+        zeta
+            The $\zeta$ angle in $[rads]$.
+        t
+            The time in Normalized Units
+        """
+
+    def dh_dpsi(self, psi: float, theta: float, zeta: float, t: float) -> float:
+        r"""The harmonic's derivative with respect to $\psi$, $\partial h(\psi, \theta, \zeta, t)/\partial\psi$
+        in Normalized Units.
+
+        Parameters
+        ----------
+        psi
+            The toroidal flux $\psi$ in Normalized Units.
+        theta
+            The $\theta$ angle in $[rads]$.
+        zeta
+            The $\zeta$ angle in $[rads]$.
+        t
+            The time in Normalized Units
+        """
+
+    def dh_dpsip(self, psip: float, theta: float, zeta: float, t: float) -> float:
+        r"""The harmonic's derivative with respect to $\psi_p$, $\partial h(\psi_p, \theta, \zeta, t)/\partial \psi_p$
+        in Normalized Units.
+
+        Parameters
+        ----------
+        psip
+            The poloidal flux $\psi_p$ in Normalized Units.
+        theta
+            The $\theta$ angle in $[rads]$.
+        zeta
+            The $\zeta$ angle in $[rads]$.
+        t
+            The time in Normalized Units
+        """
+
+    def dh_of_psi_dtheta(
+        self, psi: float, theta: float, zeta: float, t: float
+    ) -> float:
+        r"""The harmonic's derivative with respect to $\theta$, $\partial h(\psi, \theta, \zeta, t)/\partial \theta$
+        in Normalized Units, as a function of $\psi$.
+
+        Parameters
+        ----------
+        psi
+            The toroidal flux $\psi$ in Normalized Units.
+        theta
+            The $\theta$ angle in $[rads]$.
+        zeta
+            The $\zeta$ angle in $[rads]$.
+        t
+            The time in Normalized Units
+        """
+
+    def dh_of_psip_dtheta(
+        self, psip: float, theta: float, zeta: float, t: float
+    ) -> float:
+        r"""The harmonic's derivative with respect to $\theta$, $\partial h(\psi_p, \theta, \zeta, t)/\partial \theta$
+        in Normalized Units, as a function of $\psi_p$.
+
+        Parameters
+        ----------
+        psip
+            The poloidal flux $\psi_p$ in Normalized Units.
+        theta
+            The $\theta$ angle in $[rads]$.
+        zeta
+            The $\zeta$ angle in $[rads]$.
+        t
+            The time in Normalized Units
+        """
+
+    def dh_of_psi_dzeta(self, psi: float, theta: float, zeta: float, t: float) -> float:
+        r"""The harmonic's derivative with respect to $\zeta$, $\partial h(\psi, \theta, \zeta, t)/\partial \zeta$
+        in Normalized Units, as a function of $\psi$.
+
+        Parameters
+        ----------
+        psi
+            The toroidal flux $\psi$ in Normalized Units.
+        theta
+            The $\theta$ angle in $[rads]$.
+        zeta
+            The $\zeta$ angle in $[rads]$.
+        t
+            The time in Normalized Units
+        """
+
+    def dh_of_psip_dzeta(
+        self, psip: float, theta: float, zeta: float, t: float
+    ) -> float:
+        r"""The harmonic's derivative with respect to $\zeta$, $\partial h(\psi_p, \theta, \zeta, t)/\partial \zeta$
+        in Normalized Units, as a function of $\psi_p$.
+
+        Parameters
+        ----------
+        psip
+            The poloidal flux $\psi_p$ in Normalized Units.
+        theta
+            The $\theta$ angle in $[rads]$.
+        zeta
+            The $\zeta$ angle in $[rads]$.
+        t
+            The time in Normalized Units
+        """
+
+    def dh_of_psi_dt(self, psi: float, theta: float, zeta: float, t: float) -> float:
+        r"""The harmonic's derivative with respect to the time $t$, $\partial h(\psi, \theta, \zeta, t)/\partial t$
+        in Normalized Units, as a function of $\psi$.
+
+        Parameters
+        ----------
+        psi
+            The toroidal flux $\psi$ in Normalized Units.
+        theta
+            The $\theta$ angle in $[rads]$.
+        zeta
+            The $\zeta$ angle in $[rads]$.
+        t
+            The time in Normalized Units
+        """
+
+    def dh_of_psip_dt(self, psip: float, theta: float, zeta: float, t: float) -> float:
+        r"""The harmonic's derivative with respect to the time $t$, $\partial h(\psi_p, \theta, \zeta, t)/\partial t$
+        in Normalized Units, as a function of $\psi_p$.
+
+        Parameters
+        ----------
+        psip
+            The poloidal flux $\psi_p$ in Normalized Units.
+        theta
+            The $\theta$ angle in $[rads]$.
+        zeta
+            The $\zeta$ angle in $[rads]$.
+        t
+            The time in Normalized Units
+        """
+
 # ================================================================================================
 
 class _PyLarGeometry(_GeometryTrait):
@@ -461,8 +689,8 @@ class _PyNcCurrent(_CurrentTrait):
     netcdf_version: NetCDFVersion
     equilibrium_type: EquilibriumType
     interp_type: Interp1DType
-    psi_wall: float | None
-    psip_wall: float | None
+    psi_wall: float
+    psip_wall: float
     psi_state: FluxState
     psip_state: FluxState
     psi_array: Array1
@@ -503,4 +731,48 @@ class _PyNcBfield(_BfieldTrait):
         self,
         path: str,
         interp_type: Interp2DType,
+    ) -> None: ...
+
+# ================================================================================================
+
+class _PyCosHarmonic(_HarmonicTrait):
+    """PyO3 export of `CosHarmonic`. Contains the full behavior of the wrapped object."""
+
+    equilibrium_type: EquilibriumType
+    ampl: float
+    phase: float
+    m: int
+    n: int
+
+    def __init__(self, ampl: float, m: int, n: int, phase: float) -> None: ...
+
+class _PyNcHarmonic(_HarmonicTrait):
+    """PyO3 export of `NcHarmonic`. Contains the full behavior of the wrapped object."""
+
+    path: str
+    netcdf_version: NetCDFVersion
+    equilibrium_type: EquilibriumType
+    interp_type: Interp1DType
+    m: int
+    n: int
+    phase_method: PhaseMethod
+    phase_average: float
+    psi_phase_resonance: float
+    psip_phase_resonance: float
+    psi_wall: float
+    psip_wall: float
+    psi_state: FluxState
+    psip_state: FluxState
+    psi_array: Array1
+    psip_array: Array1
+    alpha_array: Array1
+    phase_array: Array1
+
+    def __init__(
+        self,
+        path: str,
+        interp_type: Interp1DType,
+        m: int,
+        n: int,
+        phase_method: PhaseMethod = "Resonance",
     ) -> None: ...

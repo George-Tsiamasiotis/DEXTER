@@ -8,18 +8,22 @@ from .objects import LarGeometry, NcGeometry
 from .objects import UnityQfactor, ParabolicQfactor, NcQfactor
 from .objects import LarCurrent, NcCurrent
 from .objects import LarBfield, NcBfield
+from .objects import CosHarmonic, NcHarmonic
 
 Geometry: TypeAlias = LarGeometry | NcGeometry
-""" Available 'Geometry' Objects"""
+"""Available 'Geometry' Objects"""
 
 Qfactor: TypeAlias = UnityQfactor | ParabolicQfactor | NcQfactor
-""" Available 'Qfactor' Objects"""
+"""Available 'Qfactor' Objects"""
 
 Current: TypeAlias = LarCurrent | NcCurrent
-""" Available 'Current' Objects"""
+"""Available 'Current' Objects"""
 
 Bfield: TypeAlias = LarBfield | NcBfield
-""" Available 'Bfield' Objects"""
+"""Available 'Bfield' Objects"""
+
+Harmonic: TypeAlias = CosHarmonic | NcHarmonic
+"""Available 'Harmonic' Objects"""
 
 __all__ = [
     "_TOROIDAL_TEST_NETCDF_PATH",
@@ -37,4 +41,7 @@ __all__ = [
     "NcCurrent",
     "LarBfield",
     "NcBfield",
+    "Harmonic",
+    "CosHarmonic",
+    "NcHarmonic",
 ]

@@ -17,5 +17,7 @@ fn _core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<pylibrium::PyNcCurrent>()?;
     m.add_class::<pylibrium::PyLarBfield>()?;
     m.add_class::<pylibrium::PyNcBfield>()?;
+    m.add_class::<pylibrium::PyCosHarmonic>()?;
+    m.add_class::<pylibrium::PyNcHarmonic>()?;
     Ok(())
 }

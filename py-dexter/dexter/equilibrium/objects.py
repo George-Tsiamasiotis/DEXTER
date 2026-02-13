@@ -2,7 +2,14 @@ from dexter._core import _PyLarGeometry, _PyNcGeometry
 from dexter._core import _PyUnityQfactor, _PyParabolicQfactor, _PyNcQfactor
 from dexter._core import _PyLarCurrent, _PyNcCurrent
 from dexter._core import _PyLarBfield, _PyNcBfield
-from ._plotters import _FluxPlotter, _QfactorPlotter, _CurrentPlotter, _GeometryPlotter
+from dexter._core import _PyCosHarmonic, _PyNcHarmonic
+from ._plotters import (
+    _FluxPlotter,
+    _QfactorPlotter,
+    _CurrentPlotter,
+    _GeometryPlotter,
+    _HarmonicPlotter,
+)
 
 
 class LarGeometry(_PyLarGeometry, _GeometryPlotter):
@@ -135,7 +142,7 @@ class UnityQfactor(_PyUnityQfactor, _FluxPlotter, _QfactorPlotter):
     Example
     -------
     ```python title="UnityQfactor creation"
-    >>> geometry = dex.UnityQfactor()
+    >>> qfactor = dex.UnityQfactor()
 
     ```
     """
@@ -401,7 +408,7 @@ class NcBfield(_PyNcBfield):
     theta_array
         The NetCDF $\theta$ data,
     b_array
-        The $B$ data array.
+        The NetCDF $B$ data,
 
     Example
     -------
@@ -410,4 +417,119 @@ class NcBfield(_PyNcBfield):
     >>> bfield = dex.NcBfield(path, "Bicubic")
 
     ```
+    """
+
+
+# ================================================================================================
+
+
+class CosHarmonic(_PyCosHarmonic, _HarmonicPlotter):
+    r"""A simple analytical Harmonic of the form $\alpha\cos(m\theta-n\zeta+\phi)$, where $\alpha$
+    and $\phi$ are constants.
+
+    Attributes
+    ----------
+    equilibrium_type
+        The Equilibrium's type.
+    ampl
+        The harmonic's constant amplitude $\alpha$ in Normalized Units.
+    m
+        The poloidal mode number $m$.
+    n
+        The poloidal mode number $n$.
+    phase
+        The harmonic's constant phase $\phi$ in $[rads]$.
+
+    Example
+    -------
+    ```python title="CosHarmonic creation"
+    >>> harmonic = dex.CosHarmonic(ampl=1e-3, m=3, n=2, phase=0)
+
+    ```
+    """
+
+
+class NcHarmonic(_PyNcHarmonic, _HarmonicPlotter):
+    r"""Single perturbation harmonic from a netCDF file.
+
+    The harmonic has the form of:
+
+    $$
+    \alpha_{m, n}(\psi/\psi_p) \cos(m\theta - n\zeta + \phi(\psi/\psi_p)
+    $$
+
+    where $\alpha$ and $\phi$ can be expressed as functions of either or both $\psi, \psi_p$, and
+    are calculated by interpolation over the numerical data.
+
+    !!! info "Phase calculation configuration"
+
+        $\phi$ calculation can be further configured with the `phase_method` optional parameter, which
+        defaults to `Resonance`, meaning that a constant value equal to the value of $\phi$ at the
+        resonance is used. If no valid value can be found, it falls back to `Zero`. See
+        [`PhaseMethod`](types.md/#dexter.types.PhaseMethod)) for available configurations.
+
+        !!! example
+
+            ```python title="Phase calculation configuration"
+            >>> harmonic = dex.NcHarmonic(path, "cubic", 3, 2, phase_method = "Average")
+            >>> harmonic = dex.NcHarmonic(path, "cubic", 3, 2, phase_method = "Interpolation")
+            >>> harmonic = dex.NcHarmonic(path, "cubic", 3, 2, phase_method = ("Custom", 3.1415))
+
+            ...
+            ```
+
+    Parameters
+    ----------
+    path
+        The path to the NetCDF file.
+    interp_type
+        The type of 1D Interpolation.
+    m
+        The poloidal mode number $m$.
+    n
+        The poloidal mode number $n$.
+    phase_method
+        The method of calculation of the phase $\phi(\psi/\psi_p)$. Defaults to "Resonance".
+
+
+    Attributes
+    ----------
+    path
+        The path of the netCDF file.
+    netcdf_version
+        The netCDF convention version (SemVer).
+    equilibrium_type
+        The Equilibrium's type.
+    interp_type
+        The 1D Interpolation type.
+    m
+        The poloidal mode number $m$.
+    n
+        The poloidal mode number $n$.
+    phase_method
+        The method of calculation of the phase $\phi(\psi/\psi_p)$.
+    phase_average
+        The average value of the phase arrays, if `phase_method` is `Average`.
+    psi_phase_resonance
+        The toroidal flux’s value where the resonance is met, if `phase_method` is `Resonance` and
+        the resonance is in bounds.
+    psip_phase_resonance
+        The poloidal flux’s value where the resonance is met, if `phase_method` is `Resonance` and
+        the resonance is in bounds.
+    psi_wall
+        The toroidal flux value at the wall $\psi_{wall}$ in Normalized Units.
+    psip_wall
+        The poloidal flux value at the wall $\psi_{p,wall}$ in Normalized Units.
+    psi_state
+        The state of the toroidal flux coordinate.
+    psip_state
+        The state of the poloidal flux coordinate.
+    psi_array
+        The NetCDF $\psi$ data.
+    psip_array
+        The NetCDF $\psi_p$ data.
+    alpha_array
+        The NetCDF $\alpha$ data,
+    alpha_array
+        The NetCDF $\phi$ data,
     """

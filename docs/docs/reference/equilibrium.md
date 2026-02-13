@@ -81,3 +81,21 @@
         summary:
             functions: true
             attributes: true
+
+## Harmonics
+
+::: dexter.CosHarmonic
+    options:
+        inherited_members: true
+        docstring_section_style: list
+        summary:
+            functions: true
+            attributes: true
+
+::: dexter.NcHarmonic
+    options:
+        inherited_members: true
+        docstring_section_style: list
+        summary:
+            functions: true
+            attributes: true

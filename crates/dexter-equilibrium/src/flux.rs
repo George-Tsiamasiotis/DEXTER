@@ -20,7 +20,8 @@ pub enum NcFluxState {
 impl NcFluxState {
     /// Returns Self::Good if the values are strictly increasing, and Self::Bad otherwise.
     fn from_array(arr: ArrayView1<f64>) -> Self {
-        match arr.diff(1, Axis(0)).iter().all(|d| d.signum() == 1.0) {
+        // Use abs() to handle negative q-factors
+        match arr.abs().diff(1, Axis(0)).iter().all(|d| d.signum() == 1.0) {
             true => Self::Good,
             false => Self::Bad,
         }

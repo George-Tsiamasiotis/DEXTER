@@ -71,6 +71,10 @@ fn nc_harmonic() {
     let alpha_array: Array1<f64> = har.alpha_array();
     let phase_array: Array1<f64> = har.phase_array();
 
+    let phase_average: Option<f64> = har.phase_average();
+    let psi_phase_resonance: Option<f64> = har.psi_phase_resonance();
+    let psip_phase_resonance: Option<f64> = har.psip_phase_resonance();
+
     let psi = 0.01;
     let psip = 0.015;
     let theta = 3.14;

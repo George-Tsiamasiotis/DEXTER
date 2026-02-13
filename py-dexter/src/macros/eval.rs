@@ -11,9 +11,9 @@ macro_rules! py_eval1D {
     ($py_object:ident, $eval_method:ident) => {
         #[pymethods]
         impl $py_object {
-            pub fn $eval_method(&self, psip: f64) -> Result<f64, PyEqError> {
+            pub fn $eval_method(&self, flux: f64) -> Result<f64, PyEqError> {
                 let mut acc = Accelerator::new();
-                Ok(self.0.$eval_method(psip, &mut acc)?)
+                Ok(self.0.$eval_method(flux, &mut acc)?)
             }
         }
     };
@@ -25,13 +25,30 @@ macro_rules! py_eval2D {
     ($py_object:ident, $eval_method:ident) => {
         #[pymethods]
         impl $py_object {
-            pub fn $eval_method(&self, psip: f64, theta: f64) -> Result<f64, PyEqError> {
+            pub fn $eval_method(&self, flux: f64, theta: f64) -> Result<f64, PyEqError> {
                 let mut xacc = Accelerator::new();
                 let mut yacc = Accelerator::new();
                 let mut cache = Cache::new();
                 Ok(self
                     .0
-                    .$eval_method(psip, theta, &mut xacc, &mut yacc, &mut cache)?)
+                    .$eval_method(flux, theta, &mut xacc, &mut yacc, &mut cache)?)
+            }
+        }
+    };
+}
+
+/// Generates an eval method from the wrapped Harmonic object.
+#[macro_export]
+macro_rules! py_eval_harmonic {
+    ($py_object:ident, $eval_method:ident) => {
+        #[pymethods]
+        impl $py_object {
+            #[rustfmt::skip]
+            pub fn $eval_method(&self, flux: f64, theta: f64, zeta: f64, t: f64) -> Result<f64, PyEqError> {
+                let mut cache = self.0.get_default_cache();
+                Ok(self
+                    .0
+                    .$eval_method(flux, theta, zeta, t, &mut cache)?)
             }
         }
     };

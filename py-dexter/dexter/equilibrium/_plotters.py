@@ -10,7 +10,6 @@ from dexter.types import Array1, Array2, ArrayShape, EquilibriumType
 import numpy as np
 import matplotlib.pyplot as plt
 
-from abc import ABC
 from math import sqrt
 from collections.abc import Callable
 
@@ -23,11 +22,12 @@ XAXIS_KW = {"c": "k", "linewidth": 1.5}
 FLUX_SURFACE_KW = {"c": "b", "zorder": 2}
 JACOBIAN_KW = {"levels": None, "cmap": "plasma", "zorder": 2}
 WALL_KW = {"c": "k", "linewidth": 2, "linestyle": "-", "zorder": 2}
+RESONANCE_KW = {"c": "g", "linewidth": 1.5, "linestyle": ":", "zorder": 2}
 PSI_WALL_BOUND = 0.5
 PSIP_WALL_BOUND = 0.5
 
 
-class _FluxPlotter(ABC):
+class _FluxPlotter:
     """Provides plotting functions between the two flux coordinates."""
 
     equilibrium_type: EquilibriumType
@@ -592,8 +592,8 @@ class _CurrentPlotter:
     di_dpsip: Callable
 
     # Not guaranteed to exist
-    psi_wall: float | None
-    psip_wall: float | None
+    psi_wall: float
+    psip_wall: float
     psi_array: Array1
     psip_array: Array1
     g_array: Array1
@@ -824,6 +824,208 @@ class _CurrentPlotter:
 
         ax.plot(psips, ds, label=ax.get_ylabel(), **PLOT_KW)
 
+        ax.grid(True)
+        ax.legend()
+        plt.show()
+
+
+class _HarmonicPlotter:
+    """Provides plotting functions for a Harmonic's evaluation methods."""
+
+    equilibrium_type: EquilibriumType
+    ampl_of_psi: Callable
+    ampl_of_psip: Callable
+    phase_of_psi: Callable
+    phase_of_psip: Callable
+    m: int
+    n: int
+
+    # Not guaranteed to exist
+    psi_wall: float
+    psip_wall: float
+    psi_array: Array1
+    psip_array: Array1
+    alpha_array: Array1
+    phase_array: Array1
+
+    ignored = (0.0, 0.0, 0.0)  # Ignored evaluation arguments θ, ζ, t
+
+    def plot_ampl_of_psi(self, points: int = 1000, data: bool = False):
+        r"""Plots the harmonic's amplitude $\alpha(\psi)$.
+
+        Note
+        ----
+
+        It is assumed that the amplitude $\alpha$ is only a function of the flux.
+
+        Parameters
+        ----------
+        points
+            The number of points in which to evaluate $\alpha(\psi)$. Defaults to 1000.
+        data
+            Whether or not to plot the data array points (numerical equilibria only). Defaults to False.
+        """
+
+        psi_wall = getattr(self, "psi_wall", PSI_WALL_BOUND)
+        psis = np.linspace(0, psi_wall, points)
+        alphas = np.asarray([self.ampl_of_psi(psi, *self.ignored) for psi in psis])
+
+        fig = plt.figure(**FIG_KW)
+        ax = fig.add_subplot(**SUBPLOT_KW | {"ymargin": 0.1})
+        ax.set_title(r"$\alpha(\psi)$ $profile$")
+        ax.set_xlabel(r"$\psi$ $[Normalized]$")
+        ax.set_ylabel(r"$\alpha(\psi)$ $[Normalized]$")
+
+        ax.plot(psis, alphas, label=ax.get_ylabel(), **PLOT_KW)
+        if self.equilibrium_type == "Numerical" and data:
+            ax.scatter(
+                self.psi_array, self.alpha_array, label=r"$data$ $points$", **SCATTER_KW
+            )
+
+        ax.axhline(y=0, **XAXIS_KW)
+        ax.grid(True)
+        ax.legend()
+        plt.show()
+
+    def plot_ampl_of_psip(self, points: int = 1000, data: bool = False):
+        r"""Plots the harmonic's amplitude $\alpha(\psi_p)$.
+
+        Note
+        ----
+
+        It is assumed that the amplitude $\alpha$ is only a function of the flux.
+
+        Parameters
+        ----------
+        points
+            The number of points in which to evaluate $\alpha(\psi_p)$. Defaults to 1000.
+        data
+            Whether or not to plot the data array points (numerical equilibria only). Defaults to False.
+        """
+
+        psip_wall = getattr(self, "psip_wall", PSIP_WALL_BOUND)
+        psips = np.linspace(0, psip_wall, points)
+        alphas = np.asarray([self.ampl_of_psip(psip, *self.ignored) for psip in psips])
+
+        fig = plt.figure(**FIG_KW)
+        ax = fig.add_subplot(**SUBPLOT_KW | {"ymargin": 0.1})
+        ax.set_title(r"$\alpha(\psi_p)$ $profile$")
+        ax.set_xlabel(r"$\psi_p$ $[Normalized]$")
+        ax.set_ylabel(r"$\alpha(\psi_p)$ $[Normalized]$")
+
+        ax.plot(psips, alphas, label=ax.get_ylabel(), **PLOT_KW)
+        if self.equilibrium_type == "Numerical" and data:
+            ax.scatter(
+                self.psip_array,
+                self.alpha_array,
+                label=r"$data$ $points$",
+                **SCATTER_KW,
+            )
+
+        ax.axhline(y=0, **XAXIS_KW)
+        ax.grid(True)
+        ax.legend()
+        plt.show()
+
+    def plot_phase_of_psi(
+        self, points: int = 1000, data: bool = False, resonance: bool = True
+    ):
+        r"""Plots the harmonic's phase $\phi(\psi)$.
+
+        Note
+        ----
+
+        It is assumed that the amplitude $\phi$ is only a function of the flux.
+
+        Parameters
+        ----------
+        points
+            The number of points in which to evaluate $\phi(\psi)$. Defaults to 1000.
+        data
+            Whether or not to plot the data array points (numerical equilibria only). Defaults to False.
+        resonance
+            Whether or not to plot the resonance location, if `phase_method` is `Resonance`.
+            Defaults to True.
+        """
+
+        psi_wall = getattr(self, "psi_wall", PSI_WALL_BOUND)
+        psis = np.linspace(0, psi_wall, points)
+        phis = np.asarray([self.phase_of_psi(psi, *self.ignored) for psi in psis])
+
+        fig = plt.figure(**FIG_KW)
+        ax = fig.add_subplot(**SUBPLOT_KW | {"ymargin": 0.1})
+        ax.set_title(r"$\phi(\psi)$ $profile$")
+        ax.set_xlabel(r"$\psi$ $[Normalized]$")
+        ax.set_ylabel(r"$\phi(\psi)$ $[Normalized]$")
+
+        ax.plot(psis, phis, label=ax.get_ylabel(), **PLOT_KW)
+        if self.equilibrium_type == "Numerical" and data:
+            ax.scatter(
+                self.psi_array, self.phase_array, label=r"$data$ $points$", **SCATTER_KW
+            )
+
+        if resonance and (getattr(self, "phase_method", False) == "Resonance"):
+            psi_res = getattr(self, "psi_phase_resonance")
+            ax.axvline(
+                x=psi_res,
+                label=f"$Resonance$ $(n/m = {self.n}/{self.m})$",
+                **RESONANCE_KW,
+            )
+
+        ax.axhline(y=0, **XAXIS_KW)
+        ax.grid(True)
+        ax.legend()
+        plt.show()
+
+    def plot_phase_of_psip(
+        self, points: int = 1000, data: bool = False, resonance: bool = True
+    ):
+        r"""Plots the harmonic's phase $\phi(\psi_p)$.
+
+        Note
+        ----
+
+        It is assumed that the amplitude $\phi$ is only a function of the flux.
+
+        Parameters
+        ----------
+        points
+            The number of points in which to evaluate $\phi(\psi_p)$. Defaults to 1000.
+        data
+            Whether or not to plot the data array points (numerical equilibria only). Defaults to False.
+        resonance
+            Whether or not to plot the resonance location, if `phase_method` is `Resonance`.
+            Defaults to True.
+        """
+
+        psip_wall = getattr(self, "psip_wall", PSIP_WALL_BOUND)
+        psips = np.linspace(0, psip_wall, points)
+        phis = np.asarray([self.phase_of_psip(psip, *self.ignored) for psip in psips])
+
+        fig = plt.figure(**FIG_KW)
+        ax = fig.add_subplot(**SUBPLOT_KW | {"ymargin": 0.1})
+        ax.set_title(r"$\phi(\psi_p)$ $profile$")
+        ax.set_xlabel(r"$\psi_p$ $[Normalized]$")
+        ax.set_ylabel(r"$\phi(\psi_p)$ $[Normalized]$")
+
+        ax.plot(psips, phis, label=ax.get_ylabel(), **PLOT_KW)
+        if self.equilibrium_type == "Numerical" and data:
+            ax.scatter(
+                self.psip_array,
+                self.phase_array,
+                label=r"$data$ $points$",
+                **SCATTER_KW,
+            )
+
+        if resonance and (getattr(self, "phase_method", False) == "Resonance"):
+            psip_res = getattr(self, "psip_phase_resonance")
+            ax.axvline(
+                x=psip_res,
+                label=f"$Resonance$ $(n/m = {self.n}/{self.m})$",
+                **RESONANCE_KW,
+            )
+
+        ax.axhline(y=0, **XAXIS_KW)
         ax.grid(True)
         ax.legend()
         plt.show()

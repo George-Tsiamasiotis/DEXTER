@@ -7,8 +7,10 @@ from dexter import (
     NcCurrent,
     # LarGeometry,
     NcGeometry,
+    CosHarmonic,
+    NcHarmonic,
 )
-from dexter import Current, Qfactor, Geometry
+from dexter import Geometry, Qfactor, Current, Harmonic
 from dexter.types import FluxWall
 
 # Unsure
@@ -52,11 +54,33 @@ def test_nc_current():
     _test_all_current_plots(current)
 
 
+def test_cos_harmonic():
+    harmonic = CosHarmonic(1e-3, 3, 2, 0)
+    _test_all_harmonic_plots(harmonic)
+
+
+def test_nc_harmonic(nc_harmonic: NcHarmonic):
+    _test_all_harmonic_plots(nc_harmonic)
+
+
 def _test_all_flux_plots(obj: Qfactor | NcGeometry):
     obj.plot_psip_of_psi(points=50, data=True)
     obj.plot_psip_of_psi(points=50, data=False)
     obj.plot_psi_of_psip(points=50, data=True)
     obj.plot_psi_of_psip(points=50, data=False)
+
+
+def _test_all_geometry_plots(geometry: Geometry):
+    geometry.plot_r_of_psi(points=50, data=True)
+    geometry.plot_r_of_psi(points=50, data=False)
+    geometry.plot_r_of_psip(points=50, data=True)
+    geometry.plot_r_of_psip(points=50, data=False)
+    geometry.plot_psi_of_r(points=50, data=True)
+    geometry.plot_psi_of_r(points=50, data=False)
+    geometry.plot_psip_of_r(points=50, data=True)
+    geometry.plot_psip_of_r(points=50, data=False)
+    geometry.plot_flux_surfaces()
+    geometry.plot_jacobian()
 
 
 def _test_all_qfactor_plots(qfactor: Qfactor):
@@ -86,14 +110,12 @@ def _test_all_current_plots(current: Current):
     current.plot_di_dpsip(points=50)
 
 
-def _test_all_geometry_plots(geometry: Geometry):
-    geometry.plot_r_of_psi(points=50, data=True)
-    geometry.plot_r_of_psi(points=50, data=False)
-    geometry.plot_r_of_psip(points=50, data=True)
-    geometry.plot_r_of_psip(points=50, data=False)
-    geometry.plot_psi_of_r(points=50, data=True)
-    geometry.plot_psi_of_r(points=50, data=False)
-    geometry.plot_psip_of_r(points=50, data=True)
-    geometry.plot_psip_of_r(points=50, data=False)
-    geometry.plot_flux_surfaces()
-    geometry.plot_jacobian()
+def _test_all_harmonic_plots(harmonic: Harmonic):
+    harmonic.plot_ampl_of_psi(points=50, data=True)
+    harmonic.plot_ampl_of_psi(points=50, data=False)
+    harmonic.plot_ampl_of_psip(points=50, data=True)
+    harmonic.plot_ampl_of_psip(points=50, data=False)
+    harmonic.plot_phase_of_psi(points=50, data=True)
+    harmonic.plot_phase_of_psi(points=50, data=False)
+    harmonic.plot_phase_of_psip(points=50, data=True)
+    harmonic.plot_phase_of_psip(points=50, data=False)

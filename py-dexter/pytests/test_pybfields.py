@@ -8,15 +8,16 @@ def test_lar_bfield():
     assert isinstance(bfield.__str__(), str)
     assert isinstance(bfield.__repr__(), str)
     assert bfield.equilibrium_type == "Analytical"
-    assert isinstance(bfield.b_of_psi(0.01, 3.14), float)
-    assert isinstance(bfield.db_dpsi(0.01, 3.14), float)
-    assert isinstance(bfield.db_of_psi_dtheta(0.01, 3.14), float)
+    args = (0.01, 3.14)
+    assert isinstance(bfield.b_of_psi(*args), float)
+    assert isinstance(bfield.db_dpsi(*args), float)
+    assert isinstance(bfield.db_of_psi_dtheta(*args), float)
     with pytest.raises(BaseException):
-        bfield.b_of_psip(0.01, 3.14)
+        bfield.b_of_psip(*args)
     with pytest.raises(BaseException):
-        bfield.db_dpsip(0.01, 3.14)
+        bfield.db_dpsip(*args)
     with pytest.raises(BaseException):
-        bfield.db_of_psip_dtheta(0.01, 3.14)
+        bfield.db_of_psip_dtheta(*args)
 
 
 def test_nc_bfield_getters(nc_bfield: NcBfield):
@@ -39,42 +40,42 @@ def test_nc_bfield_getters(nc_bfield: NcBfield):
 
 
 def test_nc_bfield_eval(nc_bfield: NcBfield):
-    psi = 0.01
-    psip = 0.015
-    theta = 3.14
-    assert isinstance(nc_bfield.b_of_psi(psi, theta), float)
-    assert isinstance(nc_bfield.b_of_psip(psip, theta), float)
-    assert isinstance(nc_bfield.db_dpsi(psi, theta), float)
-    assert isinstance(nc_bfield.db_dpsip(psip, theta), float)
-    assert isinstance(nc_bfield.db_of_psi_dtheta(psi, theta), float)
-    assert isinstance(nc_bfield.db_of_psip_dtheta(psip, theta), float)
+    args = (0.01, 3.14)
+    assert isinstance(nc_bfield.b_of_psi(*args), float)
+    assert isinstance(nc_bfield.b_of_psip(*args), float)
+    assert isinstance(nc_bfield.db_dpsi(*args), float)
+    assert isinstance(nc_bfield.db_dpsip(*args), float)
+    assert isinstance(nc_bfield.db_of_psi_dtheta(*args), float)
+    assert isinstance(nc_bfield.db_of_psip_dtheta(*args), float)
 
 
 def test_toroidal_nc_bfield():
     nc_bfield = NcBfield(_TOROIDAL_TEST_NETCDF_PATH, "Bicubic")
     assert nc_bfield.psi_state == "Good"
     assert nc_bfield.psip_state == "Bad"
-    assert isinstance(nc_bfield.b_of_psi(0.01, 3.14), float)
-    assert isinstance(nc_bfield.db_dpsi(0.01, 3.14), float)
-    assert isinstance(nc_bfield.db_of_psi_dtheta(0.01, 3.14), float)
+    args = (0.01, 3.14)
+    assert isinstance(nc_bfield.b_of_psi(*args), float)
+    assert isinstance(nc_bfield.db_dpsi(*args), float)
+    assert isinstance(nc_bfield.db_of_psi_dtheta(*args), float)
     with pytest.raises(BaseException):
-        nc_bfield.b_of_psip(0.01, 3.14)
+        nc_bfield.b_of_psip(*args)
     with pytest.raises(BaseException):
-        nc_bfield.db_dpsip(0.01, 3.14)
+        nc_bfield.db_dpsip(*args)
     with pytest.raises(BaseException):
-        nc_bfield.db_of_psip_dtheta(0.01, 3.14)
+        nc_bfield.db_of_psip_dtheta(*args)
 
 
 def test_poloidal_nc_bfield():
     nc_bfield = NcBfield(_POLOIDAL_TEST_NETCDF_PATH, "Bicubic")
     assert nc_bfield.psi_state == "Bad"
     assert nc_bfield.psip_state == "Good"
-    assert isinstance(nc_bfield.b_of_psip(0.01, 3.14), float)
-    assert isinstance(nc_bfield.db_dpsip(0.01, 3.14), float)
-    assert isinstance(nc_bfield.db_of_psip_dtheta(0.01, 3.14), float)
+    args = (0.01, 3.14)
+    assert isinstance(nc_bfield.b_of_psip(*args), float)
+    assert isinstance(nc_bfield.db_dpsip(*args), float)
+    assert isinstance(nc_bfield.db_of_psip_dtheta(*args), float)
     with pytest.raises(BaseException):
-        nc_bfield.b_of_psi(0.01, 3.14)
+        nc_bfield.b_of_psi(*args)
     with pytest.raises(BaseException):
-        nc_bfield.db_dpsi(0.01, 3.14)
+        nc_bfield.db_dpsi(*args)
     with pytest.raises(BaseException):
-        nc_bfield.db_of_psi_dtheta(0.01, 3.14)
+        nc_bfield.db_of_psi_dtheta(*args)

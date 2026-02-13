@@ -1,6 +1,9 @@
 //! `dexter-equilibrium` newtypes, constructors and method exports.
 
 use dexter::dexter_equilibrium::{Bfield, LarBfield, NcBfield, NcBfieldBuilder};
+use dexter::dexter_equilibrium::{
+    CosHarmonic, Harmonic, NcHarmonic, NcHarmonicBuilder, PhaseMethod,
+};
 use dexter::dexter_equilibrium::{Current, LarCurrent, NcCurrent, NcCurrentBuilder};
 use dexter::dexter_equilibrium::{FluxCommute, FluxWall};
 use dexter::dexter_equilibrium::{Geometry, LarGeometry, NcGeometry, NcGeometryBuilder};
@@ -14,7 +17,7 @@ use rsl_interpolation::{Accelerator, Cache};
 
 use crate::pyerror::PyEqError;
 use crate::{
-    py_debug_impl, py_eval1D, py_eval2D, py_export_getter, py_get_enum_string,
+    py_debug_impl, py_eval_harmonic, py_eval1D, py_eval2D, py_export_getter, py_get_enum_string,
     py_get_netcdf_version, py_get_numpy1D, py_get_numpy1D_fallible, py_get_numpy2D, py_get_path,
     py_repr_impl,
 };
@@ -353,3 +356,145 @@ py_eval2D!(PyNcBfield, db_dpsi);
 py_eval2D!(PyNcBfield, db_dpsip);
 py_eval2D!(PyNcBfield, db_of_psi_dtheta);
 py_eval2D!(PyNcBfield, db_of_psip_dtheta);
+
+// ===============================================================================================
+// ===============================================================================================
+
+#[pyclass(name = "_PyCosHarmonic", subclass, frozen)]
+pub struct PyCosHarmonic(CosHarmonic);
+
+#[pymethods]
+impl PyCosHarmonic {
+    #[new]
+    #[pyo3(signature = (ampl, m, n, phase))]
+    pub fn new(ampl: f64, m: i64, n: i64, phase: f64) -> Self {
+        Self(CosHarmonic::new(ampl, m, n, phase))
+    }
+}
+
+py_debug_impl!(PyCosHarmonic);
+py_repr_impl!(PyCosHarmonic);
+py_get_enum_string!(PyCosHarmonic, equilibrium_type);
+py_export_getter!(PyCosHarmonic, ampl, f64);
+py_export_getter!(PyCosHarmonic, phase, f64);
+py_export_getter!(PyCosHarmonic, m, i64);
+py_export_getter!(PyCosHarmonic, n, i64);
+py_eval_harmonic!(PyCosHarmonic, ampl_of_psi);
+py_eval_harmonic!(PyCosHarmonic, ampl_of_psip);
+py_eval_harmonic!(PyCosHarmonic, phase_of_psi);
+py_eval_harmonic!(PyCosHarmonic, phase_of_psip);
+py_eval_harmonic!(PyCosHarmonic, h_of_psi);
+py_eval_harmonic!(PyCosHarmonic, h_of_psip);
+py_eval_harmonic!(PyCosHarmonic, dh_dpsi);
+py_eval_harmonic!(PyCosHarmonic, dh_dpsip);
+py_eval_harmonic!(PyCosHarmonic, dh_of_psi_dtheta);
+py_eval_harmonic!(PyCosHarmonic, dh_of_psip_dtheta);
+py_eval_harmonic!(PyCosHarmonic, dh_of_psi_dzeta);
+py_eval_harmonic!(PyCosHarmonic, dh_of_psip_dzeta);
+py_eval_harmonic!(PyCosHarmonic, dh_of_psi_dt);
+py_eval_harmonic!(PyCosHarmonic, dh_of_psip_dt);
+
+// ===============================================================================================
+
+#[pyclass(name = "_PyNcHarmonic", subclass, frozen)]
+pub struct PyNcHarmonic(NcHarmonic);
+
+#[pymethods]
+impl PyNcHarmonic {
+    #[new]
+    #[pyo3(signature = (path, interp_type, m, n, phase_method))]
+    pub fn new<'py>(
+        path: &str,
+        interp_type: &str,
+        m: i64,
+        n: i64,
+        phase_method: Bound<'py, PyAny>,
+    ) -> Result<Self, PyEqError> {
+        let path = std::path::PathBuf::from(path);
+        let method: PhaseMethod = Self::resolve_phase_method(phase_method);
+        let builder = NcHarmonicBuilder::new(&path, interp_type, m, n).with_phase_method(method);
+        Ok(Self(builder.build()?))
+    }
+}
+
+impl PyNcHarmonic {
+    /// Attempts to create a valid [`PhaseMethod`] object from the corresponding [`PyAny`]
+    /// Python argument.
+    ///
+    /// Returns early if a valid string is found that matches one of the simple variants,
+    /// otherwise tries to unpack the [`PyAny`] object into a ("Custom", f64) tuple and cast it
+    /// into a [`PhaseMethod::Custom()`].
+    ///
+    /// Panics if both string matching and casting fail.
+    fn resolve_phase_method<'py>(arg: Bound<'py, PyAny>) -> PhaseMethod {
+        use PhaseMethod::*;
+
+        match arg.to_string().to_lowercase().as_str() {
+            "zero" => return Zero,
+            "average" => return Average,
+            "resonance" => return Resonance,
+            "interpolation" => return Interpolation,
+            _ => (),
+        };
+
+        let tuple: Option<(String, f64)> = match arg.cast::<PyTuple>() {
+            Ok(tuple) => {
+                let string: Option<String> = match tuple.get_item(0) {
+                    Ok(string) => string.extract().ok(),
+                    Err(_) => None,
+                };
+                let value: Option<f64> = match tuple.get_item(1) {
+                    Ok(value) => value.extract().ok(),
+                    Err(_) => None,
+                };
+                match (string, value) {
+                    (Some(string), Some(value)) if value.is_finite() => Some((string, value)),
+                    _ => None,
+                }
+            }
+            Err(_) => None,
+        };
+
+        match tuple {
+            Some((string, value)) if string.to_lowercase().as_str() == "custom" => {
+                PhaseMethod::Custom(value)
+            }
+            _ => panic!("Invalid phase method"),
+        }
+    }
+}
+
+py_debug_impl!(PyNcHarmonic);
+py_repr_impl!(PyNcHarmonic);
+py_get_path!(PyNcHarmonic);
+py_get_netcdf_version!(PyNcHarmonic);
+py_get_enum_string!(PyNcHarmonic, equilibrium_type);
+py_export_getter!(PyNcHarmonic, interp_type, String);
+py_export_getter!(PyNcHarmonic, m, i64);
+py_export_getter!(PyNcHarmonic, n, i64);
+py_get_enum_string!(PyNcHarmonic, phase_method);
+py_export_getter!(PyNcHarmonic, phase_average, Option<f64>);
+py_export_getter!(PyNcHarmonic, psi_phase_resonance, Option<f64>);
+py_export_getter!(PyNcHarmonic, psip_phase_resonance, Option<f64>);
+py_export_getter!(PyNcHarmonic, psi_wall, Option<f64>);
+py_export_getter!(PyNcHarmonic, psip_wall, Option<f64>);
+py_get_enum_string!(PyNcHarmonic, psi_state);
+py_get_enum_string!(PyNcHarmonic, psip_state);
+py_get_numpy1D_fallible!(PyNcHarmonic, psi_array);
+py_get_numpy1D_fallible!(PyNcHarmonic, psip_array);
+py_get_numpy1D!(PyNcHarmonic, alpha_array);
+py_get_numpy1D!(PyNcHarmonic, phase_array);
+py_eval_harmonic!(PyNcHarmonic, ampl_of_psi);
+py_eval_harmonic!(PyNcHarmonic, ampl_of_psip);
+py_eval_harmonic!(PyNcHarmonic, phase_of_psi);
+py_eval_harmonic!(PyNcHarmonic, phase_of_psip);
+py_eval_harmonic!(PyNcHarmonic, h_of_psi);
+py_eval_harmonic!(PyNcHarmonic, h_of_psip);
+py_eval_harmonic!(PyNcHarmonic, dh_dpsi);
+py_eval_harmonic!(PyNcHarmonic, dh_dpsip);
+py_eval_harmonic!(PyNcHarmonic, dh_of_psi_dtheta);
+py_eval_harmonic!(PyNcHarmonic, dh_of_psip_dtheta);
+py_eval_harmonic!(PyNcHarmonic, dh_of_psi_dzeta);
+py_eval_harmonic!(PyNcHarmonic, dh_of_psip_dzeta);
+py_eval_harmonic!(PyNcHarmonic, dh_of_psi_dt);
+py_eval_harmonic!(PyNcHarmonic, dh_of_psip_dt);

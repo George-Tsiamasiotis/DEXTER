@@ -11,6 +11,8 @@
 ::: dexter.Geometry
 ::: dexter.Qfactor
 ::: dexter.Current
+::: dexter.Bfield
+::: dexter.Harmonic
 
 ### Misc
 
@@ -20,4 +22,5 @@
 ::: dexter.types.FluxCoordinate
 ::: dexter.types.FluxState
 ::: dexter.types.FluxWall
+::: dexter.types.PhaseMethod
 ::: dexter.types.NetCDFVersion

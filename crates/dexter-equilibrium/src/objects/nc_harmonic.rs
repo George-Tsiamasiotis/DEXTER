@@ -14,7 +14,7 @@ use rsl_interpolation::{Accelerator, DynInterpolation, InterpType, make_interp_t
 use std::f64::consts::TAU;
 use std::path::{Path, PathBuf};
 
-/// Defines the calculation method of the phase `φ` in an Numerical [`Harmonic`].
+/// Defines the calculation method of the phase `φ` in a Numerical [`Harmonic`].
 #[derive(Default, Debug, Clone)]
 pub enum PhaseMethod {
     /// Corresponds to `φ = 0`.
@@ -238,6 +238,23 @@ impl NcHarmonic {
         self.psi_single.phase_method.clone()
     }
 
+    /// Returns the average value of the phase arrays, if [`PhaseMethod`] is `Average`.
+    pub fn phase_average(&self) -> Option<f64> {
+        self.psi_single.phase_average
+    }
+
+    /// Returns the toroidal flux's value where the resonance is met, if [`PhaseMethod`] is
+    /// `Resonance` and the resonance is in bounds.
+    pub fn psi_phase_resonance(&self) -> Option<f64> {
+        self.psi_single.phase_resonance
+    }
+
+    /// Returns the poloidal flux's value where the resonance is met, if [`PhaseMethod`] is
+    /// `Resonance` and the resonance is in bounds.
+    pub fn psip_phase_resonance(&self) -> Option<f64> {
+        self.psip_single.phase_resonance
+    }
+
     /// Returns the toroidal flux's value at the wall `ψ_wall`.
     pub fn psi_wall(&self) -> Option<f64> {
         self.psi_single.flux.wall_value()
@@ -434,6 +451,8 @@ impl SingleNcHarmonic {
     /// have the same length, and just picking the phase value with the same index as the q-factor
     /// element closer to the resonance. This introduces a small error, but might be the better way
     /// to go.
+    ///
+    /// FIXME: This code is both wrong and ugly, needs rewriting.
     fn find_resonance_phase(&self, f: &netcdf::File) -> Option<f64> {
         use crate::extract::netcdf_fields::*;
         use crate::extract::*;
@@ -443,6 +462,7 @@ impl SingleNcHarmonic {
             Err(_) => return None,
         };
 
+        // FIXME: Handle negative and/or non-monotonic q-factors
         let flux_of_q_interp = match &self.flux.state {
             NcFluxState::None => return None, // flux does not exist in the dataset
             _ => {
