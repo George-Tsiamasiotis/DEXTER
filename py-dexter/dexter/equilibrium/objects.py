@@ -3,6 +3,7 @@ from dexter._core import _PyUnityQfactor, _PyParabolicQfactor, _PyNcQfactor
 from dexter._core import _PyLarCurrent, _PyNcCurrent
 from dexter._core import _PyLarBfield, _PyNcBfield
 from dexter._core import _PyCosHarmonic, _PyNcHarmonic
+from dexter._core import _PyCosPerturbation, _PyNcPerturbation
 from ._plotters import (
     _FluxPlotter,
     _QfactorPlotter,
@@ -424,8 +425,26 @@ class NcBfield(_PyNcBfield):
 
 
 class CosHarmonic(_PyCosHarmonic, _HarmonicPlotter):
-    r"""A simple analytical Harmonic of the form $\alpha\cos(m\theta-n\zeta+\phi)$, where $\alpha$
-    and $\phi$ are constants.
+    r"""A simple analytical Harmonic of the form:
+
+    $$
+    \alpha_{\{m,n\}}(\psi/\psi_p, \theta, \zeta, t)
+    $$
+
+    where $\alpha$ and $\phi$ are constants.
+
+    with '$\psi/\psi_p$' meaning it can be expressed as a function of either/both flux coordinates.
+
+    Parameters
+    ----------
+    ampl
+        The harmonic's constant amplitude $\alpha$ in Normalized Units.
+    m
+        The poloidal mode number $m$.
+    n
+        The poloidal mode number $n$.
+    phase
+        The harmonic's constant phase $\phi$ in $[rads]$.
 
     Attributes
     ----------
@@ -455,8 +474,10 @@ class NcHarmonic(_PyNcHarmonic, _HarmonicPlotter):
     The harmonic has the form of:
 
     $$
-    \alpha_{m, n}(\psi/\psi_p) \cos(m\theta - n\zeta + \phi(\psi/\psi_p)
+    \alpha_{\{m, n\}}(\psi/\psi_p) \cos\big(m\theta - n\zeta + \phi(\psi/\psi_p) \big)
     $$
+
+    with '$\psi/\psi_p$' meaning it can be expressed as a function of either/both flux coordinates.
 
     where $\alpha$ and $\phi$ can be expressed as functions of either or both $\psi, \psi_p$, and
     are calculated by interpolation over the numerical data.
@@ -533,3 +554,127 @@ class NcHarmonic(_PyNcHarmonic, _HarmonicPlotter):
     alpha_array
         The NetCDF $\phi$ data,
     """
+
+
+# ================================================================================================
+
+
+class CosPerturbation(_PyCosPerturbation):
+    r"""A sum of an arbitrary number of `CosHarmonics`.
+
+    It has the general form of:
+
+    $$
+    \sum_{\{m,n\}} \bigg[ \alpha_{\{m,n\}}(\psi/\psi_p, \theta, \zeta, t) \bigg]
+    $$
+
+    with '$\psi/\psi_p$' meaning it can be expressed as a function of either/both flux coordinates.
+
+    Parameters
+    ----------
+    harmonics
+        List of the contained harmonics.
+
+    Attributes
+    ----------
+    harmonics
+        List of the contained harmonics.
+
+    Example
+    -------
+    ```python title="CosPerturbation creation with specific harmonics"
+    >>> perturbation = dex.CosPerturbation(
+    ...     [
+    ...         dex.CosHarmonic(1e-3, 1, 2, 0.0),
+    ...         dex.CosHarmonic(1e-3, 1, 3, 0.0),
+    ...         dex.CosHarmonic(1e-3, 1, 4, 0.0),
+    ...         dex.CosHarmonic(1e-3, 1, 5, 0.0),
+    ...     ]
+    ... )
+
+    ```
+
+    ```python title="CosPerturbation creation with list iteration"
+    >>> perturbation = dex.CosPerturbation(
+    ...     [dex.CosHarmonic(1e-3, 1, n, 0.0) for n in range(1, 8)] # modes with m=1 and n=1-7
+    ... )
+
+    ```
+    """
+
+    harmonics: list[CosHarmonic]
+
+    def __init__(self, harmonics: list[CosHarmonic]) -> None: ...
+
+
+class NcPerturbation(_PyNcPerturbation):
+    r"""A sum of an arbitrary number of `NcHarmonics`.
+
+    It has the general form of:
+
+    $$
+    \sum_{\{m,n\}} \bigg[ \Phi_{\{m,n\}}(\psi/\psi_p, \theta, \zeta, t) \bigg] =
+    \sum_{\{m,n\}} \bigg[ \alpha_{\{m,n\}}(\psi/\psi_p)
+        \cos\big( m\theta - n\zeta + \phi(\psi/\psi_p) \big)\bigg]
+    $$
+
+
+    with '$\psi/\psi_p$' meaning it can be expressed as a function of either/both flux coordinates.
+
+    Parameters
+    ----------
+    harmonics
+        List of the contained harmonics.
+
+    Attributes
+    ----------
+    harmonics
+        List of the contained harmonics.
+
+    Example
+    -------
+    ```python title="NcPerturbation creation with specific harmonics"
+    >>> perturbation = dex.NcPerturbation(
+    ...     [
+    ...         dex.NcHarmonic(path, "cubic", 2, 1, phase_method="Interpolation"),
+    ...         dex.NcHarmonic(path, "cubic", 2, 2, phase_method="Interpolation"),
+    ...         dex.NcHarmonic(path, "cubic", 3, 2, phase_method="Interpolation"),
+    ...     ]
+    ... )
+
+    ```
+    """
+
+    harmonics: list[NcHarmonic]
+
+    def __init__(self, harmonics: list[NcHarmonic]) -> None: ...
+
+
+# ================================================================================================
+
+
+def perturbation(
+    harmonics: list[CosHarmonic] | list[NcHarmonic],
+) -> CosPerturbation | NcPerturbation:
+    """Helper function to create a `Perturbation` object.
+
+    The type of `Perturbation` is determined by the type of the passed harmonics.
+
+    Parameters
+    ----------
+    harmonics
+        The harmonics that comprise the perturbation. **Must be of the same type.**
+
+    Returns
+    -------
+    The corresponding `Perturbation` type.
+    """
+    match harmonics:
+        case []:
+            return CosPerturbation([])
+        case [*cos] if all([isinstance(harmonic, CosHarmonic) for harmonic in cos]):
+            return CosPerturbation(harmonics)  # type: ignore
+        case [*nc] if all([isinstance(harmonic, NcHarmonic) for harmonic in nc]):
+            return NcPerturbation(harmonics)  # type: ignore
+        case _:
+            raise TypeError("All harmonics must be of the same type")

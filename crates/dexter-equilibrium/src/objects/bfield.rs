@@ -461,6 +461,7 @@ mod test_toroidal_nc_evals {
     }
 
     #[test]
+    #[rustfmt::skip]
     fn good_psi_evals() {
         let b = create_nc_bfield(TOROIDAL_TEST_NETCDF_PATH);
         let mut a1 = Accelerator::new();
@@ -468,9 +469,9 @@ mod test_toroidal_nc_evals {
         let mut c = Cache::new();
         let p = 0.01;
         let t = 3.14;
-        b.b_of_psi(p, t, &mut a1, &mut a2, &mut c).unwrap();
-        b.db_dpsi(p, t, &mut a1, &mut a2, &mut c).unwrap();
-        b.db_of_psi_dtheta(p, t, &mut a1, &mut a2, &mut c).unwrap();
+        assert!(b.b_of_psi(p, t, &mut a1, &mut a2, &mut c).unwrap().is_finite());
+        assert!(b.db_dpsi(p, t, &mut a1, &mut a2, &mut c).unwrap().is_finite());
+        assert!(b.db_of_psi_dtheta(p, t, &mut a1, &mut a2, &mut c).unwrap().is_finite());
     }
 
     #[test]
@@ -511,6 +512,7 @@ mod test_poloidal_nc_evals {
     }
 
     #[test]
+    #[rustfmt::skip]
     fn good_psip_evals() {
         let b = create_nc_bfield(POLOIDAL_TEST_NETCDF_PATH);
         let mut a1 = Accelerator::new();
@@ -518,9 +520,9 @@ mod test_poloidal_nc_evals {
         let mut c = Cache::new();
         let p = 0.01;
         let t = 3.14;
-        b.b_of_psip(p, t, &mut a1, &mut a2, &mut c).unwrap();
-        b.db_dpsip(p, t, &mut a1, &mut a2, &mut c).unwrap();
-        b.db_of_psip_dtheta(p, t, &mut a1, &mut a2, &mut c).unwrap();
+        assert!(b.b_of_psip(p, t, &mut a1, &mut a2, &mut c).unwrap().is_finite());
+        assert!(b.db_dpsip(p, t, &mut a1, &mut a2, &mut c).unwrap().is_finite());
+        assert!(b.db_of_psip_dtheta(p, t, &mut a1, &mut a2, &mut c).unwrap().is_finite());
     }
 
     #[test]

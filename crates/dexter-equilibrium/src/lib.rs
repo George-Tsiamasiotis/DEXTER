@@ -24,6 +24,9 @@
 //!     - [`NcHarmonic`]: Single perturbation harmonic from a netCDF file of the form
 //!     `α(ψ/ψp) * cos(mθ-nζ+φ(ψ/ψp))`
 //!
+//! + Representations of Perturbations.
+//!     - [`Perturbation`]: A sum of an arbitrary number of [`Harmonics`](Harmonic).
+//!
 //! ## Evaluations:
 //!
 //! + [`Geometry`]: Conversions to laboratory quantities.
@@ -101,5 +104,7 @@ pub use objects::bfield::LarBfield;
 pub use objects::bfield::NcBfield;
 pub use objects::bfield::NcBfieldBuilder;
 
-pub use objects::cos_harmonic::{CosHarmonic, CosHarmonicCache};
+pub use objects::harmonics::{CosHarmonic, CosHarmonicCache};
 pub use objects::nc_harmonic::{NcHarmonic, NcHarmonicBuilder, NcHarmonicCache, PhaseMethod};
+
+pub use objects::perturbation::Perturbation;

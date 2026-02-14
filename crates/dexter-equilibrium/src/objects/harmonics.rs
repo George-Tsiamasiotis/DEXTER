@@ -1,4 +1,4 @@
-//! Representation of A single analytical [`Harmonic`] of the form `Vcos(mθ-nζ+φ)`.
+//! Representation of analytical Harmonics.
 
 use crate::eval::HarmonicCache;
 use crate::{EquilibriumType, Harmonic, Result};
@@ -8,6 +8,8 @@ use crate::{
 };
 use std::f64::consts::TAU;
 
+// ===============================================================================================
+
 /// A simple analytical Harmonic of the form `α*cos(mθ-nζ+φ)`, where `α` and `φ` are constants.
 ///
 /// Since this Harmonic is only dependent on `θ` and `ζ`, the rest of the arguments in evaluation
@@ -15,6 +17,7 @@ use std::f64::consts::TAU;
 ///
 /// Used in pair with [`CosHarmonicCache`].
 #[non_exhaustive]
+#[derive(Clone)]
 pub struct CosHarmonic {
     equilibrium_type: EquilibriumType,
     pub(crate) ampl: f64,
@@ -325,6 +328,12 @@ mod cos_harmonic_cache {
 
         assert_eq!(c.hits(), 2);
         assert_eq!(c.misses(), 2);
+
+        h.dh_of_psi_dzeta(psi, theta / 2.0, zeta, t, c).unwrap();
+
+        assert_eq!(c.hits(), 2);
+        assert_eq!(c.misses(), 3);
+
         // dbg!(&c); // Accelerator counts should also match
     }
 }

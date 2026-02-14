@@ -336,10 +336,10 @@ mod test_toroidal_nc_evals {
     fn good_psi_evals() {
         let current = create_nc_current(TOROIDAL_TEST_NETCDF_PATH);
         let mut acc = Accelerator::new();
-        current.g_of_psi(0.01, &mut acc).unwrap();
-        current.i_of_psi(0.01, &mut acc).unwrap();
-        current.dg_dpsi(0.01, &mut acc).unwrap();
-        current.di_dpsi(0.01, &mut acc).unwrap();
+        assert!(current.g_of_psi(0.01, &mut acc).unwrap().is_finite());
+        assert!(current.i_of_psi(0.01, &mut acc).unwrap().is_finite());
+        assert!(current.dg_dpsi(0.01, &mut acc).unwrap().is_finite());
+        assert!(current.di_dpsi(0.01, &mut acc).unwrap().is_finite());
     }
 
     #[test]
@@ -379,10 +379,10 @@ mod test_poloidal_nc_evals {
     fn good_psip_evals() {
         let current = create_nc_current(POLOIDAL_TEST_NETCDF_PATH);
         let mut acc = Accelerator::new();
-        current.g_of_psip(0.01, &mut acc).unwrap();
-        current.i_of_psip(0.01, &mut acc).unwrap();
-        current.dg_dpsip(0.01, &mut acc).unwrap();
-        current.di_dpsip(0.01, &mut acc).unwrap();
+        assert!(current.g_of_psip(0.01, &mut acc).unwrap().is_finite());
+        assert!(current.i_of_psip(0.01, &mut acc).unwrap().is_finite());
+        assert!(current.dg_dpsip(0.01, &mut acc).unwrap().is_finite());
+        assert!(current.di_dpsip(0.01, &mut acc).unwrap().is_finite());
     }
 
     #[test]

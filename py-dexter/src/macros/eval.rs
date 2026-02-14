@@ -53,3 +53,21 @@ macro_rules! py_eval_harmonic {
         }
     };
 }
+
+/// Generates an eval method from the wrapped Perturbation object.
+#[macro_export]
+macro_rules! py_eval_perturbation {
+    ($py_object:ident, $eval_method:ident) => {
+        #[pymethods]
+        impl $py_object {
+            #[rustfmt::skip]
+            pub fn $eval_method(&self, flux: f64, theta: f64, zeta: f64, t: f64) -> Result<f64, PyEqError> {
+                // Unfortuneately we have to generate all the caches at each call
+                let mut caches = self.0.generate_caches();
+                Ok(self
+                    .0
+                    .$eval_method(flux, theta, zeta, t, &mut caches)?)
+            }
+        }
+    };
+}

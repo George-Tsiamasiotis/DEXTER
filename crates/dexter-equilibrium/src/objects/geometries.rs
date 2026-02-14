@@ -781,6 +781,7 @@ mod test_toroidal_nc_evals {
     }
 
     #[test]
+    #[rustfmt::skip]
     fn good_psi_evals() {
         let g = create_nc_geometry(TOROIDAL_TEST_NETCDF_PATH);
         let mut a1 = Accelerator::new();
@@ -788,11 +789,11 @@ mod test_toroidal_nc_evals {
         let mut c = Cache::new();
         let p = 0.01;
         let t = 3.14;
-        g.psip_of_psi(p, &mut a1).unwrap();
-        g.r_of_psi(p, &mut a1).unwrap();
-        g.rlab_of_psi(p, t, &mut a1, &mut a2, &mut c).unwrap();
-        g.zlab_of_psi(p, t, &mut a1, &mut a2, &mut c).unwrap();
-        g.jacobian_of_psi(p, t, &mut a1, &mut a2, &mut c).unwrap();
+        assert!(g.psip_of_psi(p, &mut a1).unwrap().is_finite());
+        assert!(g.r_of_psi(p, &mut a1).unwrap().is_finite());
+        assert!(g.rlab_of_psi(p, t, &mut a1, &mut a2, &mut c).unwrap().is_finite());
+        assert!(g.zlab_of_psi(p, t, &mut a1, &mut a2, &mut c).unwrap().is_finite());
+        assert!(g.jacobian_of_psi(p, t, &mut a1, &mut a2, &mut c).unwrap().is_finite());
     }
 
     #[test]
@@ -847,6 +848,7 @@ mod test_poloidal_nc_evals {
     }
 
     #[test]
+    #[rustfmt::skip]
     fn good_psip_evals() {
         let g = create_nc_geometry(POLOIDAL_TEST_NETCDF_PATH);
         let mut a1 = Accelerator::new();
@@ -854,11 +856,11 @@ mod test_poloidal_nc_evals {
         let mut c = Cache::new();
         let p = 0.01;
         let t = 3.14;
-        g.psi_of_psip(p, &mut a1).unwrap();
-        g.r_of_psip(p, &mut a1).unwrap();
-        g.rlab_of_psip(p, t, &mut a1, &mut a2, &mut c).unwrap();
-        g.zlab_of_psip(p, t, &mut a1, &mut a2, &mut c).unwrap();
-        g.jacobian_of_psip(p, t, &mut a1, &mut a2, &mut c).unwrap();
+        assert!(g.psi_of_psip(p, &mut a1).unwrap().is_finite());
+        assert!(g.r_of_psip(p, &mut a1).unwrap().is_finite());
+        assert!(g.rlab_of_psip(p, t, &mut a1, &mut a2, &mut c).unwrap().is_finite());
+        assert!(g.zlab_of_psip(p, t, &mut a1, &mut a2, &mut c).unwrap().is_finite());
+        assert!(g.jacobian_of_psip(p, t, &mut a1, &mut a2, &mut c).unwrap().is_finite());
     }
 
     #[test]

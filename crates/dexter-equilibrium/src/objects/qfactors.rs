@@ -606,10 +606,10 @@ mod test_toroidal_nc_evals {
     fn good_psi_evals() {
         let qfactor = create_nc_qfactor(TOROIDAL_TEST_NETCDF_PATH);
         let mut acc = Accelerator::new();
-        qfactor.q_of_psi(0.01, &mut acc).unwrap();
-        qfactor.iota_of_psi(0.01, &mut acc).unwrap();
-        qfactor.psip_of_psi(0.01, &mut acc).unwrap();
-        qfactor.dpsip_dpsi(0.01, &mut acc).unwrap();
+        assert!(qfactor.q_of_psi(0.01, &mut acc).unwrap().is_finite());
+        assert!(qfactor.iota_of_psi(0.01, &mut acc).unwrap().is_finite());
+        assert!(qfactor.psip_of_psi(0.01, &mut acc).unwrap().is_finite());
+        assert!(qfactor.dpsip_dpsi(0.01, &mut acc).unwrap().is_finite());
     }
 
     #[test]
@@ -649,10 +649,10 @@ mod test_poloidal_nc_evals {
     fn good_psip_evals() {
         let qfactor = create_nc_qfactor(POLOIDAL_TEST_NETCDF_PATH);
         let mut acc = Accelerator::new();
-        qfactor.q_of_psip(0.01, &mut acc).unwrap();
-        qfactor.iota_of_psip(0.01, &mut acc).unwrap();
-        qfactor.psi_of_psip(0.01, &mut acc).unwrap();
-        qfactor.dpsi_dpsip(0.01, &mut acc).unwrap();
+        assert!(qfactor.q_of_psip(0.01, &mut acc).unwrap().is_finite());
+        assert!(qfactor.iota_of_psip(0.01, &mut acc).unwrap().is_finite());
+        assert!(qfactor.psi_of_psip(0.01, &mut acc).unwrap().is_finite());
+        assert!(qfactor.dpsi_dpsip(0.01, &mut acc).unwrap().is_finite());
     }
 
     #[test]

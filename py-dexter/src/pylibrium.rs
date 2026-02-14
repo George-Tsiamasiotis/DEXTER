@@ -1,5 +1,6 @@
 //! `dexter-equilibrium` newtypes, constructors and method exports.
 
+use dexter::dexter_equilibrium::Perturbation;
 use dexter::dexter_equilibrium::{Bfield, LarBfield, NcBfield, NcBfieldBuilder};
 use dexter::dexter_equilibrium::{
     CosHarmonic, Harmonic, NcHarmonic, NcHarmonicBuilder, PhaseMethod,
@@ -12,14 +13,14 @@ use dexter::dexter_equilibrium::{
 };
 use numpy::{IntoPyArray, PyArray1, PyArray2};
 use pyo3::prelude::*;
-use pyo3::types::PyTuple;
+use pyo3::types::{PyList, PyTuple};
 use rsl_interpolation::{Accelerator, Cache};
 
 use crate::pyerror::PyEqError;
 use crate::{
-    py_debug_impl, py_eval_harmonic, py_eval1D, py_eval2D, py_export_getter, py_get_enum_string,
-    py_get_netcdf_version, py_get_numpy1D, py_get_numpy1D_fallible, py_get_numpy2D, py_get_path,
-    py_repr_impl,
+    py_debug_impl, py_eval_harmonic, py_eval_perturbation, py_eval1D, py_eval2D, py_export_getter,
+    py_get_enum_string, py_get_netcdf_version, py_get_numpy1D, py_get_numpy1D_fallible,
+    py_get_numpy2D, py_get_path, py_repr_impl,
 };
 
 // ===============================================================================================
@@ -360,6 +361,7 @@ py_eval2D!(PyNcBfield, db_of_psip_dtheta);
 // ===============================================================================================
 // ===============================================================================================
 
+#[derive(Clone)]
 #[pyclass(name = "_PyCosHarmonic", subclass, frozen)]
 pub struct PyCosHarmonic(CosHarmonic);
 
@@ -396,6 +398,7 @@ py_eval_harmonic!(PyCosHarmonic, dh_of_psip_dt);
 
 // ===============================================================================================
 
+#[derive(Clone)]
 #[pyclass(name = "_PyNcHarmonic", subclass, frozen)]
 pub struct PyNcHarmonic(NcHarmonic);
 
@@ -498,3 +501,80 @@ py_eval_harmonic!(PyNcHarmonic, dh_of_psi_dzeta);
 py_eval_harmonic!(PyNcHarmonic, dh_of_psip_dzeta);
 py_eval_harmonic!(PyNcHarmonic, dh_of_psi_dt);
 py_eval_harmonic!(PyNcHarmonic, dh_of_psip_dt);
+
+// ===============================================================================================
+// ===============================================================================================
+
+/// Unfortunately, since [`Perturbation`] is generic over [`Harmonic`] and pyo3 forbids generics in
+/// wrapped types, we must create a new `Py<>Perturbation` object for each [`Harmonic`] implementor.
+///
+/// Fortunately, all exported methods are identical. However, creating a trait for this is a mess
+/// due to pyo3's attributes (if possible at all), so we create this macro instead.
+#[doc(hidden)]
+macro_rules! PyPerturbationImpl {
+    ($py_perturbation:ident, $py_harmonic:ident, $harmonic:ident) => {
+        #[pymethods]
+        impl $py_perturbation {
+            #[new]
+            #[pyo3(signature = (list))]
+            pub fn new<'py>(list: Bound<'py, PyList>) -> Result<Self, PyEqError> {
+                let pyharmonics: Vec<$py_harmonic> = list
+                    .iter()
+                    .map(|h| {
+                        h.extract()
+                            .expect("Error trying to extract Harmonics from list")
+                    })
+                    .collect();
+                let harmonics: Vec<$harmonic> = pyharmonics.into_iter().map(|h| h.0).collect();
+                Ok(Self(Perturbation::new(&harmonics)))
+            }
+
+            /// Returns a Python list with all the contained harmonics.
+            #[getter]
+            pub fn harmonics(&self) -> Vec<$py_harmonic> {
+                self.0
+                    .harmonics()
+                    .iter()
+                    .map(|h| $py_harmonic(h.clone()))
+                    .collect()
+            }
+
+            /// Makes Python type indexable
+            pub fn __getitem__(&self, index: usize) -> $py_harmonic {
+                $py_harmonic(self.0[index].clone())
+            }
+
+            /// Returns the number of the contained harmonics
+            pub fn __len__(&self) -> usize {
+                self.0.count()
+            }
+        }
+
+        py_debug_impl!($py_perturbation);
+        py_repr_impl!($py_perturbation);
+        py_eval_perturbation!($py_perturbation, p_of_psi);
+        py_eval_perturbation!($py_perturbation, p_of_psip);
+        py_eval_perturbation!($py_perturbation, dp_dpsi);
+        py_eval_perturbation!($py_perturbation, dp_dpsip);
+        py_eval_perturbation!($py_perturbation, dp_of_psi_dtheta);
+        py_eval_perturbation!($py_perturbation, dp_of_psip_dtheta);
+        py_eval_perturbation!($py_perturbation, dp_of_psi_dzeta);
+        py_eval_perturbation!($py_perturbation, dp_of_psip_dzeta);
+        py_eval_perturbation!($py_perturbation, dp_of_psi_dt);
+        py_eval_perturbation!($py_perturbation, dp_of_psip_dt);
+    };
+}
+
+// ===============================================================================================
+
+#[pyclass(name = "_PyCosPerturbation", subclass, frozen, dict)]
+pub struct PyCosPerturbation(Perturbation<CosHarmonic>);
+
+PyPerturbationImpl!(PyCosPerturbation, PyCosHarmonic, CosHarmonic);
+
+// ===============================================================================================
+
+#[pyclass(name = "_PyNcPerturbation", subclass, frozen, dict)]
+pub struct PyNcPerturbation(Perturbation<NcHarmonic>);
+
+PyPerturbationImpl!(PyNcPerturbation, PyNcHarmonic, NcHarmonic);

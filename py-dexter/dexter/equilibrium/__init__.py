@@ -9,6 +9,8 @@ from .objects import UnityQfactor, ParabolicQfactor, NcQfactor
 from .objects import LarCurrent, NcCurrent
 from .objects import LarBfield, NcBfield
 from .objects import CosHarmonic, NcHarmonic
+from .objects import CosPerturbation, NcPerturbation
+from .objects import perturbation
 
 Geometry: TypeAlias = LarGeometry | NcGeometry
 """Available 'Geometry' Objects"""
@@ -25,6 +27,9 @@ Bfield: TypeAlias = LarBfield | NcBfield
 Harmonic: TypeAlias = CosHarmonic | NcHarmonic
 """Available 'Harmonic' Objects"""
 
+Perturbation: TypeAlias = CosPerturbation | NcPerturbation
+"""Available 'Perturbation' Objects"""
+
 __all__ = [
     "_TOROIDAL_TEST_NETCDF_PATH",
     "_POLOIDAL_TEST_NETCDF_PATH",
@@ -32,6 +37,9 @@ __all__ = [
     "Geometry",
     "Qfactor",
     "Current",
+    "Bfield",
+    "Harmonic",
+    "Perturbation",
     "LarGeometry",
     "NcGeometry",
     "UnityQfactor",
@@ -41,7 +49,9 @@ __all__ = [
     "NcCurrent",
     "LarBfield",
     "NcBfield",
-    "Harmonic",
     "CosHarmonic",
     "NcHarmonic",
+    "CosPerturbation",
+    "NcPerturbation",
+    "perturbation",
 ]

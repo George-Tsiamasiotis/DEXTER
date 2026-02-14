@@ -3,7 +3,14 @@ import dexter
 import matplotlib
 
 from dexter.equilibrium import _TEST_NETCDF_PATH as netcdf_path
-from dexter import NcGeometry, NcQfactor, NcCurrent, NcBfield, NcHarmonic
+from dexter import (
+    NcGeometry,
+    NcQfactor,
+    NcCurrent,
+    NcBfield,
+    NcHarmonic,
+    NcPerturbation,
+)
 
 
 @pytest.fixture(autouse=True)
@@ -41,3 +48,9 @@ def nc_bfield() -> NcBfield:
 def nc_harmonic() -> NcHarmonic:
     """Creates an NcHarmonic object from the test netCDF file."""
     return NcHarmonic(netcdf_path, "Cubic", 3, 2, "Zero")
+
+
+@pytest.fixture(scope="session")
+def nc_perturbation(nc_harmonic) -> NcPerturbation:
+    """Creates a Perturbation object with 3 identical NcHarmonics."""
+    return NcPerturbation([nc_harmonic] * 3)

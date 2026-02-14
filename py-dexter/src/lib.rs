@@ -19,5 +19,7 @@ fn _core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<pylibrium::PyNcBfield>()?;
     m.add_class::<pylibrium::PyCosHarmonic>()?;
     m.add_class::<pylibrium::PyNcHarmonic>()?;
+    m.add_class::<pylibrium::PyCosPerturbation>()?;
+    m.add_class::<pylibrium::PyNcPerturbation>()?;
     Ok(())
 }

@@ -13,6 +13,7 @@
 ::: dexter.Current
 ::: dexter.Bfield
 ::: dexter.Harmonic
+::: dexter.Perturbation
 
 ### Misc
 

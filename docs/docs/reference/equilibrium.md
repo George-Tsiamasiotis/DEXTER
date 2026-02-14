@@ -99,3 +99,33 @@
         summary:
             functions: true
             attributes: true
+
+## Perturbation
+
+::: dexter.CosPerturbation
+    options:
+        inherited_members: true
+        docstring_section_style: list
+        summary:
+            functions: true
+            attributes: true
+        filters:
+        - "!^_"
+
+::: dexter.NcPerturbation
+    options:
+        inherited_members: true
+        docstring_section_style: list
+        summary:
+            functions: true
+            attributes: true
+        filters:
+        - "!^_"
+
+# Helpers
+
+Helper functions for the construction of equilibrium objects.
+
+::: dexter.perturbation
+    options:
+        docstring_section_style: spacy

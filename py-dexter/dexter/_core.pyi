@@ -586,6 +586,184 @@ class _HarmonicTrait(ABC):
             The time in Normalized Units
         """
 
+class _PyPerturbation(ABC):
+    """Documents all the methods provided by rust's `Perturbation` type.
+
+    Since `Perturbation` is a concrete type generic over `Harmonic`, there is not 'evaluation' trait and all
+    methods are documented here. This class contains the full behavior of *every* wrapper type, except the
+    constructors.
+    """
+
+    def p_of_psi(self, psi: float, theta: float, zeta: float, t: float) -> float:
+        r"""The perturbation's value $p(\psi, \theta, \zeta, t)$ value in Normalized Units.
+
+        Parameters
+        ----------
+        psi
+            The toroidal flux $\psi$ in Normalized Units.
+        theta
+            The $\theta$ angle in $[rads]$.
+        zeta
+            The $\zeta$ angle in $[rads]$.
+        t
+            The time in Normalized Units
+        """
+
+    def p_of_psip(self, psip: float, theta: float, zeta: float, t: float) -> float:
+        r"""The perturbation's value $p(\psi_p, \theta, \zeta, t)$ value in Normalized Units.
+
+        Parameters
+        ----------
+        psip
+            The poloidal flux $\psi_p$ in Normalized Units.
+        theta
+            The $\theta$ angle in $[rads]$.
+        zeta
+            The $\zeta$ angle in $[rads]$.
+        t
+            The time in Normalized Units
+        """
+
+    def dp_dpsi(self, psi: float, theta: float, zeta: float, t: float) -> float:
+        r"""The perturbation's derivative with respect to $\psi$, $\partial p(\psi, \theta, \zeta, t)/\partial\psi$
+        in Normalized Units.
+
+        Parameters
+        ----------
+        psi
+            The toroidal flux $\psi$ in Normalized Units.
+        theta
+            The $\theta$ angle in $[rads]$.
+        zeta
+            The $\zeta$ angle in $[rads]$.
+        t
+            The time in Normalized Units
+        """
+
+    def dp_dpsip(self, psip: float, theta: float, zeta: float, t: float) -> float:
+        r"""The perturbation's derivative with respect to $\psi_p$, $\partial p(\psi_p, \theta, \zeta, t)/\partial \psi_p$
+        in Normalized Units.
+
+        Parameters
+        ----------
+        psip
+            The poloidal flux $\psi_p$ in Normalized Units.
+        theta
+            The $\theta$ angle in $[rads]$.
+        zeta
+            The $\zeta$ angle in $[rads]$.
+        t
+            The time in Normalized Units
+        """
+
+    def dp_of_psi_dtheta(
+        self, psi: float, theta: float, zeta: float, t: float
+    ) -> float:
+        r"""The perturbation's derivative with respect to $\theta$, $\partial p(\psi, \theta, \zeta, t)/\partial \theta$
+        in Normalized Units, as a function of $\psi$.
+
+        Parameters
+        ----------
+        psi
+            The toroidal flux $\psi$ in Normalized Units.
+        theta
+            The $\theta$ angle in $[rads]$.
+        zeta
+            The $\zeta$ angle in $[rads]$.
+        t
+            The time in Normalized Units
+        """
+
+    def dp_of_psip_dtheta(
+        self, psip: float, theta: float, zeta: float, t: float
+    ) -> float:
+        r"""The perturbation's derivative with respect to $\theta$, $\partial p(\psi_p, \theta, \zeta, t)/\partial \theta$
+        in Normalized Units, as a function of $\psi_p$.
+
+        Parameters
+        ----------
+        psip
+            The poloidal flux $\psi_p$ in Normalized Units.
+        theta
+            The $\theta$ angle in $[rads]$.
+        zeta
+            The $\zeta$ angle in $[rads]$.
+        t
+            The time in Normalized Units
+        """
+
+    def dp_of_psi_dzeta(self, psi: float, theta: float, zeta: float, t: float) -> float:
+        r"""The perturbation's derivative with respect to $\zeta$, $\partial p(\psi, \theta, \zeta, t)/\partial \zeta$
+        in Normalized Units, as a function of $\psi$.
+
+        Parameters
+        ----------
+        psi
+            The toroidal flux $\psi$ in Normalized Units.
+        theta
+            The $\theta$ angle in $[rads]$.
+        zeta
+            The $\zeta$ angle in $[rads]$.
+        t
+            The time in Normalized Units
+        """
+
+    def dp_of_psip_dzeta(
+        self, psip: float, theta: float, zeta: float, t: float
+    ) -> float:
+        r"""The perturbation's derivative with respect to $\zeta$, $\partial p(\psi_p, \theta, \zeta, t)/\partial \zeta$
+        in Normalized Units, as a function of $\psi_p$.
+
+        Parameters
+        ----------
+        psip
+            The poloidal flux $\psi_p$ in Normalized Units.
+        theta
+            The $\theta$ angle in $[rads]$.
+        zeta
+            The $\zeta$ angle in $[rads]$.
+        t
+            The time in Normalized Units
+        """
+
+    def dp_of_psi_dt(self, psi: float, theta: float, zeta: float, t: float) -> float:
+        r"""The perturbation's derivative with respect to the time $t$, $\partial p(\psi, \theta, \zeta, t)/\partial t$
+        in Normalized Units, as a function of $\psi$.
+
+        Parameters
+        ----------
+        psi
+            The toroidal flux $\psi$ in Normalized Units.
+        theta
+            The $\theta$ angle in $[rads]$.
+        zeta
+            The $\zeta$ angle in $[rads]$.
+        t
+            The time in Normalized Units
+        """
+
+    def dp_of_psip_dt(self, psip: float, theta: float, zeta: float, t: float) -> float:
+        r"""The perturbation's derivative with respect to the time $t$, $\partial p(\psi_p, \theta, \zeta, t)/\partial t$
+        in Normalized Units, as a function of $\psi_p$.
+
+        Parameters
+        ----------
+        psip
+            The poloidal flux $\psi_p$ in Normalized Units.
+        theta
+            The $\theta$ angle in $[rads]$.
+        zeta
+            The $\zeta$ angle in $[rads]$.
+        t
+            The time in Normalized Units
+        """
+
+    def __getitem__(self, index: int):
+        """Makes the object indexable."""
+
+    def __len__(self) -> int:
+        """Returns the number of the contained harmonics."""
+
 # ================================================================================================
 
 class _PyLarGeometry(_GeometryTrait):
@@ -776,3 +954,11 @@ class _PyNcHarmonic(_HarmonicTrait):
         n: int,
         phase_method: PhaseMethod = "Resonance",
     ) -> None: ...
+
+# ================================================================================================
+
+class _PyCosPerturbation(_PyPerturbation):
+    """Perturbation with H=CosHarmonic. Contains the full behavior of the wrapped object."""
+
+class _PyNcPerturbation(_PyPerturbation):
+    """Perturbation with H=NcHarmonic. Contains the full behavior of the wrapped object."""

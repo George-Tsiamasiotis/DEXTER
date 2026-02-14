@@ -7,6 +7,8 @@ from dexter.equilibrium import Qfactor, UnityQfactor, ParabolicQfactor, NcQfacto
 from dexter.equilibrium import Current, LarCurrent, NcCurrent
 from dexter.equilibrium import Bfield, LarBfield, NcBfield
 from dexter.equilibrium import Harmonic, CosHarmonic, NcHarmonic
+from dexter.equilibrium import Perturbation, CosPerturbation, NcPerturbation
+from dexter.equilibrium import perturbation
 
 __all__ = [
     # equilibrium
@@ -14,6 +16,8 @@ __all__ = [
     "Qfactor",
     "Current",
     "Bfield",
+    "Harmonic",
+    "Perturbation",
     "LarGeometry",
     "NcGeometry",
     "UnityQfactor",
@@ -23,7 +27,9 @@ __all__ = [
     "NcCurrent",
     "LarBfield",
     "NcBfield",
-    "Harmonic",
     "CosHarmonic",
     "NcHarmonic",
+    "perturbation",
+    "CosPerturbation",
+    "NcPerturbation",
 ]

@@ -775,7 +775,7 @@ pub trait HarmonicCache: Default {
 
 /// Single perturbation harmonic related quantities computation.
 #[rustfmt::skip]
-pub trait Harmonic
+pub trait Harmonic: Clone
 {
     /// The implementor's corresponding caching object.
     type Cache: HarmonicCache;

@@ -118,6 +118,7 @@ impl NcHarmonicBuilder {
 ///
 /// Should be created with an [`NcHarmonicBuilder`].
 #[non_exhaustive]
+#[derive(Clone)]
 pub struct NcHarmonic {
     path: PathBuf,
     netcdf_version: semver::Version,
@@ -348,6 +349,39 @@ pub(crate) struct SingleNcHarmonic {
     _cache_args: [f64; 2],
 }
 
+// Unforturately we must rebuild the interpolators, since they are trait objects.
+impl Clone for SingleNcHarmonic {
+    fn clone(&self) -> Self {
+        Self {
+            interp_type: self.interp_type.clone(),
+            flux: self.flux.clone(),
+            which: self.which.clone(),
+            m: self.m,
+            n: self.n,
+            phase_method: self.phase_method.clone(),
+            phase_average: self.phase_average,
+            phase_resonance: self.phase_resonance,
+            alpha_values: self.alpha_values.clone(),
+            phase_values: self.phase_values.clone(),
+            alpha_interp: Some(
+                make_interp_type(&self.interp_type)
+                    .unwrap()
+                    .build(self.flux.uvalues(), &self.alpha_values)
+                    .unwrap(),
+            ),
+            phase_interp: Some(
+                make_interp_type(&self.interp_type)
+                    .unwrap()
+                    .build(self.flux.uvalues(), &self.phase_values)
+                    .unwrap(),
+            ),
+            _m: self._m,
+            _n: self._n,
+            _cache_args: self._cache_args,
+        }
+    }
+}
+
 // Creation
 impl SingleNcHarmonic {
     /// Creates a SingleNcHarmonic from a [`NcFlux`].
@@ -512,8 +546,8 @@ impl SingleNcHarmonic {
     /// Updates the interpolated values, since they cannot take place inside the cache without
     /// messing up the whole structure.
     ///
-    /// Should always be called together with cache.update(). The order doesn't matter, since they
-    /// mutate different fields independently.
+    /// Should always be called together with `cache.update()`, and `update_cache_interps()` should
+    /// always be called firsts, since `cache` uses the phase value.
     fn update_cache_interps(&self, flux: f64, cache: &mut NcHarmonicCache) -> Result<()> {
         let acc = cache.flux_acc();
 
@@ -673,8 +707,8 @@ impl SingleNcHarmonic {
     fn ampl(&self, flux: f64, theta: f64, zeta: f64, t: f64, cache: &mut NcHarmonicCache) -> Result<f64> {
         self.undefined_evaluation_check("α")?;
         if !cache.is_updated(flux, theta, zeta, t) {
-            cache.update(flux, theta, zeta, t, &self._cache_args)?;
             self.update_cache_interps(flux, cache)?;
+            cache.update(flux, theta, zeta, t, &self._cache_args)?;
         };
         Ok(cache.ampl())
     }
@@ -688,8 +722,8 @@ impl SingleNcHarmonic {
             PhaseMethod::Custom(phase) => Ok(phase),
             PhaseMethod::Interpolation => {
                 if !cache.is_updated(flux, theta, zeta, t) {
-                    cache.update(flux, theta, zeta, t, &self._cache_args)?;
                     self.update_cache_interps(flux, cache)?;
+                    cache.update(flux, theta, zeta, t, &self._cache_args)?;
                 };
                 Ok(cache.phase())
             }
@@ -699,8 +733,8 @@ impl SingleNcHarmonic {
     fn h(&self, flux: f64, theta: f64, zeta: f64, t: f64, cache: &mut NcHarmonicCache) -> Result<f64> {
         self.undefined_evaluation_check("h")?;
         if !cache.is_updated(flux, theta, zeta, t) {
-            cache.update(flux, theta, zeta, t, &self._cache_args)?;
             self.update_cache_interps(flux, cache)?;
+            cache.update(flux, theta, zeta, t, &self._cache_args)?;
         };
         Ok(cache.ampl() * cache.cos())
     }
@@ -708,8 +742,8 @@ impl SingleNcHarmonic {
     fn dh_dflux(&self, flux: f64, theta: f64, zeta: f64, t: f64, cache: &mut NcHarmonicCache) -> Result<f64> {
         self.undefined_evaluation_check("dh")?;
         if !cache.is_updated(flux, theta, zeta, t) {
-            cache.update(flux, theta, zeta, t, &self._cache_args)?;
             self.update_cache_interps(flux, cache)?;
+            cache.update(flux, theta, zeta, t, &self._cache_args)?;
         };
         Ok(cache.dampl() * cache.cos())
     }
@@ -717,8 +751,8 @@ impl SingleNcHarmonic {
     fn dh_dtheta(&self, flux: f64, theta: f64, zeta: f64, t: f64, cache: &mut NcHarmonicCache) -> Result<f64> {
         self.undefined_evaluation_check("dh/dθ")?;
         if !cache.is_updated(flux, theta, zeta, t) {
-            cache.update(flux, theta, zeta, t, &self._cache_args)?;
             self.update_cache_interps(flux, cache)?;
+            cache.update(flux, theta, zeta, t, &self._cache_args)?;
         };
         Ok(-self._m * cache.ampl() * cache.sin())
     }
@@ -726,8 +760,8 @@ impl SingleNcHarmonic {
     fn dh_dzeta(&self, flux: f64, theta: f64, zeta: f64, t: f64, cache: &mut NcHarmonicCache) -> Result<f64> {
         self.undefined_evaluation_check("dh/dζ")?;
         if !cache.is_updated(flux, theta, zeta, t) {
-            cache.update(flux, theta, zeta, t, &self._cache_args)?;
             self.update_cache_interps(flux, cache)?;
+            cache.update(flux, theta, zeta, t, &self._cache_args)?;
         };
         Ok(self._n * cache.ampl() * cache.sin())
     }
@@ -922,16 +956,17 @@ mod test_toroidal_nc_evals {
     }
 
     #[test]
+    #[rustfmt::skip]
     fn good_psi_evals() {
         let harmonic = create_nc_harmonic(TOROIDAL_TEST_NETCDF_PATH);
         let c = &mut harmonic.get_default_cache();
-        harmonic.ampl_of_psi(0.1, 0.1, 0.1, 0.1, c).unwrap();
-        harmonic.phase_of_psi(0.1, 0.1, 0.1, 0.1, c).unwrap();
-        harmonic.h_of_psi(0.1, 0.1, 0.1, 0.1, c).unwrap();
-        harmonic.dh_dpsi(0.1, 0.1, 0.1, 0.1, c).unwrap();
-        harmonic.dh_of_psi_dtheta(0.1, 0.1, 0.1, 0.1, c).unwrap();
-        harmonic.dh_of_psi_dzeta(0.1, 0.1, 0.1, 0.1, c).unwrap();
-        harmonic.dh_of_psi_dt(0.1, 0.1, 0.1, 0.1, c).unwrap();
+        assert!(harmonic.ampl_of_psi(0.1, 0.1, 0.1, 0.1, c).unwrap().is_finite());
+        assert!(harmonic.phase_of_psi(0.1, 0.1, 0.1, 0.1, c).unwrap().is_finite());
+        assert!(harmonic.h_of_psi(0.1, 0.1, 0.1, 0.1, c).unwrap().is_finite());
+        assert!(harmonic.dh_dpsi(0.1, 0.1, 0.1, 0.1, c).unwrap().is_finite());
+        assert!(harmonic.dh_of_psi_dtheta(0.1, 0.1, 0.1, 0.1, c).unwrap().is_finite());
+        assert!(harmonic.dh_of_psi_dzeta(0.1, 0.1, 0.1, 0.1, c).unwrap().is_finite());
+        assert!(harmonic.dh_of_psi_dt(0.1, 0.1, 0.1, 0.1, c).unwrap().is_finite());
     }
 
     #[test]
@@ -974,16 +1009,17 @@ mod test_poloidal_nc_evals {
     }
 
     #[test]
+    #[rustfmt::skip]
     fn good_psip_evals() {
         let harmonic = create_nc_harmonic(POLOIDAL_TEST_NETCDF_PATH);
         let c = &mut harmonic.get_default_cache();
-        harmonic.ampl_of_psip(0.1, 0.1, 0.1, 0.1, c).unwrap();
-        harmonic.phase_of_psip(0.1, 0.1, 0.1, 0.1, c).unwrap();
-        harmonic.h_of_psip(0.1, 0.1, 0.1, 0.1, c).unwrap();
-        harmonic.dh_dpsip(0.1, 0.1, 0.1, 0.1, c).unwrap();
-        harmonic.dh_of_psip_dtheta(0.1, 0.1, 0.1, 0.1, c).unwrap();
-        harmonic.dh_of_psip_dzeta(0.1, 0.1, 0.1, 0.1, c).unwrap();
-        harmonic.dh_of_psip_dt(0.1, 0.1, 0.1, 0.1, c).unwrap();
+        assert!(harmonic.ampl_of_psip(0.1, 0.1, 0.1, 0.1, c).unwrap().is_finite());
+        assert!(harmonic.phase_of_psip(0.1, 0.1, 0.1, 0.1, c).unwrap().is_finite());
+        assert!(harmonic.h_of_psip(0.1, 0.1, 0.1, 0.1, c).unwrap().is_finite());
+        assert!(harmonic.dh_dpsip(0.1, 0.1, 0.1, 0.1, c).unwrap().is_finite());
+        assert!(harmonic.dh_of_psip_dtheta(0.1, 0.1, 0.1, 0.1, c).unwrap().is_finite());
+        assert!(harmonic.dh_of_psip_dzeta(0.1, 0.1, 0.1, 0.1, c).unwrap().is_finite());
+        assert!(harmonic.dh_of_psip_dt(0.1, 0.1, 0.1, 0.1, c).unwrap().is_finite());
     }
 
     #[test]
@@ -1043,6 +1079,12 @@ mod nc_harmonic_cache {
 
         assert_eq!(c.hits(), 5);
         assert_eq!(c.misses(), 2);
+
+        h.dh_dpsi(psi / 2.0, theta, zeta, t, c).unwrap();
+
+        assert_eq!(c.hits(), 5);
+        assert_eq!(c.misses(), 3);
+
         // dbg!(&c); // Accelerator counts should also match
     }
 }
