@@ -8,7 +8,7 @@ from dexter.equilibrium import Current, LarCurrent, NcCurrent
 from dexter.equilibrium import Bfield, LarBfield, NcBfield
 from dexter.equilibrium import Harmonic, CosHarmonic, NcHarmonic
 from dexter.equilibrium import Perturbation, CosPerturbation, NcPerturbation
-from dexter.equilibrium import perturbation
+from dexter.equilibrium import NcEquilibrium, perturbation
 
 __all__ = [
     # equilibrium
@@ -32,4 +32,5 @@ __all__ = [
     "perturbation",
     "CosPerturbation",
     "NcPerturbation",
+    "NcEquilibrium",
 ]

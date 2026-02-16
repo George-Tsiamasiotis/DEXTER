@@ -1,6 +1,6 @@
 [project]
 name = "dexter"
-version = "0.0.1-pre.21"
+version = "0.0.1-pre.22"
 description = "Calculations and simulations in analytical and reconstructed equilibria of toroidal fusion devices."
 readme = "README.md"
 authors = [
@@ -49,8 +49,7 @@ docs = [
 filterwarnings = ['ignore:.*Figure.*'] # matplotlib
 testpaths = [
     "./py-dexter/pytests",
-    "./py-dexter/dexter/equilibrium/objects.py",
-    "./py-dexter/dexter/plots",
+    "./py-dexter/dexter/equilibrium/*",
     "./docs/docs/",
 ] # Run from workspace root
 addopts = """

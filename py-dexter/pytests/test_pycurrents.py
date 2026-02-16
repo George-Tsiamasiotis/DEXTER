@@ -1,4 +1,5 @@
 import pytest
+from math import isfinite
 from dexter.equilibrium import _TOROIDAL_TEST_NETCDF_PATH, _POLOIDAL_TEST_NETCDF_PATH
 from dexter import Current, NcCurrent, LarCurrent
 
@@ -19,8 +20,8 @@ def test_nc_current_getters(nc_current: NcCurrent):
     assert isinstance(nc_current.netcdf_version, str)
     assert isinstance(nc_current.equilibrium_type, str)
     assert isinstance(nc_current.interp_type, str)
-    assert isinstance(nc_current.psi_wall, float)
-    assert isinstance(nc_current.psip_wall, float)
+    assert isfinite(nc_current.psi_wall)
+    assert isfinite(nc_current.psip_wall)
     assert nc_current.psi_state == "Good"
     assert nc_current.psip_state == "Good"
     assert nc_current.psi_array.ndim == 1
@@ -37,10 +38,10 @@ def test_toroidal_nc_current():
     nc_current = NcCurrent(_TOROIDAL_TEST_NETCDF_PATH, "Steffen")
     assert nc_current.psi_state == "Good"
     assert nc_current.psip_state == "Bad"
-    assert isinstance(nc_current.g_of_psi(0.01), float)
-    assert isinstance(nc_current.i_of_psi(0.01), float)
-    assert isinstance(nc_current.dg_dpsi(0.01), float)
-    assert isinstance(nc_current.di_dpsi(0.01), float)
+    assert isfinite(nc_current.g_of_psi(0.01))
+    assert isfinite(nc_current.i_of_psi(0.01))
+    assert isfinite(nc_current.dg_dpsi(0.01))
+    assert isfinite(nc_current.di_dpsi(0.01))
     with pytest.raises(BaseException):
         nc_current.g_of_psip(0.01)
     with pytest.raises(BaseException):
@@ -55,10 +56,10 @@ def test_poloidal_nc_current():
     nc_current = NcCurrent(_POLOIDAL_TEST_NETCDF_PATH, "Steffen")
     assert nc_current.psi_state == "Bad"
     assert nc_current.psip_state == "Good"
-    assert isinstance(nc_current.g_of_psip(0.01), float)
-    assert isinstance(nc_current.i_of_psip(0.01), float)
-    assert isinstance(nc_current.dg_dpsip(0.01), float)
-    assert isinstance(nc_current.di_dpsip(0.01), float)
+    assert isfinite(nc_current.g_of_psip(0.01))
+    assert isfinite(nc_current.i_of_psip(0.01))
+    assert isfinite(nc_current.dg_dpsip(0.01))
+    assert isfinite(nc_current.di_dpsip(0.01))
     with pytest.raises(BaseException):
         nc_current.g_of_psi(0.01)
     with pytest.raises(BaseException):
@@ -72,11 +73,11 @@ def test_poloidal_nc_current():
 def _test_current_evals(current: Current):
     psi = 0.01
     psip = 0.015
-    assert isinstance(current.g_of_psi(psi), float)
-    assert isinstance(current.g_of_psip(psip), float)
-    assert isinstance(current.i_of_psi(psi), float)
-    assert isinstance(current.i_of_psip(psip), float)
-    assert isinstance(current.dg_dpsi(psi), float)
-    assert isinstance(current.dg_dpsip(psip), float)
-    assert isinstance(current.di_dpsi(psi), float)
-    assert isinstance(current.di_dpsip(psip), float)
+    assert isfinite(current.g_of_psi(psi))
+    assert isfinite(current.g_of_psip(psip))
+    assert isfinite(current.i_of_psi(psi))
+    assert isfinite(current.i_of_psip(psip))
+    assert isfinite(current.dg_dpsi(psi))
+    assert isfinite(current.dg_dpsip(psip))
+    assert isfinite(current.di_dpsi(psi))
+    assert isfinite(current.di_dpsip(psip))

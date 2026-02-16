@@ -1,4 +1,5 @@
 import pytest
+from math import isfinite
 from dexter.equilibrium import _TOROIDAL_TEST_NETCDF_PATH, _POLOIDAL_TEST_NETCDF_PATH
 from dexter import LarGeometry, NcGeometry
 
@@ -7,10 +8,10 @@ def test_lar_geometry():
     geometry = LarGeometry(baxis=2, raxis=1.75, rwall=0.5)
     assert isinstance(geometry.__str__(), str)
     assert isinstance(geometry.__repr__(), str)
-    assert isinstance(geometry.r_of_psi(0.01), float)
-    assert isinstance(geometry.psi_of_r(0.01), float)
-    assert isinstance(geometry.rlab_of_psi(0.01, 3.14), float)
-    assert isinstance(geometry.zlab_of_psi(0.01, 3.14), float)
+    assert isfinite(geometry.r_of_psi(0.01))
+    assert isfinite(geometry.psi_of_r(0.01))
+    assert isfinite(geometry.rlab_of_psi(0.01, 3.14))
+    assert isfinite(geometry.zlab_of_psi(0.01, 3.14))
     with pytest.raises(BaseException):
         geometry.r_of_psip(0.01)
     with pytest.raises(BaseException):
@@ -33,14 +34,14 @@ def test_nc_geometry_getters(nc_geometry: NcGeometry):
     assert nc_geometry.equilibrium_type == "Numerical"
     assert isinstance(nc_geometry.interp1d_type, str)
     assert isinstance(nc_geometry.interp1d_type, str)
-    assert isinstance(nc_geometry.baxis, float)
-    assert isinstance(nc_geometry.raxis, float)
-    assert isinstance(nc_geometry.zaxis, float)
-    assert isinstance(nc_geometry.rgeo, float)
-    assert isinstance(nc_geometry.rwall, float)
+    assert isfinite(nc_geometry.baxis)
+    assert isfinite(nc_geometry.raxis)
+    assert isfinite(nc_geometry.zaxis)
+    assert isfinite(nc_geometry.rgeo)
+    assert isfinite(nc_geometry.rwall)
     assert len(nc_geometry.shape) == 2
-    assert isinstance(nc_geometry.psi_wall, float)
-    assert isinstance(nc_geometry.psip_wall, float)
+    assert isfinite(nc_geometry.psi_wall)
+    assert isfinite(nc_geometry.psip_wall)
     assert nc_geometry.psi_state == "Good"
     assert nc_geometry.psip_state == "Good"
     assert nc_geometry.psi_array.ndim == 1
@@ -60,13 +61,13 @@ def test_toroidal_nc_geometry():
     nc_geometry = NcGeometry(_TOROIDAL_TEST_NETCDF_PATH, "Steffen", "Bicubic")
     assert nc_geometry.psi_state == "Good"
     assert nc_geometry.psip_state == "Bad"
-    assert isinstance(nc_geometry.psip_of_psi(0.01), float)
-    assert isinstance(nc_geometry.r_of_psi(0.01), float)
-    assert isinstance(nc_geometry.psi_of_r(0.01), float)
-    assert isinstance(nc_geometry.psip_of_r(0.01), float)
-    assert isinstance(nc_geometry.rlab_of_psi(0.01, 3.14), float)
-    assert isinstance(nc_geometry.zlab_of_psi(0.01, 3.14), float)
-    assert isinstance(nc_geometry.jacobian_of_psi(0.01, 3.14), float)
+    assert isfinite(nc_geometry.psip_of_psi(0.01))
+    assert isfinite(nc_geometry.r_of_psi(0.01))
+    assert isfinite(nc_geometry.psi_of_r(0.01))
+    assert isfinite(nc_geometry.psip_of_r(0.01))
+    assert isfinite(nc_geometry.rlab_of_psi(0.01, 3.14))
+    assert isfinite(nc_geometry.zlab_of_psi(0.01, 3.14))
+    assert isfinite(nc_geometry.jacobian_of_psi(0.01, 3.14))
     with pytest.raises(BaseException):
         nc_geometry.psi_of_psip(0.01)
     with pytest.raises(BaseException):
@@ -83,13 +84,13 @@ def test_poloidal_nc_geometry():
     nc_geometry = NcGeometry(_POLOIDAL_TEST_NETCDF_PATH, "Steffen", "Bicubic")
     assert nc_geometry.psi_state == "Bad"
     assert nc_geometry.psip_state == "Good"
-    assert isinstance(nc_geometry.psi_of_psip(0.01), float)
-    assert isinstance(nc_geometry.r_of_psip(0.01), float)
-    assert isinstance(nc_geometry.psi_of_r(0.01), float)
-    assert isinstance(nc_geometry.psip_of_r(0.01), float)
-    assert isinstance(nc_geometry.rlab_of_psip(0.01, 3.14), float)
-    assert isinstance(nc_geometry.zlab_of_psip(0.01, 3.14), float)
-    assert isinstance(nc_geometry.jacobian_of_psip(0.01, 3.14), float)
+    assert isfinite(nc_geometry.psi_of_psip(0.01))
+    assert isfinite(nc_geometry.r_of_psip(0.01))
+    assert isfinite(nc_geometry.psi_of_r(0.01))
+    assert isfinite(nc_geometry.psip_of_r(0.01))
+    assert isfinite(nc_geometry.rlab_of_psip(0.01, 3.14))
+    assert isfinite(nc_geometry.zlab_of_psip(0.01, 3.14))
+    assert isfinite(nc_geometry.jacobian_of_psip(0.01, 3.14))
     with pytest.raises(BaseException):
         nc_geometry.psip_of_psi(0.01)
     with pytest.raises(BaseException):
@@ -107,15 +108,15 @@ def _test_geometry_evals(geometry: NcGeometry):
     psi = 0.01
     psip = 0.015
     theta = 3.14
-    assert isinstance(geometry.psip_of_psi(psi), float)
-    assert isinstance(geometry.psi_of_psip(psip), float)
-    assert isinstance(geometry.r_of_psi(psi), float)
-    assert isinstance(geometry.r_of_psip(psip), float)
-    assert isinstance(geometry.psi_of_r(r), float)
-    assert isinstance(geometry.psip_of_r(r), float)
-    assert isinstance(geometry.rlab_of_psi(psi, theta), float)
-    assert isinstance(geometry.rlab_of_psip(psip, theta), float)
-    assert isinstance(geometry.zlab_of_psi(psi, theta), float)
-    assert isinstance(geometry.zlab_of_psip(psip, theta), float)
-    assert isinstance(geometry.jacobian_of_psi(psi, theta), float)
-    assert isinstance(geometry.jacobian_of_psip(psip, theta), float)
+    assert isfinite(geometry.psip_of_psi(psi))
+    assert isfinite(geometry.psi_of_psip(psip))
+    assert isfinite(geometry.r_of_psi(psi))
+    assert isfinite(geometry.r_of_psip(psip))
+    assert isfinite(geometry.psi_of_r(r))
+    assert isfinite(geometry.psip_of_r(r))
+    assert isfinite(geometry.rlab_of_psi(psi, theta))
+    assert isfinite(geometry.rlab_of_psip(psip, theta))
+    assert isfinite(geometry.zlab_of_psi(psi, theta))
+    assert isfinite(geometry.zlab_of_psip(psip, theta))
+    assert isfinite(geometry.jacobian_of_psi(psi, theta))
+    assert isfinite(geometry.jacobian_of_psip(psip, theta))

@@ -364,14 +364,15 @@ impl NcGeometry {
         // Create interpolators, if possible
         use NcFluxState::Good;
         #[rustfmt::skip]
-        let psip_of_psi_interp = match psi.state {
-            Good => Some(make_interp_type(&builder.interp1d_type)?.build(psi.uvalues(), psip.uvalues())?),
-            _ => None,
+        #[rustfmt::skip]
+        let psip_of_psi_interp = match (psi.state == Good) & (psip.state != NcFluxState::None) {
+            true => Some(make_interp_type(&builder.interp1d_type)?.build(psi.uvalues(), psip.uvalues())?),
+            false => None,
         };
         #[rustfmt::skip]
-        let psi_of_psip_interp = match psip.state {
-            Good => Some(make_interp_type(&builder.interp1d_type)?.build(psip.uvalues(), psi.uvalues())?),
-            _ => None,
+        let psi_of_psip_interp = match (psip.state == Good) & (psi.state != NcFluxState::None) {
+            true => Some(make_interp_type(&builder.interp1d_type)?.build(psip.uvalues(), psi.uvalues())?),
+            false => None,
         };
 
         #[rustfmt::skip]
@@ -385,17 +386,17 @@ impl NcGeometry {
             _ => None,
         };
 
-        // r-values are guaranteed to be in inreasing order, however the corresponding flux values
-        // might no exist.
+        // Neither the fluxes or `r` is guaranteed to exist.
+        // If `r` exists, then it is guaranteed it's in increasing order.
         #[rustfmt::skip]
         let psi_of_r_interp = match psi.state {
             NcFluxState::None => None,
-            _ => Some(make_interp_type(&builder.interp1d_type)?.build(&r_values, psi.uvalues())?),
+            _ => make_interp_type(&builder.interp1d_type)?.build(&r_values, psi.uvalues()).ok(),
         };
         #[rustfmt::skip]
         let psip_of_r_interp = match psip.state {
             NcFluxState::None => None,
-            _ => Some(make_interp_type(&builder.interp1d_type)?.build(&r_values, psip.uvalues())?),
+            _ => make_interp_type(&builder.interp1d_type)?.build(&r_values, psip.uvalues()).ok(),
         };
 
         let rlab_of_psi_interp = match psi.state {

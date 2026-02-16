@@ -12,6 +12,8 @@ from ._plotters import (
     _HarmonicPlotter,
 )
 
+from typing import TypeAlias
+
 
 class LarGeometry(_PyLarGeometry, _GeometryPlotter):
     r"""Analytical Large Aspect Ratio Geometry of a circular device.
@@ -652,29 +654,20 @@ class NcPerturbation(_PyNcPerturbation):
 
 # ================================================================================================
 
+Geometry: TypeAlias = LarGeometry | NcGeometry
+"""Available 'Geometry' Objects"""
 
-def perturbation(
-    harmonics: list[CosHarmonic] | list[NcHarmonic],
-) -> CosPerturbation | NcPerturbation:
-    """Helper function to create a `Perturbation` object.
+Qfactor: TypeAlias = UnityQfactor | ParabolicQfactor | NcQfactor
+"""Available 'Qfactor' Objects"""
 
-    The type of `Perturbation` is determined by the type of the passed harmonics.
+Current: TypeAlias = LarCurrent | NcCurrent
+"""Available 'Current' Objects"""
 
-    Parameters
-    ----------
-    harmonics
-        The harmonics that comprise the perturbation. **Must be of the same type.**
+Bfield: TypeAlias = LarBfield | NcBfield
+"""Available 'Bfield' Objects"""
 
-    Returns
-    -------
-    The corresponding `Perturbation` type.
-    """
-    match harmonics:
-        case []:
-            return CosPerturbation([])
-        case [*cos] if all([isinstance(harmonic, CosHarmonic) for harmonic in cos]):
-            return CosPerturbation(harmonics)  # type: ignore
-        case [*nc] if all([isinstance(harmonic, NcHarmonic) for harmonic in nc]):
-            return NcPerturbation(harmonics)  # type: ignore
-        case _:
-            raise TypeError("All harmonics must be of the same type")
+Harmonic: TypeAlias = CosHarmonic | NcHarmonic
+"""Available 'Harmonic' Objects"""
+
+Perturbation: TypeAlias = CosPerturbation | NcPerturbation
+"""Available 'Perturbation' Objects"""

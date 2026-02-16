@@ -1,4 +1,5 @@
 import pytest
+from math import isfinite
 from dexter.equilibrium import _TOROIDAL_TEST_NETCDF_PATH, _POLOIDAL_TEST_NETCDF_PATH
 from dexter import Qfactor, UnityQfactor, ParabolicQfactor, NcQfactor
 from dexter.types import FluxWall
@@ -21,7 +22,7 @@ def test_parabolic_qfactor():
     assert qfactor.qaxis == 1.1
     assert qfactor.qwall == 3.8
     assert qfactor.psi_wall == 0.45
-    assert isinstance(qfactor.psip_wall, float)
+    assert isfinite(qfactor.psip_wall)
     _test_qfactor_evals(qfactor)
 
 
@@ -33,10 +34,10 @@ def test_nc_qfactor_getters(nc_qfactor: NcQfactor):
     assert isinstance(nc_qfactor.netcdf_version, str)
     assert isinstance(nc_qfactor.equilibrium_type, str)
     assert isinstance(nc_qfactor.interp_type, str)
-    assert isinstance(nc_qfactor.qaxis, float)
-    assert isinstance(nc_qfactor.qwall, float)
-    assert isinstance(nc_qfactor.psi_wall, float)
-    assert isinstance(nc_qfactor.psip_wall, float)
+    assert isfinite(nc_qfactor.qaxis)
+    assert isfinite(nc_qfactor.qwall)
+    assert isfinite(nc_qfactor.psi_wall)
+    assert isfinite(nc_qfactor.psip_wall)
     assert nc_qfactor.psi_state == "Good"
     assert nc_qfactor.psip_state == "Good"
     assert nc_qfactor.psi_array.ndim == 1
@@ -52,10 +53,10 @@ def test_toroidal_nc_qfactor():
     nc_qfactor = NcQfactor(_TOROIDAL_TEST_NETCDF_PATH, "Steffen")
     assert nc_qfactor.psi_state == "Good"
     assert nc_qfactor.psip_state == "Bad"
-    assert isinstance(nc_qfactor.q_of_psi(0.01), float)
-    assert isinstance(nc_qfactor.iota_of_psi(0.01), float)
-    assert isinstance(nc_qfactor.psip_of_psi(0.01), float)
-    assert isinstance(nc_qfactor.dpsip_dpsi(0.01), float)
+    assert isfinite(nc_qfactor.q_of_psi(0.01))
+    assert isfinite(nc_qfactor.iota_of_psi(0.01))
+    assert isfinite(nc_qfactor.psip_of_psi(0.01))
+    assert isfinite(nc_qfactor.dpsip_dpsi(0.01))
     with pytest.raises(BaseException):
         nc_qfactor.q_of_psip(0.01)
     with pytest.raises(BaseException):
@@ -70,10 +71,10 @@ def test_poloidal_nc_qfactor():
     nc_qfactor = NcQfactor(_POLOIDAL_TEST_NETCDF_PATH, "Steffen")
     assert nc_qfactor.psi_state == "Bad"
     assert nc_qfactor.psip_state == "Good"
-    assert isinstance(nc_qfactor.q_of_psip(0.01), float)
-    assert isinstance(nc_qfactor.iota_of_psip(0.01), float)
-    assert isinstance(nc_qfactor.psi_of_psip(0.01), float)
-    assert isinstance(nc_qfactor.dpsi_dpsip(0.01), float)
+    assert isfinite(nc_qfactor.q_of_psip(0.01))
+    assert isfinite(nc_qfactor.iota_of_psip(0.01))
+    assert isfinite(nc_qfactor.psi_of_psip(0.01))
+    assert isfinite(nc_qfactor.dpsi_dpsip(0.01))
     with pytest.raises(BaseException):
         nc_qfactor.q_of_psi(0.01)
     with pytest.raises(BaseException):
@@ -87,11 +88,11 @@ def test_poloidal_nc_qfactor():
 def _test_qfactor_evals(qfactor: Qfactor):
     psi = 0.01
     psip = 0.015
-    assert isinstance(qfactor.q_of_psi(psi), float)
-    assert isinstance(qfactor.q_of_psip(psip), float)
-    assert isinstance(qfactor.psip_of_psi(psi), float)
-    assert isinstance(qfactor.psi_of_psip(psip), float)
-    assert isinstance(qfactor.iota_of_psi(psi), float)
-    assert isinstance(qfactor.iota_of_psip(psip), float)
-    assert isinstance(qfactor.dpsip_dpsi(psi), float)
-    assert isinstance(qfactor.dpsi_dpsip(psip), float)
+    assert isfinite(qfactor.q_of_psi(psi))
+    assert isfinite(qfactor.q_of_psip(psip))
+    assert isfinite(qfactor.psip_of_psi(psi))
+    assert isfinite(qfactor.psi_of_psip(psip))
+    assert isfinite(qfactor.iota_of_psi(psi))
+    assert isfinite(qfactor.iota_of_psip(psip))
+    assert isfinite(qfactor.dpsip_dpsi(psi))
+    assert isfinite(qfactor.dpsi_dpsip(psip))

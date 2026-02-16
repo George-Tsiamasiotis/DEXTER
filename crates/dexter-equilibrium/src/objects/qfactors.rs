@@ -340,14 +340,14 @@ impl NcQfactor {
         // Create interpolators, if possible
         use NcFluxState::Good;
         #[rustfmt::skip]
-        let psip_of_psi_interp = match psi.state {
-            Good => Some(make_interp_type(&builder.interp_type)?.build(psi.uvalues(), psip.uvalues())?),
-            _ => None,
+        let psip_of_psi_interp = match (psi.state == Good) & (psip.state != NcFluxState::None) {
+            true => Some(make_interp_type(&builder.interp_type)?.build(psi.uvalues(), psip.uvalues())?),
+            false => None,
         };
         #[rustfmt::skip]
-        let psi_of_psip_interp = match psip.state {
-            Good => Some(make_interp_type(&builder.interp_type)?.build(psip.uvalues(), psi.uvalues())?),
-            _ => None,
+        let psi_of_psip_interp = match (psip.state == Good) & (psi.state != NcFluxState::None) {
+            true => Some(make_interp_type(&builder.interp_type)?.build(psip.uvalues(), psi.uvalues())?),
+            false => None,
         };
 
         #[rustfmt::skip]

@@ -27,6 +27,22 @@ PSI_WALL_BOUND = 0.5
 PSIP_WALL_BOUND = 0.5
 
 
+def _attempt_evaluation(fun: Callable):
+    """Attempts an evaluation of the method to be used for the plot.
+
+    Does nothing if the evaluation succeeds, but if it fails it
+    returns the more informative rust error
+    """
+    args = [1e-10]
+    for _ in range(5):
+        try:
+            fun(*args)
+        except TypeError:  # not enough arguments
+            args += [1e-10]
+        else:
+            break
+
+
 class _FluxPlotter:
     """Provides plotting functions between the two flux coordinates."""
 
@@ -51,9 +67,12 @@ class _FluxPlotter:
             Whether or not to plot the data array points (numerical equilibria only). Defaults to False.
         """
 
+        fun = self.psip_of_psi
+        _attempt_evaluation(fun)
+
         psi_wall = getattr(self, "psi_wall", PSI_WALL_BOUND)
         psis = np.linspace(0, psi_wall, points)
-        qs = np.asarray([self.psip_of_psi(psi) for psi in psis])
+        qs = np.asarray([fun(psi) for psi in psis])
 
         fig = plt.figure(**FIG_KW)
         ax = fig.add_subplot(**SUBPLOT_KW)
@@ -86,9 +105,12 @@ class _FluxPlotter:
             Whether or not to plot the data array points (numerical equilibria only). Defaults to False.
         """
 
+        fun = self.psi_of_psip
+        _attempt_evaluation(fun)
+
         psip_wall = getattr(self, "psip_wall", PSIP_WALL_BOUND)
         psips = np.linspace(0, psip_wall, points)
-        qs = np.asarray([self.psi_of_psip(psip) for psip in psips])
+        qs = np.asarray([fun(psip) for psip in psips])
 
         fig = plt.figure(**FIG_KW)
         ax = fig.add_subplot(**SUBPLOT_KW)
@@ -152,9 +174,12 @@ class _GeometryPlotter:
             Whether or not to plot the data array points (numerical equilibria only). Defaults to False.
         """
 
+        fun = self.r_of_psi
+        _attempt_evaluation(fun)
+
         psi_wall = getattr(self, "psi_wall")
         psis = np.linspace(0, psi_wall, points)
-        rs = np.asarray([self.r_of_psi(psi) for psi in psis])
+        rs = np.asarray([fun(psi) for psi in psis])
 
         fig = plt.figure(**FIG_KW)
         ax = fig.add_subplot(**SUBPLOT_KW)
@@ -187,9 +212,12 @@ class _GeometryPlotter:
             Whether or not to plot the data array points (numerical equilibria only). Defaults to False.
         """
 
+        fun = self.r_of_psip
+        _attempt_evaluation(fun)
+
         psip_wall = getattr(self, "psip_wall")
         psips = np.linspace(0, psip_wall, points)
-        rs = np.asarray([self.r_of_psip(psip) for psip in psips])
+        rs = np.asarray([fun(psip) for psip in psips])
 
         fig = plt.figure(**FIG_KW)
         ax = fig.add_subplot(**SUBPLOT_KW)
@@ -222,9 +250,12 @@ class _GeometryPlotter:
             Whether or not to plot the data array points (numerical equilibria only). Defaults to False.
         """
 
+        fun = self.psi_of_r
+        _attempt_evaluation(fun)
+
         rwall = getattr(self, "rwall")
         rs = np.linspace(0, rwall, points)
-        psis = np.asarray([self.psi_of_r(r) for r in rs])
+        psis = np.asarray([fun(r) for r in rs])
 
         fig = plt.figure(**FIG_KW)
         ax = fig.add_subplot(**SUBPLOT_KW)
@@ -257,9 +288,12 @@ class _GeometryPlotter:
             Whether or not to plot the data array points (numerical equilibria only). Defaults to False.
         """
 
+        fun = self.psip_of_r
+        _attempt_evaluation(fun)
+
         rwall = getattr(self, "rwall")
         rs = np.linspace(0, rwall, points)
-        psips = np.asarray([self.psip_of_r(r) for r in rs])
+        psips = np.asarray([fun(r) for r in rs])
 
         fig = plt.figure(**FIG_KW)
         ax = fig.add_subplot(**SUBPLOT_KW)
@@ -406,9 +440,12 @@ class _QfactorPlotter:
             Whether or not to plot the data array points (numerical equilibria only). Defaults to False.
         """
 
+        fun = self.q_of_psi
+        _attempt_evaluation(fun)
+
         psi_wall = getattr(self, "psi_wall", PSI_WALL_BOUND)
         psis = np.linspace(0, psi_wall, points)
-        qs = np.asarray([self.q_of_psi(psi) for psi in psis])
+        qs = np.asarray([fun(psi) for psi in psis])
 
         fig = plt.figure(**FIG_KW)
         ax = fig.add_subplot(**SUBPLOT_KW)
@@ -441,9 +478,12 @@ class _QfactorPlotter:
             Whether or not to plot the data array points (numerical equilibria only). Defaults to False.
         """
 
+        fun = self.q_of_psip
+        _attempt_evaluation(fun)
+
         psip_wall = getattr(self, "psip_wall", PSIP_WALL_BOUND)
         psips = np.linspace(0, psip_wall, points)
-        qs = np.asarray([self.q_of_psip(psip) for psip in psips])
+        qs = np.asarray([fun(psip) for psip in psips])
 
         fig = plt.figure(**FIG_KW)
         ax = fig.add_subplot(**SUBPLOT_KW)
@@ -476,10 +516,15 @@ class _QfactorPlotter:
             The number of points in which to evaluate the two splines. Defaults to 1000.
         """
 
+        fun = self.iota_of_psi
+        der_fun = self.dpsip_dpsi
+        _attempt_evaluation(fun)
+        _attempt_evaluation(der_fun)
+
         psi_wall = getattr(self, "psi_wall", PSI_WALL_BOUND)
         psis = np.linspace(0, psi_wall, points)
-        ds = np.asarray([self.dpsip_dpsi(psi) for psi in psis])
-        iotas = np.asarray([self.iota_of_psi(psi) for psi in psis])
+        ds = np.asarray([der_fun(psi) for psi in psis])
+        iotas = np.asarray([fun(psi) for psi in psis])
 
         fig = plt.figure(**FIG_KW)
         ax = fig.add_subplot(**SUBPLOT_KW)
@@ -506,10 +551,15 @@ class _QfactorPlotter:
             The number of points in which to evaluate the two splines. Defaults to 1000.
         """
 
+        fun = self.q_of_psip
+        der_fun = self.dpsi_dpsip
+        _attempt_evaluation(fun)
+        _attempt_evaluation(der_fun)
+
         psip_wall = getattr(self, "psip_wall", PSIP_WALL_BOUND)
         psips = np.linspace(0, psip_wall, points)
-        ds = np.asarray([self.dpsi_dpsip(psip) for psip in psips])
-        qs = np.asarray([self.q_of_psip(psip) for psip in psips])
+        ds = np.asarray([der_fun(psip) for psip in psips])
+        qs = np.asarray([fun(psip) for psip in psips])
 
         fig = plt.figure(**FIG_KW)
         ax = fig.add_subplot(**SUBPLOT_KW)
@@ -534,9 +584,12 @@ class _QfactorPlotter:
             The number of points in which to evaluate $\iota(\psi)$. Defaults to 1000.
         """
 
+        fun = self.iota_of_psi
+        _attempt_evaluation(fun)
+
         psi_wall = getattr(self, "psi_wall", PSI_WALL_BOUND)
         psis = np.linspace(0, psi_wall, points)
-        iotas = np.asarray([self.iota_of_psi(psi) for psi in psis])
+        iotas = np.asarray([fun(psi) for psi in psis])
 
         fig = plt.figure(**FIG_KW)
         ax = fig.add_subplot(**SUBPLOT_KW)
@@ -560,9 +613,12 @@ class _QfactorPlotter:
             The number of points in which to evaluate $\iota(\psi_p)$. Defaults to 1000.
         """
 
+        fun = self.iota_of_psip
+        _attempt_evaluation(fun)
+
         psip_wall = getattr(self, "psip_wall", PSIP_WALL_BOUND)
         psips = np.linspace(0, psip_wall, points)
-        iotas = np.asarray([self.iota_of_psip(psip) for psip in psips])
+        iotas = np.asarray([fun(psip) for psip in psips])
 
         fig = plt.figure(**FIG_KW)
         ax = fig.add_subplot(**SUBPLOT_KW)
@@ -610,9 +666,12 @@ class _CurrentPlotter:
             Whether or not to plot the data array points (numerical equilibria only). Defaults to False.
         """
 
+        fun = self.g_of_psi
+        _attempt_evaluation(fun)
+
         psi_wall = getattr(self, "psi_wall", PSI_WALL_BOUND)
         psis = np.linspace(0, psi_wall, points)
-        gs = np.asarray([self.g_of_psi(psi) for psi in psis])
+        gs = np.asarray([fun(psi) for psi in psis])
 
         fig = plt.figure(**FIG_KW)
         ax = fig.add_subplot(**SUBPLOT_KW)
@@ -642,9 +701,12 @@ class _CurrentPlotter:
             Whether or not to plot the data array points (numerical equilibria only). Defaults to False.
         """
 
+        fun = self.g_of_psip
+        _attempt_evaluation(fun)
+
         psip_wall = getattr(self, "psip_wall", PSIP_WALL_BOUND)
         psips = np.linspace(0, psip_wall, points)
-        gs = np.asarray([self.g_of_psip(psip) for psip in psips])
+        gs = np.asarray([fun(psip) for psip in psips])
 
         fig = plt.figure(**FIG_KW)
         ax = fig.add_subplot(**SUBPLOT_KW)
@@ -674,9 +736,12 @@ class _CurrentPlotter:
             Whether or not to plot the data array points (numerical equilibria only). Defaults to False.
         """
 
+        fun = self.i_of_psi
+        _attempt_evaluation(fun)
+
         psi_wall = getattr(self, "psi_wall", PSI_WALL_BOUND)
         psis = np.linspace(0, psi_wall, points)
-        i = np.asarray([self.i_of_psi(psi) for psi in psis])
+        i = np.asarray([fun(psi) for psi in psis])
 
         fig = plt.figure(**FIG_KW)
         ax = fig.add_subplot(**SUBPLOT_KW)
@@ -706,9 +771,12 @@ class _CurrentPlotter:
             Whether or not to plot the data array points (numerical equilibria only). Defaults to False.
         """
 
+        fun = self.i_of_psip
+        _attempt_evaluation(fun)
+
         psip_wall = getattr(self, "psip_wall", PSIP_WALL_BOUND)
         psips = np.linspace(0, psip_wall, points)
-        i = np.asarray([self.i_of_psip(psip) for psip in psips])
+        i = np.asarray([fun(psip) for psip in psips])
 
         fig = plt.figure(**FIG_KW)
         ax = fig.add_subplot(**SUBPLOT_KW)
@@ -736,9 +804,12 @@ class _CurrentPlotter:
             The number of points in which to evaluate $dg(\psi)/d\psi$. Defaults to 1000.
         """
 
+        fun = self.dg_dpsi
+        _attempt_evaluation(fun)
+
         psi_wall = getattr(self, "psi_wall", PSI_WALL_BOUND)
         psis = np.linspace(0, psi_wall, points)
-        ds = np.asarray([self.dg_dpsi(psi) for psi in psis])
+        ds = np.asarray([fun(psi) for psi in psis])
 
         fig = plt.figure(**FIG_KW)
         ax = fig.add_subplot(**SUBPLOT_KW)
@@ -761,9 +832,12 @@ class _CurrentPlotter:
             The number of points in which to evaluate $dg(\psi_p)/d\psi_p$. Defaults to 1000.
         """
 
+        fun = self.dg_dpsip
+        _attempt_evaluation(fun)
+
         psip_wall = getattr(self, "psip_wall", PSIP_WALL_BOUND)
         psips = np.linspace(0, psip_wall, points)
-        ds = np.asarray([self.dg_dpsip(psip) for psip in psips])
+        ds = np.asarray([fun(psip) for psip in psips])
 
         fig = plt.figure(**FIG_KW)
         ax = fig.add_subplot(**SUBPLOT_KW)
@@ -786,9 +860,12 @@ class _CurrentPlotter:
             The number of points in which to evaluate $dI(\psi)/d\psi$. Defaults to 1000.
         """
 
+        fun = self.di_dpsi
+        _attempt_evaluation(fun)
+
         psi_wall = getattr(self, "psi_wall", PSI_WALL_BOUND)
         psis = np.linspace(0, psi_wall, points)
-        ds = np.asarray([self.di_dpsi(psi) for psi in psis])
+        ds = np.asarray([fun(psi) for psi in psis])
 
         fig = plt.figure(**FIG_KW)
         ax = fig.add_subplot(**SUBPLOT_KW)
@@ -812,9 +889,12 @@ class _CurrentPlotter:
             The number of points in which to evaluate $dI(\psi_p)/d\psi_p$. Defaults to 1000.
         """
 
+        fun = self.di_dpsip
+        _attempt_evaluation(fun)
+
         psip_wall = getattr(self, "psip_wall", PSIP_WALL_BOUND)
         psips = np.linspace(0, psip_wall, points)
-        ds = np.asarray([self.di_dpsip(psip) for psip in psips])
+        ds = np.asarray([fun(psip) for psip in psips])
 
         fig = plt.figure(**FIG_KW)
         ax = fig.add_subplot(**SUBPLOT_KW)
@@ -866,9 +946,12 @@ class _HarmonicPlotter:
             Whether or not to plot the data array points (numerical equilibria only). Defaults to False.
         """
 
+        fun = self.alpha_of_psi
+        _attempt_evaluation(fun)
+
         psi_wall = getattr(self, "psi_wall", PSI_WALL_BOUND)
         psis = np.linspace(0, psi_wall, points)
-        alphas = np.asarray([self.alpha_of_psi(psi, *self.ignored) for psi in psis])
+        alphas = np.asarray([fun(psi, *self.ignored) for psi in psis])
 
         fig = plt.figure(**FIG_KW)
         ax = fig.add_subplot(**SUBPLOT_KW | {"ymargin": 0.1})
@@ -903,9 +986,12 @@ class _HarmonicPlotter:
             Whether or not to plot the data array points (numerical equilibria only). Defaults to False.
         """
 
+        fun = self.alpha_of_psip
+        _attempt_evaluation(fun)
+
         psip_wall = getattr(self, "psip_wall", PSIP_WALL_BOUND)
         psips = np.linspace(0, psip_wall, points)
-        alphas = np.asarray([self.alpha_of_psip(psip, *self.ignored) for psip in psips])
+        alphas = np.asarray([fun(psip, *self.ignored) for psip in psips])
 
         fig = plt.figure(**FIG_KW)
         ax = fig.add_subplot(**SUBPLOT_KW | {"ymargin": 0.1})
@@ -948,9 +1034,12 @@ class _HarmonicPlotter:
             Defaults to True.
         """
 
+        fun = self.phase_of_psi
+        _attempt_evaluation(fun)
+
         psi_wall = getattr(self, "psi_wall", PSI_WALL_BOUND)
         psis = np.linspace(0, psi_wall, points)
-        phis = np.asarray([self.phase_of_psi(psi, *self.ignored) for psi in psis])
+        phis = np.asarray([fun(psi, *self.ignored) for psi in psis])
 
         fig = plt.figure(**FIG_KW)
         ax = fig.add_subplot(**SUBPLOT_KW | {"ymargin": 0.1})
@@ -998,9 +1087,12 @@ class _HarmonicPlotter:
             Defaults to True.
         """
 
+        fun = self.phase_of_psip
+        _attempt_evaluation(fun)
+
         psip_wall = getattr(self, "psip_wall", PSIP_WALL_BOUND)
         psips = np.linspace(0, psip_wall, points)
-        phis = np.asarray([self.phase_of_psip(psip, *self.ignored) for psip in psips])
+        phis = np.asarray([fun(psip, *self.ignored) for psip in psips])
 
         fig = plt.figure(**FIG_KW)
         ax = fig.add_subplot(**SUBPLOT_KW | {"ymargin": 0.1})

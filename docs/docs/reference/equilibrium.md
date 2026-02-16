@@ -124,8 +124,12 @@
 
 # Helpers
 
-Helper functions for the construction of equilibrium objects.
+Helper functions/classes for the construction of equilibrium objects.
 
 ::: dexter.perturbation
     options:
-        docstring_section_style: spacy
+        docstring_section_style: list
+
+::: dexter.NcEquilibrium
+    options:
+        docstring_section_style: list

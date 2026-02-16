@@ -1,4 +1,5 @@
 import pytest
+from math import isfinite
 
 from dexter.equilibrium import _TEST_NETCDF_PATH as netcdf_path
 from dexter.equilibrium import _TOROIDAL_TEST_NETCDF_PATH as toroidal_netcdf_path
@@ -29,8 +30,8 @@ def test_nc_harmonic_getters(nc_harmonic: NcHarmonic):
     assert isinstance(nc_harmonic.m, int)
     assert isinstance(nc_harmonic.n, int)
     assert nc_harmonic.phase_method == "Zero"
-    assert isinstance(nc_harmonic.psi_wall, float)
-    assert isinstance(nc_harmonic.psip_wall, float)
+    assert isfinite(nc_harmonic.psi_wall)
+    assert isfinite(nc_harmonic.psip_wall)
     assert nc_harmonic.psi_state == "Good"
     assert nc_harmonic.psip_state == "Good"
     assert nc_harmonic.psi_array.ndim == 1
@@ -81,12 +82,12 @@ def test_toroidal_nc_harmonic():
     assert harmonic.psi_state == "Good"
     assert harmonic.psip_state == "Bad"
     args = (0.0, 0.0, 0.0, 0.0)
-    assert isinstance(harmonic.alpha_of_psi(*args), float)
-    assert isinstance(harmonic.phase_of_psi(*args), float)
-    assert isinstance(harmonic.h_of_psi(*args), float)
-    assert isinstance(harmonic.dh_dpsi(*args), float)
-    assert isinstance(harmonic.dh_of_psi_dtheta(*args), float)
-    assert isinstance(harmonic.dh_of_psi_dzeta(*args), float)
+    assert isfinite(harmonic.alpha_of_psi(*args))
+    assert isfinite(harmonic.phase_of_psi(*args))
+    assert isfinite(harmonic.h_of_psi(*args))
+    assert isfinite(harmonic.dh_dpsi(*args))
+    assert isfinite(harmonic.dh_of_psi_dtheta(*args))
+    assert isfinite(harmonic.dh_of_psi_dzeta(*args))
     with pytest.raises(BaseException):
         harmonic.alpha_of_psip(*args)
     with pytest.raises(BaseException):
@@ -100,8 +101,8 @@ def test_toroidal_nc_harmonic():
     with pytest.raises(BaseException):
         harmonic.dh_of_psip_dzeta(*args)
 
-    assert isinstance(harmonic.dh_of_psi_dt(*args), float)
-    assert isinstance(harmonic.dh_of_psip_dt(*args), float)
+    assert isfinite(harmonic.dh_of_psi_dt(*args))
+    assert isfinite(harmonic.dh_of_psip_dt(*args))
 
 
 def test_poloidal_nc_harmonic():
@@ -109,12 +110,12 @@ def test_poloidal_nc_harmonic():
     assert harmonic.psi_state == "Bad"
     assert harmonic.psip_state == "Good"
     args = (0.0, 0.0, 0.0, 0.0)
-    assert isinstance(harmonic.alpha_of_psip(*args), float)
-    assert isinstance(harmonic.phase_of_psip(*args), float)
-    assert isinstance(harmonic.h_of_psip(*args), float)
-    assert isinstance(harmonic.dh_dpsip(*args), float)
-    assert isinstance(harmonic.dh_of_psip_dtheta(*args), float)
-    assert isinstance(harmonic.dh_of_psip_dzeta(*args), float)
+    assert isfinite(harmonic.alpha_of_psip(*args))
+    assert isfinite(harmonic.phase_of_psip(*args))
+    assert isfinite(harmonic.h_of_psip(*args))
+    assert isfinite(harmonic.dh_dpsip(*args))
+    assert isfinite(harmonic.dh_of_psip_dtheta(*args))
+    assert isfinite(harmonic.dh_of_psip_dzeta(*args))
     with pytest.raises(BaseException):
         harmonic.alpha_of_psi(*args)
     with pytest.raises(BaseException):
@@ -128,8 +129,8 @@ def test_poloidal_nc_harmonic():
     with pytest.raises(BaseException):
         harmonic.dh_of_psi_dzeta(*args)
 
-    assert isinstance(harmonic.dh_of_psi_dt(*args), float)
-    assert isinstance(harmonic.dh_of_psip_dt(*args), float)
+    assert isfinite(harmonic.dh_of_psi_dt(*args))
+    assert isfinite(harmonic.dh_of_psip_dt(*args))
 
 
 def _test_harmonic_evals(harmonic: Harmonic):
@@ -138,17 +139,17 @@ def _test_harmonic_evals(harmonic: Harmonic):
     theta = 3.1415
     zeta = 6.2831
     t = 0
-    assert isinstance(harmonic.alpha_of_psi(psi, theta, zeta, t), float)
-    assert isinstance(harmonic.alpha_of_psip(psip, theta, zeta, t), float)
-    assert isinstance(harmonic.phase_of_psi(psi, theta, zeta, t), float)
-    assert isinstance(harmonic.phase_of_psip(psip, theta, zeta, t), float)
-    assert isinstance(harmonic.h_of_psi(psi, theta, zeta, t), float)
-    assert isinstance(harmonic.h_of_psip(psip, theta, zeta, t), float)
-    assert isinstance(harmonic.dh_dpsi(psi, theta, zeta, t), float)
-    assert isinstance(harmonic.dh_dpsip(psip, theta, zeta, t), float)
-    assert isinstance(harmonic.dh_of_psi_dtheta(psi, theta, zeta, t), float)
-    assert isinstance(harmonic.dh_of_psip_dtheta(psip, theta, zeta, t), float)
-    assert isinstance(harmonic.dh_of_psi_dzeta(psi, theta, zeta, t), float)
-    assert isinstance(harmonic.dh_of_psip_dzeta(psip, theta, zeta, t), float)
-    assert isinstance(harmonic.dh_of_psi_dt(psi, theta, zeta, t), float)
-    assert isinstance(harmonic.dh_of_psip_dt(psip, theta, zeta, t), float)
+    assert isfinite(harmonic.alpha_of_psi(psi, theta, zeta, t))
+    assert isfinite(harmonic.alpha_of_psip(psip, theta, zeta, t))
+    assert isfinite(harmonic.phase_of_psi(psi, theta, zeta, t))
+    assert isfinite(harmonic.phase_of_psip(psip, theta, zeta, t))
+    assert isfinite(harmonic.h_of_psi(psi, theta, zeta, t))
+    assert isfinite(harmonic.h_of_psip(psip, theta, zeta, t))
+    assert isfinite(harmonic.dh_dpsi(psi, theta, zeta, t))
+    assert isfinite(harmonic.dh_dpsip(psip, theta, zeta, t))
+    assert isfinite(harmonic.dh_of_psi_dtheta(psi, theta, zeta, t))
+    assert isfinite(harmonic.dh_of_psip_dtheta(psip, theta, zeta, t))
+    assert isfinite(harmonic.dh_of_psi_dzeta(psi, theta, zeta, t))
+    assert isfinite(harmonic.dh_of_psip_dzeta(psip, theta, zeta, t))
+    assert isfinite(harmonic.dh_of_psi_dt(psi, theta, zeta, t))
+    assert isfinite(harmonic.dh_of_psip_dt(psip, theta, zeta, t))
