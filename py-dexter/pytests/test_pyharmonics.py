@@ -11,7 +11,7 @@ def test_cos_harmonic():
     harmonic = CosHarmonic(1e-3, 3, 2, 0)
     assert isinstance(harmonic.__str__(), str)
     assert isinstance(harmonic.__repr__(), str)
-    assert harmonic.ampl == 1e-3
+    assert harmonic.alpha == 1e-3
     assert harmonic.m == 3
     assert harmonic.n == 2
     assert harmonic.phase == 0
@@ -57,9 +57,9 @@ def test_nc_harmonic_phase_methods():
     assert harmonic.phase_method == "Interpolation"
     _test_harmonic_evals(harmonic)
 
-    harmonic = NcHarmonic(poloidal_netcdf_path, "Cubic", 3, 2, "Resonance")
-    assert harmonic.phase_method == "Resonance"
-    # Not all evals work in this one of course
+    # harmonic = NcHarmonic(poloidal_netcdf_path, "Cubic", 3, 2, "Resonance")
+    # assert harmonic.phase_method == "Resonance"
+    # # Not all evals work in this one of course
 
     harmonic = NcHarmonic(netcdf_path, "Cubic", 3, 2, ("Custom", 10))
     assert harmonic.phase_method == "Custom(10.0)"
@@ -81,14 +81,14 @@ def test_toroidal_nc_harmonic():
     assert harmonic.psi_state == "Good"
     assert harmonic.psip_state == "Bad"
     args = (0.0, 0.0, 0.0, 0.0)
-    assert isinstance(harmonic.ampl_of_psi(*args), float)
+    assert isinstance(harmonic.alpha_of_psi(*args), float)
     assert isinstance(harmonic.phase_of_psi(*args), float)
     assert isinstance(harmonic.h_of_psi(*args), float)
     assert isinstance(harmonic.dh_dpsi(*args), float)
     assert isinstance(harmonic.dh_of_psi_dtheta(*args), float)
     assert isinstance(harmonic.dh_of_psi_dzeta(*args), float)
     with pytest.raises(BaseException):
-        harmonic.ampl_of_psip(*args)
+        harmonic.alpha_of_psip(*args)
     with pytest.raises(BaseException):
         harmonic.phase_of_psip(*args)
     with pytest.raises(BaseException):
@@ -109,14 +109,14 @@ def test_poloidal_nc_harmonic():
     assert harmonic.psi_state == "Bad"
     assert harmonic.psip_state == "Good"
     args = (0.0, 0.0, 0.0, 0.0)
-    assert isinstance(harmonic.ampl_of_psip(*args), float)
+    assert isinstance(harmonic.alpha_of_psip(*args), float)
     assert isinstance(harmonic.phase_of_psip(*args), float)
     assert isinstance(harmonic.h_of_psip(*args), float)
     assert isinstance(harmonic.dh_dpsip(*args), float)
     assert isinstance(harmonic.dh_of_psip_dtheta(*args), float)
     assert isinstance(harmonic.dh_of_psip_dzeta(*args), float)
     with pytest.raises(BaseException):
-        harmonic.ampl_of_psi(*args)
+        harmonic.alpha_of_psi(*args)
     with pytest.raises(BaseException):
         harmonic.phase_of_psi(*args)
     with pytest.raises(BaseException):
@@ -138,8 +138,8 @@ def _test_harmonic_evals(harmonic: Harmonic):
     theta = 3.1415
     zeta = 6.2831
     t = 0
-    assert isinstance(harmonic.ampl_of_psi(psi, theta, zeta, t), float)
-    assert isinstance(harmonic.ampl_of_psip(psip, theta, zeta, t), float)
+    assert isinstance(harmonic.alpha_of_psi(psi, theta, zeta, t), float)
+    assert isinstance(harmonic.alpha_of_psip(psip, theta, zeta, t), float)
     assert isinstance(harmonic.phase_of_psi(psi, theta, zeta, t), float)
     assert isinstance(harmonic.phase_of_psip(psip, theta, zeta, t), float)
     assert isinstance(harmonic.h_of_psi(psi, theta, zeta, t), float)

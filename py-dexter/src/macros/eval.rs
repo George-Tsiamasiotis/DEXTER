@@ -45,7 +45,7 @@ macro_rules! py_eval_harmonic {
         impl $py_object {
             #[rustfmt::skip]
             pub fn $eval_method(&self, flux: f64, theta: f64, zeta: f64, t: f64) -> Result<f64, PyEqError> {
-                let mut cache = self.0.get_default_cache();
+                let mut cache = self.0.generate_cache();
                 Ok(self
                     .0
                     .$eval_method(flux, theta, zeta, t, &mut cache)?)

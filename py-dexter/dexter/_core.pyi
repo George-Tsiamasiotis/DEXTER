@@ -362,7 +362,7 @@ class _BfieldTrait(ABC):
 class _HarmonicTrait(ABC):
     """Documents the methods provided by the 'Harmonic' trait."""
 
-    def ampl_of_psi(self, psi: float, theta: float, zeta: float, t: float) -> float:
+    def alpha_of_psi(self, psi: float, theta: float, zeta: float, t: float) -> float:
         r"""The harmonic's amplitude $\alpha(\psi, \theta, \zeta, t)$ value in Normalized Units.
 
         Parameters
@@ -377,7 +377,7 @@ class _HarmonicTrait(ABC):
             The time in Normalized Units
         """
 
-    def ampl_of_psip(self, psip: float, theta: float, zeta: float, t: float) -> float:
+    def alpha_of_psip(self, psip: float, theta: float, zeta: float, t: float) -> float:
         r"""The harmonic's amplitude $\alpha(\psi_p, \theta, \zeta, t)$ value in Normalized Units.
 
         Parameters
@@ -917,12 +917,12 @@ class _PyCosHarmonic(_HarmonicTrait):
     """PyO3 export of `CosHarmonic`. Contains the full behavior of the wrapped object."""
 
     equilibrium_type: EquilibriumType
-    ampl: float
+    alpha: float
     phase: float
     m: int
     n: int
 
-    def __init__(self, ampl: float, m: int, n: int, phase: float) -> None: ...
+    def __init__(self, alpha: float, m: int, n: int, phase: float) -> None: ...
 
 class _PyNcHarmonic(_HarmonicTrait):
     """PyO3 export of `NcHarmonic`. Contains the full behavior of the wrapped object."""
@@ -952,7 +952,7 @@ class _PyNcHarmonic(_HarmonicTrait):
         interp_type: Interp1DType,
         m: int,
         n: int,
-        phase_method: PhaseMethod = "Resonance",
+        phase_method: PhaseMethod = "Zero",
     ) -> None: ...
 
 # ================================================================================================

@@ -20,17 +20,10 @@ use std::f64::consts::TAU;
 #[derive(Clone)]
 pub struct CosHarmonic {
     equilibrium_type: EquilibriumType,
-    pub(crate) ampl: f64,
+    pub(crate) alpha: f64,
     pub(crate) m: i64,
     pub(crate) n: i64,
     pub(crate) phase: f64,
-
-    // To be used in actual calculations.
-    _m: f64,
-    _n: f64,
-
-    // [m, n, phase]
-    _cache_args: [f64; 3],
 }
 
 impl CosHarmonic {
@@ -41,24 +34,21 @@ impl CosHarmonic {
     /// # use dexter_equilibrium::*;
     /// let harmonic = CosHarmonic::new(1e-3, 3, 2, 0.0);
     /// ```
-    pub fn new(ampl: f64, m: i64, n: i64, phase: f64) -> Self {
+    pub fn new(alpha: f64, m: i64, n: i64, phase: f64) -> Self {
         let _m = m as f64;
         let _n = n as f64;
         Self {
             equilibrium_type: EquilibriumType::Analytical,
-            ampl,
+            alpha,
             m,
             n,
             phase,
-            _m,
-            _n,
-            _cache_args: [_m, _n, phase],
         }
     }
 
     /// Returns the Harmonic's constant amplitude `α`.
-    pub fn ampl(&self) -> f64 {
-        self.ampl
+    pub fn alpha(&self) -> f64 {
+        self.alpha
     }
 
     /// Returns the Harmonic's constant phase `φ`.
@@ -74,7 +64,7 @@ impl std::fmt::Debug for CosHarmonic {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("CosHarmonic")
             .field("equilibrium_type", &self.equilibrium_type)
-            .field("amplitude", &self.ampl)
+            .field("amplitude", &self.alpha)
             .field("poloidal number `m`", &self.m)
             .field("toroidal number `n`", &self.n)
             .field("phase", &self.phase)
@@ -82,41 +72,27 @@ impl std::fmt::Debug for CosHarmonic {
     }
 }
 
-/// Cache for [`CosHarmonic`] values.
-///
-/// # Note
-///
-/// Do not use the same NcHarmonicCache for both `ψ` and `ψp` evaluations, since this would
-/// invalidate the cached values.
-///
-/// # Example
-///
-/// ```
-/// # use std::path::PathBuf;
-/// # use dexter_equilibrium::*;
-/// let harmonic = CosHarmonic::new(1e-3, 3, 2, 0.0);
-/// let mut cache = harmonic.get_default_cache();
-/// let h = harmonic.h_of_psi(0.0, 0.2, 0.3, 0.0, &mut cache)?;
-/// # Ok::<_, EqError>(())
-/// ```
-///
+/// Stores a [`CosHarmonic`]'s constant parameters and cached quantities
 #[derive(Debug)]
-#[non_exhaustive]
 pub struct CosHarmonicCache {
-    hits: usize,
-    misses: usize,
-    theta: f64,
-    zeta: f64,
-    modarg: f64,
-    cos: f64,
-    sin: f64,
+    pub(crate) hits: usize,
+    pub(crate) misses: usize,
+    pub(crate) alpha: f64,
+    pub(crate) m: f64,
+    pub(crate) n: f64,
+    pub(crate) phase: f64,
+    /// ====== Order
+    /// 0. theta
+    /// 1. zeta
+    /// 2. modarg
+    /// 3. sin
+    /// 4. cos
+    pub(crate) cache: [f64; 5],
 }
-
-harmonic_cache_counts_getter_impl!(CosHarmonicCache);
 
 impl HarmonicCache for CosHarmonicCache {
     fn is_updated(&mut self, _: f64, theta: f64, zeta: f64, _: f64) -> bool {
-        if (self.theta == theta) && (self.zeta == zeta) {
+        if (self.cache[0] == theta) && (self.cache[1] == zeta) {
             self.hits += 1;
             true
         } else {
@@ -125,80 +101,39 @@ impl HarmonicCache for CosHarmonicCache {
         }
     }
 
-    fn update(&mut self, _: f64, theta: f64, zeta: f64, _: f64, args: &[f64]) -> Result<()> {
-        let m = args.first().expect("Always exists");
-        let n = args.get(1).expect("Always exists");
-        let phase = args.get(2).expect("Always exists");
-
-        self.theta = theta;
-        self.zeta = zeta;
-        self.modarg = (m * theta - n * zeta + phase).rem_euclid(TAU);
-        (self.sin, self.cos) = self.modarg.sin_cos();
+    fn update(&mut self, _: f64, theta: f64, zeta: f64, _: f64) -> Result<()> {
+        self.cache[0] = theta;
+        self.cache[1] = zeta;
+        self.cache[2] = (self.m * theta - self.n * zeta + self.phase).rem_euclid(TAU);
+        (self.cache[3], self.cache[4]) = self.cache[2].sin_cos();
         Ok(())
     }
-
-    fn sin(&self) -> f64 {
-        self.sin
-    }
-
-    fn cos(&self) -> f64 {
-        self.cos
-    }
-
-    fn ampl(&self) -> f64 {
-        unreachable!("return the constant amplitude")
-    }
-
-    fn set_ampl(&mut self, _: f64) {
-        unreachable!("ampl is constant")
-    }
-
-    fn set_phase(&mut self, _: f64) {
-        unreachable!("phase is constant")
-    }
-
-    fn set_dampl(&mut self, _: f64) {
-        unreachable!("ampl is constant")
-    }
-
-    fn phase(&self) -> f64 {
-        unreachable!("phase not stored in cache")
-    }
-
-    fn dampl(&self) -> f64 {
-        unreachable!("ampl is constant")
-    }
-
-    fn flux_acc(&mut self) -> &mut rsl_interpolation::Accelerator {
-        unreachable!("Analytical object has no Accelerator")
-    }
 }
 
-impl Default for CosHarmonicCache {
-    /// Set all initial values to NaN so first is_updated always returns false.
-    fn default() -> Self {
-        Self {
-            hits: 0,
-            misses: 0,
-            theta: f64::NAN,
-            zeta: f64::NAN,
-            modarg: f64::NAN,
-            cos: f64::NAN,
-            sin: f64::NAN,
-        }
-    }
-}
+harmonic_cache_counts_getter_impl!(CosHarmonicCache);
 
 #[rustfmt::skip]
 impl Harmonic for CosHarmonic {
     type Cache = CosHarmonicCache;
 
-    fn ampl_of_psi(&self, _: f64, _: f64, _: f64, _: f64, _: &mut CosHarmonicCache) -> Result<f64> {
-        Ok(self.ampl)
+    fn generate_cache(&self) -> Self::Cache {
+        Self::Cache {
+            hits: 0,
+            misses: 0,
+            alpha: self.alpha,
+            m: self.m as f64,
+            n: self.n as f64,
+            phase: self.phase,
+            cache: [f64::NAN; 5],
+        }
     }
 
-    fn ampl_of_psip(&self, _: f64, _: f64, _: f64, _: f64, _: &mut CosHarmonicCache) -> Result<f64> {
-        Ok(self.ampl)
+    fn alpha_of_psi(&self, _: f64, _: f64, _: f64, _: f64, _: &mut CosHarmonicCache) -> Result<f64> {
+        Ok(self.alpha)
+    }
+
+    fn alpha_of_psip(&self, _: f64, _: f64, _: f64, _: f64, _: &mut CosHarmonicCache) -> Result<f64> {
+        Ok(self.alpha)
     }
 
     fn phase_of_psi(&self, _: f64, _: f64, _: f64, _: f64, _: &mut CosHarmonicCache) -> Result<f64> {
@@ -211,9 +146,9 @@ impl Harmonic for CosHarmonic {
 
     fn h_of_psi(&self, psi: f64, theta: f64, zeta: f64, t: f64, cache: &mut CosHarmonicCache) -> Result<f64> {
         if !cache.is_updated(psi, theta, zeta, t) {
-            cache.update(psi, theta, zeta, t, &self._cache_args)?;
+            cache.update(psi, theta, zeta, t)?;
         }
-        Ok(self.ampl * cache.cos())
+        Ok(cache.alpha * cache.cache[4])
     }
 
     fn h_of_psip(&self, psip: f64, theta: f64, zeta: f64, t: f64, cache: &mut CosHarmonicCache) -> Result<f64> {
@@ -230,9 +165,9 @@ impl Harmonic for CosHarmonic {
 
     fn dh_of_psi_dtheta(&self, psi: f64, theta: f64, zeta: f64, t: f64, cache: &mut CosHarmonicCache) -> Result<f64> {
         if !cache.is_updated(psi, theta, zeta, t) {
-            cache.update(psi, theta, zeta, t, &self._cache_args)?;
+            cache.update(psi, theta, zeta, t)?;
         }
-        Ok(-self._m * self.ampl * cache.sin())
+        Ok(-cache.m * cache.alpha * cache.cache[3])
     }
 
     fn dh_of_psip_dtheta(&self, psip: f64, theta: f64, zeta: f64, t: f64, cache: &mut CosHarmonicCache) -> Result<f64> {
@@ -241,9 +176,9 @@ impl Harmonic for CosHarmonic {
 
     fn dh_of_psi_dzeta(&self, psi: f64, theta: f64, zeta: f64, t: f64, cache: &mut CosHarmonicCache) -> Result<f64> {
         if !cache.is_updated(psi, theta, zeta, t) {
-            cache.update(psi, theta, zeta, t, &self._cache_args)?;
+            cache.update(psi, theta, zeta, t)?;
         }
-        Ok(self._n * self.ampl * cache.sin())
+        Ok(cache.n * cache.alpha * cache.cache[3])
     }
 
     fn dh_of_psip_dzeta(&self, psip: f64, theta: f64, zeta: f64, t: f64, cache: &mut CosHarmonicCache) -> Result<f64> {
@@ -268,7 +203,7 @@ mod cos_harmonic_values {
     #[rustfmt::skip]
     fn desmos_values() -> Result<()> {
         let har = dbg!(CosHarmonic::new(10.0, 3, 2, 1.0));
-        let c = &mut har.get_default_cache();
+        let c = &mut har.generate_cache();
 
         let p = 0.0; // not used
         let theta = 0.2;
@@ -285,8 +220,8 @@ mod cos_harmonic_values {
         assert_eq!(c.misses(), 1);
         assert_eq!(c.hits(), 5);
 
-        assert!(is_close!(har.ampl_of_psi(p, theta, zeta, t, c)?, 10.0));
-        assert!(is_close!(har.ampl_of_psip(p, theta, zeta, t, c)?, 10.0));
+        assert!(is_close!(har.alpha_of_psi(p, theta, zeta, t, c)?, 10.0));
+        assert!(is_close!(har.alpha_of_psip(p, theta, zeta, t, c)?, 10.0));
         assert!(is_close!(har.phase_of_psi(p, theta, zeta, t, c)?, 1.0));
         assert!(is_close!(har.phase_of_psip(p, theta, zeta, t, c)?, 1.0));
         assert!(is_close!(har.dh_dpsi(p, theta, zeta, t, c)?, 0.0));
@@ -305,7 +240,7 @@ mod cos_harmonic_cache {
     #[test]
     fn counts() {
         let h = dbg!(CosHarmonic::new(10.0, 3, 2, 1.0));
-        let c = &mut h.get_default_cache();
+        let c = &mut h.generate_cache();
         let psi = 0.01; // not checked
         let t = 0.0; // not checked
 

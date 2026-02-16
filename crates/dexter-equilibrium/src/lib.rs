@@ -40,9 +40,11 @@
 //!
 //! The trait [`Harmonic`] requires a [`HarmonicCache`] object to be passed as a parameter. Such an
 //! object caches values such as angles' modulos and their sines/cosines, or amplitudes/phases
-//! calculated with interpolation. Since many evaluation methods are called with the same arguments
-//! sequentially (like in the case of the perturbed equations of motion), it makes sense to cache
-//! values that appear many times in these methods and can be expensive in tight loops.
+//! calculated with interpolation. It may also store the necessary
+//! [`Accelerators`](rsl_interpolation::Accelerator). Since many evaluation methods are called with
+//! the same arguments sequentially (like in the case of the perturbed equations of motion), it
+//! makes sense to cache values that appear many times in these methods and can be expensive in
+//! tight loops.
 //!
 //! + [`CosHarmonicCache`]: Cache for [`CosHarmonic`]
 //! + [`NcHarmonicCache`]: Cache for [`NcHarmonic`]

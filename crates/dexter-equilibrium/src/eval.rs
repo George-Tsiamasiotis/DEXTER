@@ -730,47 +730,16 @@ pub trait Current {
 /// Unfortunately, the values calculated from the interpolators must be calculated outside the
 /// implementor and updated separately, to avoid passing (a variable amount of possible missing)
 /// Interpolators and arrays as parameters as well.
-///
-/// The workaround for this is to implement a method on the caching object that does just that, and
-/// make sure to call it with every [`HarmonicCache::update`] call.
-pub trait HarmonicCache: Default {
-    /// Returns true if all the independent variables stored are equal to the ones in the call
-    /// site.
+pub trait HarmonicCache {
+    /// Checks if the caches independent coordinates are up-to-date.
+    ///
+    /// Comparing floats for equality is fine here; We want the method to return `false` with even
+    /// the slightest of changes, and only return `true` when the old and new variables are
+    /// bit-to-bit identical.
     fn is_updated(&mut self, flux: f64, theta: f64, zeta: f64, t: f64) -> bool;
 
-    /// Updates the stored independent variables and *all* derived quantities. Any additional
-    /// quantities need for the calculations should be passed with `args`.
-    fn update(&mut self, flux: f64, theta: f64, zeta: f64, t: f64, args: &[f64]) -> Result<()>;
-
-    /// Sets the `ampl` field to a new value. To be used with values calculated with interpolation,
-    /// which must be calculated outside the caching object.
-    fn set_ampl(&mut self, ampl: f64);
-
-    /// Sets the `dampl` field to a new value. To be used with values calculated with interpolation,
-    /// which must be calculated outside the caching object.
-    fn set_dampl(&mut self, dampl: f64);
-
-    /// Sets the `phase` field to a new value. To be used with values calculated with interpolation,
-    /// which must be calculated outside the caching object.
-    fn set_phase(&mut self, phase: f64);
-
-    /// Returns the amplitude of the harmonic.
-    fn ampl(&self) -> f64;
-
-    /// Returns the amplitude of the harmonic.
-    fn dampl(&self) -> f64;
-
-    /// Returns the phase of the harmonic.
-    fn phase(&self) -> f64;
-
-    /// Returns the sine of the harmonic's angle.
-    fn sin(&self) -> f64;
-
-    /// Returns the cosine of the harmonic's angle.
-    fn cos(&self) -> f64;
-
-    /// Returns a mutable reference to the flux [`Accelerator`], if it exists.
-    fn flux_acc(&mut self) -> &mut Accelerator;
+    /// Updates the cache's coordinates and intermediate values.
+    fn update(&mut self, flux: f64, theta: f64, zeta: f64, t: f64) -> Result<()>;
 }
 
 /// Single perturbation harmonic related quantities computation.
@@ -787,15 +756,10 @@ pub trait Harmonic: Clone
     /// ```
     /// # use dexter_equilibrium::*;
     /// let harmonic = CosHarmonic::new(1e-3, 3, 2, 0.0);
-    /// // from the instance:
-    /// let cache1 = harmonic.get_default_cache();
-    /// // equivalently, from the type:
-    /// let cache2 = <CosHarmonic as Harmonic>::Cache::default();
+    /// let cache1 = harmonic.generate_cache();
     /// # Ok::<_, EqError>(())
     /// ```
-    fn get_default_cache(&self) -> Self::Cache {
-        Self::Cache::default()
-    }
+    fn generate_cache(&self) -> Self::Cache;
 
     /// Calculates the harmonic's amplitude `α(ψ, θ, ζ, t)`.
     ///
@@ -804,11 +768,11 @@ pub trait Harmonic: Clone
     /// ```
     /// # use dexter_equilibrium::*;
     /// let harmonic = CosHarmonic::new(1e-3, 3, 2, 0.0);
-    /// let mut cache = harmonic.get_default_cache();
-    /// let a = harmonic.ampl_of_psi(0.0, 0.2, 0.3, 0.0, &mut cache)?;
+    /// let mut cache = harmonic.generate_cache();
+    /// let a = harmonic.alpha_of_psi(0.0, 0.2, 0.3, 0.0, &mut cache)?;
     /// # Ok::<_, EqError>(())
     /// ```
-    fn ampl_of_psi(&self, psi: f64, theta: f64, zeta: f64, t: f64, cache: &mut Self::Cache) -> Result<f64>;
+    fn alpha_of_psi(&self, psi: f64, theta: f64, zeta: f64, t: f64, cache: &mut Self::Cache) -> Result<f64>;
 
     /// Calculates the harmonic's amplitude `α(ψp, θ, ζ, t)`.
     ///
@@ -817,11 +781,11 @@ pub trait Harmonic: Clone
     /// ```
     /// # use dexter_equilibrium::*;
     /// let harmonic = CosHarmonic::new(1e-3, 3, 2, 0.0);
-    /// let mut cache = harmonic.get_default_cache();
-    /// let a = harmonic.ampl_of_psip(0.0, 0.2, 0.3, 0.0, &mut cache)?;
+    /// let mut cache = harmonic.generate_cache();
+    /// let a = harmonic.alpha_of_psip(0.0, 0.2, 0.3, 0.0, &mut cache)?;
     /// # Ok::<_, EqError>(())
     /// ```
-    fn ampl_of_psip(&self, psip: f64, theta: f64, zeta: f64, t: f64, cache: &mut Self::Cache) -> Result<f64>;
+    fn alpha_of_psip(&self, psip: f64, theta: f64, zeta: f64, t: f64, cache: &mut Self::Cache) -> Result<f64>;
 
     /// Calculates the harmonic's phase `φ(ψ, θ, ζ, t)`.
     ///
@@ -830,7 +794,7 @@ pub trait Harmonic: Clone
     /// ```
     /// # use dexter_equilibrium::*;
     /// let harmonic = CosHarmonic::new(1e-3, 3, 2, 0.0);
-    /// let mut cache = harmonic.get_default_cache();
+    /// let mut cache = harmonic.generate_cache();
     /// let phase = harmonic.phase_of_psi(0.0, 0.2, 0.3, 0.0, &mut cache)?;
     /// # Ok::<_, EqError>(())
     /// ```
@@ -843,7 +807,7 @@ pub trait Harmonic: Clone
     /// ```
     /// # use dexter_equilibrium::*;
     /// let harmonic = CosHarmonic::new(1e-3, 3, 2, 0.0);
-    /// let mut cache = harmonic.get_default_cache();
+    /// let mut cache = harmonic.generate_cache();
     /// let phase = harmonic.phase_of_psi(0.0, 0.2, 0.3, 0.0, &mut cache)?;
     /// # Ok::<_, EqError>(())
     /// ```
@@ -856,7 +820,7 @@ pub trait Harmonic: Clone
     /// ```
     /// # use dexter_equilibrium::*;
     /// let harmonic = CosHarmonic::new(1e-3, 3, 2, 0.0);
-    /// let mut cache = harmonic.get_default_cache();
+    /// let mut cache = harmonic.generate_cache();
     /// let h = harmonic.h_of_psi(0.0, 0.2, 0.3, 0.0, &mut cache)?;
     /// # Ok::<_, EqError>(())
     /// ```
@@ -869,7 +833,7 @@ pub trait Harmonic: Clone
     /// ```
     /// # use dexter_equilibrium::*;
     /// let harmonic = CosHarmonic::new(1e-3, 3, 2, 0.0);
-    /// let mut cache = harmonic.get_default_cache();
+    /// let mut cache = harmonic.generate_cache();
     /// let h = harmonic.h_of_psip(0.0, 0.2, 0.3, 0.0, &mut cache)?;
     /// # Ok::<_, EqError>(())
     /// ```
@@ -882,7 +846,7 @@ pub trait Harmonic: Clone
     /// ```
     /// # use dexter_equilibrium::*;
     /// let harmonic = CosHarmonic::new(1e-3, 3, 2, 0.0);
-    /// let mut cache = harmonic.get_default_cache();
+    /// let mut cache = harmonic.generate_cache();
     /// let dh_dpsi = harmonic.dh_dpsi(0.0, 0.2, 0.3, 0.0, &mut cache)?;
     /// # Ok::<_, EqError>(())
     /// ```
@@ -895,7 +859,7 @@ pub trait Harmonic: Clone
     /// ```
     /// # use dexter_equilibrium::*;
     /// let harmonic = CosHarmonic::new(1e-3, 3, 2, 0.0);
-    /// let mut cache = harmonic.get_default_cache();
+    /// let mut cache = harmonic.generate_cache();
     /// let dh_dpsip = harmonic.dh_dpsip(0.0, 0.2, 0.3, 0.0, &mut cache)?;
     /// # Ok::<_, EqError>(())
     /// ```
@@ -908,7 +872,7 @@ pub trait Harmonic: Clone
     /// ```
     /// # use dexter_equilibrium::*;
     /// let harmonic = CosHarmonic::new(1e-3, 3, 2, 0.0);
-    /// let mut cache = harmonic.get_default_cache();
+    /// let mut cache = harmonic.generate_cache();
     /// let dh_of_psi_dtheta = harmonic.dh_of_psi_dtheta(0.0, 0.2, 0.3, 0.0, &mut cache)?;
     /// # Ok::<_, EqError>(())
     /// ```
@@ -921,7 +885,7 @@ pub trait Harmonic: Clone
     /// ```
     /// # use dexter_equilibrium::*;
     /// let harmonic = CosHarmonic::new(1e-3, 3, 2, 0.0);
-    /// let mut cache = harmonic.get_default_cache();
+    /// let mut cache = harmonic.generate_cache();
     /// let dh_of_psip_dtheta = harmonic.dh_of_psip_dtheta(0.0, 0.2, 0.3, 0.0, &mut cache)?;
     /// # Ok::<_, EqError>(())
     /// ```
@@ -934,7 +898,7 @@ pub trait Harmonic: Clone
     /// ```
     /// # use dexter_equilibrium::*;
     /// let harmonic = CosHarmonic::new(1e-3, 3, 2, 0.0);
-    /// let mut cache = harmonic.get_default_cache();
+    /// let mut cache = harmonic.generate_cache();
     /// let dh_of_psi_dzeta = harmonic.dh_of_psi_dzeta(0.0, 0.2, 0.3, 0.0, &mut cache)?;
     /// # Ok::<_, EqError>(())
     /// ```
@@ -947,7 +911,7 @@ pub trait Harmonic: Clone
     /// ```
     /// # use dexter_equilibrium::*;
     /// let harmonic = CosHarmonic::new(1e-3, 3, 2, 0.0);
-    /// let mut cache = harmonic.get_default_cache();
+    /// let mut cache = harmonic.generate_cache();
     /// let dh_of_psip_dzeta = harmonic.dh_of_psip_dzeta(0.0, 0.2, 0.3, 0.0, &mut cache)?;
     /// # Ok::<_, EqError>(())
     /// ```
@@ -960,7 +924,7 @@ pub trait Harmonic: Clone
     /// ```
     /// # use dexter_equilibrium::*;
     /// let harmonic = CosHarmonic::new(1e-3, 3, 2, 0.0);
-    /// let mut cache = harmonic.get_default_cache();
+    /// let mut cache = harmonic.generate_cache();
     /// let dh_of_psi_dt = harmonic.dh_of_psi_dt(0.0, 0.2, 0.3, 0.0, &mut cache)?;
     /// # Ok::<_, EqError>(())
     /// ```
@@ -973,7 +937,7 @@ pub trait Harmonic: Clone
     /// ```
     /// # use dexter_equilibrium::*;
     /// let harmonic = CosHarmonic::new(1e-3, 3, 2, 0.0);
-    /// let mut cache = harmonic.get_default_cache();
+    /// let mut cache = harmonic.generate_cache();
     /// let dh_of_psip_dt = harmonic.dh_of_psip_dt(0.0, 0.2, 0.3, 0.0, &mut cache)?;
     /// # Ok::<_, EqError>(())
     /// ```

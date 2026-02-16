@@ -368,21 +368,21 @@ pub struct PyCosHarmonic(CosHarmonic);
 #[pymethods]
 impl PyCosHarmonic {
     #[new]
-    #[pyo3(signature = (ampl, m, n, phase))]
-    pub fn new(ampl: f64, m: i64, n: i64, phase: f64) -> Self {
-        Self(CosHarmonic::new(ampl, m, n, phase))
+    #[pyo3(signature = (alpha, m, n, phase))]
+    pub fn new(alpha: f64, m: i64, n: i64, phase: f64) -> Self {
+        Self(CosHarmonic::new(alpha, m, n, phase))
     }
 }
 
 py_debug_impl!(PyCosHarmonic);
 py_repr_impl!(PyCosHarmonic);
 py_get_enum_string!(PyCosHarmonic, equilibrium_type);
-py_export_getter!(PyCosHarmonic, ampl, f64);
+py_export_getter!(PyCosHarmonic, alpha, f64);
 py_export_getter!(PyCosHarmonic, phase, f64);
 py_export_getter!(PyCosHarmonic, m, i64);
 py_export_getter!(PyCosHarmonic, n, i64);
-py_eval_harmonic!(PyCosHarmonic, ampl_of_psi);
-py_eval_harmonic!(PyCosHarmonic, ampl_of_psip);
+py_eval_harmonic!(PyCosHarmonic, alpha_of_psi);
+py_eval_harmonic!(PyCosHarmonic, alpha_of_psip);
 py_eval_harmonic!(PyCosHarmonic, phase_of_psi);
 py_eval_harmonic!(PyCosHarmonic, phase_of_psip);
 py_eval_harmonic!(PyCosHarmonic, h_of_psi);
@@ -487,8 +487,8 @@ py_get_numpy1D_fallible!(PyNcHarmonic, psi_array);
 py_get_numpy1D_fallible!(PyNcHarmonic, psip_array);
 py_get_numpy1D!(PyNcHarmonic, alpha_array);
 py_get_numpy1D!(PyNcHarmonic, phase_array);
-py_eval_harmonic!(PyNcHarmonic, ampl_of_psi);
-py_eval_harmonic!(PyNcHarmonic, ampl_of_psip);
+py_eval_harmonic!(PyNcHarmonic, alpha_of_psi);
+py_eval_harmonic!(PyNcHarmonic, alpha_of_psip);
 py_eval_harmonic!(PyNcHarmonic, phase_of_psi);
 py_eval_harmonic!(PyNcHarmonic, phase_of_psip);
 py_eval_harmonic!(PyNcHarmonic, h_of_psi);

@@ -833,8 +833,8 @@ class _HarmonicPlotter:
     """Provides plotting functions for a Harmonic's evaluation methods."""
 
     equilibrium_type: EquilibriumType
-    ampl_of_psi: Callable
-    ampl_of_psip: Callable
+    alpha_of_psi: Callable
+    alpha_of_psip: Callable
     phase_of_psi: Callable
     phase_of_psip: Callable
     m: int
@@ -850,7 +850,7 @@ class _HarmonicPlotter:
 
     ignored = (0.0, 0.0, 0.0)  # Ignored evaluation arguments θ, ζ, t
 
-    def plot_ampl_of_psi(self, points: int = 1000, data: bool = False):
+    def plot_alpha_of_psi(self, points: int = 1000, data: bool = False):
         r"""Plots the harmonic's amplitude $\alpha(\psi)$.
 
         Note
@@ -868,7 +868,7 @@ class _HarmonicPlotter:
 
         psi_wall = getattr(self, "psi_wall", PSI_WALL_BOUND)
         psis = np.linspace(0, psi_wall, points)
-        alphas = np.asarray([self.ampl_of_psi(psi, *self.ignored) for psi in psis])
+        alphas = np.asarray([self.alpha_of_psi(psi, *self.ignored) for psi in psis])
 
         fig = plt.figure(**FIG_KW)
         ax = fig.add_subplot(**SUBPLOT_KW | {"ymargin": 0.1})
@@ -887,7 +887,7 @@ class _HarmonicPlotter:
         ax.legend()
         plt.show()
 
-    def plot_ampl_of_psip(self, points: int = 1000, data: bool = False):
+    def plot_alpha_of_psip(self, points: int = 1000, data: bool = False):
         r"""Plots the harmonic's amplitude $\alpha(\psi_p)$.
 
         Note
@@ -905,7 +905,7 @@ class _HarmonicPlotter:
 
         psip_wall = getattr(self, "psip_wall", PSIP_WALL_BOUND)
         psips = np.linspace(0, psip_wall, points)
-        alphas = np.asarray([self.ampl_of_psip(psip, *self.ignored) for psip in psips])
+        alphas = np.asarray([self.alpha_of_psip(psip, *self.ignored) for psip in psips])
 
         fig = plt.figure(**FIG_KW)
         ax = fig.add_subplot(**SUBPLOT_KW | {"ymargin": 0.1})

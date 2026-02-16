@@ -437,7 +437,7 @@ class CosHarmonic(_PyCosHarmonic, _HarmonicPlotter):
 
     Parameters
     ----------
-    ampl
+    alpha
         The harmonic's constant amplitude $\alpha$ in Normalized Units.
     m
         The poloidal mode number $m$.
@@ -450,7 +450,7 @@ class CosHarmonic(_PyCosHarmonic, _HarmonicPlotter):
     ----------
     equilibrium_type
         The Equilibrium's type.
-    ampl
+    alpha
         The harmonic's constant amplitude $\alpha$ in Normalized Units.
     m
         The poloidal mode number $m$.
@@ -462,7 +462,7 @@ class CosHarmonic(_PyCosHarmonic, _HarmonicPlotter):
     Example
     -------
     ```python title="CosHarmonic creation"
-    >>> harmonic = dex.CosHarmonic(ampl=1e-3, m=3, n=2, phase=0)
+    >>> harmonic = dex.CosHarmonic(alpha=1e-3, m=3, n=2, phase=0)
 
     ```
     """

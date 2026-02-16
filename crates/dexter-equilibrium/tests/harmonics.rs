@@ -8,12 +8,13 @@ use std::f64::consts::PI;
 use std::path::PathBuf;
 
 #[test]
+#[rustfmt::skip]
 #[allow(unused_variables)]
 fn cos_harmonic() {
     let har = dbg!(CosHarmonic::new(1e-3, 3, 2, PI));
 
     assert_eq!(har.equilibrium_type(), EquilibriumType::Analytical);
-    assert_eq!(har.ampl(), 1e-3);
+    assert_eq!(har.alpha(), 1e-3);
     assert_eq!(har.m(), 3);
     assert_eq!(har.n(), 2);
     assert_eq!(har.phase(), PI);
@@ -22,7 +23,7 @@ fn cos_harmonic() {
     let theta = 3.14;
     let zeta = 1.0;
     let t = 8.0;
-    let mut c = har.get_default_cache();
+    let mut c = har.generate_cache();
 
     har.h_of_psi(psi, theta, zeta, t, &mut c).unwrap();
     har.h_of_psip(psi, theta, zeta, t, &mut c).unwrap();
@@ -31,8 +32,8 @@ fn cos_harmonic() {
     har.dh_of_psi_dzeta(psi, theta, zeta, t, &mut c).unwrap();
     har.dh_of_psip_dzeta(psi, theta, zeta, t, &mut c).unwrap();
 
-    assert_eq!(har.ampl_of_psi(psi, theta, zeta, t, &mut c).unwrap(), 1e-3);
-    assert_eq!(har.ampl_of_psip(psi, theta, zeta, t, &mut c).unwrap(), 1e-3);
+    assert_eq!(har.alpha_of_psi(psi, theta, zeta, t, &mut c).unwrap(), 1e-3);
+    assert_eq!(har.alpha_of_psip(psi, theta, zeta, t, &mut c).unwrap(), 1e-3);
     assert_eq!(har.phase_of_psi(psi, theta, zeta, t, &mut c).unwrap(), PI);
     assert_eq!(har.phase_of_psip(psi, theta, zeta, t, &mut c).unwrap(), PI);
     assert_eq!(har.dh_dpsi(psi, theta, zeta, t, &mut c).unwrap(), 0.0);
@@ -80,10 +81,10 @@ fn nc_harmonic() {
     let theta = 3.14;
     let zeta = 1.0;
     let t = 8.0;
-    let mut c = har.get_default_cache();
+    let mut c = har.generate_cache();
 
-    har.ampl_of_psi(psi, theta, zeta, t, &mut c).unwrap();
-    har.ampl_of_psip(psip, theta, zeta, t, &mut c).unwrap();
+    har.alpha_of_psi(psi, theta, zeta, t, &mut c).unwrap();
+    har.alpha_of_psip(psip, theta, zeta, t, &mut c).unwrap();
     har.phase_of_psi(psi, theta, zeta, t, &mut c).unwrap();
     har.phase_of_psip(psip, theta, zeta, t, &mut c).unwrap();
     har.h_of_psi(psi, theta, zeta, t, &mut c).unwrap();

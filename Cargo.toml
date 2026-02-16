@@ -12,7 +12,6 @@ default-members = [
 [workspace.dependencies]
 ndarray = "0.17.2"
 thiserror = "2.0.18"
-criterion = "0.7.0"
 rsl-interpolation = { git = "https://github.com/George-Tsiamasiotis/rsl-interpolation.git", branch = "dev-0.1.16-pre", features = ["openblas-system"]}
 
 dexter = { path = "crates/dexter" }

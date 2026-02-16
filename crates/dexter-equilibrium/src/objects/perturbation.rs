@@ -89,7 +89,7 @@ where
     pub fn generate_caches(&self) -> Vec<H::Cache> {
         self.0
             .iter()
-            .map(|harmonic| harmonic.get_default_cache())
+            .map(|harmonic| harmonic.generate_cache())
             .collect()
     }
 }

@@ -111,10 +111,10 @@ def _test_all_current_plots(current: Current):
 
 
 def _test_all_harmonic_plots(harmonic: Harmonic):
-    harmonic.plot_ampl_of_psi(points=50, data=True)
-    harmonic.plot_ampl_of_psi(points=50, data=False)
-    harmonic.plot_ampl_of_psip(points=50, data=True)
-    harmonic.plot_ampl_of_psip(points=50, data=False)
+    harmonic.plot_alpha_of_psi(points=50, data=True)
+    harmonic.plot_alpha_of_psi(points=50, data=False)
+    harmonic.plot_alpha_of_psip(points=50, data=True)
+    harmonic.plot_alpha_of_psip(points=50, data=False)
     harmonic.plot_phase_of_psi(points=50, data=True)
     harmonic.plot_phase_of_psi(points=50, data=False)
     harmonic.plot_phase_of_psip(points=50, data=True)
