@@ -660,7 +660,7 @@ mod test_utils {
 #[cfg(test)]
 mod phase_methods {
     use crate::extract::{POLOIDAL_TEST_NETCDF_PATH, TEST_NETCDF_PATH};
-    use is_close::is_close;
+    use approx::assert_relative_eq;
 
     use super::test_utils::*;
     use super::*;
@@ -724,10 +724,10 @@ mod phase_methods {
 
         assert!(matches!(h.phase_method(), Resonance));
         assert!(h.psip_single.phase_average.is_none());
-        assert!(
-            h.psip_single
-                .phase_resonance
-                .is_some_and(|x| is_close!(x, expected))
+        assert_relative_eq!(
+            h.psip_single.phase_resonance.unwrap(),
+            expected,
+            epsilon = 1e-10
         );
     }
 
@@ -747,11 +747,11 @@ mod phase_methods {
         assert!(h.psi_single.phase_average.is_none());
         assert!(h.psi_single.phase_resonance.is_none());
 
-        assert!(is_close!(
-            h.phase_of_psip(0.1, 0.1, 0.1, 0.0, c).unwrap(),
+        assert_relative_eq!(
+            h.phase_of_psip(0.1, 0.1, 0.1, 0.1, c).unwrap(),
             expected,
-            rel_tol = 1e-5 // unsure why there is this small difference here.
-        ));
+            epsilon = 1e-5 // unsure why there is this small difference here.
+        );
     }
 
     #[test]

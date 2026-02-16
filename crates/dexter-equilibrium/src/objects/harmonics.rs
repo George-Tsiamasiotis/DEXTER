@@ -197,7 +197,7 @@ impl Harmonic for CosHarmonic {
 #[cfg(test)]
 mod cos_harmonic_values {
     use super::*;
-    use is_close::is_close;
+    use approx::assert_relative_eq;
 
     #[test]
     #[rustfmt::skip]
@@ -210,24 +210,25 @@ mod cos_harmonic_values {
         let zeta = 0.3;
         let t = 0.0; // not used
 
-        assert!(is_close!(har.h_of_psi(p, theta, zeta, t, c)?, 5.40302305868));
-        assert!(is_close!(har.h_of_psip(p, theta, zeta, t, c)?, 5.40302305868));
-        assert!(is_close!(har.dh_of_psi_dtheta(p, theta, zeta, t, c)?, -25.2441295442));
-        assert!(is_close!(har.dh_of_psip_dtheta(p, theta, zeta, t, c)?, -25.2441295442));
-        assert!(is_close!(har.dh_of_psi_dzeta(p, theta, zeta, t, c)?, 16.8294196962));
-        assert!(is_close!(har.dh_of_psip_dzeta(p, theta, zeta, t, c)?, 16.8294196962));
+        let eps = 1e-10;
+        assert_relative_eq!(har.h_of_psi(p, theta, zeta, t, c)?, 5.40302305868, epsilon = eps);
+        assert_relative_eq!(har.h_of_psip(p, theta, zeta, t, c)?, 5.40302305868, epsilon = eps);
+        assert_relative_eq!(har.dh_of_psi_dtheta(p, theta, zeta, t, c)?, -25.2441295442, epsilon = eps);
+        assert_relative_eq!(har.dh_of_psip_dtheta(p, theta, zeta, t, c)?, -25.2441295442, epsilon = eps);
+        assert_relative_eq!(har.dh_of_psi_dzeta(p, theta, zeta, t, c)?, 16.8294196962, epsilon = eps);
+        assert_relative_eq!(har.dh_of_psip_dzeta(p, theta, zeta, t, c)?, 16.8294196962, epsilon = eps);
 
         assert_eq!(c.misses(), 1);
         assert_eq!(c.hits(), 5);
 
-        assert!(is_close!(har.alpha_of_psi(p, theta, zeta, t, c)?, 10.0));
-        assert!(is_close!(har.alpha_of_psip(p, theta, zeta, t, c)?, 10.0));
-        assert!(is_close!(har.phase_of_psi(p, theta, zeta, t, c)?, 1.0));
-        assert!(is_close!(har.phase_of_psip(p, theta, zeta, t, c)?, 1.0));
-        assert!(is_close!(har.dh_dpsi(p, theta, zeta, t, c)?, 0.0));
-        assert!(is_close!(har.dh_dpsip(p, theta, zeta, t, c)?, 0.0));
-        assert!(is_close!(har.dh_of_psi_dt(p, theta, zeta, t, c)?, 0.0));
-        assert!(is_close!(har.dh_of_psip_dt(p, theta, zeta, t, c)?, 0.0));
+        assert_eq!(har.alpha_of_psi(p, theta, zeta, t, c)?, 10.0);
+        assert_eq!(har.alpha_of_psip(p, theta, zeta, t, c)?, 10.0);
+        assert_eq!(har.phase_of_psi(p, theta, zeta, t, c)?, 1.0);
+        assert_eq!(har.phase_of_psip(p, theta, zeta, t, c)?, 1.0);
+        assert_eq!(har.dh_dpsi(p, theta, zeta, t, c)?, 0.0);
+        assert_eq!(har.dh_dpsip(p, theta, zeta, t, c)?, 0.0);
+        assert_eq!(har.dh_of_psi_dt(p, theta, zeta, t, c)?, 0.0);
+        assert_eq!(har.dh_of_psip_dt(p, theta, zeta, t, c)?, 0.0);
         Ok(())
     }
 }

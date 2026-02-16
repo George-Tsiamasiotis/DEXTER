@@ -351,7 +351,7 @@ mod perturbation_evals {
 
     use crate::extract::TEST_NETCDF_PATH;
     use crate::{CosHarmonic, NcHarmonic, NcHarmonicBuilder};
-    use is_close::is_close;
+    use approx::assert_relative_eq;
 
     use super::*;
 
@@ -396,16 +396,17 @@ mod perturbation_evals {
         let per = create_cos_perturbation();
         let c = &mut per.generate_caches();
         let (p, t) = (0.01, 0.0); // Not used
-        assert!(is_close!(per.p_of_psi(p, 10.0, 20.0, t, c).unwrap(), -7.5934659096));
-        assert!(is_close!(per.p_of_psip(p, 10.0, 20.0, t, c).unwrap(), -7.5934659096));
-        assert!(is_close!(per.dp_dpsi(p, 10.0, 20.0, t, c).unwrap(), 0.0));
-        assert!(is_close!(per.dp_dpsip(p, 10.0, 20.0, t, c).unwrap(), 0.0));
-        assert!(is_close!(per.dp_of_psi_dtheta(p, 10.0, 20.0, t, c).unwrap(), 14.2385265316));
-        assert!(is_close!(per.dp_of_psip_dtheta(p, 10.0, 20.0, t, c).unwrap(), 14.2385265316));
-        assert!(is_close!(per.dp_of_psi_dzeta(p, 10.0, 20.0, t, c).unwrap(), -23.1232478476));
-        assert!(is_close!(per.dp_of_psip_dzeta(p, 10.0, 20.0, t, c).unwrap(), -23.1232478476));
-        assert!(is_close!(per.dp_of_psi_dt(p, 10.0, 20.0, t, c).unwrap(), 0.0));
-        assert!(is_close!(per.dp_of_psip_dt(p, 10.0, 20.0, t, c).unwrap(), 0.0));
+        let eps = 1e-10;
+        assert_relative_eq!(per.p_of_psi(p, 10.0, 20.0, t, c).unwrap(), -7.5934659096, epsilon = eps);
+        assert_relative_eq!(per.p_of_psip(p, 10.0, 20.0, t, c).unwrap(), -7.5934659096, epsilon = eps);
+        assert_relative_eq!(per.dp_dpsi(p, 10.0, 20.0, t, c).unwrap(), 0.0, epsilon = eps);
+        assert_relative_eq!(per.dp_dpsip(p, 10.0, 20.0, t, c).unwrap(), 0.0, epsilon = eps);
+        assert_relative_eq!(per.dp_of_psi_dtheta(p, 10.0, 20.0, t, c).unwrap(), 14.2385265316, epsilon = eps);
+        assert_relative_eq!(per.dp_of_psip_dtheta(p, 10.0, 20.0, t, c).unwrap(), 14.2385265316, epsilon = eps);
+        assert_relative_eq!(per.dp_of_psi_dzeta(p, 10.0, 20.0, t, c).unwrap(), -23.1232478476, epsilon = eps);
+        assert_relative_eq!(per.dp_of_psip_dzeta(p, 10.0, 20.0, t, c).unwrap(), -23.1232478476, epsilon = eps);
+        assert_relative_eq!(per.dp_of_psi_dt(p, 10.0, 20.0, t, c).unwrap(), 0.0, epsilon = eps);
+        assert_relative_eq!(per.dp_of_psip_dt(p, 10.0, 20.0, t, c).unwrap(), 0.0, epsilon = eps);
     }
 
     #[test]
