@@ -73,7 +73,7 @@ impl std::fmt::Debug for CosHarmonic {
 }
 
 /// Stores a [`CosHarmonic`]'s constant parameters and cached quantities
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct CosHarmonicCache {
     pub(crate) hits: usize,
     pub(crate) misses: usize,
@@ -88,6 +88,20 @@ pub struct CosHarmonicCache {
     /// 3. sin
     /// 4. cos
     pub(crate) cache: [f64; 5],
+}
+
+impl Default for CosHarmonicCache {
+    fn default() -> Self {
+        Self {
+            hits: 0,
+            misses: 0,
+            alpha: f64::NAN,
+            m: f64::NAN,
+            n: f64::NAN,
+            phase: f64::NAN,
+            cache: [f64::NAN; 5],
+        }
+    }
 }
 
 impl HarmonicCache for CosHarmonicCache {
@@ -108,9 +122,9 @@ impl HarmonicCache for CosHarmonicCache {
         (self.cache[3], self.cache[4]) = self.cache[2].sin_cos();
         Ok(())
     }
-}
 
-harmonic_cache_counts_getter_impl!(CosHarmonicCache);
+    harmonic_cache_counts_getter_impl!(CosHarmonicCache);
+}
 
 #[rustfmt::skip]
 impl Harmonic for CosHarmonic {

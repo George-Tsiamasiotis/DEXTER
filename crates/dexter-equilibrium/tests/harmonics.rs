@@ -1,8 +1,6 @@
 //! Test Harmonics' functionality.
 
-use dexter_equilibrium::{
-    CosHarmonic, EquilibriumType, Harmonic, NcFluxState, NcHarmonicBuilder, PhaseMethod,
-};
+use dexter_equilibrium::*;
 use ndarray::Array1;
 use std::f64::consts::PI;
 use std::path::PathBuf;

@@ -1,6 +1,6 @@
 [package]
 name = "dexter-equilibrium"
-version = "0.1.4"
+version = "0.1.4-pre.1"
 license.workspace = true
 edition.workspace = true
 authors.workspace = true
@@ -11,6 +11,7 @@ documentation.workspace = true
 description = "Representation of Equilibria from analytical formulas and experimental data."
 
 [dependencies]
+dexter-common.workspace = true
 ndarray.workspace = true
 thiserror.workspace = true
 rsl-interpolation.workspace = true

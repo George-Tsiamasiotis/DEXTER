@@ -166,10 +166,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "dexter-common"
+version = "0.1.0"
+
+[[package]]
 name = "dexter-equilibrium"
-version = "0.1.4"
+version = "0.1.4-pre.1"
 dependencies = [
  "approx",
+ "dexter-common",
  "ndarray",
  "netcdf",
  "rsl-interpolation",

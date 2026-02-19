@@ -187,7 +187,7 @@ impl std::fmt::Debug for NcHarmonic {
 }
 
 /// Stores an [`NcHarmonic`]'s constant parameters and cached quantities
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct NcHarmonicCache {
     hits: usize,
     misses: usize,
@@ -205,6 +205,19 @@ pub struct NcHarmonicCache {
     /// 8. cos
     pub(crate) cache: [f64; 9],
     pub(crate) acc: Accelerator,
+}
+
+impl Default for NcHarmonicCache {
+    fn default() -> Self {
+        Self {
+            hits: 0,
+            misses: 0,
+            m: f64::NAN,
+            n: f64::NAN,
+            cache: [f64::NAN; 9],
+            acc: Accelerator::new(),
+        }
+    }
 }
 
 impl HarmonicCache for NcHarmonicCache {
@@ -227,9 +240,9 @@ impl HarmonicCache for NcHarmonicCache {
         (self.cache[7], self.cache[8]) = self.cache[6].sin_cos();
         Ok(())
     }
-}
 
-harmonic_cache_counts_getter_impl!(NcHarmonicCache);
+    harmonic_cache_counts_getter_impl!(NcHarmonicCache);
+}
 
 #[rustfmt::skip]
 impl Harmonic for NcHarmonic

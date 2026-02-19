@@ -1,17 +1,3 @@
-/// Generates getters that return `[T]` fields to `Array1<T>`.
-#[doc(hidden)]
-#[macro_export]
-macro_rules! vec_to_array1D_getter_impl {
-    ($fun_name:ident, $($field:ident).+, $var_name:ident) => {
-        #[doc = "Returns the `"]
-        #[doc = stringify!($var_name)]
-        #[doc = "` values as a 1D array." ]
-        pub fn $fun_name(&self) -> Array1<f64> {
-            Array1::from_vec(self.$($field).+.clone())
-        }
-    }
-}
-
 /// Creates a getter method for extracting the flat Vec data as an Array2.
 /// The Vec is assumed to be in Fortran order, since it is intended for use by the splines.
 #[doc(hidden)]
@@ -109,16 +95,14 @@ macro_rules! harmonic_mode_number_getter_impl {
 #[macro_export]
 macro_rules! harmonic_cache_counts_getter_impl {
     ($obj: ident) => {
-        impl $obj {
-            /// Returns the Cache's hit count.
-            pub fn hits(&self) -> usize {
-                self.hits
-            }
+        /// Returns the Cache's hit count.
+        fn hits(&self) -> usize {
+            self.hits
+        }
 
-            /// Returns the Cache's miss count.
-            pub fn misses(&self) -> usize {
-                self.misses
-            }
+        /// Returns the Cache's miss count.
+        fn misses(&self) -> usize {
+            self.misses
         }
     };
 }

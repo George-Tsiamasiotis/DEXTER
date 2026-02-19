@@ -1,6 +1,7 @@
 [workspace]
 resolver = "3"
 members = [
+    "crates/dexter-common",
     "crates/dexter-equilibrium",
     "crates/dexter",
     "py-dexter",
@@ -15,6 +16,7 @@ thiserror = "2.0.18"
 rsl-interpolation = { version = "0.1.17", features = ["openblas-system"]}
 
 dexter = { path = "crates/dexter" }
+dexter-common = { path = "crates/dexter-common" }
 dexter-equilibrium = { path = "crates/dexter-equilibrium" }
 
 [workspace.package]

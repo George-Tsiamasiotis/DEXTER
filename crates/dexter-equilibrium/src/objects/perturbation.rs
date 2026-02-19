@@ -350,7 +350,7 @@ mod perturbation_evals {
     use std::path::PathBuf;
 
     use crate::extract::TEST_NETCDF_PATH;
-    use crate::{CosHarmonic, NcHarmonic, NcHarmonicBuilder};
+    use crate::{CosHarmonic, HarmonicCache, NcHarmonic, NcHarmonicBuilder};
     use approx::assert_relative_eq;
 
     use super::*;

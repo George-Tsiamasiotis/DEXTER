@@ -3,6 +3,8 @@
 //! For analytical equilibria, this is achieved by evaluation of analytical formulas, while for
 //! numerical equilibria by interpolation over the reconstructed data arrays.
 
+use std::fmt::Debug;
+
 use ndarray::Array1;
 use rsl_interpolation::{Accelerator, Cache};
 
@@ -104,7 +106,7 @@ pub trait Geometry {
         &self,
         psi: f64,
         theta: f64,
-        psip_acc: &mut Accelerator,
+        psi_acc: &mut Accelerator,
         theta_acc: &mut Accelerator,
         cache: &mut Cache<f64>,
     ) -> Result<f64>;
@@ -158,7 +160,7 @@ pub trait Geometry {
         &self,
         psi: f64,
         theta: f64,
-        psip_acc: &mut Accelerator,
+        psi_acc: &mut Accelerator,
         theta_acc: &mut Accelerator,
         cache: &mut Cache<f64>,
     ) -> Result<f64>;
@@ -341,7 +343,7 @@ pub trait Bfield {
         &self,
         psip: f64,
         theta: f64,
-        psi_acc: &mut Accelerator,
+        psip_acc: &mut Accelerator,
         theta_acc: &mut Accelerator,
         cache: &mut Cache<f64>,
     ) -> Result<f64>;
@@ -395,7 +397,7 @@ pub trait Bfield {
         &self,
         psip: f64,
         theta: f64,
-        psi_acc: &mut Accelerator,
+        psip_acc: &mut Accelerator,
         theta_acc: &mut Accelerator,
         cache: &mut Cache<f64>,
     ) -> Result<f64>;
@@ -449,7 +451,7 @@ pub trait Bfield {
         &self,
         psip: f64,
         theta: f64,
-        psi_acc: &mut Accelerator,
+        psip_acc: &mut Accelerator,
         theta_acc: &mut Accelerator,
         cache: &mut Cache<f64>,
     ) -> Result<f64>;
@@ -730,7 +732,7 @@ pub trait Current {
 /// Unfortunately, the values calculated from the interpolators must be calculated outside the
 /// implementor and updated separately, to avoid passing (a variable amount of possible missing)
 /// Interpolators and arrays as parameters as well.
-pub trait HarmonicCache {
+pub trait HarmonicCache: Default + Clone + Debug {
     /// Checks if the caches independent coordinates are up-to-date.
     ///
     /// Comparing floats for equality is fine here; We want the method to return `false` with even
@@ -740,6 +742,12 @@ pub trait HarmonicCache {
 
     /// Updates the cache's coordinates and intermediate values.
     fn update(&mut self, flux: f64, theta: f64, zeta: f64, t: f64) -> Result<()>;
+
+    /// Returns the cache's hits.
+    fn hits(&self) -> usize;
+
+    /// Returns the cache's misses.
+    fn misses(&self) -> usize;
 }
 
 /// Single perturbation harmonic related quantities computation.

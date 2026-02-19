@@ -4,8 +4,8 @@ use crate::{
     equilibrium_type_getter_impl, fluxes_state_getter_impl, fluxes_values_array_getter_impl,
     fluxes_wall_value_getter_impl, fortran_vec_to_carray2d_impl, interp_type_getter_impl,
     netcdf_path_getter_impl, netcdf_version_getter_impl, shape2d_getter_impl,
-    vec_to_array1D_getter_impl,
 };
+use dexter_common::vec_to_array1D_getter_impl;
 use ndarray::{Array1, Array2, Order::ColumnMajor};
 use rsl_interpolation::{
     Accelerator, Cache, DynInterpolation, DynInterpolation2d, Interp2dType, InterpType,

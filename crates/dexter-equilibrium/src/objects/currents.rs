@@ -3,8 +3,9 @@
 use crate::{
     equilibrium_type_getter_impl, fluxes_state_getter_impl, fluxes_values_array_getter_impl,
     fluxes_wall_value_getter_impl, interp_type_getter_impl, netcdf_path_getter_impl,
-    netcdf_version_getter_impl, vec_to_array1D_getter_impl,
+    netcdf_version_getter_impl,
 };
+use dexter_common::vec_to_array1D_getter_impl;
 use ndarray::Array1;
 use rsl_interpolation::{Accelerator, DynInterpolation, InterpType, make_interp_type};
 use std::path::{Path, PathBuf};
