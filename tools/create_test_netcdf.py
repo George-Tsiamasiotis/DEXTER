@@ -11,7 +11,7 @@
 
 Flux coordinates behavior:
 
-    1. -c = "both": equispaced ψ values, q=1 and ψp = ψ.
+    1. -c = "both": equispaced ψ values, parabolic q.
     2. -c = "toroidal": equispaced ψ values, ψp = sin(2πψ), and q(ψ) = dψp/dψ.
     3. -c = "poloidal": equispaced ψp values, ψ = sin(2πψp), and q(ψ) = dψp/dψ = 1/(dψ/dψ).
 
@@ -21,6 +21,7 @@ import argparse
 import numpy as np
 import xarray as xr
 import tomllib
+from math import sqrt
 from semver import Version
 from pathlib import Path
 from datetime import datetime
@@ -79,10 +80,14 @@ m = np.asarray([2, 3])
 n = np.asarray([1, 2])
 
 match args.coord:
-    case "both":  # q = 1
+    case "both":  # Parabolic
+        qaxis = 1.1
+        qwall = 3.9
         psi_norm = np.linspace(0, flux_wall_value_norm, FLUX_SURFACES)
-        psip_norm = psi_norm
-        q = np.ones(psi_norm.shape)
+        atan_arg = psi_norm * sqrt(qwall - qaxis) / (flux_wall_value_norm * sqrt(qaxis))
+        coef = flux_wall_value_norm / sqrt(qaxis * (qwall - qaxis))
+        psip_norm = coef * np.atan(atan_arg)
+        q = qaxis + (qwall - qaxis) * (psi_norm / flux_wall_value_norm) ** 2
     case "toroidal":  # equispaced ψ values, ψp = sin(2πψ), and q(ψ) = dψp/dψ.
         psi_norm = np.linspace(0, flux_wall_value_norm, FLUX_SURFACES)
         psip_norm = np.sin(2 * np.pi * psi_norm)  # no longer monotonic in [0, psi_wall]

@@ -79,6 +79,7 @@ pub mod extract;
 
 pub use error::EqError;
 pub use error::NcError;
+/// Result type used throughout the crate.
 pub type Result<T> = std::result::Result<T, EqError>;
 
 pub use objects::EquilibriumType;

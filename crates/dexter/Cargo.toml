@@ -11,7 +11,8 @@ documentation.workspace = true
 description.workspace = true
 
 [dependencies]
-dexter-equilibrium = {workspace = true}
+dexter-equilibrium.workspace = true
+dexter-simulate.workspace = true
 
 [features]
 default = []

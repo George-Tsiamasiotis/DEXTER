@@ -241,6 +241,14 @@ impl HarmonicCache for NcHarmonicCache {
         Ok(())
     }
 
+    fn psi_acc(&mut self) -> Option<&mut Accelerator> {
+        Some(&mut self.acc)
+    }
+
+    fn psip_acc(&mut self) -> Option<&mut Accelerator> {
+        Some(&mut self.acc)
+    }
+
     harmonic_cache_counts_getter_impl!(NcHarmonicCache);
 }
 

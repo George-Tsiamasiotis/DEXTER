@@ -1,0 +1,19 @@
+[package]
+name = "dexter-simulate"
+version = "0.1.0-pre.1"
+license.workspace = true
+edition.workspace = true
+authors.workspace = true
+homepage.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+documentation.workspace = true
+description = "Simulations of charge particles inside a plasma"
+
+[dependencies]
+dexter-common.workspace = true
+dexter-equilibrium.workspace = true
+thiserror.workspace = true
+ndarray.workspace = true
+approx.workspace = true
+rsl-interpolation.workspace = true

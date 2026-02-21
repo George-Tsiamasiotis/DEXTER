@@ -163,6 +163,7 @@ name = "dexter"
 version = "0.1.0"
 dependencies = [
  "dexter-equilibrium",
+ "dexter-simulate",
 ]
 
 [[package]]
@@ -179,6 +180,18 @@ dependencies = [
  "netcdf",
  "rsl-interpolation",
  "semver",
+ "thiserror",
+]
+
+[[package]]
+name = "dexter-simulate"
+version = "0.1.0-pre.1"
+dependencies = [
+ "approx",
+ "dexter-common",
+ "dexter-equilibrium",
+ "ndarray",
+ "rsl-interpolation",
  "thiserror",
 ]
 
