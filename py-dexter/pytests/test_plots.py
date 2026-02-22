@@ -5,12 +5,13 @@ from dexter import (
     NcQfactor,
     LarCurrent,
     NcCurrent,
-    # LarGeometry,
     NcGeometry,
     CosHarmonic,
     NcHarmonic,
+    InitialConditions,
+    Particle,
 )
-from dexter import Geometry, Qfactor, Current, Harmonic
+from dexter import Geometry, Qfactor, Current, Harmonic, NcBfield, NcPerturbation
 from dexter.types import FluxWall
 
 # Unsure
@@ -61,6 +62,35 @@ def test_cos_harmonic():
 
 def test_nc_harmonic(nc_harmonic: NcHarmonic):
     _test_all_harmonic_plots(nc_harmonic)
+
+
+def test_particle_plots(
+    nc_qfactor: NcQfactor,
+    nc_current: NcCurrent,
+    nc_bfield: NcBfield,
+    nc_perturbation: NcPerturbation,
+):
+
+    initial = InitialConditions(
+        t0=0,
+        flux0=("Toroidal", 0.1),
+        theta0=3.14,
+        zeta0=0,
+        rho0=1e-4,
+        mu0=7e-6,
+    )
+    particle = Particle(initial)
+    particle.integrate(
+        nc_qfactor,
+        nc_current,
+        nc_bfield,
+        nc_perturbation,
+        (0, 100),
+        method=("FixedStep", 0.5),
+    )
+    particle.plot_evolution()
+    particle.plot_evolution(percentage=2)
+    particle.plot_evolution(downsample=False)
 
 
 def _test_all_flux_plots(obj: Qfactor | NcGeometry):

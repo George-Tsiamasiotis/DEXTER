@@ -11,6 +11,7 @@ from typing import Callable, Optional
 from dexter._core import _PyInitialConditions, _PyParticle
 
 from ..equilibrium import Qfactor, Current, Bfield, Perturbation
+from ._plotters import _ParticlePlotter
 
 from dexter.types import Array1, InitialFlux, SteppingMethod, IntegrationStatus
 
@@ -64,7 +65,7 @@ class InitialConditions(_PyInitialConditions):
     mu0: float
 
 
-class Particle(_PyParticle):
+class Particle(_PyParticle, _ParticlePlotter):
     r"""A Particle.
 
     By taking $\mu = 0$ and $\rho \rightarrow 0$, the particle traces magnetic field
