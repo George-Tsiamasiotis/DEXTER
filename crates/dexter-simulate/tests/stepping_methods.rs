@@ -1,0 +1,62 @@
+mod common;
+
+use crate::common::check_integrated_particle_arrays;
+use dexter_equilibrium::*;
+use dexter_simulate::*;
+use ndarray::Axis;
+
+#[test]
+#[rustfmt::skip]
+fn different_stepping_methods() {
+    use InitialFlux::*;
+    let qfactor = UnityQfactor::new();
+    let current = LarCurrent::new();
+    let bfield = LarBfield::new();
+    let perturbation = Perturbation::new(&[
+        CosHarmonic::new(1e-3, 1, 2, 0.0),
+        CosHarmonic::new(1e-3, 1, 4, 0.0),
+    ]);
+
+    let energy_params = IntegrationParams {
+            method: SteppingMethod::EnergyAdaptiveStep,
+            energy_rel_tol: 1e-13,
+            energy_abs_tol: 1e-15,
+            ..Default::default()
+        };
+    let error_params = IntegrationParams {
+            method: SteppingMethod::ErrorAdaptiveStep,
+            error_rel_tol: 1e-13,
+            energy_abs_tol: 1e-15,
+            ..Default::default()
+        };
+
+    let fixed_params = IntegrationParams {
+            method: SteppingMethod::FixedStep(10.0),
+            ..Default::default()
+        };
+
+    let initial = InitialConditions {t0: 0.0, flux0: Toroidal(0.3), theta0: 0.0, zeta0: 0.0, rho0: 1e-4, mu0: 1e-6};
+
+    let mut energy_particle = Particle::new(&initial);
+    let mut error_particle = Particle::new(&initial);
+    let mut fixed_particle = Particle::new(&initial);
+
+    let teval = (0.0, 1e5);
+    energy_particle.integrate(&qfactor, &current, &bfield, &perturbation, teval, &energy_params);
+    error_particle.integrate(&qfactor, &current, &bfield, &perturbation, teval, &error_params);
+    fixed_particle.integrate(&qfactor, &current, &bfield, &perturbation, teval, &fixed_params);
+
+    dbg!(&energy_particle);
+    dbg!(&error_particle);
+    dbg!(&fixed_particle);
+
+    assert!(matches!(energy_particle.integration_status(), IntegrationStatus::Integrated));
+    assert!(matches!(error_particle.integration_status(), IntegrationStatus::Integrated));
+    assert!(matches!(fixed_particle.integration_status(), IntegrationStatus::Integrated));
+
+    assert!(fixed_particle.t_array().diff(1, Axis(0)).iter().all(|d| *d == 10.0));
+
+    check_integrated_particle_arrays(&energy_particle);
+    check_integrated_particle_arrays(&error_particle);
+    check_integrated_particle_arrays(&fixed_particle);
+}

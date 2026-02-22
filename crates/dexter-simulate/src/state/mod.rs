@@ -16,7 +16,7 @@ pub enum SteppingMethod {
 }
 
 /// Defines the flux coordinate of the System.
-#[derive(Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum FluxCoordinate {
     #[default]
     Toroidal,

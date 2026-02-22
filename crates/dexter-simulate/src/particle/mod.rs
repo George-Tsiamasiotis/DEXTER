@@ -156,7 +156,7 @@ impl Particle {
     /// #
     /// # let path = PathBuf::from("./netcdf.nc");
     /// # let geometry = NcGeometryBuilder::new(&path, "steffen", "bicubic").build()?;
-    /// let psip_wall = geometry.psip_wall().unwrap();
+    /// # let psip_wall = geometry.psip_wall().unwrap();
     /// let initial_conditions = InitialConditions {
     ///     t0: 0.0,
     ///     flux0: InitialFlux::Poloidal(0.5 * psip_wall),
@@ -184,6 +184,8 @@ impl Particle {
 // Routines
 impl Particle {
     /// Integrates the particle for a certain time interval.
+    ///
+    /// The time interval is in Normalized Units (inverse gyro-frequency).
     ///
     /// # Example
     ///

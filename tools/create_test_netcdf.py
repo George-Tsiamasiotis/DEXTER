@@ -104,7 +104,7 @@ match args.coord:
         assert_never(args.coord)
 
 # `r` is somewhat artificial, since we cannot always calculate it from the fluxes
-r_norm = np.linspace(0, a, FLUX_SURFACES)
+r_norm = np.linspace(0, a, FLUX_SURFACES) / raxis
 
 
 # Currents

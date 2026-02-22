@@ -15,7 +15,7 @@ use crate::{InitialConditions, InitialFlux, state::FluxCoordinate};
 /// `coordinate` field
 #[derive(Debug, Clone)]
 pub(crate) struct GCState {
-    coordinate: FluxCoordinate,
+    pub(crate) coordinate: FluxCoordinate,
     pub(crate) t: f64,
 
     // Dynamic variables
@@ -352,15 +352,12 @@ impl GCState {
     fn calculate_flux_dots(&mut self) {
         let flux_dot = self.kterm * self.rho_bsquared_d - self.g_over_d * self.dtheta_brace
             + self.i_over_d * self.dzeta_brace;
-        match self.coordinate {
-            FluxCoordinate::Toroidal => {
-                self.psi_dot = flux_dot;
-                self.psip_dot = flux_dot / self.q
-            }
-            FluxCoordinate::Poloidal => {
-                self.psi_dot = flux_dot * self.q;
-                self.psip_dot = flux_dot;
-            }
+        if let FluxCoordinate::Toroidal = self.coordinate {
+            self.psi_dot = flux_dot;
+            self.psip_dot = flux_dot / self.q
+        } else {
+            self.psi_dot = flux_dot * self.q;
+            self.psip_dot = flux_dot;
         }
     }
 

@@ -542,3 +542,29 @@ mod test_poloidal_nc_evals {
         );
     }
 }
+
+#[cfg(test)]
+mod lar_values {
+    use super::*;
+    use approx::assert_relative_eq;
+
+    #[test]
+    #[rustfmt::skip]
+    fn lar_bfield_values_gcmotion_check() {
+        let b = LarBfield::new();
+        let a1 = &mut Accelerator::new();
+        let a2 = &mut Accelerator::new();
+        let c = &mut Cache::new();
+        let epsilon = 1e-20;
+
+        let (psi, theta) = (0.2, 0.4);
+        assert_relative_eq!(b.b_of_psi(psi, theta, a1, a2, c).unwrap(), 0.4174698790024389, epsilon=epsilon);
+        assert_relative_eq!(b.db_dpsi(psi, theta, a1, a2, c).unwrap(), -1.4563253024939025, epsilon=epsilon);
+        assert_relative_eq!(b.db_of_psi_dtheta(psi, theta, a1, a2, c).unwrap(), 0.24628978486848968, epsilon=epsilon);
+
+        let (psi, theta) = (15.0, 1000.0);
+        assert_relative_eq!(b.b_of_psi(psi, theta, a1, a2, c).unwrap(), -2.0802770595333673, epsilon=epsilon);
+        assert_relative_eq!(b.db_dpsi(psi, theta, a1, a2, c).unwrap(), -0.10267590198444558, epsilon=epsilon);
+        assert_relative_eq!(b.db_of_psi_dtheta(psi, theta, a1, a2, c).unwrap(), 4.529005766888851, epsilon=epsilon);
+    }
+}

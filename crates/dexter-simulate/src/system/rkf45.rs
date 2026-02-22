@@ -146,6 +146,7 @@ impl Stepper {
             A21 * self.k1[4],
         ];
 
+        self.state2.coordinate = self.state1.coordinate;
         self.state2.t = self.state1.t + C2 * h;
         *self.state2.flux() = *self.state1.flux() + coef[0] * h;
         self.state2.theta = self.state1.theta + coef[1] * h;
@@ -177,6 +178,7 @@ impl Stepper {
             A31 * self.k1[4] + A32 * self.k2[4],
         ];
 
+        self.state3.coordinate = self.state1.coordinate;
         self.state3.t = self.state1.t + C3 * h;
         *self.state3.flux() = *self.state1.flux() + coef[0] * h;
         self.state3.theta = self.state1.theta + coef[1] * h;
@@ -208,6 +210,7 @@ impl Stepper {
             A41 * self.k1[4] + A42 * self.k2[4] + A43 * self.k3[4],
         ];
 
+        self.state4.coordinate = self.state1.coordinate;
         self.state4.t = self.state1.t + C4 * h;
         *self.state4.flux() = *self.state1.flux() + coef[0] * h;
         self.state4.theta = self.state1.theta + coef[1] * h;
@@ -239,6 +242,7 @@ impl Stepper {
             A51 * self.k1[4] + A52 * self.k2[4] + A53 * self.k3[4] + A54 * self.k4[4],
         ];
 
+        self.state5.coordinate = self.state1.coordinate;
         self.state5.t = self.state1.t + C5 * h;
         *self.state5.flux() = *self.state1.flux() + coef[0] * h;
         self.state5.theta = self.state1.theta + coef[1] * h;
@@ -271,6 +275,7 @@ impl Stepper {
                 A61 * self.k1[4] + A62 * self.k2[4] + A63 * self.k3[4] + A64 * self.k4[4] + A65 * self.k5[4],
             ];
 
+        self.state6.coordinate = self.state1.coordinate;
         self.state6.t = self.state1.t + C6 * h;
         *self.state6.flux() = *self.state1.flux() + coef[0] * h;
         self.state6.theta = self.state1.theta + coef[1] * h;
@@ -351,7 +356,7 @@ impl Stepper {
         // smaller due to the `REL_TOL/max_error` factor, so we need to bound it
         max_error = max_error.max(config.error_abs_tol());
 
-        // 0.2 = 1/*(p+1), where p the order
+        // 0.2 = 1/(p+1), where p the order
         let exp = if max_error >= config.error_rel_tol() {
             0.2
         } else {
@@ -374,6 +379,7 @@ impl Stepper {
     {
         {
             let mut next = GCState::default();
+            next.coordinate = self.state1.coordinate;
             next.t = self.state1.t + h;
             *next.flux() = *self.state1.flux() + h * self.weights[0];
             next.theta = self.state1.theta + h * self.weights[1];
