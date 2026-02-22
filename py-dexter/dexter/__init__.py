@@ -10,6 +10,8 @@ from dexter.equilibrium import Harmonic, CosHarmonic, NcHarmonic
 from dexter.equilibrium import Perturbation, CosPerturbation, NcPerturbation
 from dexter.equilibrium import NcEquilibrium, perturbation
 
+from dexter.simulate import InitialConditions, Particle
+
 __all__ = [
     # equilibrium
     "Geometry",
@@ -33,4 +35,7 @@ __all__ = [
     "CosPerturbation",
     "NcPerturbation",
     "NcEquilibrium",
+    # Simulate
+    "InitialConditions",
+    "Particle",
 ]

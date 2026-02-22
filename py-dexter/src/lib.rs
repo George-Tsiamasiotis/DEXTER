@@ -2,6 +2,7 @@ mod macros;
 mod pyerror;
 
 mod pylibrium;
+mod pysimulate;
 
 use pyo3::prelude::*;
 
@@ -21,5 +22,8 @@ fn _core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<pylibrium::PyNcHarmonic>()?;
     m.add_class::<pylibrium::PyCosPerturbation>()?;
     m.add_class::<pylibrium::PyNcPerturbation>()?;
+    // Simulation
+    m.add_class::<pysimulate::PyInitialConditions>()?;
+    m.add_class::<pysimulate::PyParticle>()?;
     Ok(())
 }

@@ -22,6 +22,10 @@ fn cos_harmonic() {
     let zeta = 1.0;
     let t = 8.0;
     let mut c = har.generate_cache();
+    assert!(c.psi_acc().is_none());
+    assert!(c.psip_acc().is_none());
+    assert!(c.theta_acc().is_none());
+    assert!(c.zeta_acc().is_none());
 
     har.h_of_psi(psi, theta, zeta, t, &mut c).unwrap();
     har.h_of_psip(psi, theta, zeta, t, &mut c).unwrap();
@@ -80,6 +84,10 @@ fn nc_harmonic() {
     let zeta = 1.0;
     let t = 8.0;
     let mut c = har.generate_cache();
+    assert!(c.psi_acc().is_some());
+    assert!(c.psip_acc().is_some());
+    assert!(c.theta_acc().is_none());
+    assert!(c.zeta_acc().is_none());
 
     har.alpha_of_psi(psi, theta, zeta, t, &mut c).unwrap();
     har.alpha_of_psip(psip, theta, zeta, t, &mut c).unwrap();

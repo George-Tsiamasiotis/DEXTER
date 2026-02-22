@@ -100,7 +100,7 @@ pub enum IntegrationStatus {
     /// Initialized by [`InitialConditions`], not integrated.
     #[default]
     Initialized,
-    /// [`InitialConditions`] where out of bounds.
+    /// [`InitialConditions`] were out of bounds.
     OutOfBoundsInitialization,
     /// Reached the end of the integration successfully.
     Integrated,

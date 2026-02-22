@@ -25,3 +25,9 @@
 ::: dexter.types.FluxWall
 ::: dexter.types.PhaseMethod
 ::: dexter.types.NetCDFVersion
+
+## Simulate
+
+::: dexter.types.InitialFlux
+::: dexter.types.IntegrationStatus
+::: dexter.types.SteppingMethod

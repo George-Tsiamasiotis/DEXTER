@@ -12,6 +12,7 @@ use dexter::dexter_equilibrium::{
     NcQfactor, NcQfactorBuilder, ParabolicQfactor, Qfactor, UnityQfactor,
 };
 use numpy::{IntoPyArray, PyArray1, PyArray2};
+use pyo3::exceptions::PyTypeError;
 use pyo3::prelude::*;
 use pyo3::types::{PyList, PyTuple};
 use rsl_interpolation::{Accelerator, Cache};
@@ -27,7 +28,7 @@ use crate::{
 // ===============================================================================================
 
 #[pyclass(name = "_PyLarGeometry", subclass, frozen)]
-pub struct PyLarGeometry(LarGeometry);
+pub struct PyLarGeometry(pub(crate) LarGeometry);
 
 #[pymethods]
 impl PyLarGeometry {
@@ -61,7 +62,7 @@ py_eval2D!(PyLarGeometry, jacobian_of_psip);
 // ===============================================================================================
 
 #[pyclass(name = "_PyNcGeometry", subclass, frozen)]
-pub struct PyNcGeometry(NcGeometry);
+pub struct PyNcGeometry(pub(crate) NcGeometry);
 
 #[pymethods]
 impl PyNcGeometry {
@@ -121,7 +122,7 @@ py_eval2D!(PyNcGeometry, jacobian_of_psip);
 // ===============================================================================================
 
 #[pyclass(name = "_PyUnityQfactor", subclass, frozen)]
-pub struct PyUnityQfactor(UnityQfactor);
+pub struct PyUnityQfactor(pub(crate) UnityQfactor);
 
 #[pymethods]
 impl PyUnityQfactor {
@@ -147,7 +148,7 @@ py_eval1D!(PyUnityQfactor, iota_of_psip);
 // ===============================================================================================
 
 #[pyclass(name = "_PyParabolicQfactor", subclass, frozen)]
-pub struct PyParabolicQfactor(ParabolicQfactor);
+pub struct PyParabolicQfactor(pub(crate) ParabolicQfactor);
 
 #[pymethods]
 impl PyParabolicQfactor {
@@ -187,7 +188,7 @@ py_eval1D!(PyParabolicQfactor, iota_of_psip);
 // ===============================================================================================
 
 #[pyclass(name = "_PyNcQfactor", subclass, frozen)]
-pub struct PyNcQfactor(NcQfactor);
+pub struct PyNcQfactor(pub(crate) NcQfactor);
 
 #[pymethods]
 impl PyNcQfactor {
@@ -228,7 +229,7 @@ py_eval1D!(PyNcQfactor, iota_of_psip);
 // ===============================================================================================
 
 #[pyclass(name = "_PyLarCurrent", subclass, frozen)]
-pub struct PyLarCurrent(LarCurrent);
+pub struct PyLarCurrent(pub(crate) LarCurrent);
 
 #[pymethods]
 impl PyLarCurrent {
@@ -254,7 +255,7 @@ py_eval1D!(PyLarCurrent, di_dpsip);
 // ===============================================================================================
 
 #[pyclass(name = "_PyNcCurrent", subclass, frozen)]
-pub struct PyNcCurrent(NcCurrent);
+pub struct PyNcCurrent(pub(crate) NcCurrent);
 
 #[pymethods]
 impl PyNcCurrent {
@@ -294,7 +295,7 @@ py_eval1D!(PyNcCurrent, di_dpsip);
 // ===============================================================================================
 
 #[pyclass(name = "_PyLarBfield", subclass, frozen)]
-pub struct PyLarBfield(LarBfield);
+pub struct PyLarBfield(pub(crate) LarBfield);
 
 #[pymethods]
 impl PyLarBfield {
@@ -318,7 +319,7 @@ py_eval2D!(PyLarBfield, db_of_psip_dtheta);
 // ===============================================================================================
 
 #[pyclass(name = "_PyNcBfield", subclass, frozen)]
-pub struct PyNcBfield(NcBfield);
+pub struct PyNcBfield(pub(crate) NcBfield);
 
 #[pymethods]
 impl PyNcBfield {
@@ -363,7 +364,7 @@ py_eval2D!(PyNcBfield, db_of_psip_dtheta);
 
 #[derive(Clone)]
 #[pyclass(name = "_PyCosHarmonic", subclass, frozen)]
-pub struct PyCosHarmonic(CosHarmonic);
+pub struct PyCosHarmonic(pub(crate) CosHarmonic);
 
 #[pymethods]
 impl PyCosHarmonic {
@@ -400,7 +401,7 @@ py_eval_harmonic!(PyCosHarmonic, dh_of_psip_dt);
 
 #[derive(Clone)]
 #[pyclass(name = "_PyNcHarmonic", subclass, frozen)]
-pub struct PyNcHarmonic(NcHarmonic);
+pub struct PyNcHarmonic(pub(crate) NcHarmonic);
 
 #[pymethods]
 impl PyNcHarmonic {
@@ -414,7 +415,7 @@ impl PyNcHarmonic {
         phase_method: Bound<'py, PyAny>,
     ) -> Result<Self, PyEqError> {
         let path = std::path::PathBuf::from(path);
-        let method: PhaseMethod = Self::resolve_phase_method(phase_method);
+        let method: PhaseMethod = Self::resolve_phase_method(phase_method)?;
         let builder = NcHarmonicBuilder::new(&path, interp_type, m, n).with_phase_method(method);
         Ok(Self(builder.build()?))
     }
@@ -426,43 +427,26 @@ impl PyNcHarmonic {
     ///
     /// Returns early if a valid string is found that matches one of the simple variants,
     /// otherwise tries to unpack the [`PyAny`] object into a ("Custom", f64) tuple and cast it
-    /// into a [`PhaseMethod::Custom()`].
+    /// into a PhaseMethod::Custom.
     ///
-    /// Panics if both string matching and casting fail.
-    fn resolve_phase_method<'py>(arg: Bound<'py, PyAny>) -> PhaseMethod {
+    /// Returns an Error if both string matching and casting fail.
+    fn resolve_phase_method<'py>(arg: Bound<'py, PyAny>) -> Result<PhaseMethod, PyErr> {
         use PhaseMethod::*;
 
         match arg.to_string().to_lowercase().as_str() {
-            "zero" => return Zero,
-            "average" => return Average,
-            "resonance" => return Resonance,
-            "interpolation" => return Interpolation,
+            "zero" => return Ok(Zero),
+            "average" => return Ok(Average),
+            "resonance" => return Ok(Resonance),
+            "interpolation" => return Ok(Interpolation),
             _ => (),
         };
 
-        let tuple: Option<(String, f64)> = match arg.cast::<PyTuple>() {
-            Ok(tuple) => {
-                let string: Option<String> = match tuple.get_item(0) {
-                    Ok(string) => string.extract().ok(),
-                    Err(_) => None,
-                };
-                let value: Option<f64> = match tuple.get_item(1) {
-                    Ok(value) => value.extract().ok(),
-                    Err(_) => None,
-                };
-                match (string, value) {
-                    (Some(string), Some(value)) if value.is_finite() => Some((string, value)),
-                    _ => None,
-                }
-            }
-            Err(_) => None,
-        };
-
-        match tuple {
-            Some((string, value)) if string.to_lowercase().as_str() == "custom" => {
-                PhaseMethod::Custom(value)
-            }
-            _ => panic!("Invalid phase method"),
+        let tuple = arg.cast::<PyTuple>()?;
+        let string: String = tuple.get_item(0)?.extract::<String>()?.to_lowercase();
+        let value: f64 = tuple.get_item(1)?.extract::<f64>()?;
+        match string.as_str() {
+            "custom" if value.is_finite() => Ok(PhaseMethod::Custom(value)),
+            _ => Err(PyErr::new::<PyTypeError, _>("Invalid 'phase_method'")),
         }
     }
 }
@@ -568,13 +552,13 @@ macro_rules! PyPerturbationImpl {
 // ===============================================================================================
 
 #[pyclass(name = "_PyCosPerturbation", subclass, frozen, dict)]
-pub struct PyCosPerturbation(Perturbation<CosHarmonic>);
+pub struct PyCosPerturbation(pub(crate) Perturbation<CosHarmonic>);
 
 PyPerturbationImpl!(PyCosPerturbation, PyCosHarmonic, CosHarmonic);
 
 // ===============================================================================================
 
 #[pyclass(name = "_PyNcPerturbation", subclass, frozen, dict)]
-pub struct PyNcPerturbation(Perturbation<NcHarmonic>);
+pub struct PyNcPerturbation(pub(crate) Perturbation<NcHarmonic>);
 
 PyPerturbationImpl!(PyNcPerturbation, PyNcHarmonic, NcHarmonic);

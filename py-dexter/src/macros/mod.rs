@@ -4,5 +4,6 @@
 //! allow macros to be used inside it.
 
 mod eval;
+mod generics;
 mod numpy;
 mod pymethods;

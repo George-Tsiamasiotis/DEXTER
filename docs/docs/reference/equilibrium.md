@@ -6,6 +6,7 @@
 
 ::: dexter.LarGeometry
     options:
+        heading_level: 3
         inherited_members: true
         docstring_section_style: list
         summary:
@@ -14,6 +15,7 @@
 
 ::: dexter.NcGeometry
     options:
+        heading_level: 3
         inherited_members: true
         docstring_section_style: list
         summary:
@@ -24,6 +26,7 @@
 
 ::: dexter.UnityQfactor
     options:
+        heading_level: 3
         inherited_members: true
         docstring_section_style: list
         summary:
@@ -32,6 +35,7 @@
 
 ::: dexter.ParabolicQfactor
     options:
+        heading_level: 3
         inherited_members: true
         docstring_section_style: list
         summary:
@@ -40,6 +44,7 @@
 
 ::: dexter.NcQfactor
     options:
+        heading_level: 3
         inherited_members: true
         docstring_section_style: list
         summary:
@@ -50,6 +55,7 @@
 
 ::: dexter.LarCurrent
     options:
+        heading_level: 3
         inherited_members: true
         docstring_section_style: list
         summary:
@@ -58,6 +64,7 @@
 
 ::: dexter.NcCurrent
     options:
+        heading_level: 3
         inherited_members: true
         docstring_section_style: list
         summary:
@@ -68,6 +75,7 @@
 
 ::: dexter.LarBfield
     options:
+        heading_level: 3
         inherited_members: true
         docstring_section_style: list
         summary:
@@ -76,6 +84,7 @@
 
 ::: dexter.NcBfield
     options:
+        heading_level: 3
         inherited_members: true
         docstring_section_style: list
         summary:
@@ -86,6 +95,7 @@
 
 ::: dexter.CosHarmonic
     options:
+        heading_level: 3
         inherited_members: true
         docstring_section_style: list
         summary:
@@ -94,6 +104,7 @@
 
 ::: dexter.NcHarmonic
     options:
+        heading_level: 3
         inherited_members: true
         docstring_section_style: list
         summary:
@@ -104,6 +115,7 @@
 
 ::: dexter.CosPerturbation
     options:
+        heading_level: 3
         inherited_members: true
         docstring_section_style: list
         summary:
@@ -114,6 +126,7 @@
 
 ::: dexter.NcPerturbation
     options:
+        heading_level: 3
         inherited_members: true
         docstring_section_style: list
         summary:

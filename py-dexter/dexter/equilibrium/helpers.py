@@ -86,6 +86,19 @@ def perturbation(
     -------
     CosPerturbation | NcPerturbation
         The corresponding `Perturbation` type.
+
+    Example
+    -------
+
+    ```python title="NcEquilibrium creation"
+    >>> perturbation = dex.perturbation(
+    ...     [
+    ...         dex.CosHarmonic(alpha=1e-3, m=1, n=3, phase=0),
+    ...         dex.CosHarmonic(alpha=1e-3, m=2, n=3, phase=0),
+    ...     ]
+    ... )
+
+    ```
     """
     match harmonics:
         case []:

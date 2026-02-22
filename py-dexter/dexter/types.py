@@ -58,3 +58,42 @@ r""" Defines the calculation method of the phase $\phi$ in a Numerical Harmonic.
     - Interpolation: Interpolation over the `phase_array`.
     - Custom(f64): Use a custom value for $\phi = const$.
 """
+
+# =================== Simulate
+
+InitialFlux: TypeAlias = tuple[Literal["Toroidal"] | Literal["Poloidal"], float]
+"""Defines the flux coordinate to be used in the initial conditions of a `Particle`."""
+
+IntegrationStatus: TypeAlias = Literal[
+    "Initialized",
+    "OutOfBoundsInitialization",
+    "Integrated",
+    "Escaped",
+    "TimedOut(...)",
+    "Failed(...)",
+]
+"""The integration status of a Particle.
+
+        - `Initialized`: Initialized by InitialConditions, not integrated.
+        - `OutOfBoundsInitialization`: InitialConditions where out of bounds.
+        - `Integrated`: Reached the end of the integration successfully.
+        - `Escaped`: Escaped/Hit the wall.
+        - `TimedOut(...)`: Timed out after a maximum number of steps.
+        - `Failed(...)`: Simulation failed for unknown reasons.
+
+"""
+
+SteppingMethod = (
+    Literal["EnergyAdaptiveStep"]
+    | Literal["ErrorAdaptiveStep"]
+    | tuple[Literal["FixedStep"], float]
+)
+"""The stepping method of the solver.
+
+    - `EnergyAdaptiveStep`: Forces the step size to be small enough so that the Energy difference
+      from step to step is under a certain threshold. The tolerances can be adjusted with the
+      energy_rel_tol and energy_abs_tol fields.
+    - `ErrorAdaptiveStep`: Classic RK error estimation : Adjust the step size to minimize the
+      local truncation error.
+    - `FixedStep(float)`: Fixed step size.
+"""

@@ -1,6 +1,7 @@
 //! Python wrappers for rust error types.
 
 use dexter::dexter_equilibrium::EqError;
+use dexter::dexter_simulate::SimulationError;
 use pyo3::PyErr;
 use pyo3::exceptions::PyException;
 
@@ -12,7 +13,7 @@ use pyo3::exceptions::PyException;
 macro_rules! to_pyerr_impl {
     ($error_type:ident, $py_error_type: ident) => {
         #[derive(Debug)]
-        pub struct $py_error_type($error_type);
+        pub struct $py_error_type(String);
 
         impl From<$py_error_type> for PyErr {
             fn from(error: $py_error_type) -> Self {
@@ -21,11 +22,18 @@ macro_rules! to_pyerr_impl {
         }
 
         impl From<$error_type> for $py_error_type {
-            fn from(other: $error_type) -> Self {
-                Self(other)
+            fn from(error: $error_type) -> Self {
+                Self(error.to_string())
+            }
+        }
+
+        impl From<PyErr> for $py_error_type {
+            fn from(error: PyErr) -> Self {
+                Self(error.to_string())
             }
         }
     };
 }
 
 to_pyerr_impl!(EqError, PyEqError);
+to_pyerr_impl!(SimulationError, PySimulationError);

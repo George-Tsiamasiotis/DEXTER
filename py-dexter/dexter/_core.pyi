@@ -11,6 +11,13 @@ Any added functionality on the final objects should be defined and documented in
 their corresponding sub-package.
 
 Attributes are documented on the wrapper for documentation building purposes.
+
+Note
+----
+
+Types annotated as `Any` means that the actual type is not yet defined in the package
+and therefore cannot be imported (circular import). The actual type is defined in the final
+wrapper.
 """
 
 from dexter.types import (
@@ -24,9 +31,13 @@ from dexter.types import (
     ArrayShape,
     PhaseMethod,
     NetCDFVersion,
+    InitialFlux,
+    IntegrationStatus,
+    SteppingMethod,
 )
 
 from abc import ABC
+from typing import Any, Optional
 
 class _FluxCommuteTrait(ABC):
     """Documents the methods provided by the 'FluxCommute' trait."""
@@ -821,6 +832,8 @@ class _PyUnityQfactor(_FluxCommuteTrait, _QfactorTrait):
 
     equilibrium_type: EquilibriumType
 
+    def __init__(self): ...
+
 class _PyParabolicQfactor(_FluxCommuteTrait, _QfactorTrait):
     """PyO3 export of `ParabolicQfactor`. Contains the full behavior of the wrapped object."""
 
@@ -960,5 +973,103 @@ class _PyNcHarmonic(_HarmonicTrait):
 class _PyCosPerturbation(_PyPerturbation):
     """Perturbation with H=CosHarmonic. Contains the full behavior of the wrapped object."""
 
+    harmonics: list[Any]
+
+    def __init__(self, harmonics: list[Any]) -> None: ...
+
 class _PyNcPerturbation(_PyPerturbation):
     """Perturbation with H=NcHarmonic. Contains the full behavior of the wrapped object."""
+
+    harmonics: list[Any]
+
+    def __init__(self, harmonics: list[Any]) -> None: ...
+
+# ================================================================================================
+# ================================================================================================
+
+class _PyInitialConditions:
+    """Particle initial conditions. Contains the full behavior of the wrapped object."""
+
+    t0: float
+    flux0: InitialFlux
+    theta0: float
+    zeta0: float
+    rho0: float
+    mu0: float
+
+    def __init__(
+        self,
+        t0: float,
+        flux0: InitialFlux,
+        theta0: float,
+        zeta0: float,
+        rho0: float,
+        mu0: float,
+    ): ...
+
+class _PyParticle:
+    """Particle. Contains the full behavior of the wrapped object."""
+
+    initial_conditions: Any
+    integration_status: IntegrationStatus
+    steps_taken: int
+    steps_stored: int
+    initial_energy: float | None
+    final_energy: float | None
+    energy_var: float | None
+    t_array: Array1
+    psi_array: Array1
+    psip_array: Array1
+    theta_array: Array1
+    zeta_array: Array1
+    rho_array: Array1
+    mu_array: Array1
+    ptheta_array: Array1
+    pzeta_array: Array1
+    energy_array: Array1
+
+    def __init__(self, initial_conditions: Any): ...
+    def integrate(
+        self,
+        /,
+        qfactor: Any,
+        current: Any,
+        bfield: Any,
+        perturbation: Any,
+        teval: tuple[float, float],
+        *,
+        method: Optional[SteppingMethod],
+        max_steps: Optional[int],
+        first_step: Optional[float],
+        safety_factor: Optional[float],
+        energy_rel_tol: Optional[float],
+        energy_abs_tol: Optional[float],
+        error_rel_tol: Optional[float],
+        error_abs_tol: Optional[float],
+    ): ...
+    # # fmt: off
+    # Dynamic dispatch for integrate()
+    def __int_uniQ_larC_larB_cosP(self, qfactor: Any, current: Any, bfield: Any, perturbation: Any): ...
+    def __int_uniQ_larC_larB_ncdP(self, qfactor: Any, current: Any, bfield: Any, perturbation: Any): ...
+    def __int_uniQ_larC_ncdB_cosP(self, qfactor: Any, current: Any, bfield: Any, perturbation: Any): ...
+    def __int_uniQ_larC_ncdB_ncdP(self, qfactor: Any, current: Any, bfield: Any, perturbation: Any): ...
+    def __int_uniQ_ncdC_larB_cosP(self, qfactor: Any, current: Any, bfield: Any, perturbation: Any): ...
+    def __int_uniQ_ncdC_larB_ncdP(self, qfactor: Any, current: Any, bfield: Any, perturbation: Any): ...
+    def __int_uniQ_ncdC_ncdB_cosP(self, qfactor: Any, current: Any, bfield: Any, perturbation: Any): ...
+    def __int_uniQ_ncdC_ncdB_ncdP(self, qfactor: Any, current: Any, bfield: Any, perturbation: Any): ...
+    def __int_parQ_larC_larB_cosP(self, qfactor: Any, current: Any, bfield: Any, perturbation: Any): ...
+    def __int_parQ_larC_larB_ncdP(self, qfactor: Any, current: Any, bfield: Any, perturbation: Any): ...
+    def __int_parQ_larC_ncdB_cosP(self, qfactor: Any, current: Any, bfield: Any, perturbation: Any): ...
+    def __int_parQ_larC_ncdB_ncdP(self, qfactor: Any, current: Any, bfield: Any, perturbation: Any): ...
+    def __int_parQ_ncdC_larB_cosP(self, qfactor: Any, current: Any, bfield: Any, perturbation: Any): ...
+    def __int_parQ_ncdC_larB_ncdP(self, qfactor: Any, current: Any, bfield: Any, perturbation: Any): ...
+    def __int_parQ_ncdC_ncdB_cosP(self, qfactor: Any, current: Any, bfield: Any, perturbation: Any): ...
+    def __int_parQ_ncdC_ncdB_ncdP(self, qfactor: Any, current: Any, bfield: Any, perturbation: Any): ...
+    def __int_ncdQ_larC_larB_cosP(self, qfactor: Any, current: Any, bfield: Any, perturbation: Any): ...
+    def __int_ncdQ_larC_larB_ncdP(self, qfactor: Any, current: Any, bfield: Any, perturbation: Any): ...
+    def __int_ncdQ_larC_ncdB_cosP(self, qfactor: Any, current: Any, bfield: Any, perturbation: Any): ...
+    def __int_ncdQ_larC_ncdB_ncdP(self, qfactor: Any, current: Any, bfield: Any, perturbation: Any): ...
+    def __int_ncdQ_ncdC_larB_cosP(self, qfactor: Any, current: Any, bfield: Any, perturbation: Any): ...
+    def __int_ncdQ_ncdC_larB_ncdP(self, qfactor: Any, current: Any, bfield: Any, perturbation: Any): ...
+    def __int_ncdQ_ncdC_ncdB_cosP(self, qfactor: Any, current: Any, bfield: Any, perturbation: Any): ...
+    def __int_ncdQ_ncdC_ncdB_ncdP(self, qfactor: Any, current: Any, bfield: Any, perturbation: Any): ...

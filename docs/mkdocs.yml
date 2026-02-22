@@ -67,7 +67,7 @@ theme:
 markdown_extensions:
   - toc:
       permalink: true
-      toc_depth: 2
+      toc_depth: 3
   # Math
   - pymdownx.arithmatex:
       generic: true
@@ -94,3 +94,4 @@ nav:
   - API Reference:
     - Types: reference/types.md
     - Equilibrium: reference/equilibrium.md
+    - Simulate: reference/simulate.md

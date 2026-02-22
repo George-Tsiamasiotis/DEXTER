@@ -1,3 +1,13 @@
+"""Final wrappers of the exported rust types.
+
+Note
+----
+
+Some objects have a `_dyn` class attribute. This is an attempt at reflection for methods that are generic on
+the corresponding wrapped types. The string is used to compose the final (manually) monomorphized method and
+call it.
+"""
+
 from dexter._core import _PyLarGeometry, _PyNcGeometry
 from dexter._core import _PyUnityQfactor, _PyParabolicQfactor, _PyNcQfactor
 from dexter._core import _PyLarCurrent, _PyNcCurrent
@@ -51,6 +61,8 @@ class LarGeometry(_PyLarGeometry, _GeometryPlotter):
 
     ```
     """
+
+    _dyn: str = "larG"
 
 
 class NcGeometry(_PyNcGeometry, _FluxPlotter, _GeometryPlotter):
@@ -123,12 +135,13 @@ class NcGeometry(_PyNcGeometry, _FluxPlotter, _GeometryPlotter):
 
     Example
     -------
-
     ```python title="NcGeometry creation"
     >>> geometry = dex.NcGeometry(path, "Cubic", "Bicubic")
 
     ```
     """
+
+    _dyn: str = "ncdG"
 
 
 # ================================================================================================
@@ -149,6 +162,8 @@ class UnityQfactor(_PyUnityQfactor, _FluxPlotter, _QfactorPlotter):
 
     ```
     """
+
+    _dyn: str = "uniQ"
 
 
 class ParabolicQfactor(_PyParabolicQfactor, _FluxPlotter, _QfactorPlotter):
@@ -193,7 +208,6 @@ class ParabolicQfactor(_PyParabolicQfactor, _FluxPlotter, _QfactorPlotter):
 
     Note
     ----
-
     A ParabolicQfactor is defined with the help of the [`FluxWall`](types.md/#dexter.types.FluxWall)
     helper type, which changes the position where qwall is met.
 
@@ -221,7 +235,6 @@ class ParabolicQfactor(_PyParabolicQfactor, _FluxPlotter, _QfactorPlotter):
 
     Example
     -------
-
     ```python title="UnityQfactor creation"
     >>> # Define q(ψ=ψwall=0.45) = qwall = 3.8
     >>> flux_wall: dex.types.FluxWall = ("Toroidal", 0.45)
@@ -229,6 +242,8 @@ class ParabolicQfactor(_PyParabolicQfactor, _FluxPlotter, _QfactorPlotter):
 
     ```
     """
+
+    _dyn: str = "parQ"
 
 
 class NcQfactor(_PyNcQfactor, _FluxPlotter, _QfactorPlotter):
@@ -274,12 +289,13 @@ class NcQfactor(_PyNcQfactor, _FluxPlotter, _QfactorPlotter):
 
     Example
     -------
-
     ```python title="NcQfactor creation"
     >>> qfactor = dex.NcQfactor(path, "Steffen")
 
     ```
     """
+
+    _dyn: str = "ncdQ"
 
 
 # ================================================================================================
@@ -300,6 +316,8 @@ class LarCurrent(_PyLarCurrent, _CurrentPlotter):
 
     ```
     """
+
+    _dyn: str = "larC"
 
 
 class NcCurrent(_PyNcCurrent, _CurrentPlotter):
@@ -349,6 +367,8 @@ class NcCurrent(_PyNcCurrent, _CurrentPlotter):
     ```
     """
 
+    _dyn: str = "ncdC"
+
 
 # ================================================================================================
 
@@ -368,6 +388,8 @@ class LarBfield(_PyLarBfield):
 
     ```
     """
+
+    _dyn: str = "larB"
 
 
 class NcBfield(_PyNcBfield):
@@ -415,12 +437,13 @@ class NcBfield(_PyNcBfield):
 
     Example
     -------
-
     ```python title="NcBfield creation"
     >>> bfield = dex.NcBfield(path, "Bicubic")
 
     ```
     """
+
+    _dyn: str = "ncdB"
 
 
 # ================================================================================================
@@ -468,6 +491,8 @@ class CosHarmonic(_PyCosHarmonic, _HarmonicPlotter):
 
     ```
     """
+
+    _dyn: str = "cosH"
 
 
 class NcHarmonic(_PyNcHarmonic, _HarmonicPlotter):
@@ -557,6 +582,8 @@ class NcHarmonic(_PyNcHarmonic, _HarmonicPlotter):
         The NetCDF $\phi$ data,
     """
 
+    _dyn: str = "ncdH"
+
 
 # ================================================================================================
 
@@ -606,6 +633,8 @@ class CosPerturbation(_PyCosPerturbation):
 
     harmonics: list[CosHarmonic]
 
+    _dyn: str = "cosP"
+
     def __init__(self, harmonics: list[CosHarmonic]) -> None: ...
 
 
@@ -648,6 +677,8 @@ class NcPerturbation(_PyNcPerturbation):
     """
 
     harmonics: list[NcHarmonic]
+
+    _dyn: str = "ncdP"
 
     def __init__(self, harmonics: list[NcHarmonic]) -> None: ...
 

@@ -46,6 +46,31 @@ macro_rules! py_get_path {
     };
 }
 
+/// Exports a getter method of a public field on the exposed python wrapper
+#[macro_export]
+macro_rules! py_export_pub_field {
+    ($py_object:ident, $getter:ident, $T:ident) => {
+        #[pymethods]
+        impl $py_object {
+            #[getter]
+            pub fn $getter(&self) -> $T {
+                self.0.$getter as $T
+            }
+        }
+    };
+    // In python, this translates to `Optional[T]`, which is equivalent to
+    // `None | T`
+    ($py_object:ident, $getter:ident, Option<$T:ident>) => {
+        #[pymethods]
+        impl $py_object {
+            #[getter]
+            pub fn $getter(&self) -> Option<$T> {
+                self.0.$getter as Option<$T>
+            }
+        }
+    };
+}
+
 /// Exports a getter method on the exposed python wrapper
 #[macro_export]
 macro_rules! py_export_getter {
