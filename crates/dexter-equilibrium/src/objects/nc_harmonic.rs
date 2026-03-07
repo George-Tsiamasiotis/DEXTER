@@ -455,18 +455,14 @@ impl Clone for SingleNcHarmonic {
             phase_resonance: self.phase_resonance,
             alpha_values: self.alpha_values.clone(),
             phase_values: self.phase_values.clone(),
-            alpha_interp: Some(
-                make_interp_type(&self.interp_type)
-                    .unwrap()
-                    .build(self.flux.uvalues(), &self.alpha_values)
-                    .unwrap(),
-            ),
-            phase_interp: Some(
-                make_interp_type(&self.interp_type)
-                    .unwrap()
-                    .build(self.flux.uvalues(), &self.phase_values)
-                    .unwrap(),
-            ),
+            alpha_interp: make_interp_type(&self.interp_type)
+                .unwrap()
+                .build(self.flux.uvalues(), &self.alpha_values)
+                .ok(),
+            phase_interp: make_interp_type(&self.interp_type)
+                .unwrap()
+                .build(self.flux.uvalues(), &self.phase_values)
+                .ok(),
         }
     }
 }

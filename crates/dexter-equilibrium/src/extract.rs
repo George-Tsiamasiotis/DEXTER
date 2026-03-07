@@ -15,11 +15,9 @@
 pub const TEST_NETCDF_PATH: &str = "test_netcdf.nc";
 
 /// Test netcdf file with ψ the only good coordinate.
-#[cfg(test)]
-pub(crate) const TOROIDAL_TEST_NETCDF_PATH: &str = "toroidal_test_netcdf.nc";
+pub const TOROIDAL_TEST_NETCDF_PATH: &str = "toroidal_test_netcdf.nc";
 /// Test netcdf file with ψp the only good coordinate.
-#[cfg(test)]
-pub(crate) const POLOIDAL_TEST_NETCDF_PATH: &str = "poloidal_test_netcdf.nc";
+pub const POLOIDAL_TEST_NETCDF_PATH: &str = "poloidal_test_netcdf.nc";
 
 /// The names each variable is expected to appear in the netCDF file.
 ///

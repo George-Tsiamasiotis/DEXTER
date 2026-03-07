@@ -2,8 +2,10 @@
 
 mod evolution;
 mod integrate;
+mod intersect;
 
 pub use crate::SolverParams;
+pub use intersect::{IntersectParams, Intersection};
 
 // ===============================================================================================
 
@@ -110,6 +112,10 @@ pub enum IntegrationStatus {
     TimedOut(Duration),
     /// Simulation failed for unknown reasons.
     Failed(Box<str>),
+    /// Intersections calculation successful.
+    Intersected,
+    /// Invalid intersections.
+    InvalidIntersections,
 }
 
 // ===============================================================================================
@@ -245,6 +251,79 @@ impl Particle {
             perturbation,
         };
         integrate::integrate(self, &objects, teval, solver_params);
+    }
+
+    /// Integrates the particle, calculating its intersections with a constant `θ` or `ζ` surface.
+    ///
+    /// The intersection surface, angle, and number of turns are configured with the helper struct
+    /// [`IntersectParams`].
+    ///
+    /// Using the method described by [`Hénon`] we can force the solver to step exactly on the
+    /// intersection surface.
+    ///
+    /// The differences between two consecutive values of the corresponding angle variable are
+    /// guaranteed to be `2π +- ε`, where ε a number smaller than the solver's relative tolerance.
+    ///
+    /// [`Hénon`]: https://www.sciencedirect.com/science/article/abs/pii/0167278982900343
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use dexter_equilibrium::*;
+    /// # use dexter_simulate::*;
+    /// # use std::path::PathBuf;
+    /// #
+    /// let qfactor = UnityQfactor::new();
+    /// let current = LarCurrent::new();
+    /// let bfield = LarBfield::new();
+    /// let perturbation = Perturbation::zero();
+    ///
+    /// let initial_conditions = InitialConditions {
+    ///     t0: 0.0,
+    ///     flux0: InitialFlux::Toroidal(0.02),
+    ///     theta0: 3.14,
+    ///     zeta0: 0.0,
+    ///     rho0: 1e-4,
+    ///     mu0: 1e-6,
+    /// };
+    /// let intersect_params = IntersectParams::new(Intersection::ConstTheta, 3.14, 10);
+    ///
+    /// let mut particle = Particle::new(&initial_conditions);
+    /// particle.intersect(
+    ///     &qfactor,
+    ///     &current,
+    ///     &bfield,
+    ///     &perturbation,
+    ///     &intersect_params,
+    ///     &SolverParams::default(),
+    /// );
+    ///
+    /// assert_eq!(particle.steps_stored(), 11); // includes the first step.
+    /// # assert!(matches!(particle.integration_status(), IntegrationStatus::Intersected));
+    /// # Ok::<_, SimulationError>(())
+    ///
+    /// ```
+    pub fn intersect<Q, C, B, H>(
+        &mut self,
+        qfactor: &Q,
+        current: &C,
+        bfield: &B,
+        perturbation: &Perturbation<H>,
+        intersect_params: &IntersectParams,
+        solver_params: &SolverParams,
+    ) where
+        Q: Qfactor + FluxCommute,
+        C: Current,
+        B: Bfield,
+        H: Harmonic,
+    {
+        let objects = EqObjects {
+            qfactor,
+            current,
+            bfield,
+            perturbation,
+        };
+        intersect::intersect(self, &objects, intersect_params, solver_params);
     }
 }
 

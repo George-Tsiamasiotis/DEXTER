@@ -8,6 +8,8 @@
 //! Routines:
 //!
 //! + [`Particle::integrate`]: Integrates the particle in a specific time interval.
+//! + [`Particle::intersect`]: Integrates the particle, calculating its intersections with a
+//!   constant `θ` or `ζ` surface.
 //!
 //! #### Integration Configuration
 //!
@@ -35,4 +37,6 @@ pub type Result<T> = std::result::Result<T, SimulationError>;
 pub(crate) use system::FluxCoordinate;
 pub use system::{SolverParams, SteppingMethod};
 
-pub use particle::{InitialConditions, InitialFlux, IntegrationStatus, Particle};
+pub use particle::{
+    InitialConditions, InitialFlux, IntegrationStatus, IntersectParams, Intersection, Particle,
+};

@@ -1,4 +1,5 @@
-/// Runge-kutta-Fehlberg method of order 4(5).
+//! Runge-kutta-Fehlberg method of order 4(5).
+
 use self::tableau::*;
 use super::{SolverParams, SteppingMethod};
 use crate::{
@@ -69,7 +70,7 @@ pub(crate) struct Stepper {
     state4: GCState,
     state5: GCState,
     state6: GCState,
-    weights: [f64; 5],
+    pub(crate) weights: [f64; 5],
     pub(crate) errors: [f64; 5],
 }
 

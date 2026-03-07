@@ -172,7 +172,7 @@ version = "0.1.0"
 
 [[package]]
 name = "dexter-equilibrium"
-version = "0.1.4-pre.1"
+version = "0.1.4-pre.2"
 dependencies = [
  "approx",
  "dexter-common",
@@ -185,7 +185,7 @@ dependencies = [
 
 [[package]]
 name = "dexter-simulate"
-version = "0.1.1-pre.4"
+version = "0.1.1-pre.5"
 dependencies = [
  "approx",
  "dexter-common",

@@ -4,7 +4,7 @@ mod common;
 
 use crate::common::check_integrated_particle_arrays;
 use approx::{assert_abs_diff_eq, assert_relative_eq};
-use dexter_equilibrium::{extract::TEST_NETCDF_PATH, *};
+use dexter_equilibrium::{extract::TOROIDAL_TEST_NETCDF_PATH, *};
 use dexter_simulate::*;
 use rsl_interpolation::{Accelerator, Cache};
 use std::path::PathBuf;
@@ -47,7 +47,7 @@ fn gc_toroidal_integration_uniQ_larC_larB_cosP() {
 fn gc_toroidal_integration_ncdQ_ncdC_ncdB_ncdP() {
     use InitialFlux::*;
     use PhaseMethod::Interpolation;
-    let path = PathBuf::from(TEST_NETCDF_PATH);
+    let path = PathBuf::from(TOROIDAL_TEST_NETCDF_PATH);
     let qfactor = NcQfactorBuilder::new(&path, "steffen").build().unwrap();
     let current = NcCurrentBuilder::new(&path, "steffen").build().unwrap();
     let bfield = NcBfieldBuilder::new(&path, "bicubic").build().unwrap();
@@ -56,14 +56,14 @@ fn gc_toroidal_integration_ncdQ_ncdC_ncdB_ncdP() {
         NcHarmonicBuilder::new(&path, "steffen", 3, 2).with_phase_method(Interpolation).build().unwrap(),
     ]);
 
-    let solver_params =SolverParams::default();
+    let solver_params = SolverParams::default();
 
     let initial = InitialConditions {t0: 0.0, flux0: Toroidal(0.2), theta0: 0.0, zeta0: 0.0, rho0: 1e-4, mu0: 1e-6};
 
     let mut particle = Particle::new(&initial);
     assert!(matches!(particle.integration_status(), IntegrationStatus::Initialized));
 
-    let teval = (0.0, 1e-1);
+    let teval = (0.0, 5e-1);
     particle.integrate(&qfactor, &current, &bfield, &perturbation, teval, &solver_params);
 
     assert!(matches!(particle.integration_status(), IntegrationStatus::Integrated));
