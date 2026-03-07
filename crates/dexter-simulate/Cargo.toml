@@ -1,6 +1,6 @@
 [package]
 name = "dexter-simulate"
-version = "0.1.1-pre.5"
+version = "0.1.1-pre.6"
 license.workspace = true
 edition.workspace = true
 authors.workspace = true
@@ -19,8 +19,12 @@ approx.workspace = true
 rsl-interpolation.workspace = true
 
 [[example]]
-name = "integration"
-path = "examples/integration.rs"
+name = "integrate"
+path = "examples/integrate.rs"
+
+[[example]]
+name = "intersect"
+path = "examples/intersect.rs"
 
 [[example]]
 name = "stepping_method"

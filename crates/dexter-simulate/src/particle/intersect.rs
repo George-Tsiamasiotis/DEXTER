@@ -150,9 +150,6 @@ pub(super) fn intersect<Q, C, B, H>(
             // from state2 is not a problem, since state2 was calculated from the solver, so it is
             // a valid state with a valid step size within the solver's tolerance.
             particle.evolution.push_state(&intersection_state);
-            dbg!(state1.t);
-            dbg!(intersection_state.t);
-            dbg!(state2.t);
         }
 
         // In both cases, continue from the next state.

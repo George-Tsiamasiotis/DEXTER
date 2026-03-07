@@ -117,3 +117,38 @@ class _ParticlePlotter:
 
         plt.show()
         plt.close()
+
+    def plot_poloidal_drift(self, percentage: float = 100):
+        r"""Plots the $\theta-\psi$ drift of the particle.
+
+        Note
+        ----
+
+        This method simply plots the $\theta$ and $\psi$ time arrays in a polar projection. Itis not aware
+        of the geometry of the device so the plot limit is not the actual $\psi_{wall}$.
+
+        Parameters
+        ----------
+        percentage: float
+            The percentage of the evolution to plot. Defaults to 100.
+        """
+
+        if self.integration_status in ["Initialized", "OutOfBoundsInitialization"]:
+            raise Exception("Particle hasn't been integrated")
+
+        if percentage < 0 or percentage > 100:
+            raise ValueError("Percentage must be between 0 and 100.")
+
+        # ===========================
+
+        fig = plt.figure(figsize=figsize, layout="constrained", dpi=dpi)
+        ax = fig.add_subplot(polar=True)
+
+        ax.scatter(self.theta_array, self.psi_array, **SCATTER_KW)
+        ax.set_title(r"$\theta-\psi$ drift")
+
+        ax.set_rorigin(0)  # type: ignore
+        ax.set_rlabel_position(22.5)  # type: ignore
+
+        plt.show()
+        plt.close()

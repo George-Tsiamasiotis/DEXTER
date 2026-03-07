@@ -64,7 +64,11 @@ impl Evolution {
         self.pzeta.shrink_to_fit();
         self.energy.shrink_to_fit();
 
-        self.energy_var = Some(self.energy_array().var(1.0))
+        self.energy_var = self
+            .energy
+            .len()
+            .ge(&2)
+            .then(|| self.energy_array().var(1.0));
     }
 
     /// Discards the vecs, keeping all the other fields.
