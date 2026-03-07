@@ -7,7 +7,7 @@ Python methods that wrap rust 'generic' methods, assemble the monomorphized meth
 using the generic object's `_dyn` attribute.
 """
 
-from typing import Callable, Optional
+from typing import Callable, Optional, Any
 from dexter._core import _PyInitialConditions, _PyIntersectParams, _PyParticle
 
 from ..equilibrium import Qfactor, Current, Bfield, Perturbation
@@ -189,7 +189,7 @@ class Particle(_PyParticle, _ParticlePlotter):
         perturbation: Perturbation,
         teval: tuple[float, float],
         *,
-        method: Optional[SteppingMethod] = "EnergyAdaptiveStep",
+        stepping_method: Optional[SteppingMethod] = "EnergyAdaptiveStep",
         max_steps: Optional[int] = 1_000_000,
         first_step: Optional[float] = 1e-1,
         safety_factor: Optional[float] = 0.9,
@@ -217,7 +217,7 @@ class Particle(_PyParticle, _ParticlePlotter):
 
         Other Parameters
         ----------------
-        method
+        stepping_method
             The optimal step calculation method. Defaults to "EnergyAdaptiveStep".
         max_steps
             The maximum amount of steps a particle can make before terminating its integration. Defaults to
@@ -269,7 +269,7 @@ class Particle(_PyParticle, _ParticlePlotter):
 
         ```
         """
-        prefix = "__int"
+        prefix = "__integrate"
         q = qfactor._dyn
         c = current._dyn
         b = bfield._dyn
@@ -281,7 +281,126 @@ class Particle(_PyParticle, _ParticlePlotter):
             bfield,
             perturbation,
             teval,
-            method,
+            stepping_method,
+            max_steps,
+            first_step,
+            safety_factor,
+            energy_rel_tol,
+            energy_abs_tol,
+            error_rel_tol,
+            error_abs_tol,
+        )
+
+    def intersect(
+        self,
+        /,
+        qfactor: Qfactor,
+        current: Current,
+        bfield: Bfield,
+        perturbation: Perturbation,
+        intersect_params: Any,
+        *,
+        stepping_method: Optional[SteppingMethod] = "EnergyAdaptiveStep",
+        max_steps: Optional[int] = 1_000_000,
+        first_step: Optional[float] = 1e-1,
+        safety_factor: Optional[float] = 0.9,
+        energy_rel_tol: Optional[float] = 1e-12,
+        energy_abs_tol: Optional[float] = 1e-14,
+        error_rel_tol: Optional[float] = 1e-12,
+        error_abs_tol: Optional[float] = 1e-14,
+    ):
+        r"""Integrates the particle, calculating its intersections with a constant $\theta$ or $\zeta$ surface.
+
+        Using the method described by Hénon we can force the solver to step exactly on the intersection surface.
+
+        The differences between two consecutive values of the corresponding angle variable are guaranteed to
+        be $2\pi \pm \epsilon$, where $\epsilon$ a number smaller than the solver’s relative tolerance.
+
+        Parameters
+        ----------
+        qfactor
+            The equilibrium's qfactor.
+        current
+            The equilibrium's plasma current.
+        bfield
+            The equilibrium's magnetic field.
+        perturbation
+            The equilibrium's perturbation.
+        intersect_params
+            The parameters of the integration.
+
+        Other Parameters
+        ----------------
+        stepping_method
+            The optimal step calculation method. Defaults to "EnergyAdaptiveStep".
+        max_steps
+            The maximum amount of steps a particle can make before terminating its integration. Defaults to
+            1.000.000.
+        first_step
+            The initial time step for the RKF45 adaptive step method. The value is empirical. Defaults to
+            1e-1.
+        safety_factor
+            The safety factor of the solver. Should be less than 1.0. Defaults to 0.9.
+        energy_rel_tol
+            The relative tolerance of the energy difference in every step. Defaults to 1e-12.
+        energy_abs_tol
+            The absolute tolerance of the energy difference in every step. Defaults to 1e-14.
+        error_rel_tol
+            The relative tolerance of the local truncation error in every step. Defaults to 1e-12.
+        error_abs_tol
+            The absolute tolerance of the local truncation error in every step. Defaults to 1e-14.
+
+        Example
+        -------
+        ```python title="Particle intersection integration"
+        >>> qfactor = dex.ParabolicQfactor(qaxis=1.1, qwall=4.1, flux_wall=("Toroidal", 0.45))
+        >>> current = dex.LarCurrent()
+        >>> bfield = dex.LarBfield()
+        >>> perturbation = dex.CosPerturbation(
+        ...     [
+        ...         dex.CosHarmonic(alpha=1e-3, m=1, n=3, phase=0),
+        ...         dex.CosHarmonic(alpha=1e-3, m=2, n=3, phase=0),
+        ...     ]
+        ... )
+        >>> initial_conditions = dex.InitialConditions(
+        ...     t0=0,
+        ...     flux0=("Toroidal", 0.1),
+        ...     theta0=3.14,
+        ...     zeta0=0,
+        ...     rho0=1e-4,
+        ...     mu0=7e-6,
+        ... )
+        >>> intersect_params = dex.IntersectParams(
+        ...     intersection = "ConstTheta",
+        ...     angle = 3.1415,
+        ...     turns = 5,
+        ... )
+        >>>
+        >>> particle = dex.Particle(initial_conditions)
+        >>> particle.intersect(
+        ...     qfactor=qfactor,
+        ...     current=current,
+        ...     bfield=bfield,
+        ...     perturbation=perturbation,
+        ...     intersect_params=intersect_params,
+        ...     stepping_method="ErrorAdaptiveStep",
+        ... )
+
+        ```
+        """
+        prefix = "__intersect"
+        q = qfactor._dyn
+        c = current._dyn
+        b = bfield._dyn
+        p = perturbation._dyn
+        method_name: Callable = getattr(self, f"{prefix}_{q}_{c}_{b}_{p}")
+        method_name(
+            qfactor,
+            current,
+            bfield,
+            perturbation,
+            intersect_params,
+            stepping_method,
             max_steps,
             first_step,
             safety_factor,

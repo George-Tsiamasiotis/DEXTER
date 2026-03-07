@@ -86,7 +86,7 @@ def test_particle_plots(
         nc_bfield,
         nc_perturbation,
         (0, 100),
-        method=("FixedStep", 0.5),
+        stepping_method=("FixedStep", 0.5),
     )
     particle.plot_evolution()
     particle.plot_evolution(percentage=2)

@@ -116,7 +116,7 @@ class TestToroidalParticle:
         particle.integrate(
             *self.eq,
             (0, 600),
-            method="ErrorAdaptiveStep",
+            stepping_method="ErrorAdaptiveStep",
             first_step=1e-5,
             error_rel_tol=1e-18,
             error_abs_tol=1e-20,
@@ -129,7 +129,7 @@ class TestToroidalParticle:
         particle.integrate(
             *self.eq,
             (0, 600),
-            method=("FixedStep", 0.5),
+            stepping_method=("FixedStep", 0.5),
         )
         assert particle.integration_status == "Integrated"
         _check_valid_integration(particle)
@@ -184,7 +184,7 @@ class TestPoloidalParticle:
         particle.integrate(
             *self.eq,
             (0, 6000),
-            method="ErrorAdaptiveStep",
+            stepping_method="ErrorAdaptiveStep",
             first_step=1e-5,
             error_rel_tol=1e-18,
             error_abs_tol=1e-20,
@@ -197,7 +197,7 @@ class TestPoloidalParticle:
         particle.integrate(
             *self.eq,
             (0, 300),
-            method=("FixedStep", 0.1),
+            stepping_method=("FixedStep", 0.1),
         )
         assert particle.integration_status == "Integrated"
         _check_valid_integration(particle)
