@@ -4,7 +4,7 @@ use dexter_equilibrium::{Bfield, Current, EqError, FluxCommute, Harmonic, Pertur
 
 use crate::Result;
 use crate::particle::{Caches, EqObjects};
-use crate::{InitialConditions, InitialFlux, state::FluxCoordinate};
+use crate::{FluxCoordinate, InitialConditions, InitialFlux};
 
 /// State of the Guiding Center at each step
 ///

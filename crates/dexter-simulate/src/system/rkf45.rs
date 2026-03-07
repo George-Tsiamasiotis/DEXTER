@@ -1,6 +1,6 @@
 /// Runge-kutta-Fehlberg method of order 4(5).
 use self::tableau::*;
-use super::{StepperParams, SteppingMethod};
+use super::{SolverParams, SteppingMethod};
 use crate::{
     Result, SimulationError,
     particle::{Caches, EqObjects},
@@ -308,11 +308,11 @@ impl Stepper {
         }
     }
 
-    pub(crate) fn calculate_optimal_step(&self, h: f64, params: &impl StepperParams) -> f64 {
-        match params.method() {
+    pub(crate) fn calculate_optimal_step(&self, h: f64, params: &SolverParams) -> f64 {
+        match params.method {
             SteppingMethod::EnergyAdaptiveStep => self.energy_method_optimal_step(h, params),
             SteppingMethod::ErrorAdaptiveStep => self.error_method_optimal_step(h, params),
-            SteppingMethod::FixedStep(stepsize) => *stepsize,
+            SteppingMethod::FixedStep(stepsize) => stepsize,
         }
     }
 
@@ -320,27 +320,27 @@ impl Stepper {
     ///
     /// Source:
     /// https://www.uni-muenster.de/imperia/md/content/physik_tp/lectures/ss2017/numerische_Methoden_fuer_komplexe_Systeme_II/rkm-1.pdf
-    fn energy_method_optimal_step(&self, h: f64, config: &impl StepperParams) -> f64 {
+    fn energy_method_optimal_step(&self, h: f64, config: &SolverParams) -> f64 {
         let initial_energy = self.state1.energy();
         let final_energy = self.state6.energy();
         // When the energy diff happens to be smaller than REL_TOL, the optimal step keeps getting
         // smaller due to the `REL_TOL/energy_diff` factor, so we need to bound it
         let energy_diff = ((initial_energy - final_energy) / initial_energy)
             .abs()
-            .max(config.energy_abs_tol());
-        let exp = if energy_diff >= config.energy_rel_tol() {
+            .max(config.energy_abs_tol);
+        let exp = if energy_diff >= config.energy_rel_tol {
             0.2
         } else {
             0.25
         };
-        config.safety_factor() * h * (config.energy_rel_tol() / energy_diff).powf(exp)
+        config.safety_factor * h * (config.energy_rel_tol / energy_diff).powf(exp)
     }
 
     /// Adjust the error by calculating the local truncation error.
     ///
     /// Source:
     /// https://www.uni-muenster.de/imperia/md/content/physik_tp/lectures/ss2017/numerische_Methoden_fuer_komplexe_Systeme_II/rkm-1.pdf
-    fn error_method_optimal_step(&self, h: f64, config: &impl StepperParams) -> f64 {
+    fn error_method_optimal_step(&self, h: f64, config: &SolverParams) -> f64 {
         // Using the max error vs each variable's error is equivalent.
 
         // The only way this could fail was if `self.errors` contained any non-finite values,
@@ -354,15 +354,15 @@ impl Stepper {
 
         // When all errors happen to be smaller than REL_TOL, the optimal step keeps getting
         // smaller due to the `REL_TOL/max_error` factor, so we need to bound it
-        max_error = max_error.max(config.error_abs_tol());
+        max_error = max_error.max(config.error_abs_tol);
 
         // 0.2 = 1/(p+1), where p the order
-        let exp = if max_error >= config.error_rel_tol() {
+        let exp = if max_error >= config.error_rel_tol {
             0.2
         } else {
             0.25
         };
-        config.safety_factor() * h * (config.error_rel_tol() / max_error).powf(exp)
+        config.safety_factor * h * (config.error_rel_tol / max_error).powf(exp)
     }
 
     pub(crate) fn next_state<Q, C, B, H>(

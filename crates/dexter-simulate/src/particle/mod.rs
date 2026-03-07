@@ -3,7 +3,7 @@
 mod evolution;
 mod integrate;
 
-pub use integrate::IntegrationParams;
+pub use crate::SolverParams;
 
 // ===============================================================================================
 
@@ -219,7 +219,7 @@ impl Particle {
     ///     &bfield,
     ///     &perturbation,
     ///     (0.0, 1e2),
-    ///     &IntegrationParams::default(),
+    ///     &SolverParams::default(),
     /// );
     /// # Ok::<_, SimulationError>(())
     ///
@@ -231,7 +231,7 @@ impl Particle {
         bfield: &B,
         perturbation: &Perturbation<H>,
         teval: (f64, f64),
-        params: &IntegrationParams,
+        solver_params: &SolverParams,
     ) where
         Q: Qfactor + FluxCommute,
         C: Current,
@@ -244,7 +244,7 @@ impl Particle {
             bfield,
             perturbation,
         };
-        integrate::integrate(self, &objects, teval, params);
+        integrate::integrate(self, &objects, teval, solver_params);
     }
 }
 

@@ -1,7 +1,7 @@
 //! `dexter-simulate` newtypes, constructors and method exports.
 
 use dexter::dexter_simulate::{
-    InitialConditions, InitialFlux, IntegrationParams, Particle, SteppingMethod,
+    InitialConditions, InitialFlux, Particle, SolverParams, SteppingMethod,
 };
 use numpy::{IntoPyArray, PyArray1};
 use pyo3::exceptions::PyTypeError;

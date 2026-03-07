@@ -32,8 +32,15 @@ fn analytical_equilibrium_integration() {
 
     // Integrate
     let teval = (0.0, 5e1);
-    let params = IntegrationParams::default();
-    particle.integrate(&qfactor, &current, &bfield, &perturbation, teval, &params);
+    let solver_params = SolverParams::default();
+    particle.integrate(
+        &qfactor,
+        &current,
+        &bfield,
+        &perturbation,
+        teval,
+        &solver_params,
+    );
     dbg!(&particle);
 }
 
@@ -69,7 +76,14 @@ fn numerical_equilibrium_integration() {
 
     // Integrate
     let teval = (0.0, 1e5);
-    let params = IntegrationParams::default();
-    particle.integrate(&qfactor, &current, &bfield, &perturbation, teval, &params);
+    let solver_params = SolverParams::default();
+    particle.integrate(
+        &qfactor,
+        &current,
+        &bfield,
+        &perturbation,
+        teval,
+        &solver_params,
+    );
     dbg!(&particle);
 }

@@ -17,20 +17,20 @@ fn different_stepping_methods() {
         CosHarmonic::new(1e-3, 1, 4, 0.0),
     ]);
 
-    let energy_params = IntegrationParams {
+    let energy_params =  SolverParams{
             method: SteppingMethod::EnergyAdaptiveStep,
             energy_rel_tol: 1e-13,
             energy_abs_tol: 1e-15,
             ..Default::default()
         };
-    let error_params = IntegrationParams {
+    let error_params =  SolverParams{
             method: SteppingMethod::ErrorAdaptiveStep,
             error_rel_tol: 1e-13,
             energy_abs_tol: 1e-15,
             ..Default::default()
         };
 
-    let fixed_params = IntegrationParams {
+    let fixed_params =  SolverParams{
             method: SteppingMethod::FixedStep(10.0),
             ..Default::default()
         };

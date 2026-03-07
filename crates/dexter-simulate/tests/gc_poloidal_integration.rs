@@ -22,7 +22,7 @@ fn gc_toroidal_integration_uniQ_larC_larB_cosP() {
         NcHarmonicBuilder::new(&path, "steffen", 3, 2).with_phase_method(Interpolation).build().unwrap(),
     ]);
 
-    let params = IntegrationParams::default();
+    let solver_params = SolverParams::default();
 
     let initial = InitialConditions {t0: 0.0, flux0: Poloidal(0.2), theta0: 0.0, zeta0: 0.0, rho0: 1e-4, mu0: 1e-6};
 
@@ -30,7 +30,7 @@ fn gc_toroidal_integration_uniQ_larC_larB_cosP() {
     assert!(matches!(particle.integration_status(), IntegrationStatus::Initialized));
 
     let teval = (0.0, 1e5);
-    particle.integrate(&qfactor, &current, &bfield, &perturbation, teval, &params);
+    particle.integrate(&qfactor, &current, &bfield, &perturbation, teval, &solver_params);
     dbg!(&particle);
 
     assert!(matches!(particle.integration_status(), IntegrationStatus::Integrated));

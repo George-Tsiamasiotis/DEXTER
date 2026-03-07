@@ -21,7 +21,7 @@ fn gc_toroidal_integration_uniQ_larC_larB_cosP() {
         CosHarmonic::new(1e-3, 1, 4, 0.0),
     ]);
 
-    let params = IntegrationParams::default();
+    let solver_params = SolverParams::default();
 
     let initial = InitialConditions {t0: 0.0, flux0: Toroidal(0.3), theta0: 0.0, zeta0: 0.0, rho0: 1e-4, mu0: 1e-6};
 
@@ -29,7 +29,7 @@ fn gc_toroidal_integration_uniQ_larC_larB_cosP() {
     assert!(matches!(particle.integration_status(), IntegrationStatus::Initialized));
 
     let teval = (0.0, 1e5);
-    particle.integrate(&qfactor, &current, &bfield, &perturbation, teval, &params);
+    particle.integrate(&qfactor, &current, &bfield, &perturbation, teval, &solver_params);
 
     assert!(matches!(particle.integration_status(), IntegrationStatus::Integrated));
     assert_eq!(particle.steps_stored(), particle.steps_taken());
@@ -56,7 +56,7 @@ fn gc_toroidal_integration_ncdQ_ncdC_ncdB_ncdP() {
         NcHarmonicBuilder::new(&path, "steffen", 3, 2).with_phase_method(Interpolation).build().unwrap(),
     ]);
 
-    let params = IntegrationParams::default();
+    let solver_params =SolverParams::default();
 
     let initial = InitialConditions {t0: 0.0, flux0: Toroidal(0.2), theta0: 0.0, zeta0: 0.0, rho0: 1e-4, mu0: 1e-6};
 
@@ -64,7 +64,7 @@ fn gc_toroidal_integration_ncdQ_ncdC_ncdB_ncdP() {
     assert!(matches!(particle.integration_status(), IntegrationStatus::Initialized));
 
     let teval = (0.0, 1e-1);
-    particle.integrate(&qfactor, &current, &bfield, &perturbation, teval, &params);
+    particle.integrate(&qfactor, &current, &bfield, &perturbation, teval, &solver_params);
 
     assert!(matches!(particle.integration_status(), IntegrationStatus::Integrated));
     assert_eq!(particle.steps_stored(), particle.steps_taken());
@@ -86,7 +86,7 @@ fn gc_toroidal_integration_gcmotion_check_uniQ_larC_larB_cosP() {
     let bfield = LarBfield::new();
     let perturbation = Perturbation::zero();
 
-    let params = IntegrationParams::default();
+    let solver_params = SolverParams::default();
 
     let psi0 = 0.018365472910927463;
     let initial = InitialConditions {
@@ -105,7 +105,7 @@ fn gc_toroidal_integration_gcmotion_check_uniQ_larC_larB_cosP() {
     ));
 
     let teval = (0.0, 3e3);
-    particle.integrate(&qfactor, &current, &bfield, &perturbation, teval, &params);
+    particle.integrate(&qfactor, &current, &bfield, &perturbation, teval, &solver_params);
 
     assert!(matches!(
         particle.integration_status(),

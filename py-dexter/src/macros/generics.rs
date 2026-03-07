@@ -22,7 +22,8 @@ macro_rules! generic_particle_integration_impl {
                 error_rel_tol: Option<f64>,
                 error_abs_tol: Option<f64>,
             ) -> PyResult<()> {
-                let mut params = IntegrationParams::default();
+                // Create default and replace with passed values
+                let mut params = SolverParams::default();
                 if let Some(method) = method {
                     params.method = Self::resolve_stepping_method(method)?
                 }

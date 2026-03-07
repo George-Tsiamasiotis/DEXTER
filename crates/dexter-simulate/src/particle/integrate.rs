@@ -5,51 +5,10 @@ use std::time::Instant;
 use dexter_equilibrium::{Bfield, Current, FluxCommute, Harmonic, HarmonicCache, Qfactor};
 
 use crate::particle::{Caches, EqObjects, Particle, ParticleStats};
-use crate::state::{GCState, SteppingMethod};
-use crate::stepper_params_trait_impl;
-use crate::system::{Stepper, StepperParams};
+use crate::state::GCState;
+use crate::system::{SolverParams, Stepper};
 
 use super::IntegrationStatus;
-
-/// Defines the parameters of the [`Particle::integrate`] routine.
-///
-/// See [`IntegrationParams::default`] for the default values.
-#[derive(Debug, Clone)]
-pub struct IntegrationParams {
-    /// The optimal step calculation method.
-    pub method: SteppingMethod,
-    /// The maximum amount of steps a particle can make before terminating its integration.
-    pub max_steps: usize,
-    /// The initial time step for the RKF45 adaptive step method. The value is empirical.
-    pub first_step: f64,
-    /// The safety factor of the solver. Should be less than 1.0
-    pub safety_factor: f64,
-    /// The relative tolerance of the energy difference in every step.
-    pub energy_rel_tol: f64,
-    /// The absolute tolerance of the energy difference in every step.
-    pub energy_abs_tol: f64,
-    /// The relative tolerance of the local truncation error in every step.
-    pub error_rel_tol: f64,
-    /// The absolute tolerance of the local truncation error in every step.
-    pub error_abs_tol: f64,
-}
-
-stepper_params_trait_impl!(&IntegrationParams);
-
-impl Default for IntegrationParams {
-    fn default() -> Self {
-        Self {
-            method: SteppingMethod::EnergyAdaptiveStep,
-            max_steps: 1_000_000,
-            first_step: 1e-1,
-            safety_factor: 0.9,
-            energy_rel_tol: 1e-12,
-            energy_abs_tol: 1e-14,
-            error_rel_tol: 1e-12,
-            error_abs_tol: 1e-14,
-        }
-    }
-}
 
 // ===============================================================================================
 
@@ -59,7 +18,7 @@ pub(super) fn integrate<Q, C, B, H>(
     particle: &mut Particle,
     objects: &EqObjects<Q, C, B, H>,
     teval: (f64, f64),
-    params: &IntegrationParams,
+    solver_params: &SolverParams,
 ) where
     Q: Qfactor + FluxCommute,
     C: Current,
@@ -84,12 +43,12 @@ pub(super) fn integrate<Q, C, B, H>(
     };
     particle.initial_energy = Some(state1.energy());
     let mut state2: GCState;
-    let mut dt = params.first_step;
+    let mut dt = solver_params.first_step;
 
     // =============== Main loop
 
     loop {
-        if particle.evolution.steps_taken == params.max_steps {
+        if particle.evolution.steps_taken == solver_params.max_steps {
             particle.status = IntegrationStatus::TimedOut(start.elapsed());
             break;
         }
@@ -102,7 +61,7 @@ pub(super) fn integrate<Q, C, B, H>(
         let mut stepper = Stepper::new(&state1);
         state2 = match stepper
             .start(dt, objects, &mut caches)
-            .inspect(|_| dt = stepper.calculate_optimal_step(dt, &params))
+            .inspect(|_| dt = stepper.calculate_optimal_step(dt, solver_params))
             .and_then(|_| stepper.next_state(dt, objects, &mut caches))
         {
             Ok(state) => state,

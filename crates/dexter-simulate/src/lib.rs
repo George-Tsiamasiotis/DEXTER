@@ -13,7 +13,7 @@
 //!
 //! Each integration routine's set of parameters can be adjusted with the following structs:
 //!
-//! + [`IntegrationParams`]: Parameters of [`Particle::integrate`].
+//! + [`SolverParams`]: Parameters passed to the solver.
 //!
 //! The integration is done with the RKF4(5) method. The step size can be adaptive by minimizing
 //! the energy difference from step to step or minimizing the local truncation error (classic
@@ -32,7 +32,7 @@ pub use error::SimulationError;
 /// Result type used throughout the crate.
 pub type Result<T> = std::result::Result<T, SimulationError>;
 
-pub use particle::IntegrationParams;
-pub use particle::{InitialConditions, InitialFlux, IntegrationStatus, Particle};
+pub(crate) use system::FluxCoordinate;
+pub use system::{SolverParams, SteppingMethod};
 
-pub use state::SteppingMethod;
+pub use particle::{InitialConditions, InitialFlux, IntegrationStatus, Particle};
