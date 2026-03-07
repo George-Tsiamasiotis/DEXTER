@@ -1,6 +1,6 @@
 /// Manually monomorphizes Partlcle's `integrate()` method for the specific equilibrium objects.
 #[macro_export]
-macro_rules! generic_particle_integration_impl {
+macro_rules! generic_particle_integrate_impl {
     ($fun_name:ident, $Q:ty, $C:ty, $B:ty, $P:ty) => {
         #[pymethods]
         impl PyParticle {
@@ -12,7 +12,7 @@ macro_rules! generic_particle_integration_impl {
                 bfield: &$B,
                 per: &$P,
                 teval: (f64, f64),
-                // IntegrationParams
+                // SolverParams
                 method: Option<Bound<'py, PyAny>>,
                 max_steps: Option<usize>,
                 first_step: Option<f64>,

@@ -1,9 +1,9 @@
+import pytest
 import numpy as np
 from math import isfinite
 
 from dexter import (
     CosHarmonic,
-    InitialConditions,
     LarBfield,
     LarCurrent,
     NcBfield,
@@ -11,6 +11,8 @@ from dexter import (
     NcQfactor,
     NcHarmonic,
     ParabolicQfactor,
+    InitialConditions,
+    IntersectParams,
     Particle,
     perturbation,
 )
@@ -44,6 +46,13 @@ def test_initial_conditions_psi():
     assert isfinite(i.zeta0)
     assert isfinite(i.rho0)
     assert isfinite(i.mu0)
+
+
+def test_intersect_params():
+    IntersectParams("ConstTheta", 0, 100)
+    IntersectParams("ConstZeta", 100, 10)
+    with pytest.raises(TypeError):
+        IntersectParams("wrong", 100, 10)
 
 
 def test_particle_instantiation():

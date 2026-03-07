@@ -8,7 +8,7 @@ using the generic object's `_dyn` attribute.
 """
 
 from typing import Callable, Optional
-from dexter._core import _PyInitialConditions, _PyParticle
+from dexter._core import _PyInitialConditions, _PyIntersectParams, _PyParticle
 
 from ..equilibrium import Qfactor, Current, Bfield, Perturbation
 from ._plotters import _ParticlePlotter
@@ -63,6 +63,36 @@ class InitialConditions(_PyInitialConditions):
     zeta0: float
     rho0: float
     mu0: float
+
+
+class IntersectParams(_PyIntersectParams):
+    r"""Parameters for the Particle's `intersect()` method.
+
+    Parameters
+    ----------
+    intersection
+        The surface of section Σ, defined by an equation $\chi_i = \alpha$, where $\chi_i = \theta$ or
+        $\zeta$.
+    angle
+        The constant that defines the surface of section.
+    turns
+        The number of intersections to calculate.
+
+    Example
+    -------
+    ```python title="IntersectParams definition"
+    >>> intersect_params = dex.IntersectParams(
+    ...     intersection = "ConstTheta",
+    ...     angle = 3.1415,
+    ...     turns = 100,
+    ... )
+
+    ```
+    """
+
+    intersection: str
+    angle: float
+    turns: int
 
 
 class Particle(_PyParticle, _ParticlePlotter):

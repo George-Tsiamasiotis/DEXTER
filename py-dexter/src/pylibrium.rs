@@ -430,7 +430,7 @@ impl PyNcHarmonic {
     /// into a PhaseMethod::Custom.
     ///
     /// Returns an Error if both string matching and casting fail.
-    fn resolve_phase_method<'py>(arg: Bound<'py, PyAny>) -> Result<PhaseMethod, PyErr> {
+    fn resolve_phase_method<'py>(arg: Bound<'py, PyAny>) -> PyResult<PhaseMethod> {
         use PhaseMethod::*;
 
         match arg.to_string().to_lowercase().as_str() {

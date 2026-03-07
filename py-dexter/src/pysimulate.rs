@@ -1,7 +1,8 @@
 //! `dexter-simulate` newtypes, constructors and method exports.
 
 use dexter::dexter_simulate::{
-    InitialConditions, InitialFlux, Particle, SolverParams, SteppingMethod,
+    InitialConditions, InitialFlux, IntersectParams, Intersection, Particle, SolverParams,
+    SteppingMethod,
 };
 use numpy::{IntoPyArray, PyArray1};
 use pyo3::exceptions::PyTypeError;
@@ -10,7 +11,7 @@ use pyo3::types::PyTuple;
 
 use crate::pylibrium::*;
 use crate::{
-    generic_particle_integration_impl, py_debug_impl, py_export_getter, py_export_pub_field,
+    generic_particle_integrate_impl, py_debug_impl, py_export_getter, py_export_pub_field,
     py_get_enum_string, py_get_numpy1D, py_repr_impl,
 };
 
@@ -71,6 +72,39 @@ py_export_pub_field!(PyInitialConditions, mu0, f64);
 
 // ===============================================================================================
 
+#[derive(Clone)]
+#[pyclass(name = "_PyIntersectParams", subclass, frozen)]
+pub struct PyIntersectParams(pub(crate) IntersectParams);
+
+#[pymethods]
+impl PyIntersectParams {
+    #[new]
+    pub fn new<'py>(intersection: &str, angle: f64, turns: usize) -> PyResult<Self> {
+        let intersection = match intersection.to_lowercase().as_str() {
+            "consttheta" => Intersection::ConstTheta,
+            "constzeta" => Intersection::ConstZeta,
+            _ => {
+                return Err(PyErr::new::<PyTypeError, _>(
+                    "'intersection' must be either 'ConstTheta' or 'ConstZeta'",
+                ));
+            }
+        };
+        Ok(Self(IntersectParams::new(intersection, angle, turns)))
+    }
+
+    #[getter]
+    pub fn intersection(&self) -> String {
+        format!("{:#?}", self.0.intersection)
+    }
+}
+
+py_debug_impl!(PyIntersectParams);
+py_repr_impl!(PyIntersectParams);
+py_export_pub_field!(PyIntersectParams, angle, f64);
+py_export_pub_field!(PyIntersectParams, turns, usize);
+
+// ===============================================================================================
+
 #[pyclass(name = "_PyParticle", subclass)]
 pub struct PyParticle(pub(crate) Particle);
 
@@ -96,7 +130,7 @@ impl PyParticle {
     /// into a SteppingMethod::FixedStep.
     ///
     /// Returns an Error if both string matching and casting fail.
-    fn resolve_stepping_method<'py>(arg: Bound<'py, PyAny>) -> Result<SteppingMethod, PyErr> {
+    fn resolve_stepping_method<'py>(arg: Bound<'py, PyAny>) -> PyResult<SteppingMethod> {
         use SteppingMethod::*;
         match arg.to_string().to_lowercase().as_str() {
             "energyadaptivestep" => return Ok(EnergyAdaptiveStep),
@@ -165,30 +199,30 @@ mod py_particle_generics_impl {
     type cosP = PyCosPerturbation;
     type ncdP = PyNcPerturbation;
 
-    generic_particle_integration_impl!(__int_uniQ_larC_larB_cosP, uniQ, larC, larB, cosP);
-    generic_particle_integration_impl!(__int_uniQ_larC_larB_ncdP, uniQ, larC, larB, ncdP);
-    generic_particle_integration_impl!(__int_uniQ_larC_ncdB_cosP, uniQ, larC, ncdB, cosP);
-    generic_particle_integration_impl!(__int_uniQ_larC_ncdB_ncdP, uniQ, larC, ncdB, ncdP);
-    generic_particle_integration_impl!(__int_uniQ_ncdC_larB_cosP, uniQ, ncdC, larB, cosP);
-    generic_particle_integration_impl!(__int_uniQ_ncdC_larB_ncdP, uniQ, ncdC, larB, ncdP);
-    generic_particle_integration_impl!(__int_uniQ_ncdC_ncdB_cosP, uniQ, ncdC, ncdB, cosP);
-    generic_particle_integration_impl!(__int_uniQ_ncdC_ncdB_ncdP, uniQ, ncdC, ncdB, ncdP);
+    generic_particle_integrate_impl!(__int_uniQ_larC_larB_cosP, uniQ, larC, larB, cosP);
+    generic_particle_integrate_impl!(__int_uniQ_larC_larB_ncdP, uniQ, larC, larB, ncdP);
+    generic_particle_integrate_impl!(__int_uniQ_larC_ncdB_cosP, uniQ, larC, ncdB, cosP);
+    generic_particle_integrate_impl!(__int_uniQ_larC_ncdB_ncdP, uniQ, larC, ncdB, ncdP);
+    generic_particle_integrate_impl!(__int_uniQ_ncdC_larB_cosP, uniQ, ncdC, larB, cosP);
+    generic_particle_integrate_impl!(__int_uniQ_ncdC_larB_ncdP, uniQ, ncdC, larB, ncdP);
+    generic_particle_integrate_impl!(__int_uniQ_ncdC_ncdB_cosP, uniQ, ncdC, ncdB, cosP);
+    generic_particle_integrate_impl!(__int_uniQ_ncdC_ncdB_ncdP, uniQ, ncdC, ncdB, ncdP);
 
-    generic_particle_integration_impl!(__int_parQ_larC_larB_cosP, parQ, larC, larB, cosP);
-    generic_particle_integration_impl!(__int_parQ_larC_larB_ncdP, parQ, larC, larB, ncdP);
-    generic_particle_integration_impl!(__int_parQ_larC_ncdB_cosP, parQ, larC, ncdB, cosP);
-    generic_particle_integration_impl!(__int_parQ_larC_ncdB_ncdP, parQ, larC, ncdB, ncdP);
-    generic_particle_integration_impl!(__int_parQ_ncdC_larB_cosP, parQ, ncdC, larB, cosP);
-    generic_particle_integration_impl!(__int_parQ_ncdC_larB_ncdP, parQ, ncdC, larB, ncdP);
-    generic_particle_integration_impl!(__int_parQ_ncdC_ncdB_cosP, parQ, ncdC, ncdB, cosP);
-    generic_particle_integration_impl!(__int_parQ_ncdC_ncdB_ncdP, parQ, ncdC, ncdB, ncdP);
+    generic_particle_integrate_impl!(__int_parQ_larC_larB_cosP, parQ, larC, larB, cosP);
+    generic_particle_integrate_impl!(__int_parQ_larC_larB_ncdP, parQ, larC, larB, ncdP);
+    generic_particle_integrate_impl!(__int_parQ_larC_ncdB_cosP, parQ, larC, ncdB, cosP);
+    generic_particle_integrate_impl!(__int_parQ_larC_ncdB_ncdP, parQ, larC, ncdB, ncdP);
+    generic_particle_integrate_impl!(__int_parQ_ncdC_larB_cosP, parQ, ncdC, larB, cosP);
+    generic_particle_integrate_impl!(__int_parQ_ncdC_larB_ncdP, parQ, ncdC, larB, ncdP);
+    generic_particle_integrate_impl!(__int_parQ_ncdC_ncdB_cosP, parQ, ncdC, ncdB, cosP);
+    generic_particle_integrate_impl!(__int_parQ_ncdC_ncdB_ncdP, parQ, ncdC, ncdB, ncdP);
 
-    generic_particle_integration_impl!(__int_ncdQ_larC_larB_cosP, ncdQ, larC, larB, cosP);
-    generic_particle_integration_impl!(__int_ncdQ_larC_larB_ncdP, ncdQ, larC, larB, ncdP);
-    generic_particle_integration_impl!(__int_ncdQ_larC_ncdB_cosP, ncdQ, larC, ncdB, cosP);
-    generic_particle_integration_impl!(__int_ncdQ_larC_ncdB_ncdP, ncdQ, larC, ncdB, ncdP);
-    generic_particle_integration_impl!(__int_ncdQ_ncdC_larB_cosP, ncdQ, ncdC, larB, cosP);
-    generic_particle_integration_impl!(__int_ncdQ_ncdC_larB_ncdP, ncdQ, ncdC, larB, ncdP);
-    generic_particle_integration_impl!(__int_ncdQ_ncdC_ncdB_cosP, ncdQ, ncdC, ncdB, cosP);
-    generic_particle_integration_impl!(__int_ncdQ_ncdC_ncdB_ncdP, ncdQ, ncdC, ncdB, ncdP);
+    generic_particle_integrate_impl!(__int_ncdQ_larC_larB_cosP, ncdQ, larC, larB, cosP);
+    generic_particle_integrate_impl!(__int_ncdQ_larC_larB_ncdP, ncdQ, larC, larB, ncdP);
+    generic_particle_integrate_impl!(__int_ncdQ_larC_ncdB_cosP, ncdQ, larC, ncdB, cosP);
+    generic_particle_integrate_impl!(__int_ncdQ_larC_ncdB_ncdP, ncdQ, larC, ncdB, ncdP);
+    generic_particle_integrate_impl!(__int_ncdQ_ncdC_larB_cosP, ncdQ, ncdC, larB, cosP);
+    generic_particle_integrate_impl!(__int_ncdQ_ncdC_larB_ncdP, ncdQ, ncdC, larB, ncdP);
+    generic_particle_integrate_impl!(__int_ncdQ_ncdC_ncdB_cosP, ncdQ, ncdC, ncdB, cosP);
+    generic_particle_integrate_impl!(__int_ncdQ_ncdC_ncdB_ncdP, ncdQ, ncdC, ncdB, ncdP);
 }

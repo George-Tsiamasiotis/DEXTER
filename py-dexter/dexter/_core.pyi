@@ -1007,6 +1007,20 @@ class _PyInitialConditions:
         mu0: float,
     ): ...
 
+class _PyIntersectParams:
+    """Particle intersect() params. Contains the full behavior of the wrapped object."""
+
+    intersection: str
+    angle: float
+    turns: int
+
+    def __init__(
+        self,
+        intersection: str,
+        angle: float,
+        turns: int,
+    ): ...
+
 class _PyParticle:
     """Particle. Contains the full behavior of the wrapped object."""
 
