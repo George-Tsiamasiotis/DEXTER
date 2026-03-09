@@ -748,26 +748,6 @@ pub trait HarmonicCache: Default + Clone + Debug {
 
     /// Returns the cache's misses.
     fn misses(&self) -> usize;
-
-    /// Provides a mutable reference to the ψ Accelerator, if it exists.
-    fn psi_acc(&mut self) -> Option<&mut Accelerator> {
-        None
-    }
-
-    /// Provides a mutable reference to the ψp Accelerator, if it exists.
-    fn psip_acc(&mut self) -> Option<&mut Accelerator> {
-        None
-    }
-
-    /// Provides a mutable reference to the θ Accelerator, if it exists.
-    fn theta_acc(&mut self) -> Option<&mut Accelerator> {
-        None
-    }
-
-    /// Provides a mutable reference to the ζ Accelerator, if it exists.
-    fn zeta_acc(&mut self) -> Option<&mut Accelerator> {
-        None
-    }
 }
 
 /// Single perturbation harmonic related quantities computation.

@@ -122,7 +122,7 @@ pub enum IntegrationStatus {
 
 #[derive(Debug, Default, Clone)]
 #[allow(dead_code)] // used in Debug
-pub(crate) struct ParticleStats {
+pub(crate) struct ParticleCacheStats {
     pub(crate) psi_acc: Accelerator,
     pub(crate) psip_acc: Accelerator,
     pub(crate) theta_acc: Accelerator,
@@ -142,7 +142,7 @@ pub struct Particle {
     /// The time evolution of the particle.
     evolution: Evolution,
     /// Stats about the particle's integration.
-    stats: Option<ParticleStats>,
+    stats: ParticleCacheStats,
     /// The particle's initial Energy in Normalized Units. The Energy depends both on the initial
     /// conditions and the equilibrium.
     initial_energy: Option<f64>,
@@ -180,7 +180,7 @@ impl Particle {
             initial: initial.to_owned(),
             status: IntegrationStatus::default(),
             evolution: Evolution::default(),
-            stats: None,
+            stats: ParticleCacheStats::default(),
             initial_energy: None,
             final_energy: None,
         }
@@ -366,6 +366,12 @@ impl Particle {
         self.evolution.energy_var()
     }
 
+    /// Prints the particle's integration interpolation caches, [`Cache`] and
+    /// [`Accelerator`].
+    pub fn stats(&self) {
+        println!("{:#}", self.stats);
+    }
+
     export_array1D_getter_impl!(t_array, evolution, t);
     export_array1D_getter_impl!(psi_array, evolution, psi_array);
     export_array1D_getter_impl!(psip_array, evolution, psip_array);
@@ -381,7 +387,6 @@ impl Particle {
 impl std::fmt::Debug for Particle {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Particle")
-            // .field("stats", &self.stats)
             .field("initial", &self.initial)
             .field("status", &self.status)
             .field("evolution", &self.evolution)
@@ -389,5 +394,166 @@ impl std::fmt::Debug for Particle {
             .field("final energy  ", &self.final_energy.unwrap_or(f64::NAN))
             .field("energy variance", &self.energy_var().unwrap_or(f64::NAN))
             .finish()
+    }
+}
+
+impl std::fmt::Display for ParticleCacheStats {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Particle Interpolation Caching stats")
+            .field("ψ Accelerator", &self.psi_acc)
+            .field("ψp Accelerator", &self.psip_acc)
+            .field("θ Accelerator", &self.theta_acc)
+            .field("total harmonic cache hits", &self.harmonic_cache_hits)
+            .field("total harmonic cache misses", &self.harmonic_cache_misses)
+            .finish()
+    }
+}
+
+#[cfg(test)]
+mod test {
+
+    use std::path::PathBuf;
+
+    use crate::*;
+    use dexter_equilibrium::{extract::TOROIDAL_TEST_NETCDF_PATH, *};
+
+    #[test]
+    fn integration_cache_analytica_eq_cos_harmonic() {
+        use InitialFlux::*;
+        let qfactor = ParabolicQfactor::new(1.1, 3.9, FluxWall::Toroidal(0.45));
+        let current = LarCurrent::new();
+        let bfield = LarBfield::new();
+        let perturbation = Perturbation::new(&[
+            CosHarmonic::new(1e-3, 1, 2, 0.0),
+            CosHarmonic::new(1e-3, 1, 3, 0.0),
+            CosHarmonic::new(1e-3, 1, 4, 0.0),
+            CosHarmonic::new(1e-3, 2, 1, 0.0),
+            CosHarmonic::new(1e-3, 2, 2, 0.0),
+            CosHarmonic::new(1e-3, 2, 3, 0.0),
+            CosHarmonic::new(1e-3, 2, 4, 0.0),
+        ]);
+
+        let initial = InitialConditions {
+            t0: 0.0,
+            flux0: Toroidal(0.2),
+            theta0: 0.0,
+            zeta0: 0.0,
+            rho0: 1e-4,
+            mu0: 1e-6,
+        };
+        let mut particle = Particle::new(&initial);
+
+        particle.integrate(
+            &qfactor,
+            &current,
+            &bfield,
+            &perturbation,
+            (0.0, 100.0),
+            &SolverParams::default(),
+        );
+        assert!(matches!(
+            particle.integration_status(),
+            IntegrationStatus::Integrated
+        ));
+        let steps = particle.steps_taken();
+        assert!(steps > 1000);
+        let stats = particle.stats.clone();
+
+        // Per harmonic:
+        //     6 evaluations in rkf45
+        //          `h`, `dh_dtheta`, `dh_dzeta` -> 1 miss, 2 hits
+        //
+        // Also add 1 miss and 2 hits to account for the state created on setup.
+
+        assert_eq!(stats.harmonic_cache_misses, 7 * (steps * 6 * 1 + 1));
+        assert_eq!(stats.harmonic_cache_hits, 7 * (steps * 6 * 2 + 2));
+        //
+        // Each cos harmonic results in 2 hits and 1 miss for each evaluation
+        assert_eq!(stats.harmonic_cache_hits, 2 * stats.harmonic_cache_misses);
+    }
+
+    #[test]
+    fn integration_cache_nc_eq_nc_harmonic() {
+        let path = PathBuf::from(TOROIDAL_TEST_NETCDF_PATH);
+        use InitialFlux::*;
+        let qfactor = NcQfactorBuilder::new(&path, "steffen").build().unwrap();
+        let current = NcCurrentBuilder::new(&path, "steffen").build().unwrap();
+        let bfield = NcBfieldBuilder::new(&path, "bicubic").build().unwrap();
+        let perturbation = Perturbation::new(&[
+            NcHarmonicBuilder::new(&path, "steffen", 2, 1)
+                .with_phase_method(PhaseMethod::Interpolation)
+                .build()
+                .unwrap(),
+            NcHarmonicBuilder::new(&path, "steffen", 3, 2)
+                .with_phase_method(PhaseMethod::Interpolation)
+                .build()
+                .unwrap(),
+        ]);
+
+        let initial = InitialConditions {
+            t0: 0.0,
+            flux0: Toroidal(0.2),
+            theta0: 0.0,
+            zeta0: 0.0,
+            rho0: 1e-8,
+            mu0: 1e-10,
+        };
+        let mut particle = Particle::new(&initial);
+
+        particle.integrate(
+            &qfactor,
+            &current,
+            &bfield,
+            &perturbation,
+            (0.0, 1e7),
+            &SolverParams {
+                method: SteppingMethod::FixedStep(2000.0),
+                ..Default::default()
+            },
+        );
+        particle.stats();
+        assert!(matches!(
+            particle.integration_status(),
+            IntegrationStatus::Integrated
+        ));
+        let steps = particle.steps_taken();
+        assert!(steps > 1000);
+        let stats = particle.stats.clone();
+
+        // `ψ` Accelerator
+        // We chose a very low energetic particle, so it will follow the same flux surface, so
+        // after the first GCState evaluation we have:
+        //     6 evaluations in rkf45
+        //          `other_flux`, `q`, `g`, `i`, `dg`, `di`, `b`, `db_dflux`, `db_dtheta`-> 0 misses 9 hits
+        //
+        // Also add 1 miss and 8 hits to account for the state created on setup.
+        assert_eq!(stats.psi_acc.misses(), 1);
+        assert_eq!(stats.psi_acc.hits(), 8 + steps * 6 * 9);
+
+        assert_eq!(stats.psip_acc.hits(), 0);
+        assert_eq!(stats.psip_acc.misses(), 0);
+
+        // `θ` Accelerator
+        //     6 evaluations in rkf45
+        //          `b`, `db_dflux`, `db_dtheta`
+        //
+        // We cannot now how many hits and misses, however their sum must be equal to the total
+        // amount of evaluations
+        //
+        // Also add 3 evaluations to account for the state created on setup.
+        //
+        assert_eq!(
+            stats.theta_acc.hits() + stats.theta_acc.misses(),
+            3 + steps * 6 * 3
+        );
+
+        // Per harmonic:
+        //     6 evaluations in rkf45
+        //          `h`, `dh_dflux`, `dh_dtheta`, `dh_dzeta` -> 1 miss, 3 hits
+        //
+        // Also add 1 miss and 3 hits to account for the state created on setup.
+        assert_eq!(stats.harmonic_cache_misses, 2 * (steps * 6 * 1 + 1));
+        assert_eq!(stats.harmonic_cache_hits, 2 * (steps * 6 * 3 + 3));
+        assert_eq!(stats.harmonic_cache_hits, 3 * stats.harmonic_cache_misses);
     }
 }

@@ -4,7 +4,7 @@ use std::time::Instant;
 
 use dexter_equilibrium::{Bfield, Current, FluxCommute, Harmonic, HarmonicCache, Qfactor};
 
-use crate::particle::{Caches, EqObjects, Particle, ParticleStats};
+use crate::particle::{Caches, EqObjects, Particle, ParticleCacheStats};
 use crate::state::GCState;
 use crate::system::{SolverParams, Stepper};
 
@@ -83,11 +83,11 @@ pub(super) fn integrate<Q, C, B, H>(
     particle.evolution.duration = start.elapsed();
     particle.final_energy = Some(state1.energy());
     particle.evolution.finish();
-    particle.stats = Some(ParticleStats {
+    particle.stats = ParticleCacheStats {
         psi_acc: caches.psi_acc,
         psip_acc: caches.psip_acc,
         theta_acc: caches.theta_acc,
         harmonic_cache_hits: caches.harmonic_caches.iter().map(|c| c.hits()).sum(),
         harmonic_cache_misses: caches.harmonic_caches.iter().map(|c| c.misses()).sum(),
-    })
+    }
 }

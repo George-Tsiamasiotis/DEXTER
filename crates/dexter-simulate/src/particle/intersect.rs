@@ -6,7 +6,7 @@ use std::time::Instant;
 use approx::relative_eq;
 use dexter_equilibrium::{Bfield, Current, FluxCommute, Harmonic, HarmonicCache, Qfactor};
 
-use crate::particle::{Caches, EqObjects, Evolution, Particle, ParticleStats};
+use crate::particle::{Caches, EqObjects, Evolution, Particle, ParticleCacheStats};
 use crate::state::GCState;
 use crate::system::{SolverParams, Stepper};
 use crate::{FluxCoordinate, SimulationError};
@@ -162,13 +162,13 @@ pub(super) fn intersect<Q, C, B, H>(
     particle.evolution.duration = start.elapsed();
     particle.final_energy = Some(state1.energy());
     particle.evolution.finish();
-    particle.stats = Some(ParticleStats {
+    particle.stats = ParticleCacheStats {
         psi_acc: caches.psi_acc,
         psip_acc: caches.psip_acc,
         theta_acc: caches.theta_acc,
         harmonic_cache_hits: caches.harmonic_caches.iter().map(|c| c.hits()).sum(),
         harmonic_cache_misses: caches.harmonic_caches.iter().map(|c| c.misses()).sum(),
-    });
+    };
     match check_mapping_accuracy(&particle.evolution, &intersect_params.intersection) {
         Ok(_) => particle.status = IntegrationStatus::Intersected,
         Err(_) => particle.status = IntegrationStatus::InvalidIntersections,

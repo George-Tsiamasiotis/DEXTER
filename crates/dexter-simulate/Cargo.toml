@@ -1,6 +1,6 @@
 [package]
 name = "dexter-simulate"
-version = "0.1.1-pre.6"
+version = "0.1.1-pre.7"
 license.workspace = true
 edition.workspace = true
 authors.workspace = true
@@ -29,3 +29,7 @@ path = "examples/intersect.rs"
 [[example]]
 name = "stepping_method"
 path = "examples/stepping_method.rs"
+
+[[bin]]
+name = "long_integration"
+path = "bin/long_integration.rs"
