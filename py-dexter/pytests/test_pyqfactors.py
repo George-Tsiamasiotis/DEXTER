@@ -7,28 +7,39 @@ from dexter.types import FluxWall
 
 def test_unity_qfactor():
     qfactor = UnityQfactor()
-    assert isinstance(qfactor.__str__(), str)
-    assert isinstance(qfactor.__repr__(), str)
     assert qfactor.equilibrium_type == "Analytical"
     _test_qfactor_evals(qfactor)
-
-
-def test_parabolic_qfactor():
-    flux_wall: FluxWall = ("Toroidal", 0.45)
-    qfactor = ParabolicQfactor(1.1, 3.8, flux_wall)
     assert isinstance(qfactor.__str__(), str)
     assert isinstance(qfactor.__repr__(), str)
+
+
+def test_parabolic_qfactor_toroidal_flux_wall():
+    flux_wall: FluxWall = ("Toroidal", 0.45)
+    qfactor = ParabolicQfactor(1.1, 3.8, flux_wall)
     assert qfactor.equilibrium_type == "Analytical"
     assert qfactor.qaxis == 1.1
     assert qfactor.qwall == 3.8
     assert qfactor.psi_wall == 0.45
     assert isfinite(qfactor.psip_wall)
     _test_qfactor_evals(qfactor)
+    assert isinstance(qfactor.__str__(), str)
+    assert isinstance(qfactor.__repr__(), str)
+
+
+def test_parabolic_qfactor_poloidal_flux_wall():
+    flux_wall: FluxWall = ("Poloidal", 0.45)
+    qfactor = ParabolicQfactor(1.1, 3.8, flux_wall)
+    assert qfactor.equilibrium_type == "Analytical"
+    assert qfactor.qaxis == 1.1
+    assert qfactor.qwall == 3.8
+    assert isfinite(qfactor.psip_wall)
+    assert qfactor.psip_wall == 0.45
+    _test_qfactor_evals(qfactor)
+    assert isinstance(qfactor.__str__(), str)
+    assert isinstance(qfactor.__repr__(), str)
 
 
 def test_nc_qfactor_getters(nc_qfactor: NcQfactor):
-    assert isinstance(nc_qfactor.__str__(), str)
-    assert isinstance(nc_qfactor.__repr__(), str)
     assert nc_qfactor.equilibrium_type == "Numerical"
     assert isinstance(nc_qfactor.path, str)
     assert isinstance(nc_qfactor.netcdf_version, str)
@@ -43,6 +54,8 @@ def test_nc_qfactor_getters(nc_qfactor: NcQfactor):
     assert nc_qfactor.psi_array.ndim == 1
     assert nc_qfactor.psip_array.ndim == 1
     assert nc_qfactor.q_array.ndim == 1
+    assert isinstance(nc_qfactor.__str__(), str)
+    assert isinstance(nc_qfactor.__repr__(), str)
 
 
 def test_nc_qfactor_eval(nc_qfactor: NcQfactor):

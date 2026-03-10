@@ -11,7 +11,7 @@ macro_rules! py_eval1D {
     ($py_object:ident, $eval_method:ident) => {
         #[pymethods]
         impl $py_object {
-            pub fn $eval_method(&self, flux: f64) -> Result<f64, PyEqError> {
+            pub fn $eval_method(&self, flux: f64) -> Result<f64, PyEvalError> {
                 let mut acc = Accelerator::new();
                 Ok(self.0.$eval_method(flux, &mut acc)?)
             }
@@ -25,7 +25,7 @@ macro_rules! py_eval2D {
     ($py_object:ident, $eval_method:ident) => {
         #[pymethods]
         impl $py_object {
-            pub fn $eval_method(&self, flux: f64, theta: f64) -> Result<f64, PyEqError> {
+            pub fn $eval_method(&self, flux: f64, theta: f64) -> Result<f64, PyEvalError> {
                 let mut xacc = Accelerator::new();
                 let mut yacc = Accelerator::new();
                 let mut cache = Cache::new();
@@ -44,7 +44,7 @@ macro_rules! py_eval_harmonic {
         #[pymethods]
         impl $py_object {
             #[rustfmt::skip]
-            pub fn $eval_method(&self, flux: f64, theta: f64, zeta: f64, t: f64) -> Result<f64, PyEqError> {
+            pub fn $eval_method(&self, flux: f64, theta: f64, zeta: f64, t: f64) -> Result<f64, PyEvalError> {
                 let mut cache = self.0.generate_cache();
                 Ok(self
                     .0
@@ -61,7 +61,7 @@ macro_rules! py_eval_perturbation {
         #[pymethods]
         impl $py_object {
             #[rustfmt::skip]
-            pub fn $eval_method(&self, flux: f64, theta: f64, zeta: f64, t: f64) -> Result<f64, PyEqError> {
+            pub fn $eval_method(&self, flux: f64, theta: f64, zeta: f64, t: f64) -> Result<f64, PyEvalError> {
                 // Unfortuneately we have to generate all the caches at each call
                 let mut caches = self.0.generate_caches();
                 Ok(self

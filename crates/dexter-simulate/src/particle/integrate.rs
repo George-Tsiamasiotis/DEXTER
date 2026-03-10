@@ -4,9 +4,9 @@ use std::time::Instant;
 
 use dexter_equilibrium::{Bfield, Current, FluxCommute, Harmonic, HarmonicCache, Qfactor};
 
-use crate::particle::{Caches, EqObjects, Particle, ParticleCacheStats};
+use crate::particle::{EqObjects, IntegrationCaches, Particle, ParticleCacheStats};
+use crate::solve::{SolverParams, Stepper};
 use crate::state::GCState;
-use crate::system::{SolverParams, Stepper};
 
 use super::IntegrationStatus;
 
@@ -29,17 +29,14 @@ pub(super) fn integrate<Q, C, B, H>(
 
     let start = Instant::now();
     particle.evolution.reset();
-    let mut caches = Caches::<H::Cache> {
+    let mut caches = IntegrationCaches::<H::Cache> {
         harmonic_caches: objects.perturbation.generate_caches(),
         ..Default::default()
     };
 
-    let mut state1 = match GCState::new(&particle.initial, objects, &mut caches) {
-        Ok(state) => state,
-        Err(_) => {
-            particle.status = IntegrationStatus::OutOfBoundsInitialization;
-            return;
-        }
+    let Ok(mut state1) = GCState::new(&particle.initial, objects, &mut caches) else {
+        particle.integration_status = IntegrationStatus::OutOfBoundsInitialization;
+        return;
     };
     particle.initial_energy = Some(state1.energy());
     let mut state2: GCState;
@@ -49,27 +46,26 @@ pub(super) fn integrate<Q, C, B, H>(
 
     loop {
         if particle.evolution.steps_taken == solver_params.max_steps {
-            particle.status = IntegrationStatus::TimedOut(start.elapsed());
+            particle.integration_status = IntegrationStatus::TimedOut(start.elapsed());
             break;
         }
         if particle.evolution.tf().is_some_and(|t| t > teval.1) {
-            particle.status = IntegrationStatus::Integrated;
+            particle.integration_status = IntegrationStatus::Integrated;
             break;
         }
 
         // Perform a step
         let mut stepper = Stepper::new(&state1);
-        state2 = match stepper
+        state2 = if let Ok(state) = stepper
             .start(dt, objects, &mut caches)
             .inspect(|_| dt = stepper.calculate_optimal_step(dt, solver_params))
             .and_then(|_| stepper.next_state(dt, objects, &mut caches))
         {
-            Ok(state) => state,
-            Err(_) => {
-                // `start()` and `next_state()` can only fail if an evaluation is out of bounds.
-                particle.status = IntegrationStatus::Escaped;
-                break;
-            }
+            state
+        } else {
+            // `start()` and `next_state()` can only fail if an evaluation is out of bounds.
+            particle.integration_status = IntegrationStatus::Escaped;
+            break;
         };
 
         // Store and continue
@@ -87,7 +83,7 @@ pub(super) fn integrate<Q, C, B, H>(
         psi_acc: caches.psi_acc,
         psip_acc: caches.psip_acc,
         theta_acc: caches.theta_acc,
-        harmonic_cache_hits: caches.harmonic_caches.iter().map(|c| c.hits()).sum(),
-        harmonic_cache_misses: caches.harmonic_caches.iter().map(|c| c.misses()).sum(),
-    }
+        harmonic_cache_hits: caches.harmonic_caches.iter().map(H::Cache::hits).sum(),
+        harmonic_cache_misses: caches.harmonic_caches.iter().map(H::Cache::misses).sum(),
+    };
 }

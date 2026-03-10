@@ -5,6 +5,7 @@ macro_rules! generic_particle_integrate_impl {
         #[pymethods]
         impl PyParticle {
             #[allow(non_snake_case)]
+            #[expect(clippy::too_many_arguments, reason = "python kwargs")]
             pub fn $fun_name<'py>(
                 &mut self,
                 qfactor: &$Q,
@@ -55,6 +56,7 @@ macro_rules! generic_particle_intersect_impl {
         #[pymethods]
         impl PyParticle {
             #[allow(non_snake_case)]
+            #[expect(clippy::too_many_arguments, reason = "python kwargs")]
             pub fn $fun_name<'py>(
                 &mut self,
                 qfactor: &$Q,

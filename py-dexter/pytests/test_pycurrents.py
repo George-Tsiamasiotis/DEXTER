@@ -6,19 +6,16 @@ from dexter import Current, NcCurrent, LarCurrent
 
 def test_lar_current():
     current = LarCurrent()
-    assert isinstance(current.__str__(), str)
-    assert isinstance(current.__repr__(), str)
     assert current.equilibrium_type == "Analytical"
     _test_current_evals(current)
+    assert isinstance(current.__str__(), str)
+    assert isinstance(current.__repr__(), str)
 
 
 def test_nc_current_getters(nc_current: NcCurrent):
-    assert isinstance(nc_current.__str__(), str)
-    assert isinstance(nc_current.__repr__(), str)
-    assert nc_current.equilibrium_type == "Numerical"
     assert isinstance(nc_current.path, str)
     assert isinstance(nc_current.netcdf_version, str)
-    assert isinstance(nc_current.equilibrium_type, str)
+    assert nc_current.equilibrium_type == "Numerical"
     assert isinstance(nc_current.interp_type, str)
     assert isfinite(nc_current.psi_wall)
     assert isfinite(nc_current.psip_wall)
@@ -28,6 +25,8 @@ def test_nc_current_getters(nc_current: NcCurrent):
     assert nc_current.psip_array.ndim == 1
     assert nc_current.g_array.ndim == 1
     assert nc_current.i_array.ndim == 1
+    assert isinstance(nc_current.__str__(), str)
+    assert isinstance(nc_current.__repr__(), str)
 
 
 def test_nc_current_eval(nc_current: NcCurrent):

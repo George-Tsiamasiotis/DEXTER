@@ -1,15 +1,48 @@
 //! Test Bfields functionality.
 
+#![allow(unused_variables)]
+
 use std::path::PathBuf;
 
 use dexter_equilibrium::{
-    Bfield, EqError, EquilibriumType, LarBfield, NcBfieldBuilder, NcFluxState,
+    Bfield, EquilibriumType, EvalError, LarBfield, NcBfieldBuilder, NcFluxState,
 };
 use ndarray::{Array1, Array2};
 use rsl_interpolation::{Accelerator, Cache};
 
 #[test]
-#[allow(unused_variables)]
+#[rustfmt::skip]
+fn lar_bfield() {
+    let bfield = dbg!(LarBfield::new());
+
+    let psi_acc = &mut Accelerator::new();
+    let psip_acc = &mut Accelerator::new();
+    let theta_acc = &mut Accelerator::new();
+    let cache = &mut Cache::<f64>::new();
+    let psi = 0.01;
+    let psip = 0.015;
+    let theta = 3.14;
+
+    let _: f64 = bfield.b_of_psi(psi, theta, psi_acc, theta_acc, cache).unwrap();
+    let _: f64 = bfield.db_dpsi(psi, theta, psi_acc, theta_acc, cache).unwrap();
+    let _: f64 = bfield.db_of_psi_dtheta(psi, theta, psi_acc, theta_acc, cache).unwrap();
+
+    assert!(matches!(
+        bfield.b_of_psip(psip, theta, psip_acc, theta_acc, cache),
+        Err(EvalError::UndefinedEvaluation(..))
+    ));
+    assert!(matches!(
+        bfield.db_dpsip(psip, theta, psip_acc, theta_acc, cache),
+        Err(EvalError::UndefinedEvaluation(..))
+    ));
+    assert!(matches!(
+        bfield.db_of_psip_dtheta(psip, theta, psip_acc, theta_acc, cache),
+        Err(EvalError::UndefinedEvaluation(..))
+    ));
+}
+
+#[test]
+#[rustfmt::skip]
 fn nc_bfield() {
     let path = PathBuf::from(dexter_equilibrium::extract::TEST_NETCDF_PATH);
     let interp_type = "bicubic";
@@ -31,67 +64,19 @@ fn nc_bfield() {
     let theta_array: Array1<f64> = bfield.theta_array();
     let b_array: Array2<f64> = bfield.b_array();
 
-    let mut psi_acc = Accelerator::new();
-    let mut psip_acc = Accelerator::new();
-    let mut theta_acc = Accelerator::new();
-    let mut cache = Cache::<f64>::new();
+    let psi_acc = &mut Accelerator::new();
+    let psip_acc = &mut Accelerator::new();
+    let theta_acc = &mut Accelerator::new();
+    let cache = &mut Cache::<f64>::new();
     let r = 0.2;
     let psi = 0.01;
     let psip = 0.015;
     let theta = 3.14;
 
-    let b_of_psi = bfield
-        .b_of_psi(psi, theta, &mut psi_acc, &mut theta_acc, &mut cache)
-        .unwrap();
-    let b_of_psip = bfield
-        .b_of_psip(psip, theta, &mut psip_acc, &mut theta_acc, &mut cache)
-        .unwrap();
-    let db_dpsi = bfield
-        .db_dpsi(psi, theta, &mut psi_acc, &mut theta_acc, &mut cache)
-        .unwrap();
-    let db_dpsip = bfield
-        .db_dpsip(psip, theta, &mut psip_acc, &mut theta_acc, &mut cache)
-        .unwrap();
-    let db_of_psi_dtheta = bfield
-        .db_of_psi_dtheta(psi, theta, &mut psi_acc, &mut theta_acc, &mut cache)
-        .unwrap();
-    let db_of_psip_dtheta = bfield
-        .db_of_psip_dtheta(psip, theta, &mut psip_acc, &mut theta_acc, &mut cache)
-        .unwrap();
-}
-
-#[test]
-#[allow(unused_variables)]
-fn lar_bfield() {
-    let bfield = dbg!(LarBfield::new());
-
-    let mut psi_acc = Accelerator::new();
-    let mut psip_acc = Accelerator::new();
-    let mut theta_acc = Accelerator::new();
-    let mut cache = Cache::<f64>::new();
-    let psi = 0.01;
-    let psip = 0.015;
-    let theta = 3.14;
-    let b_of_psi = bfield
-        .b_of_psi(psi, theta, &mut psi_acc, &mut theta_acc, &mut cache)
-        .unwrap();
-    let db_dpsi = bfield
-        .db_dpsi(psi, theta, &mut psi_acc, &mut theta_acc, &mut cache)
-        .unwrap();
-    let db_of_psi_dtheta = bfield
-        .db_of_psi_dtheta(psi, theta, &mut psi_acc, &mut theta_acc, &mut cache)
-        .unwrap();
-
-    assert!(matches!(
-        bfield.b_of_psip(psip, theta, &mut psip_acc, &mut theta_acc, &mut cache),
-        Err(EqError::UndefinedEvaluation(..))
-    ));
-    assert!(matches!(
-        bfield.db_dpsip(psip, theta, &mut psip_acc, &mut theta_acc, &mut cache),
-        Err(EqError::UndefinedEvaluation(..))
-    ));
-    assert!(matches!(
-        bfield.db_of_psip_dtheta(psip, theta, &mut psip_acc, &mut theta_acc, &mut cache),
-        Err(EqError::UndefinedEvaluation(..))
-    ));
+    let _: f64 = bfield.b_of_psi(psi, theta, psi_acc, theta_acc, cache).unwrap();
+    let _: f64 = bfield.b_of_psip(psip, theta, psip_acc, theta_acc, cache).unwrap();
+    let _: f64 = bfield.db_dpsi(psi, theta, psi_acc, theta_acc, cache).unwrap();
+    let _: f64 = bfield.db_dpsip(psip, theta, psip_acc, theta_acc, cache).unwrap();
+    let _: f64 = bfield.db_of_psi_dtheta(psi, theta, psi_acc, theta_acc, cache).unwrap();
+    let _: f64 = bfield.db_of_psip_dtheta(psip, theta, psip_acc, theta_acc, cache).unwrap();
 }

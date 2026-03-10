@@ -1,3 +1,7 @@
+//! Test Perturbation's functionality.
+
+#![allow(unused_variables)]
+
 use std::path::PathBuf;
 
 use dexter_equilibrium::extract::TEST_NETCDF_PATH;
@@ -6,29 +10,28 @@ use dexter_equilibrium::{
 };
 
 #[test]
-#[allow(unused_variables)]
 #[rustfmt::skip]
 fn empty_perturbation() {
     let p = Perturbation::zero();
     assert!(p.harmonics().is_empty());
 
-    let caches: &mut Vec<CosHarmonicCache> = &mut p.generate_caches();
+    let mut caches: Vec<CosHarmonicCache> = p.generate_caches();
 
     let (psi, theta, zeta, t) = (0.01, 1.0, 2.0, 0.0);
-    assert_eq!(p.p_of_psi(psi, theta, zeta, t, caches).unwrap(), 0.0);
-    assert_eq!(p.p_of_psip(psi, theta, zeta, t, caches).unwrap(), 0.0);
-    assert_eq!(p.dp_dpsi(psi, theta, zeta, t, caches).unwrap(), 0.0);
-    assert_eq!(p.dp_dpsip(psi, theta, zeta, t, caches).unwrap(), 0.0);
-    assert_eq!(p.dp_of_psi_dtheta(psi, theta, zeta, t, caches).unwrap(), 0.0);
-    assert_eq!(p.dp_of_psip_dtheta(psi, theta, zeta, t, caches).unwrap(), 0.0);
-    assert_eq!(p.dp_of_psi_dzeta(psi, theta, zeta, t, caches).unwrap(), 0.0);
-    assert_eq!(p.dp_of_psip_dzeta(psi, theta, zeta, t, caches).unwrap(), 0.0);
-    assert_eq!(p.dp_of_psi_dt(psi, theta, zeta, t, caches).unwrap(), 0.0);
-    assert_eq!(p.dp_of_psip_dt(psi, theta, zeta, t, caches).unwrap(), 0.0);
+    assert_eq!(p.p_of_psi(psi, theta, zeta, t, &mut caches).unwrap(), 0.0);
+    assert_eq!(p.p_of_psip(psi, theta, zeta, t, &mut caches).unwrap(), 0.0);
+    assert_eq!(p.dp_dpsi(psi, theta, zeta, t, &mut caches).unwrap(), 0.0);
+    assert_eq!(p.dp_dpsip(psi, theta, zeta, t, &mut caches).unwrap(), 0.0);
+    assert_eq!(p.dp_of_psi_dtheta(psi, theta, zeta, t, &mut caches).unwrap(), 0.0);
+    assert_eq!(p.dp_of_psip_dtheta(psi, theta, zeta, t, &mut caches).unwrap(), 0.0);
+    assert_eq!(p.dp_of_psi_dzeta(psi, theta, zeta, t, &mut caches).unwrap(), 0.0);
+    assert_eq!(p.dp_of_psip_dzeta(psi, theta, zeta, t, &mut caches).unwrap(), 0.0);
+    assert_eq!(p.dp_of_psi_dt(psi, theta, zeta, t, &mut caches).unwrap(), 0.0);
+    assert_eq!(p.dp_of_psip_dt(psi, theta, zeta, t, &mut caches).unwrap(), 0.0);
 }
 
 #[test]
-#[allow(unused_variables)]
+#[rustfmt::skip]
 fn cos_perturbation() {
     let p = Perturbation::new(&[
         CosHarmonic::new(1e-3, 1, 1, 0.0),
@@ -40,23 +43,23 @@ fn cos_perturbation() {
     let harmonics = p.harmonics();
     assert_eq!(p.count(), 3);
 
-    let caches: &mut Vec<CosHarmonicCache> = &mut p.generate_caches();
+    let mut caches: Vec<CosHarmonicCache> = p.generate_caches();
 
     let (psi, theta, zeta, t) = (0.01, 1.0, 2.0, 0.0);
-    p.p_of_psi(psi, theta, zeta, t, caches).unwrap();
-    p.p_of_psip(psi, theta, zeta, t, caches).unwrap();
-    p.dp_dpsi(psi, theta, zeta, t, caches).unwrap();
-    p.dp_dpsip(psi, theta, zeta, t, caches).unwrap();
-    p.dp_of_psi_dtheta(psi, theta, zeta, t, caches).unwrap();
-    p.dp_of_psip_dtheta(psi, theta, zeta, t, caches).unwrap();
-    p.dp_of_psi_dzeta(psi, theta, zeta, t, caches).unwrap();
-    p.dp_of_psip_dzeta(psi, theta, zeta, t, caches).unwrap();
-    p.dp_of_psi_dt(psi, theta, zeta, t, caches).unwrap();
-    p.dp_of_psip_dt(psi, theta, zeta, t, caches).unwrap();
+    let _: f64 = p.p_of_psi(psi, theta, zeta, t, &mut caches).unwrap();
+    let _: f64 = p.p_of_psip(psi, theta, zeta, t, &mut caches).unwrap();
+    let _: f64 = p.dp_dpsi(psi, theta, zeta, t, &mut caches).unwrap();
+    let _: f64 = p.dp_dpsip(psi, theta, zeta, t, &mut caches).unwrap();
+    let _: f64 = p.dp_of_psi_dtheta(psi, theta, zeta, t, &mut caches).unwrap();
+    let _: f64 = p.dp_of_psip_dtheta(psi, theta, zeta, t, &mut caches).unwrap();
+    let _: f64 = p.dp_of_psi_dzeta(psi, theta, zeta, t, &mut caches).unwrap();
+    let _: f64 = p.dp_of_psip_dzeta(psi, theta, zeta, t, &mut caches).unwrap();
+    let _: f64 = p.dp_of_psi_dt(psi, theta, zeta, t, &mut caches).unwrap();
+    let _: f64 = p.dp_of_psip_dt(psi, theta, zeta, t, &mut caches).unwrap();
 }
 
 #[test]
-#[allow(unused_variables)]
+#[rustfmt::skip]
 fn nc_perturbation() {
     let path = PathBuf::from(TEST_NETCDF_PATH);
     let h1 = NcHarmonicBuilder::new(&path, "steffen", 2, 1)
@@ -75,17 +78,17 @@ fn nc_perturbation() {
     let harmonics = p.harmonics();
     assert_eq!(harmonics.len(), 3);
 
-    let caches: &mut Vec<NcHarmonicCache> = &mut p.generate_caches();
+    let mut caches: Vec<NcHarmonicCache> = p.generate_caches();
 
     let (psi, theta, zeta, t) = (0.01, 1.0, 2.0, 0.0);
-    p.p_of_psi(psi, theta, zeta, t, caches).unwrap();
-    p.p_of_psip(psi, theta, zeta, t, caches).unwrap();
-    p.dp_dpsi(psi, theta, zeta, t, caches).unwrap();
-    p.dp_dpsip(psi, theta, zeta, t, caches).unwrap();
-    p.dp_of_psi_dtheta(psi, theta, zeta, t, caches).unwrap();
-    p.dp_of_psip_dtheta(psi, theta, zeta, t, caches).unwrap();
-    p.dp_of_psi_dzeta(psi, theta, zeta, t, caches).unwrap();
-    p.dp_of_psip_dzeta(psi, theta, zeta, t, caches).unwrap();
-    p.dp_of_psi_dt(psi, theta, zeta, t, caches).unwrap();
-    p.dp_of_psip_dt(psi, theta, zeta, t, caches).unwrap();
+    let _: f64 = p.p_of_psi(psi, theta, zeta, t, &mut caches).unwrap();
+    let _: f64 = p.p_of_psip(psi, theta, zeta, t, &mut caches).unwrap();
+    let _: f64 = p.dp_dpsi(psi, theta, zeta, t, &mut caches).unwrap();
+    let _: f64 = p.dp_dpsip(psi, theta, zeta, t, &mut caches).unwrap();
+    let _: f64 = p.dp_of_psi_dtheta(psi, theta, zeta, t, &mut caches).unwrap();
+    let _: f64 = p.dp_of_psip_dtheta(psi, theta, zeta, t, &mut caches).unwrap();
+    let _: f64 = p.dp_of_psi_dzeta(psi, theta, zeta, t, &mut caches).unwrap();
+    let _: f64 = p.dp_of_psip_dzeta(psi, theta, zeta, t, &mut caches).unwrap();
+    let _: f64 = p.dp_of_psi_dt(psi, theta, zeta, t, &mut caches).unwrap();
+    let _: f64 = p.dp_of_psip_dt(psi, theta, zeta, t, &mut caches).unwrap();
 }

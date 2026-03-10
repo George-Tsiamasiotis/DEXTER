@@ -1,6 +1,7 @@
 //! Representation of an equilibrium's plasma current.
 
 use crate::{
+    debug_assert_is_finite, debug_assert_non_negative_psi, debug_assert_non_negative_psip,
     equilibrium_type_getter_impl, fluxes_state_getter_impl, fluxes_values_array_getter_impl,
     fluxes_wall_value_getter_impl, interp_type_getter_impl, netcdf_path_getter_impl,
     netcdf_version_getter_impl,
@@ -10,8 +11,10 @@ use ndarray::Array1;
 use rsl_interpolation::{Accelerator, DynInterpolation, InterpType, make_interp_type};
 use std::path::{Path, PathBuf};
 
-use crate::flux::{NcFlux, NcFluxState};
-use crate::{Current, EqError, EquilibriumType, Result};
+use super::debug_assert_all_finite_values;
+use crate::objects::nc_flux::{NcFlux, NcFluxState};
+use crate::{Current, EquilibriumType};
+use crate::{EqError, EvalError};
 
 // ===============================================================================================
 
@@ -22,6 +25,7 @@ use crate::{Current, EqError, EquilibriumType, Result};
 /// No ψ/ψp bounds checks are performed in evaluations.
 #[non_exhaustive]
 pub struct LarCurrent {
+    /// The object's equilibrium type.
     equilibrium_type: EquilibriumType,
 }
 
@@ -33,7 +37,7 @@ impl LarCurrent {
     /// # use dexter_equilibrium::*;
     /// let current = LarCurrent::new();
     /// ```
-    #[allow(clippy::new_without_default, reason = "Just confuses things")]
+    #[must_use]
     pub fn new() -> Self {
         Self {
             equilibrium_type: EquilibriumType::Analytical,
@@ -43,37 +47,44 @@ impl LarCurrent {
     equilibrium_type_getter_impl!();
 }
 
-#[allow(unused_variables)]
 impl Current for LarCurrent {
-    fn g_of_psi(&self, psi: f64, acc: &mut Accelerator) -> Result<f64> {
+    fn g_of_psi(&self, psi: f64, _: &mut Accelerator) -> Result<f64, EvalError> {
+        debug_assert_non_negative_psi!(psi);
         Ok(1.0)
     }
 
-    fn g_of_psip(&self, psip: f64, acc: &mut Accelerator) -> Result<f64> {
+    fn g_of_psip(&self, psip: f64, _: &mut Accelerator) -> Result<f64, EvalError> {
+        debug_assert_non_negative_psip!(psip);
         Ok(1.0)
     }
 
-    fn i_of_psi(&self, psi: f64, acc: &mut Accelerator) -> Result<f64> {
+    fn i_of_psi(&self, psi: f64, _: &mut Accelerator) -> Result<f64, EvalError> {
+        debug_assert_non_negative_psi!(psi);
         Ok(0.0)
     }
 
-    fn i_of_psip(&self, psip: f64, acc: &mut Accelerator) -> Result<f64> {
+    fn i_of_psip(&self, psip: f64, _: &mut Accelerator) -> Result<f64, EvalError> {
+        debug_assert_non_negative_psip!(psip);
         Ok(0.0)
     }
 
-    fn dg_dpsi(&self, psi: f64, acc: &mut Accelerator) -> Result<f64> {
+    fn dg_dpsi(&self, psi: f64, _: &mut Accelerator) -> Result<f64, EvalError> {
+        debug_assert_non_negative_psi!(psi);
         Ok(0.0)
     }
 
-    fn dg_dpsip(&self, psip: f64, acc: &mut Accelerator) -> Result<f64> {
+    fn dg_dpsip(&self, psip: f64, _: &mut Accelerator) -> Result<f64, EvalError> {
+        debug_assert_non_negative_psip!(psip);
         Ok(0.0)
     }
 
-    fn di_dpsi(&self, psi: f64, acc: &mut Accelerator) -> Result<f64> {
+    fn di_dpsi(&self, psi: f64, _: &mut Accelerator) -> Result<f64, EvalError> {
+        debug_assert_non_negative_psi!(psi);
         Ok(0.0)
     }
 
-    fn di_dpsip(&self, psip: f64, acc: &mut Accelerator) -> Result<f64> {
+    fn di_dpsip(&self, psip: f64, _: &mut Accelerator) -> Result<f64, EvalError> {
+        debug_assert_non_negative_psip!(psip);
         Ok(0.0)
     }
 }
@@ -91,6 +102,7 @@ impl std::fmt::Debug for LarCurrent {
 ///
 /// Exists for future configuration flexibility.
 #[non_exhaustive]
+#[derive(Debug)]
 pub struct NcCurrentBuilder {
     /// Path to the netCDF file.
     path: PathBuf,
@@ -109,6 +121,7 @@ impl NcCurrentBuilder {
     /// let path = PathBuf::from("./netcdf.nc");
     /// let builder = NcCurrentBuilder::new(&path, "cubic");
     /// ```
+    #[must_use]
     pub fn new(path: &Path, interp_type: &str) -> Self {
         Self {
             path: path.to_path_buf(),
@@ -126,7 +139,11 @@ impl NcCurrentBuilder {
     /// let current = NcCurrentBuilder::new(&path, "cubic").build()?;
     /// Ok::<_, EqError>(())
     /// ```
-    pub fn build(self) -> Result<NcCurrent> {
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EqError`] if it fails to build the [`NcCurrent`].
+    pub fn build(self) -> Result<NcCurrent, EqError> {
         NcCurrent::build(self)
     }
 }
@@ -142,60 +159,70 @@ impl NcCurrentBuilder {
 pub struct NcCurrent {
     /// Path to the netCDF file.
     path: PathBuf,
+    /// netCDF's [`semver::Version`].
     netcdf_version: semver::Version,
 
+    /// The object's equilibrium type.
     equilibrium_type: EquilibriumType,
+    /// The interpolation type.
     interp_type: String,
 
+    /// The toroidal flux coordinate.
     psi: NcFlux,
+    /// The poloidal flux coordinate.
     psip: NcFlux,
 
+    /// The `g` values.
     g_values: Vec<f64>,
+    /// The `g(ψ)` interpolatior.
     g_of_psi_interp: Option<DynInterpolation<f64>>,
+    /// The `g(ψp)` interpolatior.
     g_of_psip_interp: Option<DynInterpolation<f64>>,
 
+    /// `I` values.
     i_values: Vec<f64>,
+    /// The `I(ψ)` interpolatior.
     i_of_psi_interp: Option<DynInterpolation<f64>>,
+    /// The `I(ψp)` interpolatior.
     i_of_psip_interp: Option<DynInterpolation<f64>>,
 }
 
-/// Creation
+/// Creation.
 impl NcCurrent {
     /// Constructs an [`NcCurrent`] from [`NcCurrentBuilder`].
-    fn build(builder: NcCurrentBuilder) -> Result<Self> {
-        use crate::extract::netcdf_fields::*;
-        use crate::extract::*;
+    fn build(builder: NcCurrentBuilder) -> Result<Self, EqError> {
+        use crate::extract;
+        use crate::extract::netcdf_fields::{NC_G_NORM, NC_I_NORM};
 
         // Make path absolute for display purposes.
         let path = std::path::absolute(builder.path)?;
-        let f = open(&path)?;
-        let netcdf_version = extract_version(&f)?;
+        let file = extract::open(&path)?;
+        let netcdf_version = extract::version(&file)?;
 
-        let psi = NcFlux::toroidal(&f);
-        let psip = NcFlux::poloidal(&f);
-        let g_values = extract_1d_array(&f, G_NORM)?.to_vec();
-        let i_values = extract_1d_array(&f, I_NORM)?.to_vec();
+        let psi = NcFlux::toroidal(&file);
+        let psip = NcFlux::poloidal(&file);
+        let g_values = extract::array_1d(&file, NC_G_NORM)?.to_vec();
+        let i_values = extract::array_1d(&file, NC_I_NORM)?.to_vec();
+
+        debug_assert_all_finite_values(&g_values);
+        debug_assert_all_finite_values(&i_values);
 
         // Create interpolators, if possible
         use NcFluxState::Good;
-        #[rustfmt::skip]
-        let g_of_psi_interp = match psi.state {
+        let g_of_psi_interp = match psi.state() {
             Good => Some(make_interp_type(&builder.interp_type)?.build(psi.uvalues(), &g_values)?),
             _ => None,
         };
-        #[rustfmt::skip]
-        let i_of_psi_interp = match psi.state {
+        let i_of_psi_interp = match psi.state() {
             Good => Some(make_interp_type(&builder.interp_type)?.build(psi.uvalues(), &i_values)?),
             _ => None,
         };
 
-        #[rustfmt::skip]
-        let g_of_psip_interp = match psip.state {
+        let g_of_psip_interp = match psip.state() {
             Good => Some(make_interp_type(&builder.interp_type)?.build(psip.uvalues(), &g_values)?),
             _ => None,
         };
-        #[rustfmt::skip]
-        let i_of_psip_interp = match psip.state {
+        let i_of_psip_interp = match psip.state() {
             Good => Some(make_interp_type(&builder.interp_type)?.build(psip.uvalues(), &i_values)?),
             _ => None,
         };
@@ -218,64 +245,112 @@ impl NcCurrent {
 }
 
 impl Current for NcCurrent {
-    fn g_of_psi(&self, psi: f64, acc: &mut Accelerator) -> Result<f64> {
+    fn g_of_psi(&self, psi: f64, acc: &mut Accelerator) -> Result<f64, EvalError> {
+        debug_assert_non_negative_psi!(psi);
         match self.g_of_psi_interp.as_ref() {
-            Some(i) => Ok(i.eval(self.psi.uvalues(), &self.g_values, psi, acc)?),
-            None => Err(EqError::UndefinedEvaluation("g(ψ)".into())),
+            Some(interp) => Ok(debug_assert_is_finite!(interp.eval(
+                self.psi.uvalues(),
+                &self.g_values,
+                psi,
+                acc
+            )?)),
+            None => Err(EvalError::UndefinedEvaluation("g(ψ)".into())),
         }
     }
 
-    fn g_of_psip(&self, psip: f64, acc: &mut Accelerator) -> Result<f64> {
+    fn g_of_psip(&self, psip: f64, acc: &mut Accelerator) -> Result<f64, EvalError> {
+        debug_assert_non_negative_psip!(psip);
         match self.g_of_psip_interp.as_ref() {
-            Some(i) => Ok(i.eval(self.psip.uvalues(), &self.g_values, psip, acc)?),
-            None => Err(EqError::UndefinedEvaluation("g(ψp)".into())),
+            Some(interp) => Ok(debug_assert_is_finite!(interp.eval(
+                self.psip.uvalues(),
+                &self.g_values,
+                psip,
+                acc
+            )?)),
+            None => Err(EvalError::UndefinedEvaluation("g(ψp)".into())),
         }
     }
 
-    fn i_of_psi(&self, psi: f64, acc: &mut Accelerator) -> Result<f64> {
+    fn i_of_psi(&self, psi: f64, acc: &mut Accelerator) -> Result<f64, EvalError> {
+        debug_assert_non_negative_psi!(psi);
         match self.i_of_psi_interp.as_ref() {
-            Some(i) => Ok(i.eval(self.psi.uvalues(), &self.i_values, psi, acc)?),
-            None => Err(EqError::UndefinedEvaluation("I(ψ)".into())),
+            Some(interp) => Ok(debug_assert_is_finite!(interp.eval(
+                self.psi.uvalues(),
+                &self.i_values,
+                psi,
+                acc
+            )?)),
+            None => Err(EvalError::UndefinedEvaluation("I(ψ)".into())),
         }
     }
 
-    fn i_of_psip(&self, psip: f64, acc: &mut Accelerator) -> Result<f64> {
+    fn i_of_psip(&self, psip: f64, acc: &mut Accelerator) -> Result<f64, EvalError> {
+        debug_assert_non_negative_psip!(psip);
         match self.i_of_psip_interp.as_ref() {
-            Some(i) => Ok(i.eval(self.psip.uvalues(), &self.i_values, psip, acc)?),
-            None => Err(EqError::UndefinedEvaluation("I(ψp)".into())),
+            Some(interp) => Ok(debug_assert_is_finite!(interp.eval(
+                self.psip.uvalues(),
+                &self.i_values,
+                psip,
+                acc
+            )?)),
+            None => Err(EvalError::UndefinedEvaluation("I(ψp)".into())),
         }
     }
 
-    fn dg_dpsi(&self, psi: f64, acc: &mut Accelerator) -> Result<f64> {
+    fn dg_dpsi(&self, psi: f64, acc: &mut Accelerator) -> Result<f64, EvalError> {
+        debug_assert_non_negative_psi!(psi);
         match self.g_of_psi_interp.as_ref() {
-            Some(i) => Ok(i.eval_deriv(self.psi.uvalues(), &self.g_values, psi, acc)?),
-            None => Err(EqError::UndefinedEvaluation("dg(ψ)/dψ".into())),
+            Some(interp) => Ok(debug_assert_is_finite!(interp.eval_deriv(
+                self.psi.uvalues(),
+                &self.g_values,
+                psi,
+                acc
+            )?)),
+            None => Err(EvalError::UndefinedEvaluation("dg(ψ)/dψ".into())),
         }
     }
 
-    fn dg_dpsip(&self, psip: f64, acc: &mut Accelerator) -> Result<f64> {
+    fn dg_dpsip(&self, psip: f64, acc: &mut Accelerator) -> Result<f64, EvalError> {
+        debug_assert_non_negative_psip!(psip);
         match self.g_of_psip_interp.as_ref() {
-            Some(i) => Ok(i.eval_deriv(self.psip.uvalues(), &self.g_values, psip, acc)?),
-            None => Err(EqError::UndefinedEvaluation("dg(ψp)/dψp".into())),
+            Some(interp) => Ok(debug_assert_is_finite!(interp.eval_deriv(
+                self.psip.uvalues(),
+                &self.g_values,
+                psip,
+                acc
+            )?)),
+            None => Err(EvalError::UndefinedEvaluation("dg(ψp)/dψp".into())),
         }
     }
 
-    fn di_dpsi(&self, psi: f64, acc: &mut Accelerator) -> Result<f64> {
+    fn di_dpsi(&self, psi: f64, acc: &mut Accelerator) -> Result<f64, EvalError> {
+        debug_assert_non_negative_psi!(psi);
         match self.i_of_psi_interp.as_ref() {
-            Some(i) => Ok(i.eval_deriv(self.psi.uvalues(), &self.i_values, psi, acc)?),
-            None => Err(EqError::UndefinedEvaluation("dI(ψ)/dψ".into())),
+            Some(interp) => Ok(debug_assert_is_finite!(interp.eval_deriv(
+                self.psi.uvalues(),
+                &self.i_values,
+                psi,
+                acc
+            )?)),
+            None => Err(EvalError::UndefinedEvaluation("dI(ψ)/dψ".into())),
         }
     }
 
-    fn di_dpsip(&self, psip: f64, acc: &mut Accelerator) -> Result<f64> {
+    fn di_dpsip(&self, psip: f64, acc: &mut Accelerator) -> Result<f64, EvalError> {
+        debug_assert_non_negative_psip!(psip);
         match self.i_of_psip_interp.as_ref() {
-            Some(i) => Ok(i.eval_deriv(self.psip.uvalues(), &self.i_values, psip, acc)?),
-            None => Err(EqError::UndefinedEvaluation("dI(ψp)/dψp".into())),
+            Some(interp) => Ok(debug_assert_is_finite!(interp.eval_deriv(
+                self.psip.uvalues(),
+                &self.i_values,
+                psip,
+                acc
+            )?)),
+            None => Err(EvalError::UndefinedEvaluation("dI(ψp)/dψp".into())),
         }
     }
 }
 
-/// Getters
+/// Getters.
 impl NcCurrent {
     netcdf_path_getter_impl!();
     netcdf_version_getter_impl!();
@@ -322,8 +397,8 @@ mod test_toroidal_nc_evals {
     #[test]
     fn flux_and_interp_states() {
         let current = create_nc_current(TOROIDAL_TEST_NETCDF_PATH);
-        assert_eq!(current.psi_state(), NcFluxState::Good);
-        assert_eq!(current.psip_state(), NcFluxState::Bad);
+        assert_eq!(current.psi.state(), NcFluxState::Good);
+        assert_eq!(current.psip.state(), NcFluxState::Bad);
         assert!(current.g_of_psi_interp.is_some());
         assert!(current.i_of_psi_interp.is_some());
         assert!(current.g_of_psip_interp.is_none());
@@ -347,7 +422,7 @@ mod test_toroidal_nc_evals {
     fn bad_psip_evals() {
         let current = create_nc_current(TOROIDAL_TEST_NETCDF_PATH);
         let mut acc = Accelerator::new();
-        use EqError::UndefinedEvaluation as err;
+        use EvalError::UndefinedEvaluation as err;
         matches!(current.g_of_psip(0.01, &mut acc), Err(err(..)));
         matches!(current.i_of_psip(0.01, &mut acc), Err(err(..)));
         matches!(current.dg_dpsip(0.01, &mut acc), Err(err(..)));
@@ -365,8 +440,8 @@ mod test_poloidal_nc_evals {
     #[test]
     fn flux_and_interp_states() {
         let current = create_nc_current(POLOIDAL_TEST_NETCDF_PATH);
-        assert_eq!(current.psi_state(), NcFluxState::Bad);
-        assert_eq!(current.psip_state(), NcFluxState::Good);
+        assert_eq!(current.psi.state(), NcFluxState::Bad);
+        assert_eq!(current.psip.state(), NcFluxState::Good);
         assert!(current.g_of_psi_interp.is_none());
         assert!(current.i_of_psi_interp.is_none());
         assert!(current.g_of_psip_interp.is_some());
@@ -390,7 +465,7 @@ mod test_poloidal_nc_evals {
     fn bad_psi_evals() {
         let current = create_nc_current(POLOIDAL_TEST_NETCDF_PATH);
         let mut acc = Accelerator::new();
-        use EqError::UndefinedEvaluation as err;
+        use EvalError::UndefinedEvaluation as err;
         matches!(current.g_of_psi(0.01, &mut acc), Err(err(..)));
         matches!(current.i_of_psi(0.01, &mut acc), Err(err(..)));
         matches!(current.dg_dpsi(0.01, &mut acc), Err(err(..)));

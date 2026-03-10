@@ -1,3 +1,5 @@
+//! Solver implementation.
+
 mod rkf45;
 
 pub(crate) use rkf45::Stepper;
@@ -15,14 +17,6 @@ pub enum SteppingMethod {
     FixedStep(f64),
 }
 
-/// Defines the flux coordinate of the System.
-#[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
-pub enum FluxCoordinate {
-    #[default]
-    Toroidal,
-    Poloidal,
-}
-
 /// Defines the parameters of the integration.
 ///
 /// See [`SolverParams::default`] for the default values.
@@ -34,7 +28,7 @@ pub struct SolverParams {
     pub max_steps: usize,
     /// The initial time step for the RKF45 adaptive step method. The value is empirical.
     pub first_step: f64,
-    /// The safety factor of the solver. Should be less than 1.0
+    /// The safety factor of the solver. Should be less than 1.0.
     pub safety_factor: f64,
     /// The relative tolerance of the energy difference in every step.
     pub energy_rel_tol: f64,
@@ -59,4 +53,14 @@ impl Default for SolverParams {
             error_abs_tol: 1e-14,
         }
     }
+}
+
+/// Defines the flux coordinate of the System.
+#[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum FluxCoordinate {
+    /// Use the toroidal flux `ψ` as the dynamic variable.
+    #[default]
+    Toroidal,
+    /// Use the toroidal flux `ψp` as the dynamic variable.
+    Poloidal,
 }

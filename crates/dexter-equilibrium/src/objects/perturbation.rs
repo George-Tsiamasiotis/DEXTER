@@ -1,12 +1,12 @@
 //! Representation of a total perturbation, a sum of multiple harmonics.
 
-use crate::{CosHarmonic, Harmonic, Result};
+use crate::{CosHarmonic, EvalError, Harmonic};
 
 /// A sum of an arbitrary number of [`Harmonics`](Harmonic).
 ///
 /// It has the general form `Σ{ Φ(n,m)(ψ/ψp, θ, ζ, t)}`, where `Φ(n,m)` the different harmonics.
 ///
-/// Evaluation methods return the sum of the corresponding evaluation method in each Harmonic.
+/// Evaluation methods return the sum of the every corresponding evaluation method in each Harmonic.
 ///
 /// The harmonics are stored in the same order as passed on [`Perturbation::new`].
 #[non_exhaustive]
@@ -23,6 +23,7 @@ impl Perturbation<CosHarmonic> {
     /// let perturbation = Perturbation::zero();
     /// # Ok::<_, EqError>(())
     /// ```
+    #[must_use]
     pub fn zero() -> Self {
         Self(vec![])
     }
@@ -54,16 +55,19 @@ where
     /// ]);
     /// # Ok::<_, EqError>(())
     /// ```
+    #[must_use]
     pub fn new(harmonics: &[H]) -> Self {
         Self(harmonics.to_vec())
     }
 
     /// Returns a [`Vec`] of the contained harmonics.
+    #[must_use]
     pub fn harmonics(&self) -> Vec<H> {
         self.0.clone()
     }
 
     /// Returns the number of the contained harmonics.
+    #[must_use]
     pub fn count(&self) -> usize {
         self.0.len()
     }
@@ -86,16 +90,13 @@ where
     /// let p = perturbation.p_of_psi(0.01, 3.14, 3.14, 0.0, &mut caches)?;
     /// # Ok::<_, EqError>(())
     /// ```
+    #[must_use]
     pub fn generate_caches(&self) -> Vec<H::Cache> {
-        self.0
-            .iter()
-            .map(|harmonic| harmonic.generate_cache())
-            .collect()
+        self.0.iter().map(H::generate_cache).collect()
     }
 }
 
-/// Evaluations
-#[rustfmt::skip]
+/// Evaluations.
 impl<H> Perturbation<H>
 where
     H: Harmonic,
@@ -113,13 +114,27 @@ where
     /// let p_of_psi = perturbation.p_of_psi(0.01, 3.14, 3.14, 0.0, &mut caches)?;
     /// # Ok::<_, EqError>(())
     /// ```
-    pub fn p_of_psi(&self, psi: f64, theta: f64, zeta: f64, t: f64, caches: &mut [H::Cache]) -> Result<f64> {
-        self.0.iter().enumerate().try_fold(0.0, |accumulator, tuple| {
-            let (index, harmonic) = tuple;
-            harmonic
-                .h_of_psi(psi, theta, zeta, t, &mut caches[index])
-                .map(|val| accumulator + val)
-        })
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if any of the the evaluations fail for any reason.
+    pub fn p_of_psi(
+        &self,
+        psi: f64,
+        theta: f64,
+        zeta: f64,
+        t: f64,
+        caches: &mut [H::Cache],
+    ) -> Result<f64, EvalError> {
+        self.0
+            .iter()
+            .enumerate()
+            .try_fold(0.0, |accumulator, tuple| {
+                let (index, harmonic) = tuple;
+                harmonic
+                    .h_of_psi(psi, theta, zeta, t, &mut caches[index])
+                    .map(|val| accumulator + val)
+            })
     }
 
     /// Calculates the Perturbation's value as a function of `(ψp, θ, ζ, t)`.
@@ -135,13 +150,27 @@ where
     /// let p_of_psip = perturbation.p_of_psip(0.015, 3.14, 3.14, 0.0, &mut caches)?;
     /// # Ok::<_, EqError>(())
     /// ```
-    pub fn p_of_psip(&self, psip: f64, theta: f64, zeta: f64, t: f64, caches: &mut [H::Cache]) -> Result<f64> {
-        self.0.iter().enumerate().try_fold(0.0, |accumulator, tuple| {
-            let (index, harmonic) = tuple;
-            harmonic
-                .h_of_psip(psip, theta, zeta, t, &mut caches[index])
-                .map(|val| accumulator + val)
-        })
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if any of the the evaluations fail for any reason.
+    pub fn p_of_psip(
+        &self,
+        psip: f64,
+        theta: f64,
+        zeta: f64,
+        t: f64,
+        caches: &mut [H::Cache],
+    ) -> Result<f64, EvalError> {
+        self.0
+            .iter()
+            .enumerate()
+            .try_fold(0.0, |accumulator, tuple| {
+                let (index, harmonic) = tuple;
+                harmonic
+                    .h_of_psip(psip, theta, zeta, t, &mut caches[index])
+                    .map(|val| accumulator + val)
+            })
     }
 
     /// Calculates the Perturbation's derivative with respect to `ψ`, as a function of `(ψ, θ, ζ, t)`.
@@ -157,13 +186,27 @@ where
     /// let dp_dpsi = perturbation.dp_dpsi(0.01, 3.14, 3.14, 0.0, &mut caches)?;
     /// # Ok::<_, EqError>(())
     /// ```
-    pub fn dp_dpsi(&self, psi: f64, theta: f64, zeta: f64, t: f64, caches: &mut [H::Cache]) -> Result<f64> {
-        self.0.iter().enumerate().try_fold(0.0, |accumulator, tuple| {
-            let (index, harmonic) = tuple;
-            harmonic
-                .dh_dpsi(psi, theta, zeta, t, &mut caches[index])
-                .map(|val| accumulator + val)
-        })
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if any of the the evaluations fail for any reason.
+    pub fn dp_dpsi(
+        &self,
+        psi: f64,
+        theta: f64,
+        zeta: f64,
+        t: f64,
+        caches: &mut [H::Cache],
+    ) -> Result<f64, EvalError> {
+        self.0
+            .iter()
+            .enumerate()
+            .try_fold(0.0, |accumulator, tuple| {
+                let (index, harmonic) = tuple;
+                harmonic
+                    .dh_dpsi(psi, theta, zeta, t, &mut caches[index])
+                    .map(|val| accumulator + val)
+            })
     }
 
     /// Calculates the Perturbation's derivative with respect to `ψp`, as a function of `(ψp, θ, ζ, t)`.
@@ -179,13 +222,27 @@ where
     /// let dp_dpsip = perturbation.dp_dpsip(0.01, 3.14, 3.14, 0.0, &mut caches)?;
     /// # Ok::<_, EqError>(())
     /// ```
-    pub fn dp_dpsip(&self, psip: f64, theta: f64, zeta: f64, t: f64, caches: &mut [H::Cache]) -> Result<f64> {
-        self.0.iter().enumerate().try_fold(0.0, |accumulator, tuple| {
-            let (index, harmonic) = tuple;
-            harmonic
-                .dh_dpsip(psip, theta, zeta, t, &mut caches[index])
-                .map(|val| accumulator + val)
-        })
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if any of the the evaluations fail for any reason.
+    pub fn dp_dpsip(
+        &self,
+        psip: f64,
+        theta: f64,
+        zeta: f64,
+        t: f64,
+        caches: &mut [H::Cache],
+    ) -> Result<f64, EvalError> {
+        self.0
+            .iter()
+            .enumerate()
+            .try_fold(0.0, |accumulator, tuple| {
+                let (index, harmonic) = tuple;
+                harmonic
+                    .dh_dpsip(psip, theta, zeta, t, &mut caches[index])
+                    .map(|val| accumulator + val)
+            })
     }
 
     /// Calculates the Perturbation's derivative with respect to `θ`, as a function of `(ψ, θ, ζ, t)`.
@@ -201,13 +258,27 @@ where
     /// let dp_of_psi_dtheta = perturbation.dp_of_psi_dtheta(0.01, 3.14, 3.14, 0.0, &mut caches)?;
     /// # Ok::<_, EqError>(())
     /// ```
-    pub fn dp_of_psi_dtheta(&self, psi: f64, theta: f64, zeta: f64, t: f64, caches: &mut [H::Cache]) -> Result<f64> {
-        self.0.iter().enumerate().try_fold(0.0, |accumulator, tuple| {
-            let (index, harmonic) = tuple;
-            harmonic
-                .dh_of_psi_dtheta(psi, theta, zeta, t, &mut caches[index])
-                .map(|val| accumulator + val)
-        })
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if any of the the evaluations fail for any reason.
+    pub fn dp_of_psi_dtheta(
+        &self,
+        psi: f64,
+        theta: f64,
+        zeta: f64,
+        t: f64,
+        caches: &mut [H::Cache],
+    ) -> Result<f64, EvalError> {
+        self.0
+            .iter()
+            .enumerate()
+            .try_fold(0.0, |accumulator, tuple| {
+                let (index, harmonic) = tuple;
+                harmonic
+                    .dh_of_psi_dtheta(psi, theta, zeta, t, &mut caches[index])
+                    .map(|val| accumulator + val)
+            })
     }
 
     /// Calculates the Perturbation's derivative with respect to `θ`, as a function of `(ψp, θ, ζ, t)`.
@@ -223,13 +294,27 @@ where
     /// let dp_of_psip_dtheta = perturbation.dp_of_psip_dtheta(0.01, 3.14, 3.14, 0.0, &mut caches)?;
     /// # Ok::<_, EqError>(())
     /// ```
-    pub fn dp_of_psip_dtheta(&self, psip: f64, theta: f64, zeta: f64, t: f64, caches: &mut [H::Cache]) -> Result<f64> {
-        self.0.iter().enumerate().try_fold(0.0, |accumulator, tuple| {
-            let (index, harmonic) = tuple;
-            harmonic
-                .dh_of_psip_dtheta(psip, theta, zeta, t, &mut caches[index])
-                .map(|val| accumulator + val)
-        })
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if any of the the evaluations fail for any reason.
+    pub fn dp_of_psip_dtheta(
+        &self,
+        psip: f64,
+        theta: f64,
+        zeta: f64,
+        t: f64,
+        caches: &mut [H::Cache],
+    ) -> Result<f64, EvalError> {
+        self.0
+            .iter()
+            .enumerate()
+            .try_fold(0.0, |accumulator, tuple| {
+                let (index, harmonic) = tuple;
+                harmonic
+                    .dh_of_psip_dtheta(psip, theta, zeta, t, &mut caches[index])
+                    .map(|val| accumulator + val)
+            })
     }
 
     /// Calculates the Perturbation's derivative with respect to `ζ`, as a function of `(ψ, θ, ζ, t)`.
@@ -245,13 +330,27 @@ where
     /// let dp_of_psi_dzeta = perturbation.dp_of_psi_dzeta(0.01, 3.14, 3.14, 0.0, &mut caches)?;
     /// # Ok::<_, EqError>(())
     /// ```
-    pub fn dp_of_psi_dzeta(&self, psi: f64, theta: f64, zeta: f64, t: f64, caches: &mut [H::Cache]) -> Result<f64> {
-        self.0.iter().enumerate().try_fold(0.0, |accumulator, tuple| {
-            let (index, harmonic) = tuple;
-            harmonic
-                .dh_of_psi_dzeta(psi, theta, zeta, t, &mut caches[index])
-                .map(|val| accumulator + val)
-        })
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if any of the the evaluations fail for any reason.
+    pub fn dp_of_psi_dzeta(
+        &self,
+        psi: f64,
+        theta: f64,
+        zeta: f64,
+        t: f64,
+        caches: &mut [H::Cache],
+    ) -> Result<f64, EvalError> {
+        self.0
+            .iter()
+            .enumerate()
+            .try_fold(0.0, |accumulator, tuple| {
+                let (index, harmonic) = tuple;
+                harmonic
+                    .dh_of_psi_dzeta(psi, theta, zeta, t, &mut caches[index])
+                    .map(|val| accumulator + val)
+            })
     }
 
     /// Calculates the Perturbation's derivative with respect to `ζ`, as a function of `(ψp, θ, ζ, t)`.
@@ -267,13 +366,27 @@ where
     /// let dp_of_psip_dzeta = perturbation.dp_of_psip_dzeta(0.01, 3.14, 3.14, 0.0, &mut caches)?;
     /// # Ok::<_, EqError>(())
     /// ```
-    pub fn dp_of_psip_dzeta(&self, psip: f64, theta: f64, zeta: f64, t: f64, caches: &mut [H::Cache]) -> Result<f64> {
-        self.0.iter().enumerate().try_fold(0.0, |accumulator, tuple| {
-            let (index, harmonic) = tuple;
-            harmonic
-                .dh_of_psip_dzeta(psip, theta, zeta, t, &mut caches[index])
-                .map(|val| accumulator + val)
-        })
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if any of the the evaluations fail for any reason.
+    pub fn dp_of_psip_dzeta(
+        &self,
+        psip: f64,
+        theta: f64,
+        zeta: f64,
+        t: f64,
+        caches: &mut [H::Cache],
+    ) -> Result<f64, EvalError> {
+        self.0
+            .iter()
+            .enumerate()
+            .try_fold(0.0, |accumulator, tuple| {
+                let (index, harmonic) = tuple;
+                harmonic
+                    .dh_of_psip_dzeta(psip, theta, zeta, t, &mut caches[index])
+                    .map(|val| accumulator + val)
+            })
     }
 
     /// Calculates the Perturbation's derivative with respect to `t`, as a function of `(ψ, θ, ζ, t)`.
@@ -289,13 +402,27 @@ where
     /// let dp_of_psi_dt = perturbation.dp_of_psi_dt(0.01, 3.14, 3.14, 0.0, &mut caches)?;
     /// # Ok::<_, EqError>(())
     /// ```
-    pub fn dp_of_psi_dt(&self, psi: f64, theta: f64, zeta: f64, t: f64, caches: &mut [H::Cache]) -> Result<f64> {
-        self.0.iter().enumerate().try_fold(0.0, |accumulator, tuple| {
-            let (index, harmonic) = tuple;
-            harmonic
-                .dh_of_psi_dt(psi, theta, zeta, t, &mut caches[index])
-                .map(|val| accumulator + val)
-        })
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if any of the the evaluations fail for any reason.
+    pub fn dp_of_psi_dt(
+        &self,
+        psi: f64,
+        theta: f64,
+        zeta: f64,
+        t: f64,
+        caches: &mut [H::Cache],
+    ) -> Result<f64, EvalError> {
+        self.0
+            .iter()
+            .enumerate()
+            .try_fold(0.0, |accumulator, tuple| {
+                let (index, harmonic) = tuple;
+                harmonic
+                    .dh_of_psi_dt(psi, theta, zeta, t, &mut caches[index])
+                    .map(|val| accumulator + val)
+            })
     }
 
     /// Calculates the Perturbation's derivative with respect to `t`, as a function of `(ψp, θ, ζ, t)`.
@@ -311,13 +438,27 @@ where
     /// let dp_of_psip_dt = perturbation.dp_of_psip_dt(0.01, 3.14, 3.14, 0.0, &mut caches)?;
     /// # Ok::<_, EqError>(())
     /// ```
-    pub fn dp_of_psip_dt(&self, psip: f64, theta: f64, zeta: f64, t: f64, caches: &mut [H::Cache]) -> Result<f64> {
-        self.0.iter().enumerate().try_fold(0.0, |accumulator, tuple| {
-            let (index, harmonic) = tuple;
-            harmonic
-                .dh_of_psip_dt(psip, theta, zeta, t, &mut caches[index])
-                .map(|val| accumulator + val)
-        })
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if any of the the evaluations fail for any reason.
+    pub fn dp_of_psip_dt(
+        &self,
+        psip: f64,
+        theta: f64,
+        zeta: f64,
+        t: f64,
+        caches: &mut [H::Cache],
+    ) -> Result<f64, EvalError> {
+        self.0
+            .iter()
+            .enumerate()
+            .try_fold(0.0, |accumulator, tuple| {
+                let (index, harmonic) = tuple;
+                harmonic
+                    .dh_of_psip_dt(psip, theta, zeta, t, &mut caches[index])
+                    .map(|val| accumulator + val)
+            })
     }
 }
 
@@ -339,7 +480,6 @@ where
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Perturbation")
-            .field("harmonics", &self.0)
             .field("number of harmonics", &self.0.len())
             .finish()
     }
@@ -350,7 +490,7 @@ mod perturbation_evals {
     use std::path::PathBuf;
 
     use crate::extract::TEST_NETCDF_PATH;
-    use crate::{CosHarmonic, HarmonicCache, NcHarmonic, NcHarmonicBuilder};
+    use crate::{HarmonicCache, NcHarmonic, NcHarmonicBuilder};
     use approx::assert_relative_eq;
 
     use super::*;
@@ -428,6 +568,7 @@ mod perturbation_evals {
     }
 
     #[test]
+    #[allow(unused_results)]
     fn perturbation_cache() {
         let per = create_cos_perturbation();
         let mut c = per.generate_caches();

@@ -1,19 +1,26 @@
+//! Implementation of the guiding center Hamiltonian and canonical equations.
+
+#![allow(clippy::missing_docs_in_private_items, reason = "self-explanatory")]
+
 use std::f64::consts::TAU;
 
-use dexter_equilibrium::{Bfield, Current, EqError, FluxCommute, Harmonic, Perturbation, Qfactor};
+use dexter_equilibrium::{
+    Bfield, Current, EvalError, FluxCommute, Harmonic, Perturbation, Qfactor,
+};
 
 use crate::Result;
-use crate::particle::{Caches, EqObjects};
+use crate::particle::{EqObjects, IntegrationCaches};
 use crate::{FluxCoordinate, InitialConditions, InitialFlux};
 
-/// State of the Guiding Center at each step
+/// State of the Guiding Center at each step.
 ///
 /// Stores all the intermediate values needed for the calculation of the final time derivatives.
 ///
 /// Corresponds to a single specific point in configuration space, e.g. all values are calculated
 /// at the same (t, ψ, θ, ζ, ρ, μ), or (t, ψp, θ, ζ, ρ, μ) point, depending on the value of the
-/// `coordinate` field
+/// `coordinate` field.
 #[derive(Debug, Clone)]
+#[expect(clippy::min_ident_chars, reason = "symbols in the Hamiltonian")]
 pub(crate) struct GCState {
     pub(crate) coordinate: FluxCoordinate,
     pub(crate) t: f64,
@@ -64,7 +71,7 @@ pub(crate) struct GCState {
     cterm: f64,
     fterm: f64,
 
-    /// The intermediate value (μ + ρ^2Β)
+    /// The intermediate value (μ + ρ^2Β).
     mu_par: f64,
     /// The intermediate value [dψ or dψp derivatives].
     dflux_brace: f64,
@@ -80,13 +87,13 @@ pub(crate) struct GCState {
     i_over_d: f64,
 }
 
-// Creation and evaluation
+/// Creation and evaluation.
 impl GCState {
     /// Creates a new `GCState` from a set of [`InitialConditions`] and evaluates it.
     pub(crate) fn new<Q, C, B, H>(
         initial: &InitialConditions,
         objects: &EqObjects<Q, C, B, H>,
-        caches: &mut Caches<H::Cache>,
+        caches: &mut IntegrationCaches<H::Cache>,
     ) -> Result<Self>
     where
         Q: Qfactor + FluxCommute,
@@ -124,7 +131,7 @@ impl GCState {
     pub(crate) fn evaluate<Q, C, B, H>(
         &mut self,
         objects: &EqObjects<Q, C, B, H>,
-        caches: &mut Caches<H::Cache>,
+        caches: &mut IntegrationCaches<H::Cache>,
     ) -> Result<()>
     where
         Q: Qfactor + FluxCommute,
@@ -139,6 +146,9 @@ impl GCState {
         self.calculate_current_quantities::<C, H>(objects.current, caches)?;
         self.calculate_bfield_quantities::<B, H>(objects.bfield, caches)?;
         self.calculate_perturbation_quantities::<H>(objects.perturbation, caches)?;
+
+        // Multiply with `q` where needed, depending on the `FluxCoordinate`
+        self.adjust_for_flux();
 
         // Then the intermediate quantities that only depend on the interpolated quantities
         self.calculate_canonical_momenta();
@@ -161,7 +171,7 @@ impl GCState {
     pub(crate) fn into_evaluated<Q, C, B, H>(
         mut self,
         objects: &EqObjects<Q, C, B, H>,
-        caches: &mut Caches<H::Cache>,
+        caches: &mut IntegrationCaches<H::Cache>,
     ) -> Result<Self>
     where
         Q: Qfactor + FluxCommute,
@@ -174,7 +184,7 @@ impl GCState {
     }
 }
 
-/// Field calculations
+/// Field calculations.
 impl GCState {
     fn calculate_modulos(&mut self) {
         self.mod_theta = self.theta.rem_euclid(TAU);
@@ -185,22 +195,22 @@ impl GCState {
     fn calculate_other_flux<Q, H>(
         &mut self,
         qfactor: &Q,
-        caches: &mut Caches<H::Cache>,
+        caches: &mut IntegrationCaches<H::Cache>,
     ) -> Result<()>
     where
         Q: Qfactor + FluxCommute,
         H: Harmonic,
     {
-        if let FluxCoordinate::Toroidal = self.coordinate {
+        if self.coordinate == FluxCoordinate::Toroidal {
             self.psip = match qfactor.psip_of_psi(self.psi, &mut caches.psi_acc) {
                 Ok(psip) => psip,
-                Err(EqError::UndefinedEvaluation(..)) => f64::NAN,
+                Err(EvalError::UndefinedEvaluation(..)) => f64::NAN,
                 Err(err) => return Err(err.into()),
             }
         } else {
             self.psi = match qfactor.psi_of_psip(self.psip, &mut caches.psip_acc) {
                 Ok(psi) => psi,
-                Err(EqError::UndefinedEvaluation(..)) => f64::NAN,
+                Err(EvalError::UndefinedEvaluation(..)) => f64::NAN,
                 Err(err) => return Err(err.into()),
             }
         }
@@ -210,13 +220,13 @@ impl GCState {
     fn calculate_qfactor_quantities<Q, H>(
         &mut self,
         qfactor: &Q,
-        caches: &mut Caches<H::Cache>,
+        caches: &mut IntegrationCaches<H::Cache>,
     ) -> Result<()>
     where
         Q: Qfactor + FluxCommute,
         H: Harmonic,
     {
-        if let FluxCoordinate::Toroidal = self.coordinate {
+        if self.coordinate == FluxCoordinate::Toroidal {
             self.q = qfactor.q_of_psi(self.psi, &mut caches.psi_acc)?;
         } else {
             self.q = qfactor.q_of_psip(self.psip, &mut caches.psip_acc)?;
@@ -227,13 +237,13 @@ impl GCState {
     fn calculate_current_quantities<C, H>(
         &mut self,
         current: &C,
-        caches: &mut Caches<H::Cache>,
+        caches: &mut IntegrationCaches<H::Cache>,
     ) -> Result<()>
     where
         C: Current,
         H: Harmonic,
     {
-        if let FluxCoordinate::Toroidal = self.coordinate {
+        if self.coordinate == FluxCoordinate::Toroidal {
             self.g = current.g_of_psi(self.psi, &mut caches.psi_acc)?;
             self.i = current.i_of_psi(self.psi, &mut caches.psi_acc)?;
             self.dg_dflux = current.dg_dpsi(self.psi, &mut caches.psi_acc)?;
@@ -251,23 +261,22 @@ impl GCState {
     fn calculate_bfield_quantities<B, H>(
         &mut self,
         bfield: &B,
-        caches: &mut Caches<H::Cache>,
+        caches: &mut IntegrationCaches<H::Cache>,
     ) -> Result<()>
     where
         B: Bfield,
         H: Harmonic,
     {
-        if let FluxCoordinate::Toroidal = self.coordinate {
+        if self.coordinate == FluxCoordinate::Toroidal {
             self.b          = bfield.b_of_psi           (self.psi, self.mod_theta, &mut caches.psi_acc, &mut caches.theta_acc, &mut caches.spline_cache)?;
             self.db_dflux   = bfield.db_dpsi            (self.psi, self.mod_theta, &mut caches.psi_acc, &mut caches.theta_acc, &mut caches.spline_cache)?;
             self.db_dtheta  = bfield.db_of_psi_dtheta   (self.psi, self.mod_theta, &mut caches.psi_acc, &mut caches.theta_acc, &mut caches.spline_cache)?;
-            self.db_dzeta   = 0.0 // Axisymmetric configuration for now
         } else {
             self.b          = bfield.b_of_psip          (self.psip, self.mod_theta, &mut caches.psip_acc, &mut caches.theta_acc, &mut caches.spline_cache)?;
             self.db_dflux   = bfield.db_dpsip           (self.psip, self.mod_theta, &mut caches.psip_acc, &mut caches.theta_acc, &mut caches.spline_cache)?;
             self.db_dtheta  = bfield.db_of_psip_dtheta  (self.psip, self.mod_theta, &mut caches.psip_acc, &mut caches.theta_acc, &mut caches.spline_cache)?;
-            self.db_dzeta   = 0.0 // Axisymmetric configuration for now
         }
+        self.db_dzeta = 0.0; // Axisymmetric configuration for now
         Ok(())
     }
 
@@ -275,12 +284,12 @@ impl GCState {
     fn calculate_perturbation_quantities<H>(
         &mut self,
         perturbation: &Perturbation<H>,
-        caches: &mut Caches<H::Cache>,
+        caches: &mut IntegrationCaches<H::Cache>,
     ) -> Result<()>
     where
         H: Harmonic,
     {
-        if let FluxCoordinate::Toroidal = self.coordinate {
+        if self.coordinate == FluxCoordinate::Toroidal {
             self.p          = perturbation.p_of_psi         (self.psi, self.mod_theta, self.mod_zeta, self.t, &mut caches.harmonic_caches)?;
             self.dp_dflux   = perturbation.dp_dpsi          (self.psi, self.mod_theta, self.mod_zeta, self.t, &mut caches.harmonic_caches)?;
             self.dp_dtheta  = perturbation.dp_of_psi_dtheta (self.psi, self.mod_theta, self.mod_zeta, self.t, &mut caches.harmonic_caches)?;
@@ -296,6 +305,27 @@ impl GCState {
         Ok(())
     }
 
+    /// Since we are solving White's equations of motion, which are expressed through (ψp, θ, ζ, ρ),
+    /// to integrate with respect to `ψ` we must apply the chain rule wherever derivatives with
+    /// respect to `ψp` appear, in order to obtain the derivatives with respect to `ψ`. This results
+    /// to a multiplication with `q`, for which we adjust here.
+    ///
+    /// Chain rule:
+    ///     dF/dψp = dF/dψ * dψ/dψp = q * dF/dψ.
+    ///
+    /// Still, the final expression of `flux_dot` is actually `psip_dot`, since this adjustment
+    /// simply calculates the correct derivatives at the current point in the configuration space.
+    /// Therefore, using the chain rule, we must also multiply the final `flux_dot` with `q` to
+    /// obtain `psi_dot`.
+    fn adjust_for_flux(&mut self) {
+        if self.coordinate == FluxCoordinate::Toroidal {
+            self.dg_dflux *= self.q;
+            self.di_dflux *= self.q;
+            self.dp_dflux *= self.q;
+            self.db_dflux *= self.q;
+        };
+    }
+
     fn calculate_canonical_momenta(&mut self) {
         self.ptheta = self.psi + self.rho * self.i;
         self.pzeta = self.rho * self.g - self.psip;
@@ -307,32 +337,24 @@ impl GCState {
     /// If `ψ` is the coordinate, we must apply the chainrule in all g, I, p derivatives (with
     /// respect to `ψp`), which results in multiplying them with q.
     fn calculate_capitals(&mut self) {
-        if let FluxCoordinate::Toroidal = self.coordinate {
-            self.dg_dflux *= self.q;
-            self.di_dflux *= self.q;
-            self.dp_dflux *= self.q;
-        };
         self.cterm = -1.0 + (self.rho + self.p) * self.dg_dflux + self.g * self.dp_dflux;
         self.fterm = self.q + (self.rho + self.p) * self.di_dflux + self.i * self.dp_dflux;
         self.kterm = self.g * self.dp_dtheta - self.i * self.dp_dzeta;
         self.dterm = self.g * self.fterm - self.i * self.cterm;
     }
 
-    /// Calculates (μ + ρ^2B)
+    /// Calculates (μ + ρ^2B).
     fn calculate_mu_par(&mut self) {
         self.mu_par = self.mu + self.rho.powi(2) * self.b;
     }
 
     /// Calculates the brackets:
-    ///     - [mu_par*dB_d<flux> + dΦ_d<flux>]
-    ///     - [mu_par*dB_dtheta + dΦ_dtheta]
-    /// where Φ = 0
+    ///     - `[mu_par*dB_d<flux> + dΦ_d<flux>]`
+    ///     - `[mu_par*dB_dtheta + dΦ_dtheta]`
+    /// where Φ = 0.
     ///
     /// Depending on the flux coordinate, it multiplies by q-factor where needed.
     fn calculate_braces(&mut self) {
-        if let FluxCoordinate::Toroidal = self.coordinate {
-            self.db_dflux *= self.q;
-        };
         self.dflux_brace = self.mu_par * self.db_dflux;
         self.dtheta_brace = self.mu_par * self.db_dtheta;
         self.dzeta_brace = self.mu_par * self.db_dzeta;
@@ -349,16 +371,12 @@ impl GCState {
         self.energy = self.energy()
     }
 
+    /// See [`Self::adjust_for_flux`].
     fn calculate_flux_dots(&mut self) {
         let flux_dot = self.kterm * self.rho_bsquared_d - self.g_over_d * self.dtheta_brace
             + self.i_over_d * self.dzeta_brace;
-        if let FluxCoordinate::Toroidal = self.coordinate {
-            self.psi_dot = flux_dot;
-            self.psip_dot = flux_dot / self.q
-        } else {
-            self.psi_dot = flux_dot * self.q;
-            self.psip_dot = flux_dot;
-        }
+        self.psi_dot = flux_dot * self.q;
+        self.psip_dot = flux_dot;
     }
 
     fn calculate_theta_dot(&mut self) {
@@ -381,21 +399,21 @@ impl GCState {
     }
 
     /// Returns the Energy of the State.
-    pub fn energy(&self) -> f64 {
+    pub(crate) fn energy(&self) -> f64 {
         let parallel = self.parallel_energy();
         let perpendicular = self.perpendicular_energy();
         parallel + perpendicular
     }
 
     /// Returns the parallel energy of the State.
-    pub fn parallel_energy(&self) -> f64 {
+    pub(crate) fn parallel_energy(&self) -> f64 {
         // Use the ρ expression here, since the g^2 in the denominator causes numerical instability
         // on configurations with g=0.
         (self.rho * self.b).powi(2) / 2.0
     }
 
     /// Returns the perpendicular energy of the State.
-    pub fn perpendicular_energy(&self) -> f64 {
+    pub(crate) fn perpendicular_energy(&self) -> f64 {
         self.mu * self.b
     }
 }

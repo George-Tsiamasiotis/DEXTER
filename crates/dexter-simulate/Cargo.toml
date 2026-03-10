@@ -1,10 +1,12 @@
 [package]
 name = "dexter-simulate"
-version = "0.1.1-pre.7"
-license.workspace = true
-edition.workspace = true
+version = "0.1.1"
 authors.workspace = true
+edition.workspace = true
+license.workspace = true
 homepage.workspace = true
+keywords.workspace = true
+categories.workspace = true
 repository.workspace = true
 rust-version.workspace = true
 documentation.workspace = true
@@ -17,6 +19,9 @@ thiserror.workspace = true
 ndarray.workspace = true
 approx.workspace = true
 rsl-interpolation.workspace = true
+
+[lints]
+workspace = true
 
 [[example]]
 name = "integrate"
@@ -31,5 +36,9 @@ name = "stepping_method"
 path = "examples/stepping_method.rs"
 
 [[bin]]
-name = "long_integration"
-path = "bin/long_integration.rs"
+name = "analytical_integration"
+path = "bin/analytical_integration.rs"
+
+[[bin]]
+name = "numerical_integration"
+path = "bin/numerical_integration.rs"

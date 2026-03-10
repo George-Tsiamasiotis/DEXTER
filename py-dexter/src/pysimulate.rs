@@ -111,13 +111,13 @@ pub struct PyParticle(pub(crate) Particle);
 #[pymethods]
 impl PyParticle {
     #[new]
-    pub fn new(initial: PyInitialConditions) -> Self {
-        Self(Particle::new(&initial.0))
+    #[pyo3(signature = (initial_conditions))]
+    pub fn new(initial_conditions: PyInitialConditions) -> Self {
+        Self(Particle::new(&initial_conditions.0))
     }
 
-    #[getter]
-    pub fn initial_conditions(&self) -> PyInitialConditions {
-        PyInitialConditions(self.0.initial_conditions().clone())
+    pub fn print_stats(&self) {
+        self.0.print_cache_stats();
     }
 }
 

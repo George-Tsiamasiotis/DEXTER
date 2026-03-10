@@ -1,4 +1,4 @@
-//! Simulations of charged particles inside an [`Equilibrium`](dexter_equilibrium)
+//! Simulations of charged particles inside an [`Equilibrium`](dexter_equilibrium).
 //!
 //! ### [`Particle`]: A charged particle inside an [`Equilibrium`](dexter_equilibrium)
 //!
@@ -21,12 +21,10 @@
 //! the energy difference from step to step or minimizing the local truncation error (classic
 //! RKF4(5)), or simple set to be constant.
 
-#![allow(confusable_idents)]
-
 mod error;
 mod particle;
+mod solve;
 mod state;
-mod system;
 
 // ============== Public API
 
@@ -34,9 +32,10 @@ pub use error::SimulationError;
 /// Result type used throughout the crate.
 pub type Result<T> = std::result::Result<T, SimulationError>;
 
-pub(crate) use system::FluxCoordinate;
-pub use system::{SolverParams, SteppingMethod};
+pub(crate) use solve::FluxCoordinate;
+pub use solve::{SolverParams, SteppingMethod};
 
 pub use particle::{
     InitialConditions, InitialFlux, IntegrationStatus, IntersectParams, Intersection, Particle,
+    ParticleCacheStats,
 };

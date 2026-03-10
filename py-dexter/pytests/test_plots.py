@@ -11,7 +11,7 @@ from dexter import (
     InitialConditions,
     Particle,
 )
-from dexter import Geometry, Qfactor, Current, Harmonic, NcBfield, NcPerturbation
+from dexter import Geometry, Qfactor, Current, Harmonic, NcBfield, Perturbation
 from dexter.types import FluxWall
 
 # Unsure
@@ -24,6 +24,7 @@ def test_nc_geometry():
     geometry = NcGeometry(netcdf_path, "Steffen", "Bicubic")
     _test_all_flux_plots(geometry)
     _test_all_geometry_plots(geometry)
+    _test_all_numerical_geometry_plots(geometry)
 
 
 def test_unity_qfactor():
@@ -68,7 +69,7 @@ def test_particle_plots(
     nc_qfactor: NcQfactor,
     nc_current: NcCurrent,
     nc_bfield: NcBfield,
-    nc_perturbation: NcPerturbation,
+    nc_perturbation: Perturbation,
 ):
 
     initial = InitialConditions(
@@ -109,6 +110,9 @@ def _test_all_geometry_plots(geometry: Geometry):
     geometry.plot_psi_of_r(points=50, data=False)
     geometry.plot_psip_of_r(points=50, data=True)
     geometry.plot_psip_of_r(points=50, data=False)
+
+
+def _test_all_numerical_geometry_plots(geometry: NcGeometry):
     geometry.plot_flux_surfaces()
     geometry.plot_jacobian()
 

@@ -1,33 +1,29 @@
 ## General
 
-::: dexter.types.Array1
-::: dexter.types.Array2
-::: dexter.types.ArrayShape
+::: dexter.Array1
+::: dexter.Array2
+::: dexter.ArrayShape
 
 ## Equilibrium
-
-### Equilibrium objects
 
 ::: dexter.Geometry
 ::: dexter.Qfactor
 ::: dexter.Current
 ::: dexter.Bfield
 ::: dexter.Harmonic
-::: dexter.Perturbation
 
-### Misc
-
-::: dexter.types.EquilibriumType
-::: dexter.types.Interp1DType
-::: dexter.types.Interp2DType
-::: dexter.types.FluxCoordinate
-::: dexter.types.FluxState
-::: dexter.types.FluxWall
-::: dexter.types.PhaseMethod
-::: dexter.types.NetCDFVersion
+::: dexter.EquilibriumType
+::: dexter.Interp1DType
+::: dexter.Interp2DType
+::: dexter.FluxCoordinate
+::: dexter.FluxState
+::: dexter.FluxWall
+::: dexter.PhaseMethod
+::: dexter.NetCDFVersion
 
 ## Simulate
 
-::: dexter.types.InitialFlux
-::: dexter.types.IntegrationStatus
-::: dexter.types.SteppingMethod
+::: dexter.InitialFlux
+::: dexter.Intersection
+::: dexter.IntegrationStatus
+::: dexter.SteppingMethod

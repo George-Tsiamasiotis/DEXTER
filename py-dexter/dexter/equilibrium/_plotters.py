@@ -6,7 +6,10 @@ These plotting methods are restricted to whatever resources each wrapped type ha
 for quick and simple diagnostic plots. They should not count to external objects to work.
 """
 
-from dexter.types import Array1, Array2, ArrayShape, EquilibriumType
+from dexter._core import _PyLarGeometry, _PyNcGeometry
+from dexter._core import _PyUnityQfactor, _PyParabolicQfactor, _PyNcQfactor
+from dexter._core import _PyLarCurrent, _PyNcCurrent
+from dexter._core import _PyCosHarmonic, _PyNcHarmonic
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -46,15 +49,7 @@ def _attempt_evaluation(fun: Callable):
 class _FluxPlotter:
     """Provides plotting functions between the two flux coordinates."""
 
-    equilibrium_type: EquilibriumType
-    psip_of_psi: Callable
-    psi_of_psip: Callable
-
-    # Not guaranteed to exist
-    psi_wall: float
-    psip_wall: float
-    psi_array: Array1
-    psip_array: Array1
+    _rust: _PyNcGeometry | _PyUnityQfactor | _PyParabolicQfactor | _PyNcQfactor
 
     def plot_psip_of_psi(self, points: int = 1000, data: bool = False):
         r"""Plots $\psi(\psi_p)$.
@@ -67,7 +62,7 @@ class _FluxPlotter:
             Whether or not to plot the data array points (numerical equilibria only). Defaults to False.
         """
 
-        fun = self.psip_of_psi
+        fun = self._rust.psip_of_psi
         _attempt_evaluation(fun)
 
         psi_wall = getattr(self, "psi_wall", PSI_WALL_BOUND)
@@ -81,10 +76,10 @@ class _FluxPlotter:
         ax.set_ylabel(r"$\psi_p(\psi)$ $[Normalized]$")
 
         ax.plot(psis, qs, label=ax.get_ylabel(), **PLOT_KW)
-        if self.equilibrium_type == "Numerical" and data:
+        if self._rust.equilibrium_type == "Numerical" and data:
             ax.scatter(
-                self.psi_array,
-                self.psip_array,
+                getattr(self._rust, "psi_array"),
+                getattr(self._rust, "psip_array"),
                 label=r"$data$ $points$",
                 **SCATTER_KW,
             )
@@ -105,7 +100,7 @@ class _FluxPlotter:
             Whether or not to plot the data array points (numerical equilibria only). Defaults to False.
         """
 
-        fun = self.psi_of_psip
+        fun = self._rust.psi_of_psip
         _attempt_evaluation(fun)
 
         psip_wall = getattr(self, "psip_wall", PSIP_WALL_BOUND)
@@ -119,10 +114,10 @@ class _FluxPlotter:
         ax.set_ylabel(r"$\psi(\psi_p)$ $[Normalized]$")
 
         ax.plot(psips, qs, label=ax.get_ylabel(), **PLOT_KW)
-        if self.equilibrium_type == "Numerical" and data:
+        if self._rust.equilibrium_type == "Numerical" and data:
             ax.scatter(
-                self.psip_array,
-                self.psi_array,
+                getattr(self._rust, "psip_array"),
+                getattr(self._rust, "psi_array"),
                 label=r"$data$ $points$",
                 **SCATTER_KW,
             )
@@ -136,32 +131,7 @@ class _FluxPlotter:
 class _GeometryPlotter:
     """Provides plotting functions for a Geometry's evaluation methods."""
 
-    equilibrium_type: EquilibriumType
-    r_of_psi: Callable
-    r_of_psip: Callable
-    psi_of_r: Callable
-    psip_of_r: Callable
-    rlab_of_psi: Callable
-    rlab_of_psip: Callable
-    zlab_of_psi: Callable
-    zlab_of_psip: Callable
-    jacobian_of_psi: Callable
-    jacobian_of_psip: Callable
-
-    raxis: float
-    zaxis: float
-    rgeo: float
-    psi_wall: float
-    psip_wall: float
-    shape: ArrayShape
-    psi_array: Array1
-    psip_array: Array1
-    r_array: Array1
-    rlab_array: Array2
-    zlab_array: Array2
-    jacobian_array: Array2
-    rlab_wall: Array1
-    zlab_wall: Array1
+    _rust: _PyLarGeometry | _PyNcGeometry
 
     def plot_r_of_psi(self, points: int = 1000, data: bool = False):
         r"""Plots $r(\psi)$, where $r$ is in $[m]$.
@@ -174,7 +144,7 @@ class _GeometryPlotter:
             Whether or not to plot the data array points (numerical equilibria only). Defaults to False.
         """
 
-        fun = self.r_of_psi
+        fun = self._rust.r_of_psi
         _attempt_evaluation(fun)
 
         psi_wall = getattr(self, "psi_wall")
@@ -188,10 +158,10 @@ class _GeometryPlotter:
         ax.set_ylabel(r"$r(\psi)$ $[Normalized]$")
 
         ax.plot(psis, rs, label=ax.get_ylabel(), **PLOT_KW)
-        if self.equilibrium_type == "Numerical" and data:
+        if self._rust.equilibrium_type == "Numerical" and data:
             ax.scatter(
-                self.psi_array,
-                self.r_array,
+                getattr(self._rust, "psi_array"),
+                getattr(self._rust, "r_array"),
                 label=r"$data$ $points$",
                 **SCATTER_KW,
             )
@@ -212,7 +182,7 @@ class _GeometryPlotter:
             Whether or not to plot the data array points (numerical equilibria only). Defaults to False.
         """
 
-        fun = self.r_of_psip
+        fun = self._rust.r_of_psip
         _attempt_evaluation(fun)
 
         psip_wall = getattr(self, "psip_wall")
@@ -226,10 +196,10 @@ class _GeometryPlotter:
         ax.set_ylabel(r"$r(\psi_p)$ $[Normalized]$")
 
         ax.plot(psips, rs, label=ax.get_ylabel(), **PLOT_KW)
-        if self.equilibrium_type == "Numerical" and data:
+        if self._rust.equilibrium_type == "Numerical" and data:
             ax.scatter(
-                self.psip_array,
-                self.r_array,
+                getattr(self._rust, "psip_array"),
+                getattr(self._rust, "r_array"),
                 label=r"$data$ $points$",
                 **SCATTER_KW,
             )
@@ -250,7 +220,7 @@ class _GeometryPlotter:
             Whether or not to plot the data array points (numerical equilibria only). Defaults to False.
         """
 
-        fun = self.psi_of_r
+        fun = self._rust.psi_of_r
         _attempt_evaluation(fun)
 
         rwall = getattr(self, "rwall")
@@ -264,10 +234,10 @@ class _GeometryPlotter:
         ax.set_ylabel(r"$\psi(r)$ $[Normalized]$")
 
         ax.plot(rs, psis, label=ax.get_ylabel(), **PLOT_KW)
-        if self.equilibrium_type == "Numerical" and data:
+        if self._rust.equilibrium_type == "Numerical" and data:
             ax.scatter(
-                self.r_array,
-                self.psi_array,
+                getattr(self._rust, "r_array"),
+                getattr(self._rust, "psi_array"),
                 label=r"$data$ $points$",
                 **SCATTER_KW,
             )
@@ -288,10 +258,10 @@ class _GeometryPlotter:
             Whether or not to plot the data array points (numerical equilibria only). Defaults to False.
         """
 
-        fun = self.psip_of_r
+        fun = self._rust.psip_of_r
         _attempt_evaluation(fun)
 
-        rwall = getattr(self, "rwall")
+        rwall = self._rust.rwall
         rs = np.linspace(0, rwall, points)
         psips = np.asarray([fun(r) for r in rs])
 
@@ -302,10 +272,10 @@ class _GeometryPlotter:
         ax.set_ylabel(r"$\psi_p(r)$ $[Normalized]$")
 
         ax.plot(rs, psips, label=ax.get_ylabel(), **PLOT_KW)
-        if self.equilibrium_type == "Numerical" and data:
+        if self._rust.equilibrium_type == "Numerical" and data:
             ax.scatter(
-                self.r_array,
-                self.psip_array,
+                getattr(self._rust, "r_array"),
+                getattr(self._rust, "psip_array"),
                 label=r"$data$ $points$",
                 **SCATTER_KW,
             )
@@ -314,6 +284,29 @@ class _GeometryPlotter:
         ax.grid(True)
         ax.legend()
         plt.show()
+
+    def plot_wall(self):
+        r"""Plots the device's wall in the $R, Z$ frame."""
+
+        fig = plt.figure(**FIG_KW)
+        ax = fig.add_subplot(**SUBPLOT_KW | {"aspect": "equal"})
+        ax.set_title(r"$Wall$")
+        ax.set_xlabel(r"$R[m]$")
+        ax.set_ylabel(r"$Z[m]$")
+
+        zlab_wall = self._rust.zlab_wall
+        rlab_wall = self._rust.rlab_wall
+
+        ax.plot(rlab_wall, zlab_wall, **WALL_KW)
+
+        ax.grid(True)
+        plt.show()
+
+
+class _NumericalGeometryPlotter:
+    """Provides plotting functions for a Numerical Geometry's evaluation methods."""
+
+    _rust: _PyNcGeometry
 
     def plot_flux_surfaces(self, number: int = 20):
         r"""Plots the flux surfaces in the $R-Z$ frame.
@@ -324,14 +317,11 @@ class _GeometryPlotter:
             The number of flux surfaces to (try to) plot. Defaults to 20.
         """
 
-        if self.equilibrium_type != "Numerical":
-            raise Exception("This method is only available for numerical equilibria")
+        rlab_array = self._rust.rlab_array
+        zlab_array = self._rust.zlab_array
 
-        rlab_array = self.rlab_array
-        zlab_array = self.zlab_array
-
-        step = max([1, int(self.shape[0] / number)])
-        print(f"Displaying {int(self.shape[0] / step)} surfaces.")
+        step = max([1, int(self._rust.shape[0] / number)])
+        print(f"Displaying {int(self._rust.shape[0] / step)} surfaces.")
 
         fig = plt.figure(**FIG_KW)
         ax = fig.add_subplot(**SUBPLOT_KW | {"aspect": "equal"})
@@ -339,11 +329,11 @@ class _GeometryPlotter:
         ax.set_xlabel(r"$R[m]$")
         ax.set_ylabel(r"$Z[m]$")
 
-        for i in range(0, self.shape[0], step):
+        for i in range(0, self._rust.shape[0], step):
             ax.plot(rlab_array[i], zlab_array[i], **FLUX_SURFACE_KW)
 
-        geom_center = (self.rgeo, self.zaxis)
-        axis = (self.raxis, self.zaxis)
+        geom_center = (self._rust.rgeo, self._rust.zaxis)
+        axis = (self._rust.raxis, self._rust.zaxis)
 
         ax.plot(*geom_center, "ko", markersize=4, label="$R_{axis}$")
         ax.plot(*axis, "ro", markersize=4, label="$R_{geo}$")
@@ -367,12 +357,9 @@ class _GeometryPlotter:
             The number of contour levels. Defaults to 20.
         """
 
-        if self.equilibrium_type != "Numerical":
-            raise Exception("This method is only available for numerical equilibria")
-
-        rlab_array = self.rlab_array
-        zlab_array = self.zlab_array
-        jacobian_array = self.jacobian_array
+        rlab_array = self._rust.rlab_array
+        zlab_array = self._rust.zlab_array
+        jacobian_array = self._rust.jacobian_array
 
         fig = plt.figure(**FIG_KW)
         ax = fig.add_subplot(**SUBPLOT_KW | {"aspect": "equal"})
@@ -393,41 +380,11 @@ class _GeometryPlotter:
         ax.grid(True)
         plt.show()
 
-    def plot_wall(self):
-        r"""Plots the device's wall in the $R, Z$ frame."""
-
-        fig = plt.figure(**FIG_KW)
-        ax = fig.add_subplot(**SUBPLOT_KW | {"aspect": "equal"})
-        ax.set_title(r"$Wall$")
-        ax.set_xlabel(r"$R[m]$")
-        ax.set_ylabel(r"$Z[m]$")
-
-        zlab_wall = self.zlab_wall
-        rlab_wall = self.rlab_wall
-
-        ax.plot(rlab_wall, zlab_wall, **WALL_KW)
-
-        ax.grid(True)
-        plt.show()
-
 
 class _QfactorPlotter:
     """Provides plotting functions for a Qfactor's evaluation methods."""
 
-    equilibrium_type: EquilibriumType
-    q_of_psi: Callable
-    q_of_psip: Callable
-    dpsip_dpsi: Callable
-    dpsi_dpsip: Callable
-    iota_of_psi: Callable
-    iota_of_psip: Callable
-
-    # Not guaranteed to exist
-    psi_wall: float
-    psip_wall: float
-    psi_array: Array1
-    psip_array: Array1
-    q_array: Array1
+    _rust: _PyUnityQfactor | _PyParabolicQfactor | _PyNcQfactor
 
     def plot_q_of_psi(self, points: int = 1000, data: bool = False):
         r"""Plots $q(\psi)$.
@@ -440,10 +397,10 @@ class _QfactorPlotter:
             Whether or not to plot the data array points (numerical equilibria only). Defaults to False.
         """
 
-        fun = self.q_of_psi
+        fun = self._rust.q_of_psi
         _attempt_evaluation(fun)
 
-        psi_wall = getattr(self, "psi_wall", PSI_WALL_BOUND)
+        psi_wall = getattr(self._rust, "psi_wall", PSI_WALL_BOUND)
         psis = np.linspace(0, psi_wall, points)
         qs = np.asarray([fun(psi) for psi in psis])
 
@@ -454,10 +411,10 @@ class _QfactorPlotter:
         ax.set_ylabel(r"$q(\psi)$")
 
         ax.plot(psis, qs, label=ax.get_ylabel(), **PLOT_KW)
-        if self.equilibrium_type == "Numerical" and data:
+        if self._rust.equilibrium_type == "Numerical" and data:
             ax.scatter(
-                self.psi_array,
-                self.q_array,
+                getattr(self._rust, "psi_array"),
+                getattr(self._rust, "q_array"),
                 label=r"$data$ $points$",
                 **SCATTER_KW,
             )
@@ -478,7 +435,7 @@ class _QfactorPlotter:
             Whether or not to plot the data array points (numerical equilibria only). Defaults to False.
         """
 
-        fun = self.q_of_psip
+        fun = self._rust.q_of_psip
         _attempt_evaluation(fun)
 
         psip_wall = getattr(self, "psip_wall", PSIP_WALL_BOUND)
@@ -492,10 +449,10 @@ class _QfactorPlotter:
         ax.set_ylabel(r"$q(\psi_p)$")
 
         ax.plot(psips, qs, label=ax.get_ylabel(), **PLOT_KW)
-        if self.equilibrium_type == "Numerical" and data:
+        if self._rust.equilibrium_type == "Numerical" and data:
             ax.scatter(
-                self.psip_array,
-                self.q_array,
+                getattr(self._rust, "psip_array"),
+                getattr(self._rust, "q_array"),
                 label=r"$data$ $points$",
                 **SCATTER_KW,
             )
@@ -516,8 +473,8 @@ class _QfactorPlotter:
             The number of points in which to evaluate the two splines. Defaults to 1000.
         """
 
-        fun = self.iota_of_psi
-        der_fun = self.dpsip_dpsi
+        fun = self._rust.iota_of_psi
+        der_fun = self._rust.dpsip_dpsi
         _attempt_evaluation(fun)
         _attempt_evaluation(der_fun)
 
@@ -551,8 +508,8 @@ class _QfactorPlotter:
             The number of points in which to evaluate the two splines. Defaults to 1000.
         """
 
-        fun = self.q_of_psip
-        der_fun = self.dpsi_dpsip
+        fun = self._rust.q_of_psip
+        der_fun = self._rust.dpsi_dpsip
         _attempt_evaluation(fun)
         _attempt_evaluation(der_fun)
 
@@ -584,7 +541,7 @@ class _QfactorPlotter:
             The number of points in which to evaluate $\iota(\psi)$. Defaults to 1000.
         """
 
-        fun = self.iota_of_psi
+        fun = self._rust.iota_of_psi
         _attempt_evaluation(fun)
 
         psi_wall = getattr(self, "psi_wall", PSI_WALL_BOUND)
@@ -613,7 +570,7 @@ class _QfactorPlotter:
             The number of points in which to evaluate $\iota(\psi_p)$. Defaults to 1000.
         """
 
-        fun = self.iota_of_psip
+        fun = self._rust.iota_of_psip
         _attempt_evaluation(fun)
 
         psip_wall = getattr(self, "psip_wall", PSIP_WALL_BOUND)
@@ -637,23 +594,7 @@ class _QfactorPlotter:
 class _CurrentPlotter:
     """Provides plotting functions for a Current's evaluation methods."""
 
-    equilibrium_type: EquilibriumType
-    g_of_psi: Callable
-    g_of_psip: Callable
-    i_of_psi: Callable
-    i_of_psip: Callable
-    dg_dpsi: Callable
-    dg_dpsip: Callable
-    di_dpsi: Callable
-    di_dpsip: Callable
-
-    # Not guaranteed to exist
-    psi_wall: float
-    psip_wall: float
-    psi_array: Array1
-    psip_array: Array1
-    g_array: Array1
-    i_array: Array1
+    _rust: _PyLarCurrent | _PyNcCurrent
 
     def plot_g_of_psi(self, points: int = 1000, data: bool = False):
         r"""Plots $g(\psi)$.
@@ -666,7 +607,7 @@ class _CurrentPlotter:
             Whether or not to plot the data array points (numerical equilibria only). Defaults to False.
         """
 
-        fun = self.g_of_psi
+        fun = self._rust.g_of_psi
         _attempt_evaluation(fun)
 
         psi_wall = getattr(self, "psi_wall", PSI_WALL_BOUND)
@@ -680,9 +621,12 @@ class _CurrentPlotter:
         ax.set_ylabel(r"$g(\psi)$ $[Normalized]$")
 
         ax.plot(psis, gs, label=ax.get_ylabel(), **PLOT_KW)
-        if self.equilibrium_type == "Numerical" and data:
+        if self._rust.equilibrium_type == "Numerical" and data:
             ax.scatter(
-                self.psi_array, self.g_array, label=r"$data$ $points$", **SCATTER_KW
+                getattr(self._rust, "psi_array"),
+                getattr(self._rust, "g_array"),
+                label=r"$data$ $points$",
+                **SCATTER_KW,
             )
 
         ax.axhline(y=0, **XAXIS_KW)
@@ -701,7 +645,7 @@ class _CurrentPlotter:
             Whether or not to plot the data array points (numerical equilibria only). Defaults to False.
         """
 
-        fun = self.g_of_psip
+        fun = self._rust.g_of_psip
         _attempt_evaluation(fun)
 
         psip_wall = getattr(self, "psip_wall", PSIP_WALL_BOUND)
@@ -715,9 +659,12 @@ class _CurrentPlotter:
         ax.set_ylabel(r"$g(\psi_p)$ $[Normalized]$")
 
         ax.plot(psips, gs, label=ax.get_ylabel(), **PLOT_KW)
-        if self.equilibrium_type == "Numerical" and data:
+        if self._rust.equilibrium_type == "Numerical" and data:
             ax.scatter(
-                self.psip_array, self.g_array, label=r"$data$ $points$", **SCATTER_KW
+                getattr(self._rust, "psip_array"),
+                getattr(self._rust, "g_array"),
+                label=r"$data$ $points$",
+                **SCATTER_KW,
             )
 
         ax.axhline(y=0, **XAXIS_KW)
@@ -736,7 +683,7 @@ class _CurrentPlotter:
             Whether or not to plot the data array points (numerical equilibria only). Defaults to False.
         """
 
-        fun = self.i_of_psi
+        fun = self._rust.i_of_psi
         _attempt_evaluation(fun)
 
         psi_wall = getattr(self, "psi_wall", PSI_WALL_BOUND)
@@ -750,9 +697,12 @@ class _CurrentPlotter:
         ax.set_ylabel(r"$I(\psi)$ $[Normalized]$")
 
         ax.plot(psis, i, label=ax.get_ylabel(), **PLOT_KW)
-        if self.equilibrium_type == "Numerical" and data:
+        if self._rust.equilibrium_type == "Numerical" and data:
             ax.scatter(
-                self.psi_array, self.i_array, label=r"$data$ $points$", **SCATTER_KW
+                getattr(self._rust, "psi_array"),
+                getattr(self._rust, "i_array"),
+                label=r"$data$ $points$",
+                **SCATTER_KW,
             )
 
         ax.axhline(y=0, **XAXIS_KW)
@@ -771,7 +721,7 @@ class _CurrentPlotter:
             Whether or not to plot the data array points (numerical equilibria only). Defaults to False.
         """
 
-        fun = self.i_of_psip
+        fun = self._rust.i_of_psip
         _attempt_evaluation(fun)
 
         psip_wall = getattr(self, "psip_wall", PSIP_WALL_BOUND)
@@ -785,9 +735,12 @@ class _CurrentPlotter:
         ax.set_ylabel(r"$I(\psi_p)$ $[Normalized]$")
 
         ax.plot(psips, i, label=ax.get_ylabel(), **PLOT_KW)
-        if self.equilibrium_type == "Numerical" and data:
+        if self._rust.equilibrium_type == "Numerical" and data:
             ax.scatter(
-                self.psip_array, self.i_array, label=r"$data$ $points$", **SCATTER_KW
+                getattr(self._rust, "psip_array"),
+                getattr(self._rust, "i_array"),
+                label=r"$data$ $points$",
+                **SCATTER_KW,
             )
 
         ax.axhline(y=0, **XAXIS_KW)
@@ -804,7 +757,7 @@ class _CurrentPlotter:
             The number of points in which to evaluate $dg(\psi)/d\psi$. Defaults to 1000.
         """
 
-        fun = self.dg_dpsi
+        fun = self._rust.dg_dpsi
         _attempt_evaluation(fun)
 
         psi_wall = getattr(self, "psi_wall", PSI_WALL_BOUND)
@@ -832,7 +785,7 @@ class _CurrentPlotter:
             The number of points in which to evaluate $dg(\psi_p)/d\psi_p$. Defaults to 1000.
         """
 
-        fun = self.dg_dpsip
+        fun = self._rust.dg_dpsip
         _attempt_evaluation(fun)
 
         psip_wall = getattr(self, "psip_wall", PSIP_WALL_BOUND)
@@ -860,7 +813,7 @@ class _CurrentPlotter:
             The number of points in which to evaluate $dI(\psi)/d\psi$. Defaults to 1000.
         """
 
-        fun = self.di_dpsi
+        fun = self._rust.di_dpsi
         _attempt_evaluation(fun)
 
         psi_wall = getattr(self, "psi_wall", PSI_WALL_BOUND)
@@ -889,7 +842,7 @@ class _CurrentPlotter:
             The number of points in which to evaluate $dI(\psi_p)/d\psi_p$. Defaults to 1000.
         """
 
-        fun = self.di_dpsip
+        fun = self._rust.di_dpsip
         _attempt_evaluation(fun)
 
         psip_wall = getattr(self, "psip_wall", PSIP_WALL_BOUND)
@@ -912,21 +865,7 @@ class _CurrentPlotter:
 class _HarmonicPlotter:
     """Provides plotting functions for a Harmonic's evaluation methods."""
 
-    equilibrium_type: EquilibriumType
-    alpha_of_psi: Callable
-    alpha_of_psip: Callable
-    phase_of_psi: Callable
-    phase_of_psip: Callable
-    m: int
-    n: int
-
-    # Not guaranteed to exist
-    psi_wall: float
-    psip_wall: float
-    psi_array: Array1
-    psip_array: Array1
-    alpha_array: Array1
-    phase_array: Array1
+    _rust: _PyCosHarmonic | _PyNcHarmonic
 
     ignored = (0.0, 0.0, 0.0)  # Ignored evaluation arguments θ, ζ, t
 
@@ -946,7 +885,7 @@ class _HarmonicPlotter:
             Whether or not to plot the data array points (numerical equilibria only). Defaults to False.
         """
 
-        fun = self.alpha_of_psi
+        fun = self._rust.alpha_of_psi
         _attempt_evaluation(fun)
 
         psi_wall = getattr(self, "psi_wall", PSI_WALL_BOUND)
@@ -960,9 +899,12 @@ class _HarmonicPlotter:
         ax.set_ylabel(r"$\alpha(\psi)$ $[Normalized]$")
 
         ax.plot(psis, alphas, label=ax.get_ylabel(), **PLOT_KW)
-        if self.equilibrium_type == "Numerical" and data:
+        if self._rust.equilibrium_type == "Numerical" and data:
             ax.scatter(
-                self.psi_array, self.alpha_array, label=r"$data$ $points$", **SCATTER_KW
+                getattr(self._rust, "psi_array"),
+                getattr(self._rust, "alpha_array"),
+                label=r"$data$ $points$",
+                **SCATTER_KW,
             )
 
         ax.axhline(y=0, **XAXIS_KW)
@@ -986,7 +928,7 @@ class _HarmonicPlotter:
             Whether or not to plot the data array points (numerical equilibria only). Defaults to False.
         """
 
-        fun = self.alpha_of_psip
+        fun = self._rust.alpha_of_psip
         _attempt_evaluation(fun)
 
         psip_wall = getattr(self, "psip_wall", PSIP_WALL_BOUND)
@@ -1000,10 +942,10 @@ class _HarmonicPlotter:
         ax.set_ylabel(r"$\alpha(\psi_p)$ $[Normalized]$")
 
         ax.plot(psips, alphas, label=ax.get_ylabel(), **PLOT_KW)
-        if self.equilibrium_type == "Numerical" and data:
+        if self._rust.equilibrium_type == "Numerical" and data:
             ax.scatter(
-                self.psip_array,
-                self.alpha_array,
+                getattr(self._rust, "psip_array"),
+                getattr(self._rust, "alpha_array"),
                 label=r"$data$ $points$",
                 **SCATTER_KW,
             )
@@ -1034,7 +976,7 @@ class _HarmonicPlotter:
             Defaults to True.
         """
 
-        fun = self.phase_of_psi
+        fun = self._rust.phase_of_psi
         _attempt_evaluation(fun)
 
         psi_wall = getattr(self, "psi_wall", PSI_WALL_BOUND)
@@ -1048,16 +990,19 @@ class _HarmonicPlotter:
         ax.set_ylabel(r"$\phi(\psi)$ $[Normalized]$")
 
         ax.plot(psis, phis, label=ax.get_ylabel(), **PLOT_KW)
-        if self.equilibrium_type == "Numerical" and data:
+        if self._rust.equilibrium_type == "Numerical" and data:
             ax.scatter(
-                self.psi_array, self.phase_array, label=r"$data$ $points$", **SCATTER_KW
+                getattr(self._rust, "psi_array"),
+                getattr(self._rust, "phase_array"),
+                label=r"$data$ $points$",
+                **SCATTER_KW,
             )
 
         if resonance and (getattr(self, "phase_method", False) == "Resonance"):
             psi_res = getattr(self, "psi_phase_resonance")
             ax.axvline(
                 x=psi_res,
-                label=f"$Resonance$ $(n/m = {self.n}/{self.m})$",
+                label=f"$Resonance$ $(n/m = {self._rust.n}/{self._rust.m})$",
                 **RESONANCE_KW,
             )
 
@@ -1087,7 +1032,7 @@ class _HarmonicPlotter:
             Defaults to True.
         """
 
-        fun = self.phase_of_psip
+        fun = self._rust.phase_of_psip
         _attempt_evaluation(fun)
 
         psip_wall = getattr(self, "psip_wall", PSIP_WALL_BOUND)
@@ -1101,10 +1046,10 @@ class _HarmonicPlotter:
         ax.set_ylabel(r"$\phi(\psi_p)$ $[Normalized]$")
 
         ax.plot(psips, phis, label=ax.get_ylabel(), **PLOT_KW)
-        if self.equilibrium_type == "Numerical" and data:
+        if self._rust.equilibrium_type == "Numerical" and data:
             ax.scatter(
-                self.psip_array,
-                self.phase_array,
+                getattr(self._rust, "psip_array"),
+                getattr(self._rust, "phase_array"),
                 label=r"$data$ $points$",
                 **SCATTER_KW,
             )
@@ -1113,7 +1058,7 @@ class _HarmonicPlotter:
             psip_res = getattr(self, "psip_phase_resonance")
             ax.axvline(
                 x=psip_res,
-                label=f"$Resonance$ $(n/m = {self.n}/{self.m})$",
+                label=f"$Resonance$ $(n/m = {self._rust.n}/{self._rust.m})$",
                 **RESONANCE_KW,
             )
 

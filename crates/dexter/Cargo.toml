@@ -8,7 +8,7 @@ license.workspace = true
 homepage.workspace = true
 repository.workspace = true
 documentation.workspace = true
-description.workspace = true
+description = "Collection of all crates needed to build 'py-dexter'"
 
 [dependencies]
 dexter-equilibrium.workspace = true
@@ -16,5 +16,5 @@ dexter-simulate.workspace = true
 
 [features]
 default = []
-openblas-static = ["dexter-equilibrium/openblas-static"]
 netcdf-static = ["dexter-equilibrium/netcdf-static"]
+openblas-static = ["dexter-equilibrium/openblas-static"]

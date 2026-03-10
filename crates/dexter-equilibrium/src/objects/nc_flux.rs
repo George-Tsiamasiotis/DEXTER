@@ -1,12 +1,13 @@
 //! Definition of the `NcFlux` object.
 
-use ndarray::{ArrayView1, Axis};
+use ndarray::{ArrayRef1, Axis};
 
-use crate::extract::extract_1d_array;
-use crate::extract::netcdf_fields::*;
+use crate::extract;
+use crate::extract::netcdf_fields::{NC_PSI_NORM, NC_PSIP_NORM};
 
 /// Defines whether or not a Flux coordinate can be used for evaluations.
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[expect(clippy::exhaustive_enums, reason = "No other possible states")]
 pub enum NcFluxState {
     /// Good coordinate: values exist and are increasing. Can be used as an x coordinate for
     /// evaluations.
@@ -18,46 +19,65 @@ pub enum NcFluxState {
 }
 
 impl NcFluxState {
-    /// Returns Self::Good if the values are strictly increasing, and Self::Bad otherwise.
-    fn from_array(arr: ArrayView1<f64>) -> Self {
-        // Use abs() to handle negative q-factors
-        match arr.abs().diff(1, Axis(0)).iter().all(|d| d.signum() == 1.0) {
-            true => Self::Good,
-            false => Self::Bad,
+    /// Returns `Good` if the values are strictly monotonic, and `Bad`
+    /// otherwise.
+    #[expect(clippy::float_cmp, reason = "signum() always returns exactly 1.0_f64")]
+    fn from_array(arr: &ArrayRef1<f64>) -> Self {
+        // Use abs() to handle negative q-factors; we only care for monotonicity
+        if arr
+            .abs()
+            .diff(1, Axis(0))
+            .iter()
+            .all(|diff| diff.signum() == 1.0_f64)
+        {
+            Self::Good
+        } else {
+            Self::Bad
         }
     }
 }
 
-/// Contains the Flux's values and state.
+/// Representation of a Flux Coordinate created from a netCDF file. Contains the Flux's values
+/// and state.
 #[derive(Clone)]
-pub struct NcFlux {
+pub(crate) struct NcFlux {
+    /// The extracted flux values, if the extraction was successful.
     values: Option<Vec<f64>>,
-    pub(crate) state: NcFluxState,
+    /// The state of the coordinate.
+    state: NcFluxState,
 }
 
 impl NcFlux {
     /// Creates the toroidal flux `ψ` representation.
     pub(crate) fn toroidal(file: &netcdf::File) -> Self {
-        Self::build(file, PSI_NORM)
+        Self::build(file, NC_PSI_NORM)
     }
 
     /// Creates the poroidal flux `ψp` representation.
     pub(crate) fn poloidal(file: &netcdf::File) -> Self {
-        Self::build(file, PSIP_NORM)
+        Self::build(file, NC_PSIP_NORM)
     }
 
     /// Extracts the values and sets the state.
+    ///
+    /// It is not guaranteed that both fluxes (good or bad) exist in a dataset, so we dont want to
+    /// return an error in case the corresponding field is not found in the netCDF file.
     fn build(file: &netcdf::File, netcdf_field: &str) -> Self {
-        match extract_1d_array(file, netcdf_field) {
-            Ok(arr) => Self {
-                values: Some(arr.to_vec()),
-                state: NcFluxState::from_array(arr.view()),
+        match extract::array_1d(file, netcdf_field) {
+            Ok(array) => Self {
+                values: Some(array.to_vec()),
+                state: NcFluxState::from_array(&array),
             },
             Err(_) => Self {
                 values: None,
                 state: NcFluxState::None,
             },
         }
+    }
+
+    /// Returns the state of the flux coordinate.
+    pub(crate) fn state(&self) -> NcFluxState {
+        self.state
     }
 
     /// Returns the flux values, if the exist.
@@ -68,7 +88,7 @@ impl NcFlux {
     /// Returns a slice to the wrapped values, panicking if they do not exist.
     ///
     /// Since the values are referenced by the interpolators all the time, we do the unwrapping
-    /// here to avoid messing up the interpolation calls
+    /// here to avoid messing up the interpolation calls, which results in very ugly code.
     ///
     /// This method should only be used in places where we know the values exists, for example
     /// under an `state != NcFluxState::None` guard.
@@ -94,7 +114,7 @@ impl std::fmt::Debug for NcFlux {
             None => String::from("No values"),
         };
         let wall = match self.wall_value() {
-            Some(value) => format!("{}", value),
+            Some(value) => format!("{value}"),
             None => String::from("No value"),
         };
         f.debug_struct("Flux")
@@ -125,7 +145,7 @@ mod test {
     fn get_uvalues_empty() {
         let flux = create_empty_flux();
         let _ = format!("{flux:?}");
-        flux.uvalues();
+        let _ = flux.uvalues();
     }
 
     #[test]

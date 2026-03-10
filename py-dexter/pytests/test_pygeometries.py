@@ -1,4 +1,5 @@
 import pytest
+import numpy as np
 from math import isfinite
 from dexter.equilibrium import _TOROIDAL_TEST_NETCDF_PATH, _POLOIDAL_TEST_NETCDF_PATH
 from dexter import LarGeometry, NcGeometry
@@ -6,8 +7,13 @@ from dexter import LarGeometry, NcGeometry
 
 def test_lar_geometry():
     geometry = LarGeometry(baxis=2, raxis=1.75, rwall=0.5)
-    assert isinstance(geometry.__str__(), str)
-    assert isinstance(geometry.__repr__(), str)
+    assert geometry.equilibrium_type == "Analytical"
+    assert geometry.baxis == 2
+    assert geometry.raxis == 1.75
+    assert geometry.rwall == 0.5
+    assert isfinite(geometry.psi_wall)
+    assert np.all(np.isfinite(geometry.rlab_wall))
+    assert np.all(np.isfinite(geometry.zlab_wall))
     assert isfinite(geometry.r_of_psi(0.01))
     assert isfinite(geometry.psi_of_r(0.01))
     assert isfinite(geometry.rlab_of_psi(0.01, 3.14))
@@ -24,11 +30,11 @@ def test_lar_geometry():
         geometry.jacobian_of_psi(0.01, 3.14)
     with pytest.raises(BaseException):
         geometry.jacobian_of_psip(0.01, 3.14)
+    assert isinstance(geometry.__str__(), str)
+    assert isinstance(geometry.__repr__(), str)
 
 
 def test_nc_geometry_getters(nc_geometry: NcGeometry):
-    assert isinstance(nc_geometry.__str__(), str)
-    assert isinstance(nc_geometry.__repr__(), str)
     assert isinstance(nc_geometry.path, str)
     assert isinstance(nc_geometry.netcdf_version, str)
     assert nc_geometry.equilibrium_type == "Numerical"
@@ -51,6 +57,8 @@ def test_nc_geometry_getters(nc_geometry: NcGeometry):
     assert nc_geometry.rlab_array.ndim == 2
     assert nc_geometry.zlab_array.ndim == 2
     assert nc_geometry.jacobian_array.ndim == 2
+    assert isinstance(nc_geometry.__str__(), str)
+    assert isinstance(nc_geometry.__repr__(), str)
 
 
 def test_nc_geometry_eval(nc_geometry: NcGeometry):

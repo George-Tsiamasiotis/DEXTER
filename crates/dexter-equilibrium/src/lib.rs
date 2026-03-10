@@ -55,37 +55,30 @@
 //! [`Variables`](netcdf::Variable) from the netCDF file.
 //!
 //! + [`extract::open`]: Open a netCDF file.
-//! + [`extract::extract_scalar`]: Scalar value extraction.
-//! + [`extract::extract_1d_array`]: 1D array extraction.
-//! + [`extract::extract_2d_array`]: 2D array extraction.
-//! + [`extract::extract_3d_array`]: 3D array extraction.
-//! + [`extract::extract_harmonic_arrays`]: Extraction of the α and φ arrays of the {m,n} mode.
-//! Modes are indexed by their mode numbers, rather than the logical index they appear on the data
+//! + [`extract::scalar`]: Scalar value extraction.
+//! + [`extract::array_1d`]: 1D array extraction.
+//! + [`extract::array_2d`]: 2D array extraction.
+//! + [`extract::array_3d`]: 3D array extraction.
+//! + [`extract::harmonic_arrays`]: Extraction of the α and φ arrays of the {m,n} mode. Modes are indexed
+//! by their mode numbers, rather than the logical index they appear on the data
 //! arrays.
-//! + [`extract::extract_variable`]: Extraction of a variable as a [`Variable`](netcdf::Variable).
-//! + [`extract::extract_attribute`]: Extraction of a file's attribute as a String.
-//! + [`extract::extract_version`]: Extraction of a files convention [`Semantic Version`](https://semver.org/)
-
-#![allow(mixed_script_confusables)]
+//! + [`extract::variable`]: Extraction of a variable as a [`Variable`](netcdf::Variable).
+//! + [`extract::attribute`]: Extraction of a file's attribute as a String.
+//! + [`extract::version`]: Extraction of a files convention [`Semantic Version`](https://semver.org/)
 
 mod error;
 mod eval;
-mod flux;
 mod objects;
 
 // ============== Public API
 
 pub mod extract;
 
-pub use error::EqError;
-pub use error::NcError;
-/// Result type used throughout the crate.
-pub type Result<T> = std::result::Result<T, EqError>;
+pub use error::{EqError, EvalError, NcError};
 
 pub use objects::EquilibriumType;
 
-pub use flux::NcFlux;
-pub use flux::NcFluxState;
+pub use objects::nc_flux::NcFluxState;
 
 pub use eval::HarmonicCache;
 pub use eval::{Bfield, Current, FluxCommute, Geometry, Harmonic, Qfactor};

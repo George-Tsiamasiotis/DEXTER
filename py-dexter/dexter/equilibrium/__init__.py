@@ -7,8 +7,8 @@ from .objects import Qfactor, UnityQfactor, ParabolicQfactor, NcQfactor
 from .objects import Current, LarCurrent, NcCurrent
 from .objects import Bfield, LarBfield, NcBfield
 from .objects import Harmonic, CosHarmonic, NcHarmonic
-from .objects import Perturbation, CosPerturbation, NcPerturbation
-from .helpers import NcEquilibrium, perturbation
+from .objects import Perturbation
+from .helpers import NcEquilibrium
 
 __all__ = [
     "_TOROIDAL_TEST_NETCDF_PATH",
@@ -31,9 +31,6 @@ __all__ = [
     "NcBfield",
     "CosHarmonic",
     "NcHarmonic",
-    "CosPerturbation",
-    "NcPerturbation",
     # Helpers
     "NcEquilibrium",
-    "perturbation",
 ]

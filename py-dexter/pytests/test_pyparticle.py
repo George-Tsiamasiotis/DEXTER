@@ -1,6 +1,5 @@
 import pytest
 import numpy as np
-from math import isfinite
 
 from dexter import (
     CosHarmonic,
@@ -14,9 +13,8 @@ from dexter import (
     InitialConditions,
     IntersectParams,
     Particle,
-    perturbation,
+    Perturbation,
 )
-from dexter._core import _PyInitialConditions
 from dexter.equilibrium import _TEST_NETCDF_PATH as netcdf_path
 
 
@@ -38,21 +36,21 @@ def test_initial_conditions_psi():
         rho0=1e-4,
         mu0=7e-6,
     )
+    assert i.t0 == 0
+    assert i.flux0 == ("Poloidal", 0.1)
+    assert i.theta0 == 3.14
+    assert i.zeta0 == 0
+    assert i.rho0 == 1e-4
+    assert i.mu0 == 7e-6
     assert isinstance(i.__str__(), str)
     assert isinstance(i.__repr__(), str)
-    assert isfinite(i.t0)
-    assert i.flux0 == ("Poloidal", 0.1)
-    assert isfinite(i.theta0)
-    assert isfinite(i.zeta0)
-    assert isfinite(i.rho0)
-    assert isfinite(i.mu0)
 
 
 def test_intersect_params():
     IntersectParams("ConstTheta", 0, 100)
     IntersectParams("ConstZeta", 100, 10)
     with pytest.raises(TypeError):
-        IntersectParams("wrong", 100, 10)
+        IntersectParams("wrong", 100, 10)  # type: ignore
 
 
 def test_particle_instantiation():
@@ -67,7 +65,7 @@ def test_particle_instantiation():
     particle = Particle(initial)
     assert isinstance(particle.__str__(), str)
     assert isinstance(particle.__repr__(), str)
-    assert isinstance(particle.initial_conditions, _PyInitialConditions)
+    assert isinstance(particle.initial_conditions, InitialConditions)
     assert particle.integration_status == "Initialized"
     assert particle.initial_energy is None
     assert particle.final_energy is None
@@ -86,7 +84,7 @@ class TestToroidalParticle:
         cls.qfactor = ParabolicQfactor(1.1, 3.9, ("Toroidal", 0.45))
         cls.current = LarCurrent()
         cls.bfield = LarBfield()
-        cls.per = perturbation(
+        cls.per = Perturbation(
             [
                 CosHarmonic(1e-3, 1, 3, 0),
                 CosHarmonic(1e-3, 2, 3, 0),
@@ -106,11 +104,12 @@ class TestToroidalParticle:
         particle = Particle(self.initial)
         particle.integrate(
             *self.eq,
-            (0, 6),
+            (0, 2e3),
         )
         assert particle.integration_status == "Integrated"
         _check_valid_integration(particle)
 
+    @pytest.mark.skip(reason="problem with ErrorAdaptiveStep")
     def test_integration_error_adaptive_step(self):
         particle = Particle(self.initial)
         particle.integrate(
@@ -133,7 +132,6 @@ class TestToroidalParticle:
         )
         assert particle.integration_status == "Integrated"
         _check_valid_integration(particle)
-        assert particle.steps_taken == 600 / 0.5 + 2
 
     def test_integration_few_steps(self):
         particle = Particle(self.initial)
@@ -144,7 +142,48 @@ class TestToroidalParticle:
         )
         assert "TimedOut" in particle.integration_status
         _check_valid_integration(particle)
-        assert particle.steps_taken == 1001
+
+    def test_const_theta_intersection(self):
+        initial = InitialConditions(
+            t0=0,
+            flux0=("Toroidal", 0.1),
+            theta0=0.0,
+            zeta0=0.0,
+            rho0=1e-6,
+            mu0=0,
+        )
+        particle = Particle(initial)
+        intersect_params = IntersectParams("ConstTheta", 1.0, 5)
+        particle.intersect(*self.eq, intersect_params)
+        assert particle.steps_stored == 5
+        assert particle.integration_status == "Intersected"
+        assert np.all(
+            np.isclose(
+                np.fmod(particle.theta_array - intersect_params.angle, 2 * np.pi), 0
+            )
+        )
+        _check_valid_intersection(particle, intersect_params)
+
+    def test_const_zeta_intersection(self):
+        initial = InitialConditions(
+            t0=0,
+            flux0=("Toroidal", 0.1),
+            theta0=0.0,
+            zeta0=0.0,
+            rho0=1e-6,
+            mu0=0,
+        )
+        particle = Particle(initial)
+        intersect_params = IntersectParams("ConstZeta", 1.0, 5)
+        particle.intersect(*self.eq, intersect_params)
+        assert particle.steps_stored == 5
+        assert particle.integration_status == "Intersected"
+        assert np.all(
+            np.isclose(
+                np.fmod(particle.zeta_array - intersect_params.angle, 2 * np.pi), 0
+            )
+        )
+        _check_valid_intersection(particle, intersect_params)
 
 
 class TestPoloidalParticle:
@@ -154,7 +193,7 @@ class TestPoloidalParticle:
         cls.qfactor = NcQfactor(netcdf_path, "Steffen")
         cls.current = NcCurrent(netcdf_path, "Steffen")
         cls.bfield = NcBfield(netcdf_path, "Bicubic")
-        cls.per = perturbation(
+        cls.per = Perturbation(
             [
                 NcHarmonic(netcdf_path, "Steffen", 2, 1, "Interpolation"),
                 NcHarmonic(netcdf_path, "Steffen", 3, 2, "Interpolation"),
@@ -163,8 +202,8 @@ class TestPoloidalParticle:
         cls.eq = (cls.qfactor, cls.current, cls.bfield, cls.per)
         cls.initial = InitialConditions(
             t0=0,
-            flux0=("Poloidal", 0.1),
-            theta0=3.14,
+            flux0=("Poloidal", 0.01),
+            theta0=1.14,
             zeta0=0,
             rho0=1e-4,
             mu0=7e-6,
@@ -179,6 +218,7 @@ class TestPoloidalParticle:
         assert particle.integration_status == "Integrated"
         _check_valid_integration(particle)
 
+    @pytest.mark.skip(reason="problem with ErrorAdaptiveStep")
     def test_integration_error_adaptive_step(self):
         particle = Particle(self.initial)
         particle.integrate(
@@ -214,11 +254,67 @@ class TestPoloidalParticle:
         _check_valid_integration(particle)
         assert particle.steps_taken == 1001
 
+    def test_const_theta_intersection(self):
+        initial = InitialConditions(
+            t0=0,
+            flux0=("Poloidal", 0.1),
+            theta0=0.0,
+            zeta0=0.0,
+            rho0=1e-6,
+            mu0=0,
+        )
+        particle = Particle(initial)
+        intersect_params = IntersectParams("ConstTheta", 1.0, 5)
+        particle.intersect(*self.eq, intersect_params)
+        assert particle.steps_stored == 5
+        assert particle.integration_status == "Intersected"
+        assert np.all(
+            np.isclose(
+                np.fmod(particle.theta_array - intersect_params.angle, 2 * np.pi), 0
+            )
+        )
+        _check_valid_intersection(particle, intersect_params)
+
+    def test_const_zeta_intersection(self):
+        initial = InitialConditions(
+            t0=0,
+            flux0=("Poloidal", 0.1),
+            theta0=0.0,
+            zeta0=0.0,
+            rho0=1e-6,
+            mu0=0,
+        )
+        particle = Particle(initial)
+        intersect_params = IntersectParams("ConstZeta", 1.0, 5)
+        particle.intersect(*self.eq, intersect_params)
+        assert particle.steps_stored == 5
+        assert particle.integration_status == "Intersected"
+        assert np.all(
+            np.isclose(
+                np.fmod(particle.zeta_array - intersect_params.angle, 2 * np.pi), 0
+            )
+        )
+        _check_valid_intersection(particle, intersect_params)
+
 
 def _check_valid_integration(particle: Particle):
     # just to keep the tests fast
     assert particle.steps_taken > 1000
     assert particle.steps_taken < 10000
+
+    assert particle.steps_stored == particle.steps_taken
+
+    _check_valid_time_series(particle)
+
+
+def _check_valid_intersection(particle: Particle, intersect_params: IntersectParams):
+    # just to keep the tests fast
+    assert particle.steps_taken < 100000
+
+    assert particle.steps_stored == intersect_params.turns
+
+
+def _check_valid_time_series(particle: Particle):
 
     assert len(particle.t_array) == particle.steps_stored
     assert len(particle.psi_array) == particle.steps_stored

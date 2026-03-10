@@ -1,3 +1,3 @@
-//! Common utilities across the workspace
+//! Common utilities across the workspace.
 
 mod macros;

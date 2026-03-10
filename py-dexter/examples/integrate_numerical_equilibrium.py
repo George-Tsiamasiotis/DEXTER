@@ -1,24 +1,26 @@
 """Integration of a particle in a numerical equilibrium."""
 
 import dexter as dex
+from dexter.equilibrium import _TEST_NETCDF_PATH
 
-path = "./data.nc"
+path = _TEST_NETCDF_PATH
 
-geometry = dex.NcGeometry(path, interp1d_type="Steffen", interp2d_type="Bicubic")
-qfactor = dex.NcQfactor(path, interp_type="Steffen")
-current = dex.NcCurrent(path, interp_type="Steffen")
-bfield = dex.NcBfield(path, interp_type="Bicubic")
-perturbation = dex.perturbation(
+eq = dex.NcEquilibrium(path, "Steffen", "Bicubic")
+geometry, qfactor, current, bfield = eq.objects()
+perturbation = dex.Perturbation(
     [
-        dex.NcHarmonic(path, interp_type="Steffen", m=m, n=n, phase_method="Zero")
-        for n in range(1, 24)
-        for m in range(-1, 3)
+        dex.NcHarmonic(
+            path, interp_type="Steffen", m=2, n=1, phase_method="Interpolation"
+        ),
+        dex.NcHarmonic(
+            path, interp_type="Steffen", m=3, n=2, phase_method="Interpolation"
+        ),
     ]
 )
 
 initial_conditions = dex.InitialConditions(
     t0=0,
-    flux0=("Poloidal", 0.1 * qfactor.psip_wall),
+    flux0=("Poloidal", 0.8 * qfactor.psip_wall),
     theta0=1.0,
     zeta0=0.0,
     rho0=1e-3,
@@ -32,9 +34,8 @@ particle.integrate(
     current=current,
     bfield=bfield,
     perturbation=perturbation,
-    teval=(0, 6e3),
+    teval=(0, 7e5),
 )
 print(particle)
 
 particle.plot_evolution()
-particle.plot_poloidal_drift()

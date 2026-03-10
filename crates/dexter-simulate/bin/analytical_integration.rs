@@ -1,9 +1,14 @@
-use dexter_equilibrium::*;
-use dexter_simulate::*;
+//! Integration of a particle for a long time, useful for profiling.
+
+use dexter_equilibrium::{
+    CosHarmonic, FluxWall, LarBfield, LarCurrent, ParabolicQfactor, Perturbation,
+};
+use dexter_simulate::{
+    InitialConditions, InitialFlux, IntegrationStatus, Particle, SolverParams, SteppingMethod,
+};
 
 fn main() {
     // Equilibrium setup
-    use InitialFlux::*;
     let qfactor = ParabolicQfactor::new(1.1, 3.9, FluxWall::Toroidal(0.45));
     let current = LarCurrent::new();
     let bfield = LarBfield::new();
@@ -15,7 +20,7 @@ fn main() {
     // Particle setup
     let initial = InitialConditions {
         t0: 0.0,
-        flux0: Toroidal(0.2),
+        flux0: InitialFlux::Toroidal(0.2),
         theta0: 0.0,
         zeta0: 0.0,
         rho0: 1e-4,
@@ -41,8 +46,11 @@ fn main() {
         &solver_params,
     );
     dbg!(&particle);
-    assert!(matches!(
-        particle.integration_status(),
-        IntegrationStatus::TimedOut(..)
-    ));
+    assert!(
+        matches!(
+            particle.integration_status(),
+            IntegrationStatus::TimedOut(..)
+        ),
+        "particle is supposed to time out"
+    );
 }

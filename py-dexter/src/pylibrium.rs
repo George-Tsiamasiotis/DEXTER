@@ -17,7 +17,7 @@ use pyo3::prelude::*;
 use pyo3::types::{PyList, PyTuple};
 use rsl_interpolation::{Accelerator, Cache};
 
-use crate::pyerror::PyEqError;
+use crate::pyerror::{PyEqError, PyEvalError};
 use crate::{
     py_debug_impl, py_eval_harmonic, py_eval_perturbation, py_eval1D, py_eval2D, py_export_getter,
     py_get_enum_string, py_get_netcdf_version, py_get_numpy1D, py_get_numpy1D_fallible,
@@ -46,8 +46,6 @@ py_export_getter!(PyLarGeometry, baxis, f64);
 py_export_getter!(PyLarGeometry, raxis, f64);
 py_export_getter!(PyLarGeometry, rwall, f64);
 py_export_getter!(PyLarGeometry, psi_wall, f64);
-py_get_numpy1D!(PyLarGeometry, rlab_wall);
-py_get_numpy1D!(PyLarGeometry, zlab_wall);
 py_eval1D!(PyLarGeometry, r_of_psi);
 py_eval1D!(PyLarGeometry, r_of_psip);
 py_eval1D!(PyLarGeometry, psi_of_r);
@@ -58,6 +56,8 @@ py_eval2D!(PyLarGeometry, zlab_of_psi);
 py_eval2D!(PyLarGeometry, zlab_of_psip);
 py_eval2D!(PyLarGeometry, jacobian_of_psi);
 py_eval2D!(PyLarGeometry, jacobian_of_psip);
+py_get_numpy1D!(PyLarGeometry, rlab_wall);
+py_get_numpy1D!(PyLarGeometry, zlab_wall);
 
 // ===============================================================================================
 
@@ -103,8 +103,6 @@ py_get_numpy1D!(PyNcGeometry, r_array);
 py_get_numpy2D!(PyNcGeometry, rlab_array);
 py_get_numpy2D!(PyNcGeometry, zlab_array);
 py_get_numpy2D!(PyNcGeometry, jacobian_array);
-py_get_numpy1D!(PyNcGeometry, rlab_wall);
-py_get_numpy1D!(PyNcGeometry, zlab_wall);
 py_eval1D!(PyNcGeometry, psip_of_psi);
 py_eval1D!(PyNcGeometry, psi_of_psip);
 py_eval1D!(PyNcGeometry, r_of_psi);
@@ -117,6 +115,8 @@ py_eval2D!(PyNcGeometry, zlab_of_psi);
 py_eval2D!(PyNcGeometry, zlab_of_psip);
 py_eval2D!(PyNcGeometry, jacobian_of_psi);
 py_eval2D!(PyNcGeometry, jacobian_of_psip);
+py_get_numpy1D!(PyNcGeometry, rlab_wall);
+py_get_numpy1D!(PyNcGeometry, zlab_wall);
 
 // ===============================================================================================
 // ===============================================================================================
@@ -136,10 +136,10 @@ impl PyUnityQfactor {
 py_debug_impl!(PyUnityQfactor);
 py_repr_impl!(PyUnityQfactor);
 py_get_enum_string!(PyUnityQfactor, equilibrium_type);
-py_eval1D!(PyUnityQfactor, q_of_psi);
-py_eval1D!(PyUnityQfactor, q_of_psip);
 py_eval1D!(PyUnityQfactor, psip_of_psi);
 py_eval1D!(PyUnityQfactor, psi_of_psip);
+py_eval1D!(PyUnityQfactor, q_of_psi);
+py_eval1D!(PyUnityQfactor, q_of_psip);
 py_eval1D!(PyUnityQfactor, dpsi_dpsip);
 py_eval1D!(PyUnityQfactor, dpsip_dpsi);
 py_eval1D!(PyUnityQfactor, iota_of_psi);
@@ -154,18 +154,17 @@ pub struct PyParabolicQfactor(pub(crate) ParabolicQfactor);
 impl PyParabolicQfactor {
     #[new]
     #[pyo3(signature = (qaxis, qwall, flux_wall))]
-    pub fn new<'py>(qaxis: f64, qwall: f64, flux_wall: Bound<'py, PyTuple>) -> Self {
-        let e = "Input type must be a tuple of the form (str, float)";
-        let flux: String = flux_wall.get_item(0).expect(e).extract().expect(e);
-        let value: f64 = flux_wall.get_item(1).expect(e).extract().expect(e);
-        let flux_wall: FluxWall;
-        match flux.to_lowercase().as_str() {
-            "toroidal" => flux_wall = FluxWall::Toroidal(value),
-            "poloidal" => flux_wall = FluxWall::Poloidal(value),
-            _ => panic!("Flux coordinate must be either 'Toroidal' or 'Poloidal'"),
-        }
+    pub fn new<'py>(qaxis: f64, qwall: f64, flux_wall: Bound<'py, PyTuple>) -> PyResult<Self> {
+        let tuple = flux_wall.cast::<PyTuple>()?;
+        let string: String = tuple.get_item(0)?.extract::<String>()?.to_lowercase();
+        let value: f64 = tuple.get_item(1)?.extract::<f64>()?;
+        let flux_wall = match string.as_str() {
+            "toroidal" => FluxWall::Toroidal(value),
+            "poloidal" => FluxWall::Poloidal(value),
+            _ => return Err(PyErr::new::<PyTypeError, _>("Invalid 'FluxWall'")),
+        };
 
-        Self(ParabolicQfactor::new(qaxis, qwall, flux_wall))
+        Ok(Self(ParabolicQfactor::new(qaxis, qwall, flux_wall)))
     }
 }
 
@@ -176,10 +175,10 @@ py_export_getter!(PyParabolicQfactor, qaxis, f64);
 py_export_getter!(PyParabolicQfactor, qwall, f64);
 py_export_getter!(PyParabolicQfactor, psi_wall, f64);
 py_export_getter!(PyParabolicQfactor, psip_wall, f64);
-py_eval1D!(PyParabolicQfactor, q_of_psi);
-py_eval1D!(PyParabolicQfactor, q_of_psip);
 py_eval1D!(PyParabolicQfactor, psip_of_psi);
 py_eval1D!(PyParabolicQfactor, psi_of_psip);
+py_eval1D!(PyParabolicQfactor, q_of_psi);
+py_eval1D!(PyParabolicQfactor, q_of_psip);
 py_eval1D!(PyParabolicQfactor, dpsi_dpsip);
 py_eval1D!(PyParabolicQfactor, dpsip_dpsi);
 py_eval1D!(PyParabolicQfactor, iota_of_psi);
@@ -216,10 +215,10 @@ py_get_enum_string!(PyNcQfactor, psip_state);
 py_get_numpy1D_fallible!(PyNcQfactor, psi_array);
 py_get_numpy1D_fallible!(PyNcQfactor, psip_array);
 py_get_numpy1D!(PyNcQfactor, q_array);
-py_eval1D!(PyNcQfactor, q_of_psi);
-py_eval1D!(PyNcQfactor, q_of_psip);
 py_eval1D!(PyNcQfactor, psip_of_psi);
 py_eval1D!(PyNcQfactor, psi_of_psip);
+py_eval1D!(PyNcQfactor, q_of_psi);
+py_eval1D!(PyNcQfactor, q_of_psip);
 py_eval1D!(PyNcQfactor, dpsi_dpsip);
 py_eval1D!(PyNcQfactor, dpsip_dpsi);
 py_eval1D!(PyNcQfactor, iota_of_psi);
@@ -412,7 +411,7 @@ impl PyNcHarmonic {
         interp_type: &str,
         m: i64,
         n: i64,
-        phase_method: Bound<'py, PyAny>,
+        phase_method: Option<Bound<'py, PyAny>>,
     ) -> Result<Self, PyEqError> {
         let path = std::path::PathBuf::from(path);
         let method: PhaseMethod = Self::resolve_phase_method(phase_method)?;
@@ -430,8 +429,13 @@ impl PyNcHarmonic {
     /// into a PhaseMethod::Custom.
     ///
     /// Returns an Error if both string matching and casting fail.
-    fn resolve_phase_method<'py>(arg: Bound<'py, PyAny>) -> PyResult<PhaseMethod> {
+    fn resolve_phase_method<'py>(arg: Option<Bound<'py, PyAny>>) -> PyResult<PhaseMethod> {
         use PhaseMethod::*;
+
+        if arg.is_none() {
+            return Ok(PhaseMethod::Average);
+        }
+        let arg = arg.unwrap();
 
         match arg.to_string().to_lowercase().as_str() {
             "zero" => return Ok(Zero),
@@ -494,15 +498,14 @@ py_eval_harmonic!(PyNcHarmonic, dh_of_psip_dt);
 ///
 /// Fortunately, all exported methods are identical. However, creating a trait for this is a mess
 /// due to pyo3's attributes (if possible at all), so we create this macro instead.
-#[doc(hidden)]
 macro_rules! PyPerturbationImpl {
     ($py_perturbation:ident, $py_harmonic:ident, $harmonic:ident) => {
         #[pymethods]
         impl $py_perturbation {
             #[new]
-            #[pyo3(signature = (list))]
-            pub fn new<'py>(list: Bound<'py, PyList>) -> Result<Self, PyEqError> {
-                let pyharmonics: Vec<$py_harmonic> = list
+            #[pyo3(signature = (harmonics))]
+            pub fn new<'py>(harmonics: Bound<'py, PyList>) -> Result<Self, PyEvalError> {
+                let pyharmonics: Vec<$py_harmonic> = harmonics
                     .iter()
                     .map(|h| {
                         h.extract()

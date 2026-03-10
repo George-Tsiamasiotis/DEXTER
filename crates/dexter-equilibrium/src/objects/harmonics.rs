@@ -1,12 +1,14 @@
 //! Representation of analytical Harmonics.
 
-use crate::eval::HarmonicCache;
-use crate::{EquilibriumType, Harmonic, Result};
 use crate::{
+    debug_assert_is_finite, debug_assert_non_negative_psi, debug_assert_non_negative_psip,
     equilibrium_type_getter_impl, harmonic_cache_counts_getter_impl,
     harmonic_mode_number_getter_impl,
 };
 use std::f64::consts::TAU;
+
+use crate::EvalError;
+use crate::{EquilibriumType, Harmonic, HarmonicCache};
 
 // ===============================================================================================
 
@@ -19,11 +21,16 @@ use std::f64::consts::TAU;
 #[non_exhaustive]
 #[derive(Clone)]
 pub struct CosHarmonic {
+    /// The object's equilibrium type.
     equilibrium_type: EquilibriumType,
-    pub(crate) alpha: f64,
-    pub(crate) m: i64,
-    pub(crate) n: i64,
-    pub(crate) phase: f64,
+    /// The harmonic's amplitude.
+    alpha: f64,
+    /// The harmonic's poloidal mode number `m`.
+    m: i64,
+    /// The harmonic's toroidal mode number `n`.
+    n: i64,
+    /// The harmonic's phase.
+    phase: f64,
 }
 
 impl CosHarmonic {
@@ -34,6 +41,7 @@ impl CosHarmonic {
     /// # use dexter_equilibrium::*;
     /// let harmonic = CosHarmonic::new(1e-3, 3, 2, 0.0);
     /// ```
+    #[must_use]
     pub fn new(alpha: f64, m: i64, n: i64, phase: f64) -> Self {
         let _m = m as f64;
         let _n = n as f64;
@@ -47,11 +55,13 @@ impl CosHarmonic {
     }
 
     /// Returns the Harmonic's constant amplitude `α`.
+    #[must_use]
     pub fn alpha(&self) -> f64 {
         self.alpha
     }
 
     /// Returns the Harmonic's constant phase `φ`.
+    #[must_use]
     pub fn phase(&self) -> f64 {
         self.phase
     }
@@ -72,22 +82,31 @@ impl std::fmt::Debug for CosHarmonic {
     }
 }
 
-/// Stores a [`CosHarmonic`]'s constant parameters and cached quantities
+/// Stores a [`CosHarmonic`]'s constant parameters and cached quantities.
 #[derive(Debug, Clone)]
 pub struct CosHarmonicCache {
-    pub(crate) hits: usize,
-    pub(crate) misses: usize,
-    pub(crate) alpha: f64,
-    pub(crate) m: f64,
-    pub(crate) n: f64,
-    pub(crate) phase: f64,
-    /// ====== Order
-    /// 0. theta
-    /// 1. zeta
-    /// 2. modarg
-    /// 3. sin
-    /// 4. cos
-    pub(crate) cache: [f64; 5],
+    /// The number of cache hits.
+    hits: usize,
+    /// The number of cache misses.
+    misses: usize,
+    /// The harmonic's amplitude.
+    alpha: f64,
+    /// The harmonic's poloidal mode number `m`, casted to `f64` to use for evaluations.
+    m: f64,
+    /// The harmonic's toroidal mode number `n`, casted to `f64` to use for evaluations.
+    n: f64,
+    /// The harmonic's phase.
+    phase: f64,
+    /// Ordered array with the intermediate values.
+    ///
+    /// cache = [
+    ///     0 = theta,
+    ///     1 = zeta,
+    ///     2 = modarg,
+    ///     3 = sin,
+    ///     4 = cos
+    /// ].
+    cache: [f64; 5],
 }
 
 impl Default for CosHarmonicCache {
@@ -106,6 +125,10 @@ impl Default for CosHarmonicCache {
 
 impl HarmonicCache for CosHarmonicCache {
     fn is_updated(&mut self, _: f64, theta: f64, zeta: f64, _: f64) -> bool {
+        #[expect(
+            clippy::float_cmp,
+            reason = "we want a cache hit only if all values are exactly equal"
+        )]
         if (self.cache[0] == theta) && (self.cache[1] == zeta) {
             self.hits += 1;
             true
@@ -115,96 +138,208 @@ impl HarmonicCache for CosHarmonicCache {
         }
     }
 
-    fn update(&mut self, _: f64, theta: f64, zeta: f64, _: f64) -> Result<()> {
+    fn update(&mut self, _: f64, theta: f64, zeta: f64, _: f64) {
         self.cache[0] = theta;
         self.cache[1] = zeta;
         self.cache[2] = (self.m * theta - self.n * zeta + self.phase).rem_euclid(TAU);
         (self.cache[3], self.cache[4]) = self.cache[2].sin_cos();
-        Ok(())
     }
 
     harmonic_cache_counts_getter_impl!(CosHarmonicCache);
 }
 
-#[rustfmt::skip]
 impl Harmonic for CosHarmonic {
     type Cache = CosHarmonicCache;
 
     fn generate_cache(&self) -> Self::Cache {
         Self::Cache {
-            hits: 0,
-            misses: 0,
             alpha: self.alpha,
             m: self.m as f64,
             n: self.n as f64,
             phase: self.phase,
-            cache: [f64::NAN; 5],
+            ..Default::default()
         }
     }
 
-    fn alpha_of_psi(&self, _: f64, _: f64, _: f64, _: f64, _: &mut CosHarmonicCache) -> Result<f64> {
-        Ok(self.alpha)
+    fn alpha_of_psi(
+        &self,
+        psi: f64,
+        _: f64,
+        _: f64,
+        _: f64,
+        _: &mut CosHarmonicCache,
+    ) -> Result<f64, EvalError> {
+        debug_assert_non_negative_psi!(psi);
+        Ok(debug_assert_is_finite!(self.alpha))
     }
 
-    fn alpha_of_psip(&self, _: f64, _: f64, _: f64, _: f64, _: &mut CosHarmonicCache) -> Result<f64> {
-        Ok(self.alpha)
+    fn alpha_of_psip(
+        &self,
+        psip: f64,
+        _: f64,
+        _: f64,
+        _: f64,
+        _: &mut CosHarmonicCache,
+    ) -> Result<f64, EvalError> {
+        debug_assert_non_negative_psip!(psip);
+        Ok(debug_assert_is_finite!(self.alpha))
     }
 
-    fn phase_of_psi(&self, _: f64, _: f64, _: f64, _: f64, _: &mut CosHarmonicCache) -> Result<f64> {
-        Ok(self.phase)
+    fn phase_of_psi(
+        &self,
+        psi: f64,
+        _: f64,
+        _: f64,
+        _: f64,
+        _: &mut CosHarmonicCache,
+    ) -> Result<f64, EvalError> {
+        debug_assert_non_negative_psi!(psi);
+        Ok(debug_assert_is_finite!(self.phase))
     }
 
-    fn phase_of_psip(&self, _: f64, _: f64, _: f64, _: f64, _: &mut CosHarmonicCache) -> Result<f64> {
-        Ok(self.phase)
+    fn phase_of_psip(
+        &self,
+        psip: f64,
+        _: f64,
+        _: f64,
+        _: f64,
+        _: &mut CosHarmonicCache,
+    ) -> Result<f64, EvalError> {
+        debug_assert_non_negative_psip!(psip);
+        Ok(debug_assert_is_finite!(self.phase))
     }
 
-    fn h_of_psi(&self, psi: f64, theta: f64, zeta: f64, t: f64, cache: &mut CosHarmonicCache) -> Result<f64> {
+    fn h_of_psi(
+        &self,
+        psi: f64,
+        theta: f64,
+        zeta: f64,
+        t: f64,
+        cache: &mut CosHarmonicCache,
+    ) -> Result<f64, EvalError> {
+        debug_assert_non_negative_psi!(psi);
         if !cache.is_updated(psi, theta, zeta, t) {
-            cache.update(psi, theta, zeta, t)?;
+            cache.update(psi, theta, zeta, t);
         }
-        Ok(cache.alpha * cache.cache[4])
+        Ok(debug_assert_is_finite!(cache.alpha * cache.cache[4]))
     }
 
-    fn h_of_psip(&self, psip: f64, theta: f64, zeta: f64, t: f64, cache: &mut CosHarmonicCache) -> Result<f64> {
+    fn h_of_psip(
+        &self,
+        psip: f64,
+        theta: f64,
+        zeta: f64,
+        t: f64,
+        cache: &mut CosHarmonicCache,
+    ) -> Result<f64, EvalError> {
+        debug_assert_non_negative_psip!(psip);
         self.h_of_psi(psip, theta, zeta, t, cache)
     }
 
-    fn dh_dpsi(&self, _: f64, _: f64, _: f64, _: f64, _: &mut CosHarmonicCache) -> Result<f64> {
-        Ok(0.0)
+    fn dh_dpsi(
+        &self,
+        psi: f64,
+        _: f64,
+        _: f64,
+        _: f64,
+        _: &mut CosHarmonicCache,
+    ) -> Result<f64, EvalError> {
+        debug_assert_non_negative_psi!(psi);
+        Ok(debug_assert_is_finite!(0.0_f64))
     }
 
-    fn dh_dpsip(&self, _: f64, _: f64, _: f64, _: f64, _: &mut CosHarmonicCache) -> Result<f64> {
-        Ok(0.0)
+    fn dh_dpsip(
+        &self,
+        psip: f64,
+        _: f64,
+        _: f64,
+        _: f64,
+        _: &mut CosHarmonicCache,
+    ) -> Result<f64, EvalError> {
+        debug_assert_non_negative_psip!(psip);
+        Ok(debug_assert_is_finite!(0.0_f64))
     }
 
-    fn dh_of_psi_dtheta(&self, psi: f64, theta: f64, zeta: f64, t: f64, cache: &mut CosHarmonicCache) -> Result<f64> {
+    fn dh_of_psi_dtheta(
+        &self,
+        psi: f64,
+        theta: f64,
+        zeta: f64,
+        t: f64,
+        cache: &mut CosHarmonicCache,
+    ) -> Result<f64, EvalError> {
+        debug_assert_non_negative_psi!(psi);
         if !cache.is_updated(psi, theta, zeta, t) {
-            cache.update(psi, theta, zeta, t)?;
+            cache.update(psi, theta, zeta, t);
         }
-        Ok(-cache.m * cache.alpha * cache.cache[3])
+        Ok(debug_assert_is_finite!(
+            -cache.m * cache.alpha * cache.cache[3]
+        ))
     }
 
-    fn dh_of_psip_dtheta(&self, psip: f64, theta: f64, zeta: f64, t: f64, cache: &mut CosHarmonicCache) -> Result<f64> {
+    fn dh_of_psip_dtheta(
+        &self,
+        psip: f64,
+        theta: f64,
+        zeta: f64,
+        t: f64,
+        cache: &mut CosHarmonicCache,
+    ) -> Result<f64, EvalError> {
+        debug_assert_non_negative_psip!(psip);
         self.dh_of_psi_dtheta(psip, theta, zeta, t, cache)
     }
 
-    fn dh_of_psi_dzeta(&self, psi: f64, theta: f64, zeta: f64, t: f64, cache: &mut CosHarmonicCache) -> Result<f64> {
+    fn dh_of_psi_dzeta(
+        &self,
+        psi: f64,
+        theta: f64,
+        zeta: f64,
+        t: f64,
+        cache: &mut CosHarmonicCache,
+    ) -> Result<f64, EvalError> {
+        debug_assert_non_negative_psi!(psi);
         if !cache.is_updated(psi, theta, zeta, t) {
-            cache.update(psi, theta, zeta, t)?;
+            cache.update(psi, theta, zeta, t);
         }
-        Ok(cache.n * cache.alpha * cache.cache[3])
+        Ok(debug_assert_is_finite!(
+            cache.n * cache.alpha * cache.cache[3]
+        ))
     }
 
-    fn dh_of_psip_dzeta(&self, psip: f64, theta: f64, zeta: f64, t: f64, cache: &mut CosHarmonicCache) -> Result<f64> {
+    fn dh_of_psip_dzeta(
+        &self,
+        psip: f64,
+        theta: f64,
+        zeta: f64,
+        t: f64,
+        cache: &mut CosHarmonicCache,
+    ) -> Result<f64, EvalError> {
+        debug_assert_non_negative_psip!(psip);
         self.dh_of_psi_dzeta(psip, theta, zeta, t, cache)
     }
 
-    fn dh_of_psi_dt(&self, _: f64, _: f64, _: f64, _: f64, _: &mut CosHarmonicCache) -> Result<f64> {
-        Ok(0.0)
+    fn dh_of_psi_dt(
+        &self,
+        psi: f64,
+        _: f64,
+        _: f64,
+        _: f64,
+        _: &mut CosHarmonicCache,
+    ) -> Result<f64, EvalError> {
+        debug_assert_non_negative_psi!(psi);
+        Ok(debug_assert_is_finite!(0.0_f64))
     }
 
-    fn dh_of_psip_dt(&self, _: f64, _: f64, _: f64, _: f64, _: &mut CosHarmonicCache) -> Result<f64> {
-        Ok(0.0)
+    fn dh_of_psip_dt(
+        &self,
+        psip: f64,
+        _: f64,
+        _: f64,
+        _: f64,
+        _: &mut CosHarmonicCache,
+    ) -> Result<f64, EvalError> {
+        debug_assert_non_negative_psip!(psip);
+        Ok(debug_assert_is_finite!(0.0_f64))
     }
 }
 
@@ -215,7 +350,7 @@ mod cos_harmonic_values {
 
     #[test]
     #[rustfmt::skip]
-    fn desmos_values() -> Result<()> {
+    fn desmos_values() -> Result<(), EvalError> {
         let har = dbg!(CosHarmonic::new(10.0, 3, 2, 1.0));
         let c = &mut har.generate_cache();
 
@@ -248,6 +383,7 @@ mod cos_harmonic_values {
 }
 
 #[cfg(test)]
+#[expect(unused_results)]
 mod cos_harmonic_cache {
 
     use super::*;
@@ -283,7 +419,5 @@ mod cos_harmonic_cache {
 
         assert_eq!(c.hits(), 2);
         assert_eq!(c.misses(), 3);
-
-        // dbg!(&c); // Accelerator counts should also match
     }
 }

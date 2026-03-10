@@ -1,47 +1,86 @@
+//! `Particle::intersect` routine.
+
+use dexter_equilibrium::extract::TEST_NETCDF_PATH;
 use dexter_equilibrium::*;
 use dexter_simulate::*;
+use std::path::Path;
 
 fn main() {
-    // TODO: numerical_equilibrium_intersect();
     analytical_equilibrium_intersect();
+    numerical_equilibrium_intersect();
 }
 
 fn analytical_equilibrium_intersect() {
     // Equilibrium setup
-    use InitialFlux::*;
     let qfactor = ParabolicQfactor::new(1.1, 3.8, FluxWall::Toroidal(0.45));
     let current = LarCurrent::new();
     let bfield = LarBfield::new();
     let perturbation = Perturbation::new(&[
-        CosHarmonic::new(3e-3, 3, 1, 0.0),
-        CosHarmonic::new(2e-3, 7, 2, 0.0),
-        CosHarmonic::new(1e-3, 15, 4, 0.0),
+        CosHarmonic::new(1e-3, 2, 1, 0.0),
+        CosHarmonic::new(1e-3, 3, 1, 0.0),
     ]);
 
     // Particle setup
     let initial = InitialConditions {
         t0: 0.0,
-        flux0: Toroidal(0.02),
+        flux0: InitialFlux::Toroidal(0.2),
         theta0: 0.0,
         zeta0: 0.0,
-        rho0: 8e-3,
+        rho0: 1e-4,
         mu0: 1e-6,
     };
-    let intersect_params = IntersectParams::new(Intersection::ConstZeta, 0.0, 20);
+    let intersect_params = IntersectParams::new(Intersection::ConstTheta, 0.0, 100);
     let mut particle = Particle::new(&initial);
 
     // Calculate intersections
-    let solver_params = SolverParams {
-        method: SteppingMethod::FixedStep(0.4),
-        ..Default::default()
-    };
     particle.intersect(
         &qfactor,
         &current,
         &bfield,
         &perturbation,
         &intersect_params,
-        &solver_params,
+        &SolverParams::default(),
+    );
+    dbg!(&particle);
+}
+
+fn numerical_equilibrium_intersect() {
+    // Equilibrium setup
+    let path = Path::new("crates/dexter-simulate").join(TEST_NETCDF_PATH);
+    let qfactor = NcQfactorBuilder::new(&path, "steffen").build().unwrap();
+    let current = NcCurrentBuilder::new(&path, "steffen").build().unwrap();
+    let bfield = NcBfieldBuilder::new(&path, "bicubic").build().unwrap();
+    let perturbation = Perturbation::new(&[
+        NcHarmonicBuilder::new(&path, "steffen", 2, 1)
+            .with_phase_method(PhaseMethod::Interpolation)
+            .build()
+            .unwrap(),
+        NcHarmonicBuilder::new(&path, "steffen", 3, 2)
+            .with_phase_method(PhaseMethod::Interpolation)
+            .build()
+            .unwrap(),
+    ]);
+
+    // Particle setup
+    let initial = InitialConditions {
+        t0: 0.0,
+        flux0: InitialFlux::Toroidal(0.2),
+        theta0: 0.0,
+        zeta0: 0.0,
+        rho0: 1e-6,
+        mu0: 0.0,
+    };
+    let intersect_params = IntersectParams::new(Intersection::ConstZeta, 0.0, 100);
+    let mut particle = Particle::new(&initial);
+
+    // Calculate intersections
+    particle.intersect(
+        &qfactor,
+        &current,
+        &bfield,
+        &perturbation,
+        &intersect_params,
+        &SolverParams::default(),
     );
     dbg!(&particle);
 }

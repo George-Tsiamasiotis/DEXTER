@@ -1,19 +1,28 @@
-use std::path::PathBuf;
+//! Custom Error types for netCDF and equilibrium object creation/evalution errors.
 
-/// Custom error types from equilibrium objects
+/// Top level Error type.
 #[derive(thiserror::Error, Debug)]
 pub enum EqError {
+    /// From [`std::io::Error`].
     #[error("IO error: {0}")]
     Io(#[from] std::io::Error),
 
-    /// From [`ndarray::ShapeError`].
-    #[error("ShapeError error: {0}")]
-    ShapeError(#[from] ndarray::ShapeError),
+    /// From [`NcError`].
+    #[error("NetCDF error: {0}")]
+    NcError(#[from] NcError),
+
+    /// From [`EvalError`].
+    #[error("Eval error: {0}")]
+    EvalError(#[from] EvalError),
 
     /// Error from [`rsl_interpolation`].
     #[error("Interpolation error: {0}")]
     InterpolationError(#[from] rsl_interpolation::InterpolationError),
+}
 
+/// Evaluation related errors.
+#[derive(thiserror::Error, Debug)]
+pub enum EvalError {
     /// Interpolation domain error from [`rsl_interpolation`].
     #[error("Interpolation domain error: {0}")]
     DomainError(#[from] rsl_interpolation::DomainError),
@@ -21,38 +30,48 @@ pub enum EqError {
     /// Called undefined evaluation method.
     #[error("Call to undefined evaluation method '{0}'")]
     UndefinedEvaluation(Box<str>),
-
-    /// From [`NcError`].
-    #[error("NetCDF error: {0}")]
-    NcError(#[from] NcError),
 }
 
-/// Custom error types from extraction methods
+/// netCDF handling errors.
 #[derive(thiserror::Error, Debug)]
 pub enum NcError {
     /// File not found.
     #[error("File '{0}' not found")]
-    FileNotFound(PathBuf),
+    FileNotFound(std::path::PathBuf),
 
-    /// Error opening NetCDF [`netcdf::File`].
+    /// Error opening [`netcdf::File`].
     #[error("Error opening '{path}' ({err})")]
-    FileOpenError { path: PathBuf, err: netcdf::Error },
+    FileOpenError {
+        /// Path to file.
+        path: std::path::PathBuf,
+        /// The wrapped [`netcdf::Error`].
+        err: netcdf::Error,
+    },
 
     /// Attribute not found.
     #[error("Attribute '{0}' not found")]
     AttributeNotFound(Box<str>),
 
-    /// Error extracting netCDF Convention Version
+    /// Error extracting the value of an Attribute.
+    #[error("Error extracting the value of the Attribute {0}")]
+    AttributeValueError(Box<str>),
+
+    /// Error extracting netCDF Convention Version.
     #[error("Error extracting netCDF convention version: {0}")]
     VersionError(#[from] semver::Error),
 
     /// Error extracting values from a [`netcdf::Variable`].
     #[error("Error extracting values from variable {name}: {err}")]
-    GetValues { name: String, err: netcdf::Error },
+    GetValues {
+        /// The name of the variable.
+        name: String,
+        /// The wrapped [`netcdf::Error`].
+        err: netcdf::Error,
+    },
 
     /// Shape mismatch while extracting value into an array.
     #[error("Shape mismatch while extracting value into an array: {0}")]
-    NdArray(#[from] ndarray::ShapeError),
+    ShapeError(#[from] ndarray::ShapeError),
 
     /// Empty [`netcdf::Variable`].
     #[error("'{0}' variable is empty")]
@@ -64,5 +83,10 @@ pub enum NcError {
 
     /// Harmonic with passed mode number does not exist.
     #[error("Mode '{which}={mode}' not found in the NetCDF file.")]
-    HarmonicModeNotFound { which: String, mode: i64 },
+    HarmonicModeNotFound {
+        /// The name of the mode ('m' or 'n').
+        which: String,
+        /// The mode number.
+        mode: i64,
+    },
 }

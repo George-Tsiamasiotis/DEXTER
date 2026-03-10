@@ -10,18 +10,17 @@ from dexter import Harmonic, CosHarmonic, NcHarmonic
 
 def test_cos_harmonic():
     harmonic = CosHarmonic(1e-3, 3, 2, 0)
-    assert isinstance(harmonic.__str__(), str)
-    assert isinstance(harmonic.__repr__(), str)
+    assert harmonic.equilibrium_type == "Analytical"
     assert harmonic.alpha == 1e-3
     assert harmonic.m == 3
     assert harmonic.n == 2
     assert harmonic.phase == 0
     _test_harmonic_evals(harmonic)
+    assert isinstance(harmonic.__str__(), str)
+    assert isinstance(harmonic.__repr__(), str)
 
 
 def test_nc_harmonic_getters(nc_harmonic: NcHarmonic):
-    assert isinstance(nc_harmonic.__str__(), str)
-    assert isinstance(nc_harmonic.__repr__(), str)
     assert nc_harmonic.equilibrium_type == "Numerical"
     assert isinstance(nc_harmonic.path, str)
     assert isinstance(nc_harmonic.netcdf_version, str)
@@ -38,6 +37,8 @@ def test_nc_harmonic_getters(nc_harmonic: NcHarmonic):
     assert nc_harmonic.psip_array.ndim == 1
     assert nc_harmonic.alpha_array.ndim == 1
     assert nc_harmonic.phase_array.ndim == 1
+    assert isinstance(nc_harmonic.__str__(), str)
+    assert isinstance(nc_harmonic.__repr__(), str)
 
 
 def test_nc_harmonic_eval(nc_harmonic: NcHarmonic):

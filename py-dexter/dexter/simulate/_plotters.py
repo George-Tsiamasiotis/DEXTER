@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from math import floor, log10
 from warnings import warn
 
-from dexter.types import Array1, IntegrationStatus
+from dexter._core import _PyParticle
 
 dpi = 120
 figsize = (10, 7)
@@ -17,17 +17,7 @@ LABEL_KW = {"labelpad": 10, "rotation": 0, "fontsize": 15}
 class _ParticlePlotter:
     """Provides plotting functions for the Particle Class."""
 
-    integration_status: IntegrationStatus
-    t_array: Array1
-    psi_array: Array1
-    psip_array: Array1
-    theta_array: Array1
-    zeta_array: Array1
-    rho_array: Array1
-    mu_array: Array1
-    ptheta_array: Array1
-    pzeta_array: Array1
-    energy_array: Array1
+    _rust: _PyParticle
 
     def plot_evolution(self, percentage: float = 100, downsample: bool = True):
         """Plots the time evolution of an integrated Particle.
@@ -45,7 +35,10 @@ class _ParticlePlotter:
             Defaults to True
         """
 
-        if self.integration_status in ["Initialized", "OutOfBoundsInitialization"]:
+        if self._rust.integration_status in [
+            "Initialized",
+            "OutOfBoundsInitialization",
+        ]:
             raise Exception("Particle hasn't been integrated")
 
         if percentage < 0 or percentage > 100:
@@ -53,27 +46,28 @@ class _ParticlePlotter:
 
         step = 1
         if downsample:
-            length = len(self.t_array)
+            length = len(self._rust.t_array)
             oom = floor(log10(length))  # order of magnitude of number of points
             target_oom = floor(log10(target_points))
             if oom > target_oom:
                 step = 10 ** (oom - target_oom)
 
+        t_array = self._rust.t_array
         points = min(
-            int(np.floor(len(self.t_array) * percentage / 100)),
-            len(self.t_array),
+            int(np.floor(len(t_array) * percentage / 100)),
+            len(t_array),
         )
 
-        t = self.t_array[:points][::step]
-        psi = self.psi_array[:points][::step]
-        psip = self.psip_array[:points][::step]
-        theta = self.theta_array[:points][::step]
-        zeta = self.zeta_array[:points][::step]
-        rho = self.rho_array[:points][::step]
+        t = t_array[:points][::step]
+        psi = self._rust.psi_array[:points][::step]
+        psip = self._rust.psip_array[:points][::step]
+        theta = self._rust.theta_array[:points][::step]
+        zeta = self._rust.zeta_array[:points][::step]
+        rho = self._rust.rho_array[:points][::step]
         # mu = self.mu_array[:points][::step]
-        ptheta = self.ptheta_array[:points][::step]
-        pzeta = self.pzeta_array[:points][::step]
-        energy = self.energy_array[:points][::step]
+        ptheta = self._rust.ptheta_array[:points][::step]
+        pzeta = self._rust.pzeta_array[:points][::step]
+        energy = self._rust.energy_array[:points][::step]
 
         if downsample and len(t) > target_points * 10:
             warn("Downsampling did not work..")
@@ -133,7 +127,10 @@ class _ParticlePlotter:
             The percentage of the evolution to plot. Defaults to 100.
         """
 
-        if self.integration_status in ["Initialized", "OutOfBoundsInitialization"]:
+        if self._rust.integration_status in [
+            "Initialized",
+            "OutOfBoundsInitialization",
+        ]:
             raise Exception("Particle hasn't been integrated")
 
         if percentage < 0 or percentage > 100:
@@ -144,7 +141,7 @@ class _ParticlePlotter:
         fig = plt.figure(figsize=figsize, layout="constrained", dpi=dpi)
         ax = fig.add_subplot(polar=True)
 
-        ax.scatter(self.theta_array, self.psi_array, **SCATTER_KW)
+        ax.scatter(self._rust.theta_array, self._rust.psi_array, **SCATTER_KW)
         ax.set_title(r"$\theta-\psi$ drift")
 
         ax.set_rorigin(0)  # type: ignore

@@ -9,7 +9,7 @@ This crate requires the [`netCDF-C`] library, which is available in most linux p
 `libnetcdf` can be statically linked with the `netcdf-static` feature, which is provided by the
 [`netcdf crate`].
 
-## NetCDF files
+## `NetCDF` files
 
 The netCDF file must follow a [`specific convention`](https://dexter.tsiamasiotis.gr/netcdf).
 

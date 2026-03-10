@@ -1,5 +1,7 @@
 //! Benchmark for the equilibrium objects evaluation methods.
 
+#![allow(unused_results)]
+
 use criterion::{Criterion, criterion_group, criterion_main};
 use dexter_equilibrium::extract::TEST_NETCDF_PATH;
 use dexter_equilibrium::*;

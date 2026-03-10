@@ -1,3 +1,5 @@
+//! Common getter method implementations for equilibrium objects.
+
 /// Creates a getter method for extracting the flat Vec data as an Array2.
 /// The Vec is assumed to be in Fortran order, since it is intended for use by the splines.
 #[doc(hidden)]
@@ -7,6 +9,7 @@ macro_rules! fortran_vec_to_carray2d_impl {
         #[doc = "Returns the `"]
         #[doc = stringify!($var_name)]
         #[doc = "` values as a 2D array." ]
+        #[must_use]
         pub fn $meth_name(&self) -> Array2<f64> {
             // Array is in Fortran order., so we must reverse the shape
             let actual_shape = self.shape();
@@ -24,6 +27,7 @@ macro_rules! fortran_vec_to_carray2d_impl {
 macro_rules! fluxes_values_array_getter_impl {
     () => {
         /// Returns the toroidal flux's values as a 1D array, if they exist.
+        #[must_use]
         pub fn psi_array(&self) -> Option<Array1<f64>> {
             self.psi
                 .values()
@@ -31,6 +35,7 @@ macro_rules! fluxes_values_array_getter_impl {
         }
 
         /// Returns the poloidal flux's values as a 1D array, if they exist.
+        #[must_use]
         pub fn psip_array(&self) -> Option<Array1<f64>> {
             self.psip
                 .values()
@@ -45,11 +50,13 @@ macro_rules! fluxes_values_array_getter_impl {
 macro_rules! fluxes_wall_value_getter_impl {
     () => {
         /// Returns the toroidal flux's value at the wall `ψ_wall`.
+        #[must_use]
         pub fn psi_wall(&self) -> Option<f64> {
             self.psi.wall_value()
         }
 
         /// Returns the poloidal flux's value at the wall `ψp_wall`.
+        #[must_use]
         pub fn psip_wall(&self) -> Option<f64> {
             self.psip.wall_value()
         }
@@ -62,13 +69,15 @@ macro_rules! fluxes_wall_value_getter_impl {
 macro_rules! fluxes_state_getter_impl {
     () => {
         /// Returns the toroidal flux's state.
+        #[must_use]
         pub fn psi_state(&self) -> NcFluxState {
-            self.psi.state.clone()
+            self.psi.state()
         }
 
         /// Returns the poloidal flux's state.
+        #[must_use]
         pub fn psip_state(&self) -> NcFluxState {
-            self.psip.state.clone()
+            self.psip.state()
         }
     };
 }
@@ -79,11 +88,13 @@ macro_rules! fluxes_state_getter_impl {
 macro_rules! harmonic_mode_number_getter_impl {
     () => {
         /// Returns the poloidal mode number `m`.
+        #[must_use]
         pub fn m(&self) -> i64 {
             self.m
         }
 
         /// Returns the toroidal mode number `n`.
+        #[must_use]
         pub fn n(&self) -> i64 {
             self.n
         }
@@ -113,6 +124,7 @@ macro_rules! harmonic_cache_counts_getter_impl {
 macro_rules! equilibrium_type_getter_impl {
     () => {
         /// Returns the object's [`EquilibriumType`].
+        #[must_use]
         pub fn equilibrium_type(&self) -> EquilibriumType {
             self.equilibrium_type.clone()
         }
@@ -125,6 +137,7 @@ macro_rules! equilibrium_type_getter_impl {
 macro_rules! netcdf_path_getter_impl {
     () => {
         /// Returns the netCDF file's path.
+        #[must_use]
         pub fn path(&self) -> PathBuf {
             self.path.clone()
         }
@@ -138,6 +151,7 @@ macro_rules! interp_type_getter_impl {
     // 1D Interpolation
     (1) => {
         /// Returns the interpolation type.
+        #[must_use]
         pub fn interp_type(&self) -> String {
             self.interp_type.clone()
         }
@@ -145,11 +159,13 @@ macro_rules! interp_type_getter_impl {
     // 2D Interpolation
     (2) => {
         /// Returns the 1D interpolation type.
+        #[must_use]
         pub fn interp1d_type(&self) -> String {
             self.interp1d_type.clone()
         }
 
         /// Returns the 2D interpolation type.
+        #[must_use]
         pub fn interp2d_type(&self) -> String {
             self.interp2d_type.clone()
         }
@@ -162,6 +178,7 @@ macro_rules! interp_type_getter_impl {
 macro_rules! netcdf_version_getter_impl {
     () => {
         /// Returns the object's [`Version`](semver::Version).
+        #[must_use]
         pub fn netcdf_version(&self) -> semver::Version {
             self.netcdf_version.clone()
         }
@@ -176,13 +193,14 @@ macro_rules! shape2d_getter_impl {
         /// Returns the the (ψ/ψp, θ) shape of the 2D arrays, depending on the state of each
         /// flux coordinate. If both coordinates are "good", they are guaranteed to be of the same
         /// length.
+        #[must_use]
         pub fn shape(&self) -> (usize, usize) {
             // One of the 2 is guaranteed to be non-zero.
-            let psi_len = match self.psi.state {
+            let psi_len = match self.psi.state() {
                 NcFluxState::None => 0,
                 _ => self.psi.uvalues().len(),
             };
-            let psip_len = match self.psip.state {
+            let psip_len = match self.psip.state() {
                 NcFluxState::None => 0,
                 _ => self.psip.uvalues().len(),
             };

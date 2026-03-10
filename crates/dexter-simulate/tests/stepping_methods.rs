@@ -1,3 +1,5 @@
+//! Different integration `SteppingMethods` testing.
+
 mod common;
 
 use crate::common::check_integrated_particle_arrays;

@@ -1,4 +1,7 @@
+//! Equilibrium representation objects.
+
 pub(crate) mod getters;
+pub(crate) mod nc_flux;
 
 pub(crate) mod bfield;
 pub(crate) mod currents;
@@ -9,7 +12,7 @@ pub(crate) mod perturbation;
 pub(crate) mod qfactors;
 
 /// Describes the type of equilibrium the object represents.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum EquilibriumType {
     /// Equilibrium reconstructed from numerical data.
     ///
@@ -19,4 +22,63 @@ pub enum EquilibriumType {
     ///
     /// Evaluations are calculated by simply evaluating the formulas.
     Analytical,
+}
+
+/// Debug-asserts that all values of the slice are finite.
+pub(crate) fn debug_assert_all_finite_values(values: &[f64]) {
+    debug_assert!(
+        values.iter().all(|element| element.is_finite()),
+        "Non-finite values encountered."
+    )
+}
+
+/// Debug-asserts that `r` is non-negative.
+#[doc(hidden)]
+#[macro_export]
+macro_rules! debug_assert_non_negative_r {
+    ($r: expr) => {
+        debug_assert!($r >= 0.0, "Encountered negative r")
+    };
+}
+
+/// Debug-asserts that `psi` is non-negative.
+#[doc(hidden)]
+#[macro_export]
+macro_rules! debug_assert_non_negative_psi {
+    ($psi: expr) => {
+        debug_assert!($psi >= 0.0, "Encountered negative ψ")
+    };
+}
+
+/// Debug-asserts that `psip` is non-negative.
+#[doc(hidden)]
+#[macro_export]
+macro_rules! debug_assert_non_negative_psip {
+    ($psip: expr) => {
+        debug_assert!($psip >= 0.0, "Encountered negative ψp")
+    };
+}
+
+/// Debug-asserts that the wrapped expression `is_finite()` and returns it.
+///
+/// Use `std::debug_assert` and `std::dbg` syntax.
+#[doc(hidden)]
+#[macro_export]
+macro_rules! debug_assert_is_finite {
+    ($arg: expr) => {
+        if std::cfg!(debug_assertions) {
+            if $arg.is_finite() {
+                $arg
+            } else {
+                panic!(
+                    "[{}:{}:{}]: NaN value encountered",
+                    std::file!(),
+                    std::line!(),
+                    std::column!(),
+                )
+            }
+        } else {
+            $arg
+        }
+    };
 }

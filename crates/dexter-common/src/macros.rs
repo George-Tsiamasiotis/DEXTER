@@ -1,5 +1,6 @@
-/// Generates getters that return `[T]` fields to `Array1<T>`.
-#[doc(hidden)]
+//! Utility macros.
+
+/// Generates a getter method that returns a `Vec<T>` field as an `Array1<T>`.
 #[macro_export]
 macro_rules! vec_to_array1D_getter_impl {
     ($fun_name:ident, $($field:ident).+, $var_name:ident) => {
@@ -12,8 +13,7 @@ macro_rules! vec_to_array1D_getter_impl {
     }
 }
 
-/// Generates getters that export a vec->Array1D getter of an inner field
-#[doc(hidden)]
+/// Generates a getter method for an `Array1<T>` field.
 #[macro_export]
 macro_rules! export_array1D_getter_impl {
     ($fun_name:ident, $($field:ident).+, $var_name:ident) => {

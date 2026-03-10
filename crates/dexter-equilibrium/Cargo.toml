@@ -1,10 +1,12 @@
 [package]
 name = "dexter-equilibrium"
-version = "0.1.4-pre.3"
-license.workspace = true
-edition.workspace = true
+version = "0.1.4"
 authors.workspace = true
+edition.workspace = true
+license.workspace = true
 homepage.workspace = true
+keywords.workspace = true
+categories.workspace = true
 repository.workspace = true
 rust-version.workspace = true
 documentation.workspace = true
@@ -23,8 +25,11 @@ semver = "1.0.27"
 criterion.workspace=true
 
 [features]
-openblas-static = ["rsl-interpolation/openblas-static"]
 netcdf-static = ["netcdf/static"]
+openblas-static = ["rsl-interpolation/openblas-static"]
+
+[lints]
+workspace = true
 
 [[bench]]
 name = "evaluations"

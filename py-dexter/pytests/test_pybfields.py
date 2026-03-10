@@ -6,8 +6,6 @@ from dexter import LarBfield, NcBfield
 
 def test_lar_bfield():
     bfield = LarBfield()
-    assert isinstance(bfield.__str__(), str)
-    assert isinstance(bfield.__repr__(), str)
     assert bfield.equilibrium_type == "Analytical"
     args = (0.01, 3.14)
     assert isfinite(bfield.b_of_psi(*args))
@@ -19,11 +17,11 @@ def test_lar_bfield():
         bfield.db_dpsip(*args)
     with pytest.raises(BaseException):
         bfield.db_of_psip_dtheta(*args)
+    assert isinstance(bfield.__str__(), str)
+    assert isinstance(bfield.__repr__(), str)
 
 
 def test_nc_bfield_getters(nc_bfield: NcBfield):
-    assert isinstance(nc_bfield.__str__(), str)
-    assert isinstance(nc_bfield.__repr__(), str)
     assert isinstance(nc_bfield.path, str)
     assert isinstance(nc_bfield.netcdf_version, str)
     assert nc_bfield.equilibrium_type == "Numerical"
@@ -38,6 +36,8 @@ def test_nc_bfield_getters(nc_bfield: NcBfield):
     assert nc_bfield.psip_array.ndim == 1
     assert nc_bfield.theta_array.ndim == 1
     assert nc_bfield.b_array.ndim == 2
+    assert isinstance(nc_bfield.__str__(), str)
+    assert isinstance(nc_bfield.__repr__(), str)
 
 
 def test_nc_bfield_eval(nc_bfield: NcBfield):

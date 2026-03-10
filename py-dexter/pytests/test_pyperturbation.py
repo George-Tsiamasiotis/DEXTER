@@ -1,24 +1,15 @@
 import pytest
 from math import isfinite
-from dexter import CosHarmonic, NcHarmonic
-from dexter import CosPerturbation, NcPerturbation, Perturbation, perturbation
+from dexter import Perturbation, CosHarmonic, NcHarmonic
 
 
-def test_helper_constructor(nc_harmonic: NcHarmonic):
-    emptyp = perturbation([])
-    cosp = perturbation([CosHarmonic(0, 0, 0, 0)])
-    ncp = perturbation([nc_harmonic])
-
-    assert isinstance(emptyp, CosPerturbation)
-    assert isinstance(cosp, CosPerturbation)
-    assert isinstance(ncp, NcPerturbation)
-
+def test_invalid_perturbation(nc_harmonic: NcHarmonic):
     with pytest.raises(TypeError):
-        perturbation([CosHarmonic(0, 0, 0, 0), nc_harmonic])  # type: ignore
+        Perturbation([CosHarmonic(1e-3, 1, 2, 0.0), nc_harmonic])  # type: ignore
 
 
 def test_empty_perturbation():
-    p = NcPerturbation([])
+    p = Perturbation([])
     assert p.harmonics == []
     assert len(p) == 0
     with pytest.raises(BaseException):
@@ -38,7 +29,7 @@ def test_empty_perturbation():
 
 
 def test_cos_perturbation():
-    p = CosPerturbation(
+    p = Perturbation(
         [
             CosHarmonic(1e-3, 1, 2, 0.0),
             CosHarmonic(1e-3, 1, 3, 0.0),
@@ -46,12 +37,14 @@ def test_cos_perturbation():
             CosHarmonic(1e-3, 1, 5, 0.0),
         ]
     )
+    assert isinstance(p.harmonics, list)
     assert len(p) == 4
     _test_perturbation_evals(p)
 
 
-def test_nc_perturbation(nc_perturbation: NcPerturbation):
+def test_nc_perturbation(nc_perturbation: Perturbation):
     assert len(nc_perturbation) == 3
+    assert isinstance(nc_perturbation.harmonics, list)
     _test_perturbation_evals(nc_perturbation)
 
 

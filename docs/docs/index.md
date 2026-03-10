@@ -11,7 +11,7 @@ The Python interface directly exposes all underlying objects and routines in the
 ```python
 >>> import dexter as dex
 >>>
->>> #qfactor = dex.Qfactor(path="./data.nc", typ="cubic") #FIXME:
+>>> qfactor = dex.NcQfactor(path="./data.nc", interp_type="cubic")
 
 ```
 

@@ -1,3 +1,5 @@
+//! Comparison of the different integration `SteppingMethods`.
+
 use dexter_equilibrium::*;
 use dexter_simulate::*;
 

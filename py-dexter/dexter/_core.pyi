@@ -1,784 +1,28 @@
-"""This file mirrors all the definitions made in the dexter-python Rust API.
+"""This file mirrors all the definitions made in the `py-dexter` Rust API."""
 
-Note
-----
-
-For the Equilibrium objects, ABCs are used for documentation purposes, to mirror the
-behavior of the corresponding Traits and avoid re-writing each method. The final
-object is the direct export of the wrapped pyo3 object.
-
-Any added functionality on the final objects should be defined and documented in
-their corresponding sub-package.
-
-Attributes are documented on the wrapper for documentation building purposes.
-
-Note
-----
-
-Types annotated as `Any` means that the actual type is not yet defined in the package
-and therefore cannot be imported (circular import). The actual type is defined in the final
-wrapper.
-"""
+from typing import Any, Optional
 
 from dexter.types import (
-    EquilibriumType,
-    FluxWall,
-    Interp1DType,
-    Interp2DType,
-    FluxState,
+    ArrayShape,
     Array1,
     Array2,
-    ArrayShape,
-    PhaseMethod,
     NetCDFVersion,
+    EquilibriumType,
+    Interp1DType,
+    Interp2DType,
+    FluxWall,
+    FluxState,
+    PhaseMethod,
     InitialFlux,
+    Intersection,
     IntegrationStatus,
     SteppingMethod,
 )
 
-from abc import ABC
-from typing import Any, Optional
-
-class _FluxCommuteTrait(ABC):
-    """Documents the methods provided by the 'FluxCommute' trait."""
-
-    def psip_of_psi(self, psi: float) -> float:
-        r"""The $\psi_p(\psi)$ value in Normalized Units.
-
-        Parameters
-        ----------
-        psi
-            The toroidal flux $\psi$ in Normalized Units.
-        """
-
-    def psi_of_psip(self, psip: float) -> float:
-        r"""The $\psi(\psi_p)$ value in Normalized Units.
-
-        Parameters
-        ----------
-        psip
-            The poloidal flux $\psi_p$ in Normalized Units.
-        """
-
-class _GeometryTrait(ABC):
-    """Documents the methods provided by the 'Geometries' trait."""
-
-    def r_of_psi(self, psi: float) -> float:
-        r"""The $r(\psi)$ value in $[m]$.
-
-        Parameters
-        ----------
-        psi
-            The toroidal flux $\psi$ in Normalized Units.
-        """
-
-    def r_of_psip(self, psip: float) -> float:
-        r"""The $r(\psi_p)$ value in $[m]$.
-
-        Parameters
-        ----------
-        psip
-            The poloidal flux $\psi_p$ in Normalized Units.
-        """
-
-    def psi_of_r(self, r: float) -> float:
-        r"""The $\psi(r)$ value in Normalized Units.
-
-        Parameters
-        ----------
-        r
-            The radial distance $r$ in $[m]$.
-        """
-
-    def psip_of_r(self, r: float) -> float:
-        r"""The $\psi_p(r)$ value in Normalized Units.
-
-        Parameters
-        ----------
-        r
-            The radial distance $r$ in $[m]$.
-        """
-
-    def rlab_of_psi(self, psi: float, theta: float) -> float:
-        r"""The $R_{lab}(\psi, \theta)$ value in $[m]$.
-
-        Parameters
-        ----------
-        psi
-            The toroidal flux $\psi$ in Normalized Units.
-        theta
-            The $\theta$ angle in $[rads]$.
-        """
-
-    def rlab_of_psip(self, psip: float, theta: float) -> float:
-        r"""The $R_{lab}(\psi_p, \theta)$ value in $[m]$.
-
-        Parameters
-        ----------
-        psip
-            The poloidal flux $\psi_p$ in Normalized Units.
-        theta
-            The $\theta$ angle in $[rads]$.
-        """
-
-    def zlab_of_psi(self, psi: float, theta: float) -> float:
-        r"""The $Z_{lab}(\psi, \theta)$ value in $[m]$.
-
-        Parameters
-        ----------
-        psi
-            The toroidal flux $\psi$ in Normalized Units.
-        theta
-            The $\theta$ angle in $[rads]$.
-        """
-
-    def zlab_of_psip(self, psip: float, theta: float) -> float:
-        r"""The $Z_{lab}(\psi_p, \theta)$ value in $[m]$.
-
-        Parameters
-        ----------
-        psip
-            The poloidal flux $\psi_p$ in Normalized Units.
-        theta
-            The $\theta$ angle in $[rads]$.
-        """
-
-    def jacobian_of_psi(self, psi: float, theta: float) -> float:
-        r"""The $J(\psi, \theta)$ value in $[m]$.
-
-        Parameters
-        ----------
-        psi
-            The toroidal flux $\psi$ in Normalized Units.
-        theta
-            The $\theta$ angle in $[rads]$.
-        """
-
-    def jacobian_of_psip(self, psip: float, theta: float) -> float:
-        r"""The $J(\psi_p, \theta)$ value in $[m]$.
-
-        Parameters
-        ----------
-        psip
-            The poloidal flux $\psi_p$ in Normalized Units.
-        theta
-            The $\theta$ angle in $[rads]$.
-        """
-
-class _QfactorTrait(ABC):
-    """Documents the methods provided by the 'Qfactor' trait."""
-
-    def q_of_psi(self, psi: float) -> float:
-        r"""The $q(\psi)$ value.
-
-        Parameters
-        ----------
-        psi
-            The toroidal flux $\psi$ in Normalized Units.
-        """
-
-    def q_of_psip(self, psip: float) -> float:
-        r"""The $q(\psi_p)$ value.
-
-        Parameters
-        ----------
-        psip
-            The poloidal flux $\psi_p$ in Normalized Units.
-        """
-
-    def dpsi_dpsip(self, psip: float) -> float:
-        r"""The derivative $d\psi(\psi_p)/d\psi_p$ value.
-
-        It's a good check that the values coincide with `qfactor.q_of_psip(psip)`.
-
-        Parameters
-        ----------
-        psip
-            The poloidal flux $\psi_p$ in Normalized Units.
-        """
-
-    def dpsip_dpsi(self, psi: float) -> float:
-        r"""The derivative $d\psi_p(\psi)/d\psi$ value.
-
-        It's a good check that the values coincide with `qfactor.iota_of_psi(psi)`.
-
-        Parameters
-        ----------
-        psi
-            The toroidal flux $\psi$ in Normalized Units.
-        """
-
-    def iota_of_psi(self, psi: float) -> float:
-        r"""The $\iota(\psi) = \dfrac{1}{q(\psi)}$ value.
-
-        Parameters
-        ----------
-        psi
-            The toroidal flux $\psi$ in Normalized Units.
-        """
-
-    def iota_of_psip(self, psip: float) -> float:
-        r"""The $\iota(\psi_p) = \dfrac{1}{q(\psi_p)}$ value.
-
-        Parameters
-        ----------
-        psip
-            The poloidal flux $\psi_p$ in Normalized Units.
-        """
-
-class _CurrentTrait(ABC):
-    """Documents the methods provided by the 'Current' trait."""
-
-    def g_of_psi(self, psi: float) -> float:
-        r"""The $g(\psi)$ value.
-
-        Parameters
-        ----------
-        psi
-            The toroidal flux $\psi$ in Normalized Units.
-        """
-
-    def g_of_psip(self, psip: float) -> float:
-        r"""The $g(\psi_p)$ value.
-
-        Parameters
-        ----------
-        psip
-            The poloidal flux $\psi_p$ in Normalized Units.
-        """
-
-    def i_of_psi(self, psi: float) -> float:
-        r"""The $I(\psi)$ value.
-
-        Parameters
-        ----------
-        psi
-            The toroidal flux $\psi$ in Normalized Units.
-        """
-
-    def i_of_psip(self, psip: float) -> float:
-        r"""The $I(\psi_p)$ value.
-
-        Parameters
-        ----------
-        psip
-            The poloidal flux $\psi_p$ in Normalized Units.
-        """
-
-    def dg_dpsi(self, psi: float) -> float:
-        r"""The $dg(\psi)/d\psi$ value.
-
-        Parameters
-        ----------
-        psi
-            The toroidal flux $\psi$ in Normalized Units.
-        """
-
-    def dg_dpsip(self, psip: float) -> float:
-        r"""The $dg(\psi_p)/d\psi_p$ value.
-
-        Parameters
-        ----------
-        psip
-            The poloidal flux $\psi$ in Normalized Units.
-        """
-
-    def di_dpsi(self, psi: float) -> float:
-        r"""The $dg(\psi)/d\psi$ value.
-
-        Parameters
-        ----------
-        psi
-            The toroidal flux $\psi$ in Normalized Units.
-        """
-
-    def di_dpsip(self, psip: float) -> float:
-        r"""The $dg(\psi_p)/d\psi_p$ value.
-
-        Parameters
-        ----------
-        psip
-            The poloidal flux $\psi$ in Normalized Units.
-        """
-
-class _BfieldTrait(ABC):
-    """Documents the methods provided by the 'Bfield' trait."""
-
-    def b_of_psi(self, psi: float, theta: float) -> float:
-        r"""The $B(\psi, \theta)$ value in Normalized Units.
-
-        Parameters
-        ----------
-        psi
-            The toroidal flux $\psi$ in Normalized Units.
-        theta
-            The $\theta$ angle in $[rads]$.
-        """
-
-    def b_of_psip(self, psip: float, theta: float) -> float:
-        r"""The $B(\psi_p, \theta)$ value in Normalized Units.
-
-        Parameters
-        ----------
-        psip
-            The poloidal flux $\psi_p$ in Normalized Units.
-        theta
-            The $\theta$ angle in $[rads]$.
-        """
-
-    def db_dpsi(self, psi: float, theta: float) -> float:
-        r"""The $dB(\psi, \theta)/d\psi$ value in Normalized Units.
-
-        Parameters
-        ----------
-        psi
-            The toroidal flux $\psi$ in Normalized Units.
-        theta
-            The $\theta$ angle in $[rads]$.
-        """
-
-    def db_dpsip(self, psip: float, theta: float) -> float:
-        r"""The $dB(\psi_p, \theta)/d\psi_p$ value in Normalized Units.
-
-        Parameters
-        ----------
-        psip
-            The poloidal flux $\psi_p$ in Normalized Units.
-        theta
-            The $\theta$ angle in $[rads]$.
-        """
-
-    def db_of_psi_dtheta(self, psi: float, theta: float) -> float:
-        r"""The $dB(\psi, \theta)/d\theta$ value in Normalized Units.
-
-        Parameters
-        ----------
-        psi
-            The toroidal flux $\psi$ in Normalized Units.
-        theta
-            The $\theta$ angle in $[rads]$.
-        """
-
-    def db_of_psip_dtheta(self, psip: float, theta: float) -> float:
-        r"""The $dB(\psi_p, \theta)/d\theta$ value in Normalized Units.
-
-        Parameters
-        ----------
-        psip
-            The poloidal flux $\psi_p$ in Normalized Units.
-        theta
-            The $\theta$ angle in $[rads]$.
-        """
-
-class _HarmonicTrait(ABC):
-    """Documents the methods provided by the 'Harmonic' trait."""
-
-    def alpha_of_psi(self, psi: float, theta: float, zeta: float, t: float) -> float:
-        r"""The harmonic's amplitude $\alpha(\psi, \theta, \zeta, t)$ value in Normalized Units.
-
-        Parameters
-        ----------
-        psi
-            The toroidal flux $\psi$ in Normalized Units.
-        theta
-            The $\theta$ angle in $[rads]$.
-        zeta
-            The $\zeta$ angle in $[rads]$.
-        t
-            The time in Normalized Units
-        """
-
-    def alpha_of_psip(self, psip: float, theta: float, zeta: float, t: float) -> float:
-        r"""The harmonic's amplitude $\alpha(\psi_p, \theta, \zeta, t)$ value in Normalized Units.
-
-        Parameters
-        ----------
-        psip
-            The poloidal flux $\psi_p$ in Normalized Units.
-        theta
-            The $\theta$ angle in $[rads]$.
-        zeta
-            The $\zeta$ angle in $[rads]$.
-        t
-            The time in Normalized Units
-        """
-
-    def phase_of_psi(self, psi: float, theta: float, zeta: float, t: float) -> float:
-        r"""The harmonic's phase $\phi(\psi, \theta, \zeta, t)$ value in Normalized Units.
-
-        Parameters
-        ----------
-        psi
-            The toroidal flux $\psi$ in Normalized Units.
-        theta
-            The $\theta$ angle in $[rads]$.
-        zeta
-            The $\zeta$ angle in $[rads]$.
-        t
-            The time in Normalized Units
-        """
-
-    def phase_of_psip(self, psip: float, theta: float, zeta: float, t: float) -> float:
-        r"""The harmonic's phase $\phi(\psi_p, \theta, \zeta, t)$ value in Normalized Units.
-
-        Parameters
-        ----------
-        psip
-            The poloidal flux $\psi_p$ in Normalized Units.
-        theta
-            The $\theta$ angle in $[rads]$.
-        zeta
-            The $\zeta$ angle in $[rads]$.
-        t
-            The time in Normalized Units
-        """
-
-    def h_of_psi(self, psi: float, theta: float, zeta: float, t: float) -> float:
-        r"""The full harmonic's value $h(\psi, \theta, \zeta, t)$ value in Normalized Units.
-
-        Parameters
-        ----------
-        psi
-            The toroidal flux $\psi$ in Normalized Units.
-        theta
-            The $\theta$ angle in $[rads]$.
-        zeta
-            The $\zeta$ angle in $[rads]$.
-        t
-            The time in Normalized Units
-        """
-
-    def h_of_psip(self, psip: float, theta: float, zeta: float, t: float) -> float:
-        r"""The full harmonic's value $h(\psi_p, \theta, \zeta, t)$ value in Normalized Units.
-
-        Parameters
-        ----------
-        psip
-            The poloidal flux $\psi_p$ in Normalized Units.
-        theta
-            The $\theta$ angle in $[rads]$.
-        zeta
-            The $\zeta$ angle in $[rads]$.
-        t
-            The time in Normalized Units
-        """
-
-    def dh_dpsi(self, psi: float, theta: float, zeta: float, t: float) -> float:
-        r"""The harmonic's derivative with respect to $\psi$, $\partial h(\psi, \theta, \zeta, t)/\partial\psi$
-        in Normalized Units.
-
-        Parameters
-        ----------
-        psi
-            The toroidal flux $\psi$ in Normalized Units.
-        theta
-            The $\theta$ angle in $[rads]$.
-        zeta
-            The $\zeta$ angle in $[rads]$.
-        t
-            The time in Normalized Units
-        """
-
-    def dh_dpsip(self, psip: float, theta: float, zeta: float, t: float) -> float:
-        r"""The harmonic's derivative with respect to $\psi_p$, $\partial h(\psi_p, \theta, \zeta, t)/\partial \psi_p$
-        in Normalized Units.
-
-        Parameters
-        ----------
-        psip
-            The poloidal flux $\psi_p$ in Normalized Units.
-        theta
-            The $\theta$ angle in $[rads]$.
-        zeta
-            The $\zeta$ angle in $[rads]$.
-        t
-            The time in Normalized Units
-        """
-
-    def dh_of_psi_dtheta(
-        self, psi: float, theta: float, zeta: float, t: float
-    ) -> float:
-        r"""The harmonic's derivative with respect to $\theta$, $\partial h(\psi, \theta, \zeta, t)/\partial \theta$
-        in Normalized Units, as a function of $\psi$.
-
-        Parameters
-        ----------
-        psi
-            The toroidal flux $\psi$ in Normalized Units.
-        theta
-            The $\theta$ angle in $[rads]$.
-        zeta
-            The $\zeta$ angle in $[rads]$.
-        t
-            The time in Normalized Units
-        """
-
-    def dh_of_psip_dtheta(
-        self, psip: float, theta: float, zeta: float, t: float
-    ) -> float:
-        r"""The harmonic's derivative with respect to $\theta$, $\partial h(\psi_p, \theta, \zeta, t)/\partial \theta$
-        in Normalized Units, as a function of $\psi_p$.
-
-        Parameters
-        ----------
-        psip
-            The poloidal flux $\psi_p$ in Normalized Units.
-        theta
-            The $\theta$ angle in $[rads]$.
-        zeta
-            The $\zeta$ angle in $[rads]$.
-        t
-            The time in Normalized Units
-        """
-
-    def dh_of_psi_dzeta(self, psi: float, theta: float, zeta: float, t: float) -> float:
-        r"""The harmonic's derivative with respect to $\zeta$, $\partial h(\psi, \theta, \zeta, t)/\partial \zeta$
-        in Normalized Units, as a function of $\psi$.
-
-        Parameters
-        ----------
-        psi
-            The toroidal flux $\psi$ in Normalized Units.
-        theta
-            The $\theta$ angle in $[rads]$.
-        zeta
-            The $\zeta$ angle in $[rads]$.
-        t
-            The time in Normalized Units
-        """
-
-    def dh_of_psip_dzeta(
-        self, psip: float, theta: float, zeta: float, t: float
-    ) -> float:
-        r"""The harmonic's derivative with respect to $\zeta$, $\partial h(\psi_p, \theta, \zeta, t)/\partial \zeta$
-        in Normalized Units, as a function of $\psi_p$.
-
-        Parameters
-        ----------
-        psip
-            The poloidal flux $\psi_p$ in Normalized Units.
-        theta
-            The $\theta$ angle in $[rads]$.
-        zeta
-            The $\zeta$ angle in $[rads]$.
-        t
-            The time in Normalized Units
-        """
-
-    def dh_of_psi_dt(self, psi: float, theta: float, zeta: float, t: float) -> float:
-        r"""The harmonic's derivative with respect to the time $t$, $\partial h(\psi, \theta, \zeta, t)/\partial t$
-        in Normalized Units, as a function of $\psi$.
-
-        Parameters
-        ----------
-        psi
-            The toroidal flux $\psi$ in Normalized Units.
-        theta
-            The $\theta$ angle in $[rads]$.
-        zeta
-            The $\zeta$ angle in $[rads]$.
-        t
-            The time in Normalized Units
-        """
-
-    def dh_of_psip_dt(self, psip: float, theta: float, zeta: float, t: float) -> float:
-        r"""The harmonic's derivative with respect to the time $t$, $\partial h(\psi_p, \theta, \zeta, t)/\partial t$
-        in Normalized Units, as a function of $\psi_p$.
-
-        Parameters
-        ----------
-        psip
-            The poloidal flux $\psi_p$ in Normalized Units.
-        theta
-            The $\theta$ angle in $[rads]$.
-        zeta
-            The $\zeta$ angle in $[rads]$.
-        t
-            The time in Normalized Units
-        """
-
-class _PyPerturbation(ABC):
-    """Documents all the methods provided by rust's `Perturbation` type.
-
-    Since `Perturbation` is a concrete type generic over `Harmonic`, there is not 'evaluation' trait and all
-    methods are documented here. This class contains the full behavior of *every* wrapper type, except the
-    constructors.
-    """
-
-    def p_of_psi(self, psi: float, theta: float, zeta: float, t: float) -> float:
-        r"""The perturbation's value $p(\psi, \theta, \zeta, t)$ value in Normalized Units.
-
-        Parameters
-        ----------
-        psi
-            The toroidal flux $\psi$ in Normalized Units.
-        theta
-            The $\theta$ angle in $[rads]$.
-        zeta
-            The $\zeta$ angle in $[rads]$.
-        t
-            The time in Normalized Units
-        """
-
-    def p_of_psip(self, psip: float, theta: float, zeta: float, t: float) -> float:
-        r"""The perturbation's value $p(\psi_p, \theta, \zeta, t)$ value in Normalized Units.
-
-        Parameters
-        ----------
-        psip
-            The poloidal flux $\psi_p$ in Normalized Units.
-        theta
-            The $\theta$ angle in $[rads]$.
-        zeta
-            The $\zeta$ angle in $[rads]$.
-        t
-            The time in Normalized Units
-        """
-
-    def dp_dpsi(self, psi: float, theta: float, zeta: float, t: float) -> float:
-        r"""The perturbation's derivative with respect to $\psi$, $\partial p(\psi, \theta, \zeta, t)/\partial\psi$
-        in Normalized Units.
-
-        Parameters
-        ----------
-        psi
-            The toroidal flux $\psi$ in Normalized Units.
-        theta
-            The $\theta$ angle in $[rads]$.
-        zeta
-            The $\zeta$ angle in $[rads]$.
-        t
-            The time in Normalized Units
-        """
-
-    def dp_dpsip(self, psip: float, theta: float, zeta: float, t: float) -> float:
-        r"""The perturbation's derivative with respect to $\psi_p$, $\partial p(\psi_p, \theta, \zeta, t)/\partial \psi_p$
-        in Normalized Units.
-
-        Parameters
-        ----------
-        psip
-            The poloidal flux $\psi_p$ in Normalized Units.
-        theta
-            The $\theta$ angle in $[rads]$.
-        zeta
-            The $\zeta$ angle in $[rads]$.
-        t
-            The time in Normalized Units
-        """
-
-    def dp_of_psi_dtheta(
-        self, psi: float, theta: float, zeta: float, t: float
-    ) -> float:
-        r"""The perturbation's derivative with respect to $\theta$, $\partial p(\psi, \theta, \zeta, t)/\partial \theta$
-        in Normalized Units, as a function of $\psi$.
-
-        Parameters
-        ----------
-        psi
-            The toroidal flux $\psi$ in Normalized Units.
-        theta
-            The $\theta$ angle in $[rads]$.
-        zeta
-            The $\zeta$ angle in $[rads]$.
-        t
-            The time in Normalized Units
-        """
-
-    def dp_of_psip_dtheta(
-        self, psip: float, theta: float, zeta: float, t: float
-    ) -> float:
-        r"""The perturbation's derivative with respect to $\theta$, $\partial p(\psi_p, \theta, \zeta, t)/\partial \theta$
-        in Normalized Units, as a function of $\psi_p$.
-
-        Parameters
-        ----------
-        psip
-            The poloidal flux $\psi_p$ in Normalized Units.
-        theta
-            The $\theta$ angle in $[rads]$.
-        zeta
-            The $\zeta$ angle in $[rads]$.
-        t
-            The time in Normalized Units
-        """
-
-    def dp_of_psi_dzeta(self, psi: float, theta: float, zeta: float, t: float) -> float:
-        r"""The perturbation's derivative with respect to $\zeta$, $\partial p(\psi, \theta, \zeta, t)/\partial \zeta$
-        in Normalized Units, as a function of $\psi$.
-
-        Parameters
-        ----------
-        psi
-            The toroidal flux $\psi$ in Normalized Units.
-        theta
-            The $\theta$ angle in $[rads]$.
-        zeta
-            The $\zeta$ angle in $[rads]$.
-        t
-            The time in Normalized Units
-        """
-
-    def dp_of_psip_dzeta(
-        self, psip: float, theta: float, zeta: float, t: float
-    ) -> float:
-        r"""The perturbation's derivative with respect to $\zeta$, $\partial p(\psi_p, \theta, \zeta, t)/\partial \zeta$
-        in Normalized Units, as a function of $\psi_p$.
-
-        Parameters
-        ----------
-        psip
-            The poloidal flux $\psi_p$ in Normalized Units.
-        theta
-            The $\theta$ angle in $[rads]$.
-        zeta
-            The $\zeta$ angle in $[rads]$.
-        t
-            The time in Normalized Units
-        """
-
-    def dp_of_psi_dt(self, psi: float, theta: float, zeta: float, t: float) -> float:
-        r"""The perturbation's derivative with respect to the time $t$, $\partial p(\psi, \theta, \zeta, t)/\partial t$
-        in Normalized Units, as a function of $\psi$.
-
-        Parameters
-        ----------
-        psi
-            The toroidal flux $\psi$ in Normalized Units.
-        theta
-            The $\theta$ angle in $[rads]$.
-        zeta
-            The $\zeta$ angle in $[rads]$.
-        t
-            The time in Normalized Units
-        """
-
-    def dp_of_psip_dt(self, psip: float, theta: float, zeta: float, t: float) -> float:
-        r"""The perturbation's derivative with respect to the time $t$, $\partial p(\psi_p, \theta, \zeta, t)/\partial t$
-        in Normalized Units, as a function of $\psi_p$.
-
-        Parameters
-        ----------
-        psip
-            The poloidal flux $\psi_p$ in Normalized Units.
-        theta
-            The $\theta$ angle in $[rads]$.
-        zeta
-            The $\zeta$ angle in $[rads]$.
-        t
-            The time in Normalized Units
-        """
-
-    def __getitem__(self, index: int):
-        """Makes the object indexable."""
-
-    def __len__(self) -> int:
-        """Returns the number of the contained harmonics."""
-
 # ================================================================================================
 
-class _PyLarGeometry(_GeometryTrait):
-    """PyO3 export of `LarGeometry`. Contains the full behavior of the wrapped object."""
+class _PyLarGeometry:
+    """PyO3 export of `dexter_equilibrium::LarGeometry`."""
 
     equilibrium_type: EquilibriumType
     baxis: float
@@ -789,9 +33,19 @@ class _PyLarGeometry(_GeometryTrait):
     zlab_wall: Array1
 
     def __init__(self, baxis: float, raxis: float, rwall: float) -> None: ...
+    def r_of_psi(self, psi: float) -> float: ...
+    def r_of_psip(self, psip: float) -> float: ...
+    def psi_of_r(self, r: float) -> float: ...
+    def psip_of_r(self, r: float) -> float: ...
+    def rlab_of_psi(self, psi: float, theta: float) -> float: ...
+    def rlab_of_psip(self, psip: float, theta: float) -> float: ...
+    def zlab_of_psi(self, psi: float, theta: float) -> float: ...
+    def zlab_of_psip(self, psip: float, theta: float) -> float: ...
+    def jacobian_of_psi(self, psi: float, theta: float) -> float: ...
+    def jacobian_of_psip(self, psip: float, theta: float) -> float: ...
 
-class _PyNcGeometry(_FluxCommuteTrait, _GeometryTrait):
-    """PyO3 export of `NcGeometry`. Contains the full behavior of the wrapped object."""
+class _PyNcGeometry:
+    """PyO3 export of `dexter_equilibrium::NcGeometry`."""
 
     path: str
     netcdf_version: NetCDFVersion
@@ -824,18 +78,38 @@ class _PyNcGeometry(_FluxCommuteTrait, _GeometryTrait):
         interp1d_type: Interp1DType,
         interp2d_type: Interp2DType,
     ) -> None: ...
+    def psip_of_psi(self, psi: float) -> float: ...
+    def psi_of_psip(self, psip: float) -> float: ...
+    def r_of_psi(self, psi: float) -> float: ...
+    def r_of_psip(self, psip: float) -> float: ...
+    def psi_of_r(self, r: float) -> float: ...
+    def psip_of_r(self, r: float) -> float: ...
+    def rlab_of_psi(self, psi: float, theta: float) -> float: ...
+    def rlab_of_psip(self, psip: float, theta: float) -> float: ...
+    def zlab_of_psi(self, psi: float, theta: float) -> float: ...
+    def zlab_of_psip(self, psip: float, theta: float) -> float: ...
+    def jacobian_of_psi(self, psi: float, theta: float) -> float: ...
+    def jacobian_of_psip(self, psip: float, theta: float) -> float: ...
 
 # ================================================================================================
 
-class _PyUnityQfactor(_FluxCommuteTrait, _QfactorTrait):
-    """PyO3 export of `UnityQfactor`. Contains the full behavior of the wrapped object."""
+class _PyUnityQfactor:
+    """PyO3 export of `dexter_equilibrium::UnityQfactor`."""
 
     equilibrium_type: EquilibriumType
 
     def __init__(self): ...
+    def psip_of_psi(self, psi: float) -> float: ...
+    def psi_of_psip(self, psip: float) -> float: ...
+    def q_of_psi(self, psi: float) -> float: ...
+    def q_of_psip(self, psip: float) -> float: ...
+    def dpsi_dpsip(self, psip: float) -> float: ...
+    def dpsip_dpsi(self, psi: float) -> float: ...
+    def iota_of_psi(self, psi: float) -> float: ...
+    def iota_of_psip(self, psip: float) -> float: ...
 
-class _PyParabolicQfactor(_FluxCommuteTrait, _QfactorTrait):
-    """PyO3 export of `ParabolicQfactor`. Contains the full behavior of the wrapped object."""
+class _PyParabolicQfactor:
+    """PyO3 export of `dexter_equilibrium::ParabolicQfactor`."""
 
     equilibrium_type: EquilibriumType
     qaxis: float
@@ -844,9 +118,17 @@ class _PyParabolicQfactor(_FluxCommuteTrait, _QfactorTrait):
     psip_wall: float
 
     def __init__(self, qaxis: float, qwall: float, flux_wall: FluxWall) -> None: ...
+    def psip_of_psi(self, psi: float) -> float: ...
+    def psi_of_psip(self, psip: float) -> float: ...
+    def q_of_psi(self, psi: float) -> float: ...
+    def q_of_psip(self, psip: float) -> float: ...
+    def dpsi_dpsip(self, psip: float) -> float: ...
+    def dpsip_dpsi(self, psi: float) -> float: ...
+    def iota_of_psi(self, psi: float) -> float: ...
+    def iota_of_psip(self, psip: float) -> float: ...
 
-class _PyNcQfactor(_FluxCommuteTrait, _QfactorTrait):
-    """PyO3 export of `NcQfactor`. Contains the full behavior of the wrapped object."""
+class _PyNcQfactor:
+    """PyO3 export of `dexter_equilibrium::NcQfactor`."""
 
     path: str
     netcdf_version: NetCDFVersion
@@ -863,18 +145,34 @@ class _PyNcQfactor(_FluxCommuteTrait, _QfactorTrait):
     q_array: Array1
 
     def __init__(self, path: str, interp_type: Interp1DType) -> None: ...
+    def psip_of_psi(self, psi: float) -> float: ...
+    def psi_of_psip(self, psip: float) -> float: ...
+    def q_of_psi(self, psi: float) -> float: ...
+    def q_of_psip(self, psip: float) -> float: ...
+    def dpsi_dpsip(self, psip: float) -> float: ...
+    def dpsip_dpsi(self, psi: float) -> float: ...
+    def iota_of_psi(self, psi: float) -> float: ...
+    def iota_of_psip(self, psip: float) -> float: ...
 
 # ================================================================================================
 
-class _PyLarCurrent(_CurrentTrait):
-    """PyO3 export of `LarCurrent`. Contains the full behavior of the wrapped object."""
+class _PyLarCurrent:
+    """PyO3 export of `dexter_equilibrium::LarCurrent`."""
 
     equilibrium_type: EquilibriumType
 
     def __init__(self) -> None: ...
+    def g_of_psi(self, psi: float) -> float: ...
+    def g_of_psip(self, psip: float) -> float: ...
+    def i_of_psi(self, psi: float) -> float: ...
+    def i_of_psip(self, psip: float) -> float: ...
+    def dg_dpsi(self, psi: float) -> float: ...
+    def dg_dpsip(self, psip: float) -> float: ...
+    def di_dpsi(self, psi: float) -> float: ...
+    def di_dpsip(self, psip: float) -> float: ...
 
-class _PyNcCurrent(_CurrentTrait):
-    """PyO3 export of `NcCurrent`. Contains the full behavior of the wrapped object."""
+class _PyNcCurrent:
+    """PyO3 export of `dexter_equilibrium::NcCurrent`."""
 
     path: str
     netcdf_version: NetCDFVersion
@@ -890,18 +188,32 @@ class _PyNcCurrent(_CurrentTrait):
     i_array: Array1
 
     def __init__(self, path: str, interp_type: Interp1DType) -> None: ...
+    def g_of_psi(self, psi: float) -> float: ...
+    def g_of_psip(self, psip: float) -> float: ...
+    def i_of_psi(self, psi: float) -> float: ...
+    def i_of_psip(self, psip: float) -> float: ...
+    def dg_dpsi(self, psi: float) -> float: ...
+    def dg_dpsip(self, psip: float) -> float: ...
+    def di_dpsi(self, psi: float) -> float: ...
+    def di_dpsip(self, psip: float) -> float: ...
 
 # ================================================================================================
 
-class _PyLarBfield(_BfieldTrait):
-    """PyO3 export of `LarBfield`. Contains the full behavior of the wrapped object."""
+class _PyLarBfield:
+    """PyO3 export of `dexter_equilibrium::LarBfield`."""
 
     equilibrium_type: EquilibriumType
 
     def __init__(self) -> None: ...
+    def b_of_psi(self, psi: float, theta: float) -> float: ...
+    def b_of_psip(self, psip: float, theta: float) -> float: ...
+    def db_dpsi(self, psi: float, theta: float) -> float: ...
+    def db_dpsip(self, psip: float, theta: float) -> float: ...
+    def db_of_psi_dtheta(self, psi: float, theta: float) -> float: ...
+    def db_of_psip_dtheta(self, psip: float, theta: float) -> float: ...
 
-class _PyNcBfield(_BfieldTrait):
-    """PyO3 export of `NcBfield`. Contains the full behavior of the wrapped object."""
+class _PyNcBfield:
+    """PyO3 export of `dexter_equilibrium::NcBfield`."""
 
     path: str
     netcdf_version: NetCDFVersion
@@ -923,11 +235,17 @@ class _PyNcBfield(_BfieldTrait):
         path: str,
         interp_type: Interp2DType,
     ) -> None: ...
+    def b_of_psi(self, psi: float, theta: float) -> float: ...
+    def b_of_psip(self, psip: float, theta: float) -> float: ...
+    def db_dpsi(self, psi: float, theta: float) -> float: ...
+    def db_dpsip(self, psip: float, theta: float) -> float: ...
+    def db_of_psi_dtheta(self, psi: float, theta: float) -> float: ...
+    def db_of_psip_dtheta(self, psip: float, theta: float) -> float: ...
 
 # ================================================================================================
 
-class _PyCosHarmonic(_HarmonicTrait):
-    """PyO3 export of `CosHarmonic`. Contains the full behavior of the wrapped object."""
+class _PyCosHarmonic:
+    """PyO3 export of `dexter_equilibrium::CosHarmonic`."""
 
     equilibrium_type: EquilibriumType
     alpha: float
@@ -936,9 +254,25 @@ class _PyCosHarmonic(_HarmonicTrait):
     n: int
 
     def __init__(self, alpha: float, m: int, n: int, phase: float) -> None: ...
+    # fmt: off
+    def alpha_of_psi(self, psi: float, theta: float, zeta: float, t: float) -> float: ...
+    def alpha_of_psip(self, psip: float, theta: float, zeta: float, t: float) -> float: ...
+    def phase_of_psi(self, psi: float, theta: float, zeta: float, t: float) -> float: ...
+    def phase_of_psip(self, psip: float, theta: float, zeta: float, t: float) -> float: ...
+    def h_of_psi(self, psi: float, theta: float, zeta: float, t: float) -> float: ...
+    def h_of_psip(self, psip: float, theta: float, zeta: float, t: float) -> float: ...
+    def dh_dpsi(self, psi: float, theta: float, zeta: float, t: float) -> float: ...
+    def dh_dpsip(self, psip: float, theta: float, zeta: float, t: float) -> float: ...
+    def dh_of_psi_dtheta(self, psi: float, theta: float, zeta: float, t: float) -> float: ...
+    def dh_of_psip_dtheta(self, psip: float, theta: float, zeta: float, t: float) -> float: ...
+    def dh_of_psi_dzeta(self, psi: float, theta: float, zeta: float, t: float) -> float: ...
+    def dh_of_psip_dzeta(self, psip: float, theta: float, zeta: float, t: float) -> float: ...
+    def dh_of_psi_dt(self, psi: float, theta: float, zeta: float, t: float) -> float: ...
+    def dh_of_psip_dt(self, psip: float, theta: float, zeta: float, t: float) -> float: ...
+    # fmt: on
 
-class _PyNcHarmonic(_HarmonicTrait):
-    """PyO3 export of `NcHarmonic`. Contains the full behavior of the wrapped object."""
+class _PyNcHarmonic:
+    """PyO3 export of `dexter_equilibrium::NcHarmonic`."""
 
     path: str
     netcdf_version: NetCDFVersion
@@ -967,28 +301,72 @@ class _PyNcHarmonic(_HarmonicTrait):
         n: int,
         phase_method: PhaseMethod = "Zero",
     ) -> None: ...
+    # fmt: off
+    def alpha_of_psi(self, psi: float, theta: float, zeta: float, t: float) -> float: ...
+    def alpha_of_psip(self, psip: float, theta: float, zeta: float, t: float) -> float: ...
+    def phase_of_psi(self, psi: float, theta: float, zeta: float, t: float) -> float: ...
+    def phase_of_psip(self, psip: float, theta: float, zeta: float, t: float) -> float: ...
+    def h_of_psi(self, psi: float, theta: float, zeta: float, t: float) -> float: ...
+    def h_of_psip(self, psip: float, theta: float, zeta: float, t: float) -> float: ...
+    def dh_dpsi(self, psi: float, theta: float, zeta: float, t: float) -> float: ...
+    def dh_dpsip(self, psip: float, theta: float, zeta: float, t: float) -> float: ...
+    def dh_of_psi_dtheta(self, psi: float, theta: float, zeta: float, t: float) -> float: ...
+    def dh_of_psip_dtheta(self, psip: float, theta: float, zeta: float, t: float) -> float: ...
+    def dh_of_psi_dzeta(self, psi: float, theta: float, zeta: float, t: float) -> float: ...
+    def dh_of_psip_dzeta(self, psip: float, theta: float, zeta: float, t: float) -> float: ...
+    def dh_of_psi_dt(self, psi: float, theta: float, zeta: float, t: float) -> float: ...
+    def dh_of_psip_dt(self, psip: float, theta: float, zeta: float, t: float) -> float: ...
+    # fmt: on
 
 # ================================================================================================
 
-class _PyCosPerturbation(_PyPerturbation):
-    """Perturbation with H=CosHarmonic. Contains the full behavior of the wrapped object."""
+class _PyCosPerturbation:
+    """PyO3 export of `dexter_equilibrium::Perturbation<CosHarmonic>`."""
 
-    harmonics: list[Any]
+    harmonics: list[_PyCosHarmonic]
 
-    def __init__(self, harmonics: list[Any]) -> None: ...
+    def __init__(self, harmonics: list[_PyCosHarmonic]) -> None: ...
+    # fmt: off
+    def p_of_psi(self, psi: float, theta: float, zeta: float, t: float) -> float: ...
+    def p_of_psip(self, psip: float, theta: float, zeta: float, t: float) -> float: ...
+    def dp_dpsi(self, psi: float, theta: float, zeta: float, t: float) -> float: ...
+    def dp_dpsip(self, psip: float, theta: float, zeta: float, t: float) -> float: ...
+    def dp_of_psi_dtheta(self, psi: float, theta: float, zeta: float, t: float) -> float: ...
+    def dp_of_psip_dtheta(self, psip: float, theta: float, zeta: float, t: float) -> float: ...
+    def dp_of_psi_dzeta(self, psi: float, theta: float, zeta: float, t: float) -> float: ...
+    def dp_of_psip_dzeta(self, psip: float, theta: float, zeta: float, t: float) -> float: ...
+    def dp_of_psi_dt(self, psi: float, theta: float, zeta: float, t: float) -> float: ...
+    def dp_of_psip_dt(self, psip: float, theta: float, zeta: float, t: float) -> float: ...
+    def __getitem__(self, index: int): ...
+    def __len__(self) -> int: ...
+    # fmt: on
 
-class _PyNcPerturbation(_PyPerturbation):
-    """Perturbation with H=NcHarmonic. Contains the full behavior of the wrapped object."""
+class _PyNcPerturbation:
+    """PyO3 export of `dexter_equilibrium::Perturbation<NcHarmonic>`."""
 
-    harmonics: list[Any]
+    harmonics: list[_PyNcHarmonic]
 
-    def __init__(self, harmonics: list[Any]) -> None: ...
+    def __init__(self, harmonics: list[_PyNcHarmonic]) -> None: ...
+    # fmt: off
+    def p_of_psi(self, psi: float, theta: float, zeta: float, t: float) -> float: ...
+    def p_of_psip(self, psip: float, theta: float, zeta: float, t: float) -> float: ...
+    def dp_dpsi(self, psi: float, theta: float, zeta: float, t: float) -> float: ...
+    def dp_dpsip(self, psip: float, theta: float, zeta: float, t: float) -> float: ...
+    def dp_of_psi_dtheta(self, psi: float, theta: float, zeta: float, t: float) -> float: ...
+    def dp_of_psip_dtheta(self, psip: float, theta: float, zeta: float, t: float) -> float: ...
+    def dp_of_psi_dzeta(self, psi: float, theta: float, zeta: float, t: float) -> float: ...
+    def dp_of_psip_dzeta(self, psip: float, theta: float, zeta: float, t: float) -> float: ...
+    def dp_of_psi_dt(self, psi: float, theta: float, zeta: float, t: float) -> float: ...
+    def dp_of_psip_dt(self, psip: float, theta: float, zeta: float, t: float) -> float: ...
+    def __getitem__(self, index: int): ...
+    def __len__(self) -> int: ...
+    # fmt: on
 
 # ================================================================================================
 # ================================================================================================
 
 class _PyInitialConditions:
-    """Particle initial conditions. Contains the full behavior of the wrapped object."""
+    """PyO3 export of `dexter_simulate::InitialConditions`."""
 
     t0: float
     flux0: InitialFlux
@@ -1008,21 +386,23 @@ class _PyInitialConditions:
     ): ...
 
 class _PyIntersectParams:
-    """Particle intersect() params. Contains the full behavior of the wrapped object."""
+    """PyO3 export of `dexter_simulate::IntersectParams`."""
 
-    intersection: str
+    intersection: Intersection
     angle: float
     turns: int
 
     def __init__(
         self,
-        intersection: str,
+        intersection: Intersection,
         angle: float,
         turns: int,
     ): ...
 
 class _PyParticle:
-    """Particle. Contains the full behavior of the wrapped object."""
+    """PyO3 export of `dexter_simulate::Particle`."""
+
+    # Some types are not defined yet, so annotate with `Any`.
 
     initial_conditions: Any
     integration_status: IntegrationStatus
@@ -1068,7 +448,7 @@ class _PyParticle:
         current: Any,
         bfield: Any,
         perturbation: Any,
-        intersect_params: _PyIntersectParams,
+        intersect_params: Any,
         *,
         stepping_method: Optional[SteppingMethod],
         max_steps: Optional[int],

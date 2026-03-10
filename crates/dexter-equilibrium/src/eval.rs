@@ -3,16 +3,16 @@
 //! For analytical equilibria, this is achieved by evaluation of analytical formulas, while for
 //! numerical equilibria by interpolation over the reconstructed data arrays.
 
-use std::fmt::Debug;
+use core::fmt::Debug;
 
 use ndarray::Array1;
 use rsl_interpolation::{Accelerator, Cache};
 
-use crate::Result;
+use crate::EvalError;
 
 /// Equilibrium geometry related quantities computation.
 pub trait Geometry {
-    /// Calculates the radial coordinate `r(ψ)` **in \[m\]**.
+    /// Calculates the radial coordinate `r(ψ)` in **\[m\]**.
     ///
     /// # Example
     ///
@@ -28,9 +28,13 @@ pub trait Geometry {
     /// let r_of_psi = geometry.r_of_psi(0.01, &mut acc)?;
     /// # Ok::<_, EqError>(())
     /// ```
-    fn r_of_psi(&self, psi: f64, acc: &mut Accelerator) -> Result<f64>;
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
+    fn r_of_psi(&self, psi: f64, acc: &mut Accelerator) -> Result<f64, EvalError>;
 
-    /// Calculates the radial coordinate `r(ψp)` **in \[m\]**.
+    /// Calculates the radial coordinate `r(ψp)` in **\[m\]**.
     ///
     /// # Example
     ///
@@ -46,7 +50,11 @@ pub trait Geometry {
     /// let r_of_psip = geometry.r_of_psip(0.015, &mut acc)?;
     /// # Ok::<_, EqError>(())
     /// ```
-    fn r_of_psip(&self, psip: f64, acc: &mut Accelerator) -> Result<f64>;
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
+    fn r_of_psip(&self, psip: f64, acc: &mut Accelerator) -> Result<f64, EvalError>;
 
     /// Calculates `ψ(r)`.
     ///
@@ -64,7 +72,11 @@ pub trait Geometry {
     /// let psi_of_r = geometry.psi_of_r(0.02, &mut acc)?;
     /// # Ok::<_, EqError>(())
     /// ```
-    fn psi_of_r(&self, r: f64, acc: &mut Accelerator) -> Result<f64>;
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
+    fn psi_of_r(&self, r: f64, acc: &mut Accelerator) -> Result<f64, EvalError>;
 
     /// Calculates `ψp(r)`.
     ///
@@ -82,7 +94,11 @@ pub trait Geometry {
     /// let psip_of_r = geometry.psip_of_r(0.02, &mut acc)?;
     /// # Ok::<_, EqError>(())
     /// ```
-    fn psip_of_r(&self, r: f64, acc: &mut Accelerator) -> Result<f64>;
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
+    fn psip_of_r(&self, r: f64, acc: &mut Accelerator) -> Result<f64, EvalError>;
 
     /// Calculates `R(ψ, θ)`.
     ///
@@ -102,6 +118,10 @@ pub trait Geometry {
     /// let rlab_of_psi = geometry.rlab_of_psi(0.01, 3.14, &mut psi_acc, &mut theta_acc, &mut cache)?;
     /// # Ok::<_, EqError>(())
     /// ```
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
     fn rlab_of_psi(
         &self,
         psi: f64,
@@ -109,7 +129,7 @@ pub trait Geometry {
         psi_acc: &mut Accelerator,
         theta_acc: &mut Accelerator,
         cache: &mut Cache<f64>,
-    ) -> Result<f64>;
+    ) -> Result<f64, EvalError>;
 
     /// Calculates `R(ψp, θ)`.
     ///
@@ -129,6 +149,10 @@ pub trait Geometry {
     /// let rlab_of_psip = geometry.rlab_of_psip(0.01, 3.14, &mut psip_acc, &mut theta_acc, &mut cache)?;
     /// # Ok::<_, EqError>(())
     /// ```
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
     fn rlab_of_psip(
         &self,
         psip: f64,
@@ -136,7 +160,7 @@ pub trait Geometry {
         psip_acc: &mut Accelerator,
         theta_acc: &mut Accelerator,
         cache: &mut Cache<f64>,
-    ) -> Result<f64>;
+    ) -> Result<f64, EvalError>;
 
     /// Calculates `Z(ψ, θ)`.
     ///
@@ -156,6 +180,10 @@ pub trait Geometry {
     /// let zlab_of_psi = geometry.zlab_of_psi(0.01, 3.14, &mut psi_acc, &mut theta_acc, &mut cache)?;
     /// # Ok::<_, EqError>(())
     /// ```
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
     fn zlab_of_psi(
         &self,
         psi: f64,
@@ -163,7 +191,7 @@ pub trait Geometry {
         psi_acc: &mut Accelerator,
         theta_acc: &mut Accelerator,
         cache: &mut Cache<f64>,
-    ) -> Result<f64>;
+    ) -> Result<f64, EvalError>;
 
     /// Calculates `Z(ψp, θ)`.
     ///
@@ -183,6 +211,10 @@ pub trait Geometry {
     /// let zlab_of_psip = geometry.zlab_of_psip(0.01, 3.14, &mut psip_acc, &mut theta_acc, &mut cache)?;
     /// # Ok::<_, EqError>(())
     /// ```
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
     fn zlab_of_psip(
         &self,
         psip: f64,
@@ -190,7 +222,7 @@ pub trait Geometry {
         psip_acc: &mut Accelerator,
         theta_acc: &mut Accelerator,
         cache: &mut Cache<f64>,
-    ) -> Result<f64>;
+    ) -> Result<f64, EvalError>;
 
     /// Calculates the Jacobian `J(ψ, θ)`.
     ///
@@ -210,6 +242,10 @@ pub trait Geometry {
     /// let jacobian_of_psi = geometry.jacobian_of_psi(0.01, 3.14, &mut psi_acc, &mut theta_acc, &mut cache)?;
     /// # Ok::<_, EqError>(())
     /// ```
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
     fn jacobian_of_psi(
         &self,
         psi: f64,
@@ -217,7 +253,7 @@ pub trait Geometry {
         psi_acc: &mut Accelerator,
         theta_acc: &mut Accelerator,
         cache: &mut Cache<f64>,
-    ) -> Result<f64>;
+    ) -> Result<f64, EvalError>;
 
     /// Calculates the Jacobian `J(ψp, θ)`.
     ///
@@ -237,6 +273,10 @@ pub trait Geometry {
     /// let jacobian_of_psip = geometry.zlab_of_psip(0.01, 3.14, &mut psip_acc, &mut theta_acc, &mut cache)?;
     /// # Ok::<_, EqError>(())
     /// ```
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
     fn jacobian_of_psip(
         &self,
         psip: f64,
@@ -244,18 +284,18 @@ pub trait Geometry {
         psip_acc: &mut Accelerator,
         theta_acc: &mut Accelerator,
         cache: &mut Cache<f64>,
-    ) -> Result<f64>;
+    ) -> Result<f64, EvalError>;
 
-    /// Returns the last `Rlab` values that correspond to the device's wall.
+    /// Returns the last `Rlab` values that correspond to the device's wall (last closed flux surface).
     fn rlab_wall(&self) -> Array1<f64>;
 
-    /// Returns the last `Zlab` values that correspond to the device's wall.
+    /// Returns the last `Zlab` values that correspond to the device's wall (last closed flux surface).
     fn zlab_wall(&self) -> Array1<f64>;
 }
 
-/// Conversion between the two flux coordinates `ψ` and `ψp`
+/// Conversion between the two flux coordinates `ψ` and `ψp`.
 pub trait FluxCommute {
-    /// Calculates `ψp(ψ)`
+    /// Calculates `ψp(ψ)`.
     ///
     /// # Example
     ///
@@ -271,7 +311,11 @@ pub trait FluxCommute {
     /// let psip_of_psi = qfactor.psip_of_psi(0.01, &mut acc)?;
     /// # Ok::<_, EqError>(())
     /// ```
-    fn psip_of_psi(&self, psi: f64, acc: &mut Accelerator) -> Result<f64>;
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the conversion fails for any reason.
+    fn psip_of_psi(&self, psi: f64, acc: &mut Accelerator) -> Result<f64, EvalError>;
 
     /// Calculates `ψ(ψp)`.
     ///
@@ -289,177 +333,16 @@ pub trait FluxCommute {
     /// let psi_of_psip = geometry.psi_of_psip(0.015, &mut acc)?;
     /// # Ok::<_, EqError>(())
     /// ```
-    fn psi_of_psip(&self, psip: f64, acc: &mut Accelerator) -> Result<f64>;
-}
-
-/// Magnetic field related quantities computation
-pub trait Bfield {
-    /// Calculates `B(ψ, θ)`.
     ///
-    /// # Example
+    /// # Errors
     ///
-    /// ```
-    /// # use dexter_equilibrium::*;
-    /// # use rsl_interpolation::*;
-    /// # use std::path::PathBuf;
-    /// #
-    /// # let path = PathBuf::from("./netcdf.nc");
-    /// # let bfield = NcBfieldBuilder::new(&path, "bicubic").build()?;
-    /// #
-    /// let mut psi_acc = Accelerator::new();
-    /// let mut theta_acc = Accelerator::new();
-    /// let mut cache = Cache::new();
-    /// let b_of_psi = bfield.b_of_psi(0.01, 3.14, &mut psi_acc, &mut theta_acc, &mut cache)?;
-    /// # Ok::<_, EqError>(())
-    /// ```
-    fn b_of_psi(
-        &self,
-        psi: f64,
-        theta: f64,
-        psi_acc: &mut Accelerator,
-        theta_acc: &mut Accelerator,
-        cache: &mut Cache<f64>,
-    ) -> Result<f64>;
-
-    /// Calculates `B(ψp, θ)`.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// # use dexter_equilibrium::*;
-    /// # use rsl_interpolation::*;
-    /// # use std::path::PathBuf;
-    /// #
-    /// # let path = PathBuf::from("./netcdf.nc");
-    /// # let bfield = NcBfieldBuilder::new(&path, "bicubic").build()?;
-    /// #
-    /// let mut psi_acc = Accelerator::new();
-    /// let mut theta_acc = Accelerator::new();
-    /// let mut cache = Cache::new();
-    /// let b_of_psip = bfield.b_of_psip(0.01, 3.14, &mut psi_acc, &mut theta_acc, &mut cache)?;
-    /// # Ok::<_, EqError>(())
-    /// ```
-    fn b_of_psip(
-        &self,
-        psip: f64,
-        theta: f64,
-        psip_acc: &mut Accelerator,
-        theta_acc: &mut Accelerator,
-        cache: &mut Cache<f64>,
-    ) -> Result<f64>;
-
-    /// Calculates `dB(ψ, θ)/dψ`.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// # use dexter_equilibrium::*;
-    /// # use rsl_interpolation::*;
-    /// # use std::path::PathBuf;
-    /// #
-    /// # let path = PathBuf::from("./netcdf.nc");
-    /// # let bfield = NcBfieldBuilder::new(&path, "bicubic").build()?;
-    /// #
-    /// let mut psi_acc = Accelerator::new();
-    /// let mut theta_acc = Accelerator::new();
-    /// let mut cache = Cache::new();
-    /// let db_dpsi = bfield.db_dpsi(0.01, 3.14, &mut psi_acc, &mut theta_acc, &mut cache)?;
-    /// # Ok::<_, EqError>(())
-    /// ```
-    fn db_dpsi(
-        &self,
-        psi: f64,
-        theta: f64,
-        psi_acc: &mut Accelerator,
-        theta_acc: &mut Accelerator,
-        cache: &mut Cache<f64>,
-    ) -> Result<f64>;
-
-    /// Calculates `dB(ψp, θ)/dψp`.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// # use dexter_equilibrium::*;
-    /// # use rsl_interpolation::*;
-    /// # use std::path::PathBuf;
-    /// #
-    /// # let path = PathBuf::from("./netcdf.nc");
-    /// # let bfield = NcBfieldBuilder::new(&path, "bicubic").build()?;
-    /// #
-    /// let mut psi_acc = Accelerator::new();
-    /// let mut theta_acc = Accelerator::new();
-    /// let mut cache = Cache::new();
-    /// let db_dpsip = bfield.db_dpsip(0.01, 3.14, &mut psi_acc, &mut theta_acc, &mut cache)?;
-    /// # Ok::<_, EqError>(())
-    /// ```
-    fn db_dpsip(
-        &self,
-        psip: f64,
-        theta: f64,
-        psip_acc: &mut Accelerator,
-        theta_acc: &mut Accelerator,
-        cache: &mut Cache<f64>,
-    ) -> Result<f64>;
-
-    /// Calculates `dB(ψ, θ)/dθ`.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// # use dexter_equilibrium::*;
-    /// # use rsl_interpolation::*;
-    /// # use std::path::PathBuf;
-    /// #
-    /// # let path = PathBuf::from("./netcdf.nc");
-    /// # let bfield = NcBfieldBuilder::new(&path, "bicubic").build()?;
-    /// #
-    /// let mut psi_acc = Accelerator::new();
-    /// let mut theta_acc = Accelerator::new();
-    /// let mut cache = Cache::new();
-    /// let db_of_psi_dtheta = bfield.db_of_psi_dtheta(0.01, 3.14, &mut psi_acc, &mut theta_acc, &mut cache)?;
-    /// # Ok::<_, EqError>(())
-    /// ```
-    fn db_of_psi_dtheta(
-        &self,
-        psi: f64,
-        theta: f64,
-        psi_acc: &mut Accelerator,
-        theta_acc: &mut Accelerator,
-        cache: &mut Cache<f64>,
-    ) -> Result<f64>;
-
-    /// Calculates `dB(ψp, θ)/dθ`.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// # use dexter_equilibrium::*;
-    /// # use rsl_interpolation::*;
-    /// # use std::path::PathBuf;
-    /// #
-    /// # let path = PathBuf::from("./netcdf.nc");
-    /// # let bfield = NcBfieldBuilder::new(&path, "bicubic").build()?;
-    /// #
-    /// let mut psi_acc = Accelerator::new();
-    /// let mut theta_acc = Accelerator::new();
-    /// let mut cache = Cache::new();
-    /// let db_of_psip_dtheta = bfield.db_of_psip_dtheta(0.01, 3.14, &mut psi_acc, &mut theta_acc, &mut cache)?;
-    /// # Ok::<_, EqError>(())
-    /// ```
-    fn db_of_psip_dtheta(
-        &self,
-        psip: f64,
-        theta: f64,
-        psip_acc: &mut Accelerator,
-        theta_acc: &mut Accelerator,
-        cache: &mut Cache<f64>,
-    ) -> Result<f64>;
+    /// Returns an [`EvalError`] if the conversion fails for any reason.
+    fn psi_of_psip(&self, psip: f64, acc: &mut Accelerator) -> Result<f64, EvalError>;
 }
 
 /// q-factor related quantities computation.
 pub trait Qfactor {
-    /// Calculates `q(ψ)`
+    /// Calculates `q(ψ)`.
     ///
     /// # Example
     ///
@@ -475,9 +358,13 @@ pub trait Qfactor {
     /// let q_of_psi = qfactor.q_of_psi(0.01, &mut acc)?;
     /// # Ok::<_, EqError>(())
     /// ```
-    fn q_of_psi(&self, psi: f64, acc: &mut Accelerator) -> Result<f64>;
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
+    fn q_of_psi(&self, psi: f64, acc: &mut Accelerator) -> Result<f64, EvalError>;
 
-    /// Calculates `q(ψp)`
+    /// Calculates `q(ψp)`.
     ///
     /// # Example
     ///
@@ -493,7 +380,11 @@ pub trait Qfactor {
     /// let q_of_psip = qfactor.q_of_psip(0.015, &mut acc)?;
     /// # Ok::<_, EqError>(())
     /// ```
-    fn q_of_psip(&self, psip: f64, acc: &mut Accelerator) -> Result<f64>;
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
+    fn q_of_psip(&self, psip: f64, acc: &mut Accelerator) -> Result<f64, EvalError>;
 
     /// Calculates the derivative `dψp(ψ)/dψ`.
     ///
@@ -513,7 +404,11 @@ pub trait Qfactor {
     /// let dpsip_dpsi = qfactor.dpsip_dpsi(0.01, &mut acc)?;
     /// # Ok::<_, EqError>(())
     /// ```
-    fn dpsip_dpsi(&self, psi: f64, acc: &mut Accelerator) -> Result<f64>;
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
+    fn dpsip_dpsi(&self, psi: f64, acc: &mut Accelerator) -> Result<f64, EvalError>;
 
     /// Calculates the derivative `dψ(ψp)/dψp`.
     ///
@@ -533,9 +428,13 @@ pub trait Qfactor {
     /// let dpsi_dpsip = qfactor.dpsi_dpsip(0.01, &mut acc)?;
     /// # Ok::<_, EqError>(())
     /// ```
-    fn dpsi_dpsip(&self, psip: f64, acc: &mut Accelerator) -> Result<f64>;
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
+    fn dpsi_dpsip(&self, psip: f64, acc: &mut Accelerator) -> Result<f64, EvalError>;
 
-    /// Calculates `i(ψ) = 1/q(ψ)`
+    /// Calculates `i(ψ) = 1/q(ψ)`.
     ///
     /// # Example
     ///
@@ -551,11 +450,16 @@ pub trait Qfactor {
     /// let iota_of_psi = qfactor.iota_of_psi(0.01, &mut acc)?;
     /// # Ok::<_, EqError>(())
     /// ```
-    fn iota_of_psi(&self, psi: f64, acc: &mut Accelerator) -> Result<f64> {
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation of `self.q_of_psi()` fails for any reason.
+    #[inline]
+    fn iota_of_psi(&self, psi: f64, acc: &mut Accelerator) -> Result<f64, EvalError> {
         Ok(self.q_of_psi(psi, acc)?.recip())
     }
 
-    /// Calculates `i(ψp) = 1/q(ψp)`
+    /// Calculates `i(ψp) = 1/q(ψp)`.
     ///
     /// # Example
     ///
@@ -571,14 +475,19 @@ pub trait Qfactor {
     /// let iota_of_psip = qfactor.iota_of_psip(0.015, &mut acc)?;
     /// # Ok::<_, EqError>(())
     /// ```
-    fn iota_of_psip(&self, psip: f64, acc: &mut Accelerator) -> Result<f64> {
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation of `self.q_of_psip()` fails for any reason.
+    #[inline]
+    fn iota_of_psip(&self, psip: f64, acc: &mut Accelerator) -> Result<f64, EvalError> {
         Ok(self.q_of_psip(psip, acc)?.recip())
     }
 }
 
 /// Plasma current related quantities computation.
 pub trait Current {
-    /// Calculates `g(ψ)`
+    /// Calculates `g(ψ)`.
     ///
     /// # Example
     ///
@@ -594,9 +503,13 @@ pub trait Current {
     /// let g_of_psi = current.g_of_psi(0.01, &mut acc)?;
     /// # Ok::<_, EqError>(())
     /// ```
-    fn g_of_psi(&self, psi: f64, acc: &mut Accelerator) -> Result<f64>;
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
+    fn g_of_psi(&self, psi: f64, acc: &mut Accelerator) -> Result<f64, EvalError>;
 
-    /// Calculates `g(ψp)`
+    /// Calculates `g(ψp)`.
     ///
     /// # Example
     ///
@@ -612,9 +525,13 @@ pub trait Current {
     /// let g_of_psip = current.g_of_psip(0.015, &mut acc)?;
     /// # Ok::<_, EqError>(())
     /// ```
-    fn g_of_psip(&self, psip: f64, acc: &mut Accelerator) -> Result<f64>;
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
+    fn g_of_psip(&self, psip: f64, acc: &mut Accelerator) -> Result<f64, EvalError>;
 
-    /// Calculates `I(ψ)`
+    /// Calculates `I(ψ)`.
     ///
     /// # Example
     ///
@@ -630,9 +547,13 @@ pub trait Current {
     /// let i_of_psi = current.i_of_psi(0.01, &mut acc)?;
     /// # Ok::<_, EqError>(())
     /// ```
-    fn i_of_psi(&self, psi: f64, acc: &mut Accelerator) -> Result<f64>;
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
+    fn i_of_psi(&self, psi: f64, acc: &mut Accelerator) -> Result<f64, EvalError>;
 
-    /// Calculates `I(ψp)`
+    /// Calculates `I(ψp)`.
     ///
     /// # Example
     ///
@@ -648,9 +569,13 @@ pub trait Current {
     /// let i_of_psip = current.i_of_psip(0.015, &mut acc)?;
     /// # Ok::<_, EqError>(())
     /// ```
-    fn i_of_psip(&self, psip: f64, acc: &mut Accelerator) -> Result<f64>;
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
+    fn i_of_psip(&self, psip: f64, acc: &mut Accelerator) -> Result<f64, EvalError>;
 
-    /// Calculates `𝜕g(ψ)/𝜕ψ`
+    /// Calculates `𝜕g(ψ)/𝜕ψ`.
     ///
     /// # Example
     ///
@@ -666,9 +591,13 @@ pub trait Current {
     /// let dg_dpsi = current.dg_dpsi(0.01, &mut acc)?;
     /// # Ok::<_, EqError>(())
     /// ```
-    fn dg_dpsi(&self, psi: f64, acc: &mut Accelerator) -> Result<f64>;
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
+    fn dg_dpsi(&self, psi: f64, acc: &mut Accelerator) -> Result<f64, EvalError>;
 
-    /// Calculates `𝜕g(ψp)/𝜕ψp`
+    /// Calculates `𝜕g(ψp)/𝜕ψp`.
     ///
     /// # Example
     ///
@@ -684,9 +613,13 @@ pub trait Current {
     /// let dg_dpsip = current.dg_dpsip(0.015, &mut acc)?;
     /// # Ok::<_, EqError>(())
     /// ```
-    fn dg_dpsip(&self, psip: f64, acc: &mut Accelerator) -> Result<f64>;
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
+    fn dg_dpsip(&self, psip: f64, acc: &mut Accelerator) -> Result<f64, EvalError>;
 
-    /// Calculates `𝜕I(ψ)/𝜕ψ`
+    /// Calculates `𝜕I(ψ)/𝜕ψ`.
     ///
     /// # Example
     ///
@@ -702,9 +635,13 @@ pub trait Current {
     /// let di_dpsi = current.di_dpsi(0.01, &mut acc)?;
     /// # Ok::<_, EqError>(())
     /// ```
-    fn di_dpsi(&self, psi: f64, acc: &mut Accelerator) -> Result<f64>;
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
+    fn di_dpsi(&self, psi: f64, acc: &mut Accelerator) -> Result<f64, EvalError>;
 
-    /// Calculates `𝜕I(ψp)/𝜕ψp`
+    /// Calculates `𝜕I(ψp)/𝜕ψp`.
     ///
     /// # Example
     ///
@@ -720,28 +657,220 @@ pub trait Current {
     /// let di_dpsip = current.di_dpsip(0.015, &mut acc)?;
     /// # Ok::<_, EqError>(())
     /// ```
-    fn di_dpsip(&self, psip: f64, acc: &mut Accelerator) -> Result<f64>;
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
+    fn di_dpsip(&self, psip: f64, acc: &mut Accelerator) -> Result<f64, EvalError>;
+}
+
+/// Magnetic field related quantities computation.
+pub trait Bfield {
+    /// Calculates `B(ψ, θ)`.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use dexter_equilibrium::*;
+    /// # use rsl_interpolation::*;
+    /// # use std::path::PathBuf;
+    /// #
+    /// # let path = PathBuf::from("./netcdf.nc");
+    /// # let bfield = NcBfieldBuilder::new(&path, "bicubic").build()?;
+    /// #
+    /// let mut psi_acc = Accelerator::new();
+    /// let mut theta_acc = Accelerator::new();
+    /// let mut cache = Cache::new();
+    /// let b_of_psi = bfield.b_of_psi(0.01, 3.14, &mut psi_acc, &mut theta_acc, &mut cache)?;
+    /// # Ok::<_, EqError>(())
+    /// ```
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
+    fn b_of_psi(
+        &self,
+        psi: f64,
+        theta: f64,
+        psi_acc: &mut Accelerator,
+        theta_acc: &mut Accelerator,
+        cache: &mut Cache<f64>,
+    ) -> Result<f64, EvalError>;
+
+    /// Calculates `B(ψp, θ)`.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use dexter_equilibrium::*;
+    /// # use rsl_interpolation::*;
+    /// # use std::path::PathBuf;
+    /// #
+    /// # let path = PathBuf::from("./netcdf.nc");
+    /// # let bfield = NcBfieldBuilder::new(&path, "bicubic").build()?;
+    /// #
+    /// let mut psi_acc = Accelerator::new();
+    /// let mut theta_acc = Accelerator::new();
+    /// let mut cache = Cache::new();
+    /// let b_of_psip = bfield.b_of_psip(0.01, 3.14, &mut psi_acc, &mut theta_acc, &mut cache)?;
+    /// # Ok::<_, EqError>(())
+    /// ```
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
+    fn b_of_psip(
+        &self,
+        psip: f64,
+        theta: f64,
+        psip_acc: &mut Accelerator,
+        theta_acc: &mut Accelerator,
+        cache: &mut Cache<f64>,
+    ) -> Result<f64, EvalError>;
+
+    /// Calculates `dB(ψ, θ)/dψ`.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use dexter_equilibrium::*;
+    /// # use rsl_interpolation::*;
+    /// # use std::path::PathBuf;
+    /// #
+    /// # let path = PathBuf::from("./netcdf.nc");
+    /// # let bfield = NcBfieldBuilder::new(&path, "bicubic").build()?;
+    /// #
+    /// let mut psi_acc = Accelerator::new();
+    /// let mut theta_acc = Accelerator::new();
+    /// let mut cache = Cache::new();
+    /// let db_dpsi = bfield.db_dpsi(0.01, 3.14, &mut psi_acc, &mut theta_acc, &mut cache)?;
+    /// # Ok::<_, EqError>(())
+    /// ```
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
+    fn db_dpsi(
+        &self,
+        psi: f64,
+        theta: f64,
+        psi_acc: &mut Accelerator,
+        theta_acc: &mut Accelerator,
+        cache: &mut Cache<f64>,
+    ) -> Result<f64, EvalError>;
+
+    /// Calculates `dB(ψp, θ)/dψp`.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use dexter_equilibrium::*;
+    /// # use rsl_interpolation::*;
+    /// # use std::path::PathBuf;
+    /// #
+    /// # let path = PathBuf::from("./netcdf.nc");
+    /// # let bfield = NcBfieldBuilder::new(&path, "bicubic").build()?;
+    /// #
+    /// let mut psi_acc = Accelerator::new();
+    /// let mut theta_acc = Accelerator::new();
+    /// let mut cache = Cache::new();
+    /// let db_dpsip = bfield.db_dpsip(0.01, 3.14, &mut psi_acc, &mut theta_acc, &mut cache)?;
+    /// # Ok::<_, EqError>(())
+    /// ```
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
+    fn db_dpsip(
+        &self,
+        psip: f64,
+        theta: f64,
+        psip_acc: &mut Accelerator,
+        theta_acc: &mut Accelerator,
+        cache: &mut Cache<f64>,
+    ) -> Result<f64, EvalError>;
+
+    /// Calculates `dB(ψ, θ)/dθ`.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use dexter_equilibrium::*;
+    /// # use rsl_interpolation::*;
+    /// # use std::path::PathBuf;
+    /// #
+    /// # let path = PathBuf::from("./netcdf.nc");
+    /// # let bfield = NcBfieldBuilder::new(&path, "bicubic").build()?;
+    /// #
+    /// let mut psi_acc = Accelerator::new();
+    /// let mut theta_acc = Accelerator::new();
+    /// let mut cache = Cache::new();
+    /// let db_of_psi_dtheta = bfield.db_of_psi_dtheta(0.01, 3.14, &mut psi_acc, &mut theta_acc, &mut cache)?;
+    /// # Ok::<_, EqError>(())
+    /// ```
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
+    fn db_of_psi_dtheta(
+        &self,
+        psi: f64,
+        theta: f64,
+        psi_acc: &mut Accelerator,
+        theta_acc: &mut Accelerator,
+        cache: &mut Cache<f64>,
+    ) -> Result<f64, EvalError>;
+
+    /// Calculates `dB(ψp, θ)/dθ`.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use dexter_equilibrium::*;
+    /// # use rsl_interpolation::*;
+    /// # use std::path::PathBuf;
+    /// #
+    /// # let path = PathBuf::from("./netcdf.nc");
+    /// # let bfield = NcBfieldBuilder::new(&path, "bicubic").build()?;
+    /// #
+    /// let mut psi_acc = Accelerator::new();
+    /// let mut theta_acc = Accelerator::new();
+    /// let mut cache = Cache::new();
+    /// let db_of_psip_dtheta = bfield.db_of_psip_dtheta(0.01, 3.14, &mut psi_acc, &mut theta_acc, &mut cache)?;
+    /// # Ok::<_, EqError>(())
+    /// ```
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
+    fn db_of_psip_dtheta(
+        &self,
+        psip: f64,
+        theta: f64,
+        psip_acc: &mut Accelerator,
+        theta_acc: &mut Accelerator,
+        cache: &mut Cache<f64>,
+    ) -> Result<f64, EvalError>;
 }
 
 /// Defines the behavior of objects that support caching of a [`Harmonic`]'s values.
 ///
-/// All methods that return a derived quantity should only do just that; the `update()` method
-/// should have already calculated and stored them beforehand. Therefore, they must always be
-/// guarded by an `if !cache.is_updated() { cache.update() }` statement.
+/// # Use inside evaluation methods
 ///
-/// Unfortunately, the values calculated from the interpolators must be calculated outside the
-/// implementor and updated separately, to avoid passing (a variable amount of possible missing)
-/// Interpolators and arrays as parameters as well.
+/// All non-trivial [`Harmonic`] evaluation methods must be guarded by a:
+/// ```notest
+/// if !cache.is_updated() {
+///     cache.update()
+/// }
+/// ```
+/// statement before using the cache.
 pub trait HarmonicCache: Default + Clone + Debug {
-    /// Checks if the caches independent coordinates are up-to-date.
-    ///
-    /// Comparing floats for equality is fine here; We want the method to return `false` with even
-    /// the slightest of changes, and only return `true` when the old and new variables are
-    /// bit-to-bit identical.
+    /// Checks if the cache's stored independent coordinates are up-to-date, i.e. are equal to the
+    /// passed arguments.
     fn is_updated(&mut self, flux: f64, theta: f64, zeta: f64, t: f64) -> bool;
 
     /// Updates the cache's coordinates and intermediate values.
-    fn update(&mut self, flux: f64, theta: f64, zeta: f64, t: f64) -> Result<()>;
+    fn update(&mut self, flux: f64, theta: f64, zeta: f64, t: f64);
 
     /// Returns the cache's hits.
     fn hits(&self) -> usize;
@@ -751,9 +880,7 @@ pub trait HarmonicCache: Default + Clone + Debug {
 }
 
 /// Single perturbation harmonic related quantities computation.
-#[rustfmt::skip]
-pub trait Harmonic: Clone
-{
+pub trait Harmonic: Clone {
     /// The implementor's corresponding caching object.
     type Cache: HarmonicCache;
 
@@ -780,7 +907,18 @@ pub trait Harmonic: Clone
     /// let a = harmonic.alpha_of_psi(0.0, 0.2, 0.3, 0.0, &mut cache)?;
     /// # Ok::<_, EqError>(())
     /// ```
-    fn alpha_of_psi(&self, psi: f64, theta: f64, zeta: f64, t: f64, cache: &mut Self::Cache) -> Result<f64>;
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
+    fn alpha_of_psi(
+        &self,
+        psi: f64,
+        theta: f64,
+        zeta: f64,
+        t: f64,
+        cache: &mut Self::Cache,
+    ) -> Result<f64, EvalError>;
 
     /// Calculates the harmonic's amplitude `α(ψp, θ, ζ, t)`.
     ///
@@ -793,7 +931,18 @@ pub trait Harmonic: Clone
     /// let a = harmonic.alpha_of_psip(0.0, 0.2, 0.3, 0.0, &mut cache)?;
     /// # Ok::<_, EqError>(())
     /// ```
-    fn alpha_of_psip(&self, psip: f64, theta: f64, zeta: f64, t: f64, cache: &mut Self::Cache) -> Result<f64>;
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
+    fn alpha_of_psip(
+        &self,
+        psip: f64,
+        theta: f64,
+        zeta: f64,
+        t: f64,
+        cache: &mut Self::Cache,
+    ) -> Result<f64, EvalError>;
 
     /// Calculates the harmonic's phase `φ(ψ, θ, ζ, t)`.
     ///
@@ -806,7 +955,18 @@ pub trait Harmonic: Clone
     /// let phase = harmonic.phase_of_psi(0.0, 0.2, 0.3, 0.0, &mut cache)?;
     /// # Ok::<_, EqError>(())
     /// ```
-    fn phase_of_psi(&self, psi: f64, theta: f64, zeta: f64, t: f64, cache: &mut Self::Cache) -> Result<f64>;
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
+    fn phase_of_psi(
+        &self,
+        psi: f64,
+        theta: f64,
+        zeta: f64,
+        t: f64,
+        cache: &mut Self::Cache,
+    ) -> Result<f64, EvalError>;
 
     /// Calculates the harmonic's phase `φ(ψ, θ, ζ, t)`.
     ///
@@ -819,7 +979,18 @@ pub trait Harmonic: Clone
     /// let phase = harmonic.phase_of_psi(0.0, 0.2, 0.3, 0.0, &mut cache)?;
     /// # Ok::<_, EqError>(())
     /// ```
-    fn phase_of_psip(&self, psip: f64, theta: f64, zeta: f64, t: f64, cache: &mut Self::Cache) -> Result<f64>;
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
+    fn phase_of_psip(
+        &self,
+        psip: f64,
+        theta: f64,
+        zeta: f64,
+        t: f64,
+        cache: &mut Self::Cache,
+    ) -> Result<f64, EvalError>;
 
     /// Calculates the full harmonic's value `h(ψ, θ, ζ, t)`.
     ///
@@ -832,7 +1003,18 @@ pub trait Harmonic: Clone
     /// let h = harmonic.h_of_psi(0.0, 0.2, 0.3, 0.0, &mut cache)?;
     /// # Ok::<_, EqError>(())
     /// ```
-    fn h_of_psi(&self, psi: f64, theta: f64, zeta: f64, t: f64, cache: &mut Self::Cache) -> Result<f64>;
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
+    fn h_of_psi(
+        &self,
+        psi: f64,
+        theta: f64,
+        zeta: f64,
+        t: f64,
+        cache: &mut Self::Cache,
+    ) -> Result<f64, EvalError>;
 
     /// Calculates the full harmonic's value `h(ψp, θ, ζ, t)`.
     ///
@@ -845,7 +1027,18 @@ pub trait Harmonic: Clone
     /// let h = harmonic.h_of_psip(0.0, 0.2, 0.3, 0.0, &mut cache)?;
     /// # Ok::<_, EqError>(())
     /// ```
-    fn h_of_psip(&self, psip: f64, theta: f64, zeta: f64, t: f64, cache: &mut Self::Cache) -> Result<f64>;
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
+    fn h_of_psip(
+        &self,
+        psip: f64,
+        theta: f64,
+        zeta: f64,
+        t: f64,
+        cache: &mut Self::Cache,
+    ) -> Result<f64, EvalError>;
 
     /// Calculates the harmonic's derivative with respect to ψ, `dh(ψ, θ, ζ, t)/dψ`.
     ///
@@ -858,7 +1051,18 @@ pub trait Harmonic: Clone
     /// let dh_dpsi = harmonic.dh_dpsi(0.0, 0.2, 0.3, 0.0, &mut cache)?;
     /// # Ok::<_, EqError>(())
     /// ```
-    fn dh_dpsi(&self, psi: f64, theta: f64, zeta: f64, t: f64, cache: &mut Self::Cache) -> Result<f64>;
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
+    fn dh_dpsi(
+        &self,
+        psi: f64,
+        theta: f64,
+        zeta: f64,
+        t: f64,
+        cache: &mut Self::Cache,
+    ) -> Result<f64, EvalError>;
 
     /// Calculates the harmonic's derivative with respect to ψp, `dh(ψp, θ, ζ, t)/dψp`.
     ///
@@ -871,7 +1075,18 @@ pub trait Harmonic: Clone
     /// let dh_dpsip = harmonic.dh_dpsip(0.0, 0.2, 0.3, 0.0, &mut cache)?;
     /// # Ok::<_, EqError>(())
     /// ```
-    fn dh_dpsip(&self, psip: f64, theta: f64, zeta: f64, t: f64, cache: &mut Self::Cache) -> Result<f64>;
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
+    fn dh_dpsip(
+        &self,
+        psip: f64,
+        theta: f64,
+        zeta: f64,
+        t: f64,
+        cache: &mut Self::Cache,
+    ) -> Result<f64, EvalError>;
 
     /// Calculates the harmonic's derivative with respect to θ, `dh(ψ, θ, ζ, t)/dθ`.
     ///
@@ -884,7 +1099,18 @@ pub trait Harmonic: Clone
     /// let dh_of_psi_dtheta = harmonic.dh_of_psi_dtheta(0.0, 0.2, 0.3, 0.0, &mut cache)?;
     /// # Ok::<_, EqError>(())
     /// ```
-    fn dh_of_psi_dtheta(&self, psi: f64, theta: f64, zeta: f64, t: f64, cache: &mut Self::Cache) -> Result<f64>;
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
+    fn dh_of_psi_dtheta(
+        &self,
+        psi: f64,
+        theta: f64,
+        zeta: f64,
+        t: f64,
+        cache: &mut Self::Cache,
+    ) -> Result<f64, EvalError>;
 
     /// Calculates the harmonic's derivative with respect to θ, `dh(ψp, θ, ζ, t)/dθ`.
     ///
@@ -897,7 +1123,18 @@ pub trait Harmonic: Clone
     /// let dh_of_psip_dtheta = harmonic.dh_of_psip_dtheta(0.0, 0.2, 0.3, 0.0, &mut cache)?;
     /// # Ok::<_, EqError>(())
     /// ```
-    fn dh_of_psip_dtheta(&self, psip: f64, theta: f64, zeta: f64, t: f64, cache: &mut Self::Cache) -> Result<f64>;
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
+    fn dh_of_psip_dtheta(
+        &self,
+        psip: f64,
+        theta: f64,
+        zeta: f64,
+        t: f64,
+        cache: &mut Self::Cache,
+    ) -> Result<f64, EvalError>;
 
     /// Calculates the harmonic's derivative with respect to ζ, `dh(ψ, θ, ζ, t)/dζ`.
     ///
@@ -910,7 +1147,18 @@ pub trait Harmonic: Clone
     /// let dh_of_psi_dzeta = harmonic.dh_of_psi_dzeta(0.0, 0.2, 0.3, 0.0, &mut cache)?;
     /// # Ok::<_, EqError>(())
     /// ```
-    fn dh_of_psi_dzeta(&self, psi: f64, theta: f64, zeta: f64, t: f64, cache: &mut Self::Cache) -> Result<f64>;
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
+    fn dh_of_psi_dzeta(
+        &self,
+        psi: f64,
+        theta: f64,
+        zeta: f64,
+        t: f64,
+        cache: &mut Self::Cache,
+    ) -> Result<f64, EvalError>;
 
     /// Calculates the harmonic's derivative with respect to ζ, `dh(ψp, θ, ζ, t)/dζ`.
     ///
@@ -923,7 +1171,18 @@ pub trait Harmonic: Clone
     /// let dh_of_psip_dzeta = harmonic.dh_of_psip_dzeta(0.0, 0.2, 0.3, 0.0, &mut cache)?;
     /// # Ok::<_, EqError>(())
     /// ```
-    fn dh_of_psip_dzeta(&self, psip: f64, theta: f64, zeta: f64, t: f64, cache: &mut Self::Cache) -> Result<f64>;
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
+    fn dh_of_psip_dzeta(
+        &self,
+        psip: f64,
+        theta: f64,
+        zeta: f64,
+        t: f64,
+        cache: &mut Self::Cache,
+    ) -> Result<f64, EvalError>;
 
     /// Calculates the harmonic's derivative with respect to t, `dh(ψ, θ, ζ, t)/dt`.
     ///
@@ -936,7 +1195,18 @@ pub trait Harmonic: Clone
     /// let dh_of_psi_dt = harmonic.dh_of_psi_dt(0.0, 0.2, 0.3, 0.0, &mut cache)?;
     /// # Ok::<_, EqError>(())
     /// ```
-    fn dh_of_psi_dt(&self, psi: f64, theta: f64, zeta: f64, t: f64, cache: &mut Self::Cache) -> Result<f64>;
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
+    fn dh_of_psi_dt(
+        &self,
+        psi: f64,
+        theta: f64,
+        zeta: f64,
+        t: f64,
+        cache: &mut Self::Cache,
+    ) -> Result<f64, EvalError>;
 
     /// Calculates the harmonic's derivative with respect to t, `dh(ψp, θ, ζ, t)/dt`.
     ///
@@ -949,5 +1219,16 @@ pub trait Harmonic: Clone
     /// let dh_of_psip_dt = harmonic.dh_of_psip_dt(0.0, 0.2, 0.3, 0.0, &mut cache)?;
     /// # Ok::<_, EqError>(())
     /// ```
-    fn dh_of_psip_dt(&self, psip: f64, theta: f64, zeta: f64, t: f64, cache: &mut Self::Cache) -> Result<f64>;
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
+    fn dh_of_psip_dt(
+        &self,
+        psip: f64,
+        theta: f64,
+        zeta: f64,
+        t: f64,
+        cache: &mut Self::Cache,
+    ) -> Result<f64, EvalError>;
 }

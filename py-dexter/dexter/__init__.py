@@ -7,13 +7,47 @@ from dexter.equilibrium import Qfactor, UnityQfactor, ParabolicQfactor, NcQfacto
 from dexter.equilibrium import Current, LarCurrent, NcCurrent
 from dexter.equilibrium import Bfield, LarBfield, NcBfield
 from dexter.equilibrium import Harmonic, CosHarmonic, NcHarmonic
-from dexter.equilibrium import Perturbation, CosPerturbation, NcPerturbation
-from dexter.equilibrium import NcEquilibrium, perturbation
+from dexter.equilibrium import Perturbation
+from dexter.equilibrium import NcEquilibrium
+
+from dexter.types import (
+    ArrayShape,
+    Array1,
+    Array2,
+    NetCDFVersion,
+    EquilibriumType,
+    Interp1DType,
+    Interp2DType,
+    FluxWall,
+    FluxCoordinate,
+    FluxState,
+    PhaseMethod,
+    InitialFlux,
+    Intersection,
+    IntegrationStatus,
+    SteppingMethod,
+)
 
 from dexter.simulate import InitialConditions, IntersectParams, Particle
 
 __all__ = [
-    # equilibrium
+    # Types
+    "ArrayShape",
+    "Array1",
+    "Array2",
+    "NetCDFVersion",
+    "EquilibriumType",
+    "Interp1DType",
+    "Interp2DType",
+    "FluxWall",
+    "FluxCoordinate",
+    "FluxState",
+    "PhaseMethod",
+    "InitialFlux",
+    "Intersection",
+    "IntegrationStatus",
+    "SteppingMethod",
+    # Equilibrium
     "Geometry",
     "Qfactor",
     "Current",
@@ -31,9 +65,7 @@ __all__ = [
     "NcBfield",
     "CosHarmonic",
     "NcHarmonic",
-    "perturbation",
-    "CosPerturbation",
-    "NcPerturbation",
+    "Perturbation",
     "NcEquilibrium",
     # Simulate
     "InitialConditions",

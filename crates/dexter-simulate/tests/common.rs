@@ -1,7 +1,30 @@
-use dexter_simulate::Particle;
+//! Common testing utilities.
 
-pub fn check_integrated_particle_arrays(particle: &Particle) {
-    particle.initial_conditions();
+use dexter_equilibrium::*;
+use dexter_simulate::*;
+
+#[allow(dead_code, reason = "used in tests")]
+pub(crate) fn lar_equilibrium() -> (
+    ParabolicQfactor,
+    LarCurrent,
+    LarBfield,
+    Perturbation<CosHarmonic>,
+) {
+    (
+        ParabolicQfactor::new(1.1, 3.9, FluxWall::Toroidal(0.45)),
+        LarCurrent::new(),
+        LarBfield::new(),
+        Perturbation::new(&[
+            CosHarmonic::new(1e-3, 3, 1, 0.0),
+            CosHarmonic::new(1e-3, 3, 1, 0.0),
+        ]),
+    )
+}
+
+/// Checks that the time series calculated from an integration routine are valid.
+#[allow(dead_code, reason = "used in tests")]
+pub(crate) fn check_integrated_particle_arrays(particle: &Particle) {
+    let _: InitialConditions = particle.initial_conditions();
     assert_eq!(particle.t_array().len(), particle.steps_stored());
     assert_eq!(particle.psi_array().len(), particle.steps_stored());
     assert_eq!(particle.psip_array().len(), particle.steps_stored());

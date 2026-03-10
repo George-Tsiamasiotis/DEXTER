@@ -30,9 +30,14 @@ plugins:
           # Signatures
           annotations_path: source
           modernize_annotations: false
-          show_signature_annotations: false
+          show_signature_annotations: true
+          signature_crossrefs: true
+          unwrap_annotated: true
           # Members
-          show_labels: false
+          show_labels: true
+          summary:
+            functions: true
+            attributes: true
 
 theme:
   name: material
@@ -93,5 +98,19 @@ nav:
   - NetCDF: netcdf.md
   - API Reference:
     - Types: reference/types.md
-    - Equilibrium: reference/equilibrium.md
-    - Simulate: reference/simulate.md
+    - Equilibrium:
+      - LarGeometry: reference/equilibrium/lar_geometry.md
+      - NcGeometry: reference/equilibrium/nc_geometry.md
+      - UnityQfactor: reference/equilibrium/unity_qfactor.md
+      - ParabolicQfactor: reference/equilibrium/parabolic_qfactor.md
+      - NcQfactor: reference/equilibrium/nc_qfactor.md
+      - LarCurrent: reference/equilibrium/lar_current.md
+      - NcCurrent: reference/equilibrium/nc_current.md
+      - LarBfield: reference/equilibrium/lar_bfield.md
+      - NcBfield: reference/equilibrium/nc_bfield.md
+      - CosHarmonic: reference/equilibrium/cos_harmonic.md
+      - NcHarmonic: reference/equilibrium/nc_harmonic.md
+      - Perturbation: reference/equilibrium/perturbation.md
+      - Helpers: reference/equilibrium/helpers.md
+    - Simulate:
+      - Particle: reference/simulate/particle.md

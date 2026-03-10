@@ -14,19 +14,40 @@ from dexter._core import _PyLarCurrent, _PyNcCurrent
 from dexter._core import _PyLarBfield, _PyNcBfield
 from dexter._core import _PyCosHarmonic, _PyNcHarmonic
 from dexter._core import _PyCosPerturbation, _PyNcPerturbation
+from .traits import (
+    _FluxCommuteTrait,
+    _GeometryTrait,
+    _QfactorTrait,
+    _CurrentTrait,
+    _BfieldTrait,
+    _HarmonicTrait,
+)
 from ._plotters import (
     _FluxPlotter,
+    _GeometryPlotter,
+    _NumericalGeometryPlotter,
     _QfactorPlotter,
     _CurrentPlotter,
-    _GeometryPlotter,
     _HarmonicPlotter,
+)
+from dexter.types import (
+    ArrayShape,
+    Array1,
+    Array2,
+    FluxWall,
+    NetCDFVersion,
+    EquilibriumType,
+    Interp1DType,
+    Interp2DType,
+    FluxState,
+    PhaseMethod,
 )
 
 from typing import TypeAlias
 
 
-class LarGeometry(_PyLarGeometry, _GeometryPlotter):
-    r"""Analytical Large Aspect Ratio Geometry of a circular device.
+class LarGeometry(_GeometryTrait, _GeometryPlotter):
+    r"""Analytical Large Aspect Ratio Geometry of a circular cross section device.
 
     Parameters
     ----------
@@ -37,23 +58,6 @@ class LarGeometry(_PyLarGeometry, _GeometryPlotter):
     rwall
         The value of the $r_{wall}$ coordinate at the wall in $[m]$.
 
-    Attributes
-    ----------
-    equilibrium_type
-        The Equilibrium's type.
-    baxis
-        The magnetic field strength on the magnetic axis $B_0$ in $[T]$.
-    raxis
-        The horizontal position of the magnetic axis $R_0$ in $[m]$.
-    rwall
-        The value of the $r_{wall}$ coordinate at the wall in $[m]$.
-    psi_wall
-        The toroidal flux value at the wall $\psi_{wall}$ in Normalized Units.
-    rlab_wall
-        Last $R_{lab}$ values that correspond to the device's walls.
-    zlab_wall
-        Last $Z_{lab}$ values that correspond to the device's walls.
-
     Example
     -------
     ```python title="LarGeometry creation"
@@ -63,9 +67,60 @@ class LarGeometry(_PyLarGeometry, _GeometryPlotter):
     """
 
     _dyn: str = "larG"
+    _rust: _PyLarGeometry  # type: ignore[assignment]
+
+    def __init__(self, baxis: float, raxis: float, rwall: float) -> None:
+        setattr(self, "_rust", _PyLarGeometry(baxis=baxis, raxis=raxis, rwall=rwall))
+
+    @property
+    def equilibrium_type(self) -> EquilibriumType:
+        """The object's equilibrium's type."""
+        return self._rust.equilibrium_type
+
+    @property
+    def baxis(self) -> float:
+        """The magnetic field strength on the magnetic axis $B_0$ in $[T]$."""
+        return self._rust.baxis
+
+    @property
+    def raxis(self) -> float:
+        """The horizontal position of the magnetic axis $R_0$ in $[m]$."""
+        return self._rust.raxis
+
+    @property
+    def rwall(self) -> float:
+        """The value of the $r_{wall}$ coordinate at the wall in $[m]$."""
+        return self._rust.rwall
+
+    @property
+    def psi_wall(self) -> float:
+        r"""The toroidal flux value at the wall $\psi_{wall}$ in Normalized Units."""
+        return self._rust.psi_wall
+
+    @property
+    def rlab_wall(self) -> Array1:
+        """Last $R_{lab}$ values that correspond to the device's wall (last closed flux surface)."""
+        return self._rust.rlab_wall
+
+    @property
+    def zlab_wall(self) -> Array1:
+        """Last $Z_{lab}$ values that correspond to the device's wall (last closed flux surface)."""
+        return self._rust.zlab_wall
+
+    def __str__(self) -> str:
+        return self._rust.__str__()
+
+    def __repr__(self) -> str:
+        return self.__str__()
 
 
-class NcGeometry(_PyNcGeometry, _FluxPlotter, _GeometryPlotter):
+class NcGeometry(
+    _GeometryTrait,
+    _FluxCommuteTrait,
+    _FluxPlotter,
+    _GeometryPlotter,
+    _NumericalGeometryPlotter,
+):
     r"""Object describing the general geometry of a numerical equilibrium.
 
     Stores relates scalars and arrays, and provides interpolation methods for converting
@@ -82,57 +137,6 @@ class NcGeometry(_PyNcGeometry, _FluxPlotter, _GeometryPlotter):
     interp2d_type
         The type of 2D Interpolation.
 
-    Attributes
-    ----------
-    path
-        The path of the netCDF file.
-    netcdf_version
-        The netCDF convention version (SemVer).
-    equilibrium_type
-        The Equilibrium's type.
-    interp1d_type
-        The 1D Interpolation type.
-    interp2d_type
-        The 2D Interpolation type.
-    baxis
-        The magnetic field strength on the magnetic axis $B_0$ in $[T]$.
-    raxis
-        The horizontal position of the magnetic axis $R_0$ in $[m]$.
-    zaxis
-        The vertical position of the magnetic axis in $[m]$.
-    rgeo
-        The geometrical axis (device major radius) in $[m]$.
-    rwall
-        The value of the $r_{wall}$ coordinate at the wall in $[m]$.
-    shape
-        The shape of the 2 dimensional data arrays, as in $(len(\psi/\psi_p), len(\theta))$.
-    psi_wall
-        The toroidal flux value at the wall $\psi_{wall}$ in Normalized Units.
-    psip_wall
-        The poloidal flux value at the wall $\psi_{p,wall}$ in Normalized Units.
-    psi_state
-        The state of the toroidal flux coordinate.
-    psip_state
-        The state of the poloidal flux coordinate.
-    psi_array
-        The NetCDF $\psi$ data.
-    psip_array
-        The NetCDF $\psi_p$ data.
-    theta_array
-        The NetCDF $\theta$ data,
-    r_array
-        The NetCDF $r$ data in $[m]$,
-    rlab_array
-        The $R_{lab}$ data array.
-    zlab_array
-        The $Z_{lab}$ data array.
-    jacobian_array
-        The Jacobian $J$ data array.
-    rlab_wall
-        Last $R_{lab}$ values that correspond to the device's walls.
-    zlab_wall
-        Last $Z_{lab}$ values that correspond to the device's walls.
-
     Example
     -------
     ```python title="NcGeometry creation"
@@ -142,18 +146,159 @@ class NcGeometry(_PyNcGeometry, _FluxPlotter, _GeometryPlotter):
     """
 
     _dyn: str = "ncdG"
+    _rust: _PyNcGeometry  # type: ignore[assignment]
+
+    def __init__(
+        self,
+        path: str,
+        interp1d_type: Interp1DType,
+        interp2d_type: Interp2DType,
+    ) -> None:
+        setattr(
+            self,
+            "_rust",
+            _PyNcGeometry(
+                path=path,
+                interp1d_type=interp1d_type,
+                interp2d_type=interp2d_type,
+            ),
+        )
+
+    @property
+    def path(self) -> str:
+        """The path of the netCDF file."""
+        return self._rust.path
+
+    @property
+    def netcdf_version(self) -> NetCDFVersion:
+        """The netCDF convention version (SemVer)."""
+        return self._rust.netcdf_version
+
+    @property
+    def equilibrium_type(self) -> EquilibriumType:
+        """The object's equilibrium's type."""
+        return self._rust.equilibrium_type
+
+    @property
+    def interp1d_type(self) -> str:
+        """The 1D Interpolation type."""
+        return self._rust.interp1d_type
+
+    @property
+    def interp2d_type(self) -> str:
+        """The 2D Interpolation type."""
+        return self._rust.interp2d_type
+
+    @property
+    def baxis(self) -> float:
+        """The magnetic field strength on the magnetic axis $B_0$ in $[T]$."""
+        return self._rust.baxis
+
+    @property
+    def raxis(self) -> float:
+        """The horizontal position of the magnetic axis $R_0$ in $[m]$."""
+        return self._rust.raxis
+
+    @property
+    def zaxis(self) -> float:
+        """The vertical position of the magnetic axis in $[m]$."""
+        return self._rust.raxis
+
+    @property
+    def rgeo(self) -> float:
+        """The geometrical axis (device major radius) in $[m]$."""
+        return self._rust.rgeo
+
+    @property
+    def rwall(self) -> float:
+        """The value of the $r_{wall}$ coordinate at the wall in $[m]$."""
+        return self._rust.rwall
+
+    @property
+    def shape(self) -> ArrayShape:
+        r"""The shape of the 2 dimensional data arrays, as in $(len(\psi/\psi_p), len(\theta))$.
+
+        If both coordinates are “good”, they are guaranteed to be of the same length.
+        """
+        return self._rust.shape
+
+    @property
+    def psi_wall(self) -> float:
+        r"""The toroidal flux value at the wall $\psi_{wall}$ in Normalized Units."""
+        return self._rust.psi_wall
+
+    @property
+    def psip_wall(self) -> float:
+        r"""The poloidal flux value at the wall $\psi_{p,wall}$ in Normalized Units."""
+        return self._rust.psip_wall
+
+    @property
+    def psi_state(self) -> FluxState:
+        """The state of the toroidal flux coordinate."""
+        return self._rust.psi_state
+
+    @property
+    def psip_state(self) -> FluxState:
+        """The state of the poloidal flux coordinate."""
+        return self._rust.psip_state
+
+    @property
+    def psi_array(self) -> Array1:
+        r"""The NetCDF $\psi$ data."""
+        return self._rust.psi_array
+
+    @property
+    def psip_array(self) -> Array1:
+        r"""The NetCDF $\psi_p$ data."""
+        return self._rust.psip_array
+
+    @property
+    def theta_array(self) -> Array1:
+        r"""The NetCDF $\theta$ data."""
+        return self._rust.theta_array
+
+    @property
+    def r_array(self) -> Array1:
+        r"""The NetCDF $r$ data."""
+        return self._rust.r_array
+
+    @property
+    def rlab_array(self) -> Array2:
+        """The NetCDF $R_{lab}$ data array."""
+        return self._rust.rlab_array
+
+    @property
+    def zlab_array(self) -> Array2:
+        """The NetCDF $Z_{lab}$ data array."""
+        return self._rust.zlab_array
+
+    @property
+    def jacobian_array(self) -> Array2:
+        """The Jacobian $J$ data array."""
+        return self._rust.jacobian_array
+
+    @property
+    def rlab_wall(self) -> Array1:
+        """Last $R_{lab}$ values that correspond to the device's wall (last closed flux surface)."""
+        return self._rust.rlab_wall
+
+    @property
+    def zlab_wall(self) -> Array1:
+        """Last $Z_{lab}$ values that correspond to the device's wall (last closed flux surface)."""
+        return self._rust.zlab_wall
+
+    def __str__(self) -> str:
+        return self._rust.__str__()
+
+    def __repr__(self) -> str:
+        return self.__str__()
 
 
 # ================================================================================================
 
 
-class UnityQfactor(_PyUnityQfactor, _FluxPlotter, _QfactorPlotter):
+class UnityQfactor(_QfactorTrait, _FluxCommuteTrait, _FluxPlotter, _QfactorPlotter):
     r"""Analytical q-factor profile of $q=1$ and $\psi=\psi_p$.
-
-    Attributes
-    ----------
-    equilibrium_type
-        The Equilibrium's type.
 
     Example
     -------
@@ -164,51 +309,31 @@ class UnityQfactor(_PyUnityQfactor, _FluxPlotter, _QfactorPlotter):
     """
 
     _dyn: str = "uniQ"
+    _rust: _PyUnityQfactor  # type: ignore[assignment]
+
+    def __init__(self) -> None:
+        setattr(self, "_rust", _PyUnityQfactor())
+
+    @property
+    def equilibrium_type(self) -> EquilibriumType:
+        """The object's equilibrium's type."""
+        return self._rust.equilibrium_type
+
+    def __str__(self) -> str:
+        return self._rust.__str__()
+
+    def __repr__(self) -> str:
+        return self.__str__()
 
 
-class ParabolicQfactor(_PyParabolicQfactor, _FluxPlotter, _QfactorPlotter):
+class ParabolicQfactor(_QfactorTrait, _FluxCommuteTrait, _FluxPlotter, _QfactorPlotter):
     r"""Analytical q-factor of parabolic q(ψ) profile.
 
     Described by the following formulas:
 
-    $$
-    q(\psi) = q_{axis} + (q_{wall} - q_{axis})
-        \bigg( \dfrac{\psi}{\psi_{wall}} \bigg)^2
-    $$
-
-    $$
-    \psi_p(\psi) = \dfrac{\psi_{wall}}{\sqrt{q_{axis}(q_{wall} - q_{axis})}}
-        \arctan\bigg[ \dfrac{\psi\sqrt{q_{wall} - q_{axis}}}{\psi_{wall}\sqrt{q_{axis}}} \bigg]
-    $$
-
-    $$
-    \psi(\psi_p) = \dfrac{\psi_{wall}\sqrt{q_{axis}}}{\sqrt{q_{wall} - q_{axis}}}
-        \tan\bigg[ \dfrac{\sqrt{q_{axis}(q_{wall} - q_{axis})}}{\psi_{wall}}\psi_p \bigg]
-    $$
-
-    $$
-    \dfrac{d\psi_p(\psi)}{d\psi} = ... = \dfrac{1}{q(\psi)} = \iota(\psi)
-    $$
-
-    $$
-    \dfrac{d\psi(\psi_p)}{d\psi_p} =
-        \dfrac{q_{axis}}{\cos^2 \bigg[
-        \dfrac{\sqrt{q_{axis}(q_{wall} - q_{axis})}}{\psi_{wall}}\psi_p
-        \bigg]}
-        \overset{*}{=}
-        q(\psi_p)
-    $$
-
-    $$
-    q(\psi_p) = q_{axis} + q_{axis} \tan^2
-        \bigg[ \dfrac{\sqrt{q_{axis}(q_{wall}-q_{axis})}}{\psi_{wall}} \psi_p \bigg]
-    $$
-
-    $^*$ Identity: $\dfrac{1}{\cos^2\theta} = 1 + \tan^2\theta$
-
     Note
     ----
-    A ParabolicQfactor is defined with the help of the [`FluxWall`](types.md/#dexter.types.FluxWall)
+    A ParabolicQfactor is defined with the help of the [`FluxWall`][dexter.FluxWall]
     helper type, which changes the position where qwall is met.
 
     Parameters
@@ -219,19 +344,6 @@ class ParabolicQfactor(_PyParabolicQfactor, _FluxPlotter, _QfactorPlotter):
         The value of $q$ on the wall.
     flux_wall
         Helper type to define a ParabolicQfactor with respect to one of the two fluxes’ values at the wall.
-
-    Attributes
-    ----------
-    equilibrium_type
-        The Equilibrium's type.
-    qaxis
-        The value of $q$ on the magnetic axis.
-    qwall
-        The value of $q$ on the wall.
-    psi_wall
-        The value of the toroidal flux at the wall, $\psi_{wall}$.
-    psip_wall
-        The value of the poloidal flux at the wall, $\psi_{p,wall}$.
 
     Example
     -------
@@ -244,9 +356,57 @@ class ParabolicQfactor(_PyParabolicQfactor, _FluxPlotter, _QfactorPlotter):
     """
 
     _dyn: str = "parQ"
+    _rust: _PyParabolicQfactor  # type: ignore[assignment]
+
+    def __init__(
+        self,
+        qaxis: float,
+        qwall: float,
+        flux_wall: FluxWall,
+    ) -> None:
+        setattr(
+            self,
+            "_rust",
+            _PyParabolicQfactor(
+                qaxis=qaxis,
+                qwall=qwall,
+                flux_wall=flux_wall,
+            ),
+        )
+
+    @property
+    def equilibrium_type(self) -> EquilibriumType:
+        """The object's equilibrium's type."""
+        return self._rust.equilibrium_type
+
+    @property
+    def qaxis(self) -> float:
+        """The value of $q$ on the magnetic axis."""
+        return self._rust.qaxis
+
+    @property
+    def qwall(self) -> float:
+        """The value of $q$ on the wall."""
+        return self._rust.qwall
+
+    @property
+    def psi_wall(self) -> float:
+        r"""The toroidal flux value at the wall $\psi_{wall}$ in Normalized Units."""
+        return self._rust.psi_wall
+
+    @property
+    def psip_wall(self) -> float:
+        r"""The poloidal flux value at the wall $\psi_{p,wall}$ in Normalized Units."""
+        return self._rust.psip_wall
+
+    def __str__(self) -> str:
+        return self._rust.__str__()
+
+    def __repr__(self) -> str:
+        return self.__str__()
 
 
-class NcQfactor(_PyNcQfactor, _FluxPlotter, _QfactorPlotter):
+class NcQfactor(_FluxCommuteTrait, _QfactorTrait, _FluxPlotter, _QfactorPlotter):
     r"""Numerical q-factor reconstructed from a NetCDF file.
 
     Related quantities are computed by interpolating over the data arrays.
@@ -258,35 +418,6 @@ class NcQfactor(_PyNcQfactor, _FluxPlotter, _QfactorPlotter):
     interp_type
         The 1D Interpolation type.
 
-    Attributes
-    ----------
-    path
-        The path to the NetCDF file.
-    netcdf_version
-        The netCDF convention version (SemVer).
-    equilibrium_type
-        The Equilibrium's type.
-    interp_type
-        The 1D Interpolation type.
-    qaxis
-        The value of $q$ on the magnetic axis.
-    qwall
-        The value of $q$ on the wall.
-    psi_wall
-        The value of the toroidal flux at the wall (if it exists).
-    psip_wall
-        The value of the poloidal flux at the wall (if it exists).
-    psi_state
-        The state of the toroidal flux coordinate.
-    psip_state
-        The state of the poloidal flux coordinate.
-    psi_array
-        The NetCDF $\psi$ data used to construct the $q(\psi)$ and $I(\psi)$ splines.
-    psip_array
-        The NetCDF $\psi_p$ data used to construct the $q(\psi_p)$ and $I(\psi_p)$ splines.
-    q_array
-        The NetCDF $q$ data used to construct the $q(\psi_p)$ spline.
-
     Example
     -------
     ```python title="NcQfactor creation"
@@ -296,18 +427,99 @@ class NcQfactor(_PyNcQfactor, _FluxPlotter, _QfactorPlotter):
     """
 
     _dyn: str = "ncdQ"
+    _rust: _PyNcQfactor  # type: ignore[assignment]
+
+    def __init__(
+        self,
+        path: str,
+        interp_type: Interp1DType,
+    ) -> None:
+        setattr(
+            self,
+            "_rust",
+            _PyNcQfactor(
+                path=path,
+                interp_type=interp_type,
+            ),
+        )
+
+    @property
+    def path(self) -> str:
+        """The path of the netCDF file."""
+        return self._rust.path
+
+    @property
+    def netcdf_version(self) -> NetCDFVersion:
+        """The netCDF convention version (SemVer)."""
+        return self._rust.netcdf_version
+
+    @property
+    def equilibrium_type(self) -> EquilibriumType:
+        """The object's equilibrium's type."""
+        return self._rust.equilibrium_type
+
+    @property
+    def interp_type(self) -> str:
+        """The Interpolation type."""
+        return self._rust.interp_type
+
+    @property
+    def qaxis(self) -> float:
+        """The value of $q$ on the magnetic axis."""
+        return self._rust.qaxis
+
+    @property
+    def qwall(self) -> float:
+        """The value of $q$ on the wall."""
+        return self._rust.qwall
+
+    @property
+    def psi_wall(self) -> float:
+        r"""The toroidal flux value at the wall $\psi_{wall}$ in Normalized Units."""
+        return self._rust.psi_wall
+
+    @property
+    def psip_wall(self) -> float:
+        r"""The poloidal flux value at the wall $\psi_{p,wall}$ in Normalized Units."""
+        return self._rust.psip_wall
+
+    @property
+    def psi_state(self) -> FluxState:
+        """The state of the toroidal flux coordinate."""
+        return self._rust.psi_state
+
+    @property
+    def psip_state(self) -> FluxState:
+        """The state of the poloidal flux coordinate."""
+        return self._rust.psip_state
+
+    @property
+    def psi_array(self) -> Array1:
+        r"""The NetCDF $\psi$ data."""
+        return self._rust.psi_array
+
+    @property
+    def psip_array(self) -> Array1:
+        r"""The NetCDF $\psi_p$ data."""
+        return self._rust.psip_array
+
+    @property
+    def q_array(self) -> Array1:
+        r"""The NetCDF $q$ data."""
+        return self._rust.q_array
+
+    def __str__(self) -> str:
+        return self._rust.__str__()
+
+    def __repr__(self) -> str:
+        return self.__str__()
 
 
 # ================================================================================================
 
 
-class LarCurrent(_PyLarCurrent, _CurrentPlotter):
+class LarCurrent(_CurrentTrait, _CurrentPlotter):
     """Analytical Large Aspect Ratio Current with $g=1$ and $I=0$.
-
-    Attributes
-    ----------
-    equilibrium_type
-        The Equilibrium's type.
 
     Example
     -------
@@ -318,9 +530,24 @@ class LarCurrent(_PyLarCurrent, _CurrentPlotter):
     """
 
     _dyn: str = "larC"
+    _rust: _PyLarCurrent  # type: ignore[assignment]
+
+    def __init__(self) -> None:
+        setattr(self, "_rust", _PyLarCurrent())
+
+    @property
+    def equilibrium_type(self) -> EquilibriumType:
+        """The object's equilibrium's type."""
+        return self._rust.equilibrium_type
+
+    def __str__(self) -> str:
+        return self._rust.__str__()
+
+    def __repr__(self) -> str:
+        return self.__str__()
 
 
-class NcCurrent(_PyNcCurrent, _CurrentPlotter):
+class NcCurrent(_CurrentTrait, _CurrentPlotter):
     r"""Numerical plasma current reconstructed from a NetCDF file.
 
     Related quantities are computed by interpolating over the data arrays.
@@ -332,33 +559,6 @@ class NcCurrent(_PyNcCurrent, _CurrentPlotter):
     interp_type
         The 1D Interpolation type.
 
-    Attributes
-    ----------
-    path
-        The path to the NetCDF file.
-    netcdf_version
-        The netCDF convention version (SemVer).
-    equilibrium_type
-        The Equilibrium's type.
-    interp_type
-        The 1D Interpolation type.
-    psi_wall
-        The value of the toroidal flux at the wall (if it exists).
-    psip_wall
-        The value of the poloidal flux at the wall (if it exists).
-    psi_state
-        The state of the toroidal flux coordinate.
-    psip_state
-        The state of the poloidal flux coordinate.
-    psi_array
-        The NetCDF $\psi$ data used to construct the $q(\psi)$ and $I(\psi)$ splines.
-    psip_array
-        The NetCDF $\psi_p$ data used to construct the $q(\psi_p)$ and $I(\psi_p)$ splines.
-    g_array
-        The NetCDF $g$ data used to construct the $g(\psi_p)$ spline.
-    i_array
-        The NetCDF $I$ data used to construct the $I(\psi_p)$ spline.
-
     Example
     -------
     ```python title="NcCurrent creation"
@@ -368,18 +568,95 @@ class NcCurrent(_PyNcCurrent, _CurrentPlotter):
     """
 
     _dyn: str = "ncdC"
+    _rust: _PyNcCurrent  # type: ignore[assignment]
+
+    def __init__(
+        self,
+        path: str,
+        interp_type: Interp1DType,
+    ) -> None:
+        setattr(
+            self,
+            "_rust",
+            _PyNcCurrent(
+                path=path,
+                interp_type=interp_type,
+            ),
+        )
+
+    @property
+    def path(self) -> str:
+        """The path of the netCDF file."""
+        return self._rust.path
+
+    @property
+    def netcdf_version(self) -> NetCDFVersion:
+        """The netCDF convention version (SemVer)."""
+        return self._rust.netcdf_version
+
+    @property
+    def equilibrium_type(self) -> EquilibriumType:
+        """The object's equilibrium's type."""
+        return self._rust.equilibrium_type
+
+    @property
+    def interp_type(self) -> str:
+        """The Interpolation type."""
+        return self._rust.interp_type
+
+    @property
+    def psi_wall(self) -> float:
+        r"""The toroidal flux value at the wall $\psi_{wall}$ in Normalized Units."""
+        return self._rust.psi_wall
+
+    @property
+    def psip_wall(self) -> float:
+        r"""The poloidal flux value at the wall $\psi_{p,wall}$ in Normalized Units."""
+        return self._rust.psip_wall
+
+    @property
+    def psi_state(self) -> FluxState:
+        """The state of the toroidal flux coordinate."""
+        return self._rust.psi_state
+
+    @property
+    def psip_state(self) -> FluxState:
+        """The state of the poloidal flux coordinate."""
+        return self._rust.psip_state
+
+    @property
+    def psi_array(self) -> Array1:
+        r"""The NetCDF $\psi$ data."""
+        return self._rust.psi_array
+
+    @property
+    def psip_array(self) -> Array1:
+        r"""The NetCDF $\psi_p$ data."""
+        return self._rust.psip_array
+
+    @property
+    def g_array(self) -> Array1:
+        r"""The NetCDF $g$ data."""
+        return self._rust.g_array
+
+    @property
+    def i_array(self) -> Array1:
+        r"""The NetCDF $I$ data."""
+        return self._rust.i_array
+
+    def __str__(self) -> str:
+        return self._rust.__str__()
+
+    def __repr__(self) -> str:
+        return self.__str__()
 
 
 # ================================================================================================
 
 
-class LarBfield(_PyLarBfield):
-    """Analytical Large Aspect Ratio magnetic field with B(ψ, θ) = 1 - sqrt(2ψ)cos(θ).
-
-    Attributes
-    ----------
-    equilibrium_type
-        The Equilibrium's type.
+class LarBfield(_BfieldTrait):
+    r"""Analytical Large Aspect Ratio magnetic field with
+    $B(\psi, \theta) = 1 - \sqrt{2\psi}\cos(\theta)$.
 
     Example
     -------
@@ -390,9 +667,24 @@ class LarBfield(_PyLarBfield):
     """
 
     _dyn: str = "larB"
+    _rust: _PyLarBfield  # type: ignore[assignment]
+
+    def __init__(self) -> None:
+        setattr(self, "_rust", _PyLarBfield())
+
+    @property
+    def equilibrium_type(self) -> EquilibriumType:
+        """The object's equilibrium's type."""
+        return self._rust.equilibrium_type
+
+    def __str__(self) -> str:
+        return self._rust.__str__()
+
+    def __repr__(self) -> str:
+        return self.__str__()
 
 
-class NcBfield(_PyNcBfield):
+class NcBfield(_BfieldTrait):
     r"""Numerical magnetic field profile reconstructed from a netCDF file.
 
     Related quantities are computed by interpolating over the data arrays.
@@ -404,37 +696,6 @@ class NcBfield(_PyNcBfield):
     interp_type
         The type of 2D Interpolation.
 
-    Attributes
-    ----------
-    path
-        The path of the netCDF file.
-    netcdf_version
-        The netCDF convention version (SemVer).
-    equilibrium_type
-        The Equilibrium's type.
-    interp_type
-        The 2D Interpolation type.
-    baxis
-        The magnetic field strength on the magnetic axis $B_0$ in $[T]$.
-    shape
-        The shape of the 2 dimensional data arrays, as in $(len(\psi/\psi_p), len(\theta))$.
-    psi_wall
-        The toroidal flux value at the wall $\psi_{wall}$ in Normalized Units.
-    psip_wall
-        The poloidal flux value at the wall $\psi_{p,wall}$ in Normalized Units.
-    psi_state
-        The state of the toroidal flux coordinate.
-    psip_state
-        The state of the poloidal flux coordinate.
-    psi_array
-        The NetCDF $\psi$ data.
-    psip_array
-        The NetCDF $\psi_p$ data.
-    theta_array
-        The NetCDF $\theta$ data,
-    b_array
-        The NetCDF $B$ data,
-
     Example
     -------
     ```python title="NcBfield creation"
@@ -444,37 +705,110 @@ class NcBfield(_PyNcBfield):
     """
 
     _dyn: str = "ncdB"
+    _rust: _PyNcBfield  # type: ignore[assignment]
+
+    def __init__(
+        self,
+        path: str,
+        interp_type: Interp2DType,
+    ) -> None:
+        setattr(
+            self,
+            "_rust",
+            _PyNcBfield(
+                path=path,
+                interp_type=interp_type,
+            ),
+        )
+
+    @property
+    def path(self) -> str:
+        """The path of the netCDF file."""
+        return self._rust.path
+
+    @property
+    def netcdf_version(self) -> NetCDFVersion:
+        """The netCDF convention version (SemVer)."""
+        return self._rust.netcdf_version
+
+    @property
+    def equilibrium_type(self) -> EquilibriumType:
+        """The object's equilibrium's type."""
+        return self._rust.equilibrium_type
+
+    @property
+    def interp_type(self) -> str:
+        """The Interpolation type."""
+        return self._rust.interp_type
+
+    @property
+    def baxis(self) -> float:
+        """The magnetic field strength on the magnetic axis $B_0$ in $[T]$."""
+        return self._rust.baxis
+
+    @property
+    def shape(self) -> ArrayShape:
+        r"""The shape of the 2 dimensional data arrays, as in $(len(\psi/\psi_p), len(\theta))$.
+
+        If both coordinates are “good”, they are guaranteed to be of the same length.
+        """
+        return self._rust.shape
+
+    @property
+    def psi_wall(self) -> float:
+        r"""The toroidal flux value at the wall $\psi_{wall}$ in Normalized Units."""
+        return self._rust.psi_wall
+
+    @property
+    def psip_wall(self) -> float:
+        r"""The poloidal flux value at the wall $\psi_{p,wall}$ in Normalized Units."""
+        return self._rust.psip_wall
+
+    @property
+    def psi_state(self) -> FluxState:
+        """The state of the toroidal flux coordinate."""
+        return self._rust.psi_state
+
+    @property
+    def psip_state(self) -> FluxState:
+        """The state of the poloidal flux coordinate."""
+        return self._rust.psip_state
+
+    @property
+    def psi_array(self) -> Array1:
+        r"""The NetCDF $\psi$ data."""
+        return self._rust.psi_array
+
+    @property
+    def psip_array(self) -> Array1:
+        r"""The NetCDF $\psi_p$ data."""
+        return self._rust.psip_array
+
+    @property
+    def theta_array(self) -> Array1:
+        r"""The NetCDF $\theta$ data."""
+        return self._rust.theta_array
+
+    @property
+    def b_array(self) -> Array2:
+        r"""The NetCDF $g$ data."""
+        return self._rust.b_array
+
+    def __str__(self) -> str:
+        return self._rust.__str__()
+
+    def __repr__(self) -> str:
+        return self.__str__()
 
 
 # ================================================================================================
 
 
-class CosHarmonic(_PyCosHarmonic, _HarmonicPlotter):
-    r"""A simple analytical Harmonic of the form:
-
-    $$
-    \alpha_{\{m,n\}}(\psi/\psi_p, \theta, \zeta, t)
-    $$
-
-    where $\alpha$ and $\phi$ are constants.
-
-    with '$\psi/\psi_p$' meaning it can be expressed as a function of either/both flux coordinates.
+class CosHarmonic(_HarmonicTrait, _HarmonicPlotter):
+    r"""A simple analytical Harmonic of the form `αcos(mθ-nζ+φ)`, where `α`, `φ` constants.
 
     Parameters
     ----------
-    alpha
-        The harmonic's constant amplitude $\alpha$ in Normalized Units.
-    m
-        The poloidal mode number $m$.
-    n
-        The poloidal mode number $n$.
-    phase
-        The harmonic's constant phase $\phi$ in $[rads]$.
-
-    Attributes
-    ----------
-    equilibrium_type
-        The Equilibrium's type.
     alpha
         The harmonic's constant amplitude $\alpha$ in Normalized Units.
     m
@@ -493,28 +827,67 @@ class CosHarmonic(_PyCosHarmonic, _HarmonicPlotter):
     """
 
     _dyn: str = "cosH"
+    _rust: _PyCosHarmonic  # type: ignore[assignment]
+
+    def __init__(
+        self,
+        alpha: float,
+        m: int,
+        n: int,
+        phase: float,
+    ) -> None:
+        setattr(
+            self,
+            "_rust",
+            _PyCosHarmonic(
+                alpha=alpha,
+                m=m,
+                n=n,
+                phase=phase,
+            ),
+        )
+
+    @property
+    def equilibrium_type(self) -> EquilibriumType:
+        """The object's equilibrium's type."""
+        return self._rust.equilibrium_type
+
+    @property
+    def alpha(self) -> float:
+        r"""The harmonic's constant amplitude $\alpha$ in Normalized Units."""
+        return self._rust.alpha
+
+    @property
+    def m(self) -> int:
+        """The harmonic's poloidal mode number $m$."""
+        return self._rust.m
+
+    @property
+    def n(self) -> int:
+        """The harmonic's toroidal mode number $n$."""
+        return self._rust.n
+
+    @property
+    def phase(self) -> float:
+        r"""The harmonic's constant phase $\phi$ in $[rads]$."""
+        return self._rust.phase
+
+    def __str__(self) -> str:
+        return self._rust.__str__()
+
+    def __repr__(self) -> str:
+        return self.__str__()
 
 
-class NcHarmonic(_PyNcHarmonic, _HarmonicPlotter):
+class NcHarmonic(_HarmonicTrait, _HarmonicPlotter):
     r"""Single perturbation harmonic from a netCDF file.
-
-    The harmonic has the form of:
-
-    $$
-    \alpha_{\{m, n\}}(\psi/\psi_p) \cos\big(m\theta - n\zeta + \phi(\psi/\psi_p) \big)
-    $$
-
-    with '$\psi/\psi_p$' meaning it can be expressed as a function of either/both flux coordinates.
-
-    where $\alpha$ and $\phi$ can be expressed as functions of either or both $\psi, \psi_p$, and
-    are calculated by interpolation over the numerical data.
 
     !!! info "Phase calculation configuration"
 
         $\phi$ calculation can be further configured with the `phase_method` optional parameter, which
         defaults to `Resonance`, meaning that a constant value equal to the value of $\phi$ at the
         resonance is used. If no valid value can be found, it falls back to `Zero`. See
-        [`PhaseMethod`](types.md/#dexter.types.PhaseMethod)) for available configurations.
+        [`PhaseMethod`][dexter.PhaseMethod]) for available configurations.
 
         !!! example
 
@@ -523,7 +896,6 @@ class NcHarmonic(_PyNcHarmonic, _HarmonicPlotter):
             >>> harmonic = dex.NcHarmonic(path, "cubic", 3, 2, phase_method = "Interpolation")
             >>> harmonic = dex.NcHarmonic(path, "cubic", 3, 2, phase_method = ("Custom", 3.1415))
 
-            ...
             ```
 
     Parameters
@@ -538,81 +910,149 @@ class NcHarmonic(_PyNcHarmonic, _HarmonicPlotter):
         The poloidal mode number $n$.
     phase_method
         The method of calculation of the phase $\phi(\psi/\psi_p)$. Defaults to "Resonance".
-
-
-    Attributes
-    ----------
-    path
-        The path of the netCDF file.
-    netcdf_version
-        The netCDF convention version (SemVer).
-    equilibrium_type
-        The Equilibrium's type.
-    interp_type
-        The 1D Interpolation type.
-    m
-        The poloidal mode number $m$.
-    n
-        The poloidal mode number $n$.
-    phase_method
-        The method of calculation of the phase $\phi(\psi/\psi_p)$.
-    phase_average
-        The average value of the phase arrays, if `phase_method` is `Average`.
-    psi_phase_resonance
-        The toroidal flux’s value where the resonance is met, if `phase_method` is `Resonance` and
-        the resonance is in bounds.
-    psip_phase_resonance
-        The poloidal flux’s value where the resonance is met, if `phase_method` is `Resonance` and
-        the resonance is in bounds.
-    psi_wall
-        The toroidal flux value at the wall $\psi_{wall}$ in Normalized Units.
-    psip_wall
-        The poloidal flux value at the wall $\psi_{p,wall}$ in Normalized Units.
-    psi_state
-        The state of the toroidal flux coordinate.
-    psip_state
-        The state of the poloidal flux coordinate.
-    psi_array
-        The NetCDF $\psi$ data.
-    psip_array
-        The NetCDF $\psi_p$ data.
-    alpha_array
-        The NetCDF $\alpha$ data,
-    alpha_array
-        The NetCDF $\phi$ data,
     """
 
     _dyn: str = "ncdH"
+    _rust: _PyNcHarmonic  # type: ignore[assignment]
+
+    def __init__(
+        self,
+        path: str,
+        interp_type: Interp1DType,
+        m: int,
+        n: int,
+        phase_method: PhaseMethod = "Zero",
+    ) -> None:
+        setattr(
+            self,
+            "_rust",
+            _PyNcHarmonic(
+                path=path,
+                interp_type=interp_type,
+                m=m,
+                n=n,
+                phase_method=phase_method,
+            ),
+        )
+
+    @property
+    def path(self) -> str:
+        """The path of the netCDF file."""
+        return self._rust.path
+
+    @property
+    def netcdf_version(self) -> NetCDFVersion:
+        """The netCDF convention version (SemVer)."""
+        return self._rust.netcdf_version
+
+    @property
+    def equilibrium_type(self) -> EquilibriumType:
+        """The object's equilibrium's type."""
+        return self._rust.equilibrium_type
+
+    @property
+    def interp_type(self) -> str:
+        """The Interpolation type."""
+        return self._rust.interp_type
+
+    @property
+    def m(self) -> int:
+        """The harmonic's poloidal mode number $m$."""
+        return self._rust.m
+
+    @property
+    def n(self) -> int:
+        """The harmonic's toroidal mode number $n$."""
+        return self._rust.n
+
+    @property
+    def phase_method(self) -> PhaseMethod:
+        r"""The method of calculation of the phase $\phi(\psi/\psi_p)$."""
+        return self._rust.phase_method
+
+    @property
+    def phase_average(self) -> float:
+        """The average value of the phase arrays, if `phase_method` is `Average`."""
+        return self._rust.phase_average
+
+    @property
+    def psi_phase_resonance(self) -> float:
+        """The toroidal flux’s value where the resonance is met, if `phase_method` is `Resonance` and
+        the resonance is in bounds."""
+        return self._rust.psi_phase_resonance
+
+    @property
+    def psip_phase_resonance(self) -> float:
+        """The poloidal flux’s value where the resonance is met, if `phase_method` is `Resonance` and
+        the resonance is in bounds."""
+        return self._rust.psip_phase_resonance
+
+    @property
+    def psi_wall(self) -> float:
+        r"""The toroidal flux value at the wall $\psi_{wall}$ in Normalized Units."""
+        return self._rust.psi_wall
+
+    @property
+    def psip_wall(self) -> float:
+        r"""The poloidal flux value at the wall $\psi_{p,wall}$ in Normalized Units."""
+        return self._rust.psip_wall
+
+    @property
+    def psi_state(self) -> FluxState:
+        """The state of the toroidal flux coordinate."""
+        return self._rust.psi_state
+
+    @property
+    def psip_state(self) -> FluxState:
+        """The state of the poloidal flux coordinate."""
+        return self._rust.psip_state
+
+    @property
+    def psi_array(self) -> Array1:
+        r"""The NetCDF $\psi$ data."""
+        return self._rust.psi_array
+
+    @property
+    def psip_array(self) -> Array1:
+        r"""The NetCDF $\psi_p$ data."""
+        return self._rust.psip_array
+
+    @property
+    def alpha_array(self) -> Array1:
+        r"""The NetCDF $\alpha$ data."""
+        return self._rust.alpha_array
+
+    @property
+    def phase_array(self) -> Array1:
+        r"""The NetCDF $\phi$ data."""
+        return self._rust.phase_array
+
+    def __str__(self) -> str:
+        return self._rust.__str__()
+
+    def __repr__(self) -> str:
+        return self.__str__()
 
 
 # ================================================================================================
 
 
-class CosPerturbation(_PyCosPerturbation):
-    r"""A sum of an arbitrary number of `CosHarmonics`.
+class Perturbation:
+    r"""A sum of an arbitrary number of Harmonics.
 
-    It has the general form of:
-
-    $$
-    \sum_{\{m,n\}} \bigg[ \alpha_{\{m,n\}}(\psi/\psi_p, \theta, \zeta, t) \bigg]
-    $$
-
-    with '$\psi/\psi_p$' meaning it can be expressed as a function of either/both flux coordinates.
+    Note
+    ----
+    All the harmonics must be of the same type.
 
     Parameters
     ----------
     harmonics
         List of the contained harmonics.
 
-    Attributes
-    ----------
-    harmonics
-        List of the contained harmonics.
-
     Example
     -------
-    ```python title="CosPerturbation creation with specific harmonics"
-    >>> perturbation = dex.CosPerturbation(
+    ```python title="Create a Perturbation of specific cosine harmonics"
+    >>> perturbation = dex.Perturbation(
     ...     [
     ...         dex.CosHarmonic(1e-3, 1, 2, 0.0),
     ...         dex.CosHarmonic(1e-3, 1, 3, 0.0),
@@ -624,48 +1064,14 @@ class CosPerturbation(_PyCosPerturbation):
     ```
 
     ```python title="CosPerturbation creation with list iteration"
-    >>> perturbation = dex.CosPerturbation(
+    >>> perturbation = dex.Perturbation(
     ...     [dex.CosHarmonic(1e-3, 1, n, 0.0) for n in range(1, 8)] # modes with m=1 and n=1-7
     ... )
 
     ```
-    """
 
-    harmonics: list[CosHarmonic]
-
-    _dyn: str = "cosP"
-
-    def __init__(self, harmonics: list[CosHarmonic]) -> None: ...
-
-
-class NcPerturbation(_PyNcPerturbation):
-    r"""A sum of an arbitrary number of `NcHarmonics`.
-
-    It has the general form of:
-
-    $$
-    \sum_{\{m,n\}} \bigg[ \Phi_{\{m,n\}}(\psi/\psi_p, \theta, \zeta, t) \bigg] =
-    \sum_{\{m,n\}} \bigg[ \alpha_{\{m,n\}}(\psi/\psi_p)
-        \cos\big( m\theta - n\zeta + \phi(\psi/\psi_p) \big)\bigg]
-    $$
-
-
-    with '$\psi/\psi_p$' meaning it can be expressed as a function of either/both flux coordinates.
-
-    Parameters
-    ----------
-    harmonics
-        List of the contained harmonics.
-
-    Attributes
-    ----------
-    harmonics
-        List of the contained harmonics.
-
-    Example
-    -------
-    ```python title="NcPerturbation creation with specific harmonics"
-    >>> perturbation = dex.NcPerturbation(
+    ```python title="Create a Perturbation from numerical harmonics"
+    >>> perturbation = dex.Perturbation(
     ...     [
     ...         dex.NcHarmonic(path, "cubic", 2, 1, phase_method="Interpolation"),
     ...         dex.NcHarmonic(path, "cubic", 2, 2, phase_method="Interpolation"),
@@ -676,11 +1082,216 @@ class NcPerturbation(_PyNcPerturbation):
     ```
     """
 
-    harmonics: list[NcHarmonic]
+    _dyn: str
+    _rust: _PyCosPerturbation | _PyNcPerturbation
 
-    _dyn: str = "ncdP"
+    def __init__(self, harmonics: list[CosHarmonic] | list[NcHarmonic]) -> None:
+        self._harmonics = harmonics
+        match harmonics:
+            case []:
+                setattr(self, "_rust", _PyCosPerturbation(harmonics=[]))
+            case [*cos] if all([isinstance(harmonic, CosHarmonic) for harmonic in cos]):
+                _harmonics = [harmonic._rust for harmonic in harmonics]
+                self._dyn = "cosP"
+                setattr(self, "_rust", _PyCosPerturbation(harmonics=_harmonics))  # type: ignore
+            case [*nc] if all([isinstance(harmonic, NcHarmonic) for harmonic in nc]):
+                _harmonics = [harmonic._rust for harmonic in harmonics]
+                self._dyn = "ncdP"
+                setattr(self, "_rust", _PyNcPerturbation(harmonics=_harmonics))  # type: ignore
+            case _:
+                raise TypeError("All harmonics must be of the same type")
 
-    def __init__(self, harmonics: list[NcHarmonic]) -> None: ...
+    @property
+    def harmonics(self) -> list[CosHarmonic] | list[NcHarmonic]:
+        return self._harmonics
+
+    def p_of_psi(self, psi: float, theta: float, zeta: float, t: float) -> float:
+        r"""The perturbation's value $p(\psi, \theta, \zeta, t)$ value in Normalized Units.
+
+        Parameters
+        ----------
+        psi
+            The toroidal flux $\psi$ in Normalized Units.
+        theta
+            The $\theta$ angle in $[rads]$.
+        zeta
+            The $\zeta$ angle in $[rads]$.
+        t
+            The time in Normalized Units
+        """
+        return self._rust.p_of_psi(psi, theta, zeta, t)
+
+    def p_of_psip(self, psip: float, theta: float, zeta: float, t: float) -> float:
+        r"""The perturbation's value $p(\psi_p, \theta, \zeta, t)$ value in Normalized Units.
+
+        Parameters
+        ----------
+        psip
+            The poloidal flux $\psi_p$ in Normalized Units.
+        theta
+            The $\theta$ angle in $[rads]$.
+        zeta
+            The $\zeta$ angle in $[rads]$.
+        t
+            The time in Normalized Units
+        """
+        return self._rust.p_of_psip(psip, theta, zeta, t)
+
+    def dp_dpsi(self, psi: float, theta: float, zeta: float, t: float) -> float:
+        r"""The perturbation's derivative with respect to $\psi$, $\partial p(\psi, \theta, \zeta, t)/\partial\psi$
+        in Normalized Units.
+
+        Parameters
+        ----------
+        psi
+            The toroidal flux $\psi$ in Normalized Units.
+        theta
+            The $\theta$ angle in $[rads]$.
+        zeta
+            The $\zeta$ angle in $[rads]$.
+        t
+            The time in Normalized Units
+        """
+        return self._rust.dp_dpsi(psi, theta, zeta, t)
+
+    def dp_dpsip(self, psip: float, theta: float, zeta: float, t: float) -> float:
+        r"""The perturbation's derivative with respect to $\psi_p$, $\partial p(\psi_p, \theta, \zeta, t)/\partial \psi_p$
+        in Normalized Units.
+
+        Parameters
+        ----------
+        psip
+            The poloidal flux $\psi_p$ in Normalized Units.
+        theta
+            The $\theta$ angle in $[rads]$.
+        zeta
+            The $\zeta$ angle in $[rads]$.
+        t
+            The time in Normalized Units
+        """
+        return self._rust.dp_dpsip(psip, theta, zeta, t)
+
+    def dp_of_psi_dtheta(
+        self, psi: float, theta: float, zeta: float, t: float
+    ) -> float:
+        r"""The perturbation's derivative with respect to $\theta$, $\partial p(\psi, \theta, \zeta, t)/\partial \theta$
+        in Normalized Units, as a function of $\psi$.
+
+        Parameters
+        ----------
+        psi
+            The toroidal flux $\psi$ in Normalized Units.
+        theta
+            The $\theta$ angle in $[rads]$.
+        zeta
+            The $\zeta$ angle in $[rads]$.
+        t
+            The time in Normalized Units
+        """
+        return self._rust.dp_of_psi_dtheta(psi, theta, zeta, t)
+
+    def dp_of_psip_dtheta(
+        self, psip: float, theta: float, zeta: float, t: float
+    ) -> float:
+        r"""The perturbation's derivative with respect to $\theta$, $\partial p(\psi_p, \theta, \zeta, t)/\partial \theta$
+        in Normalized Units, as a function of $\psi_p$.
+
+        Parameters
+        ----------
+        psip
+            The poloidal flux $\psi_p$ in Normalized Units.
+        theta
+            The $\theta$ angle in $[rads]$.
+        zeta
+            The $\zeta$ angle in $[rads]$.
+        t
+            The time in Normalized Units
+        """
+        return self._rust.dp_of_psip_dtheta(psip, theta, zeta, t)
+
+    def dp_of_psi_dzeta(self, psi: float, theta: float, zeta: float, t: float) -> float:
+        r"""The perturbation's derivative with respect to $\zeta$, $\partial p(\psi, \theta, \zeta, t)/\partial \zeta$
+        in Normalized Units, as a function of $\psi$.
+
+        Parameters
+        ----------
+        psi
+            The toroidal flux $\psi$ in Normalized Units.
+        theta
+            The $\theta$ angle in $[rads]$.
+        zeta
+            The $\zeta$ angle in $[rads]$.
+        t
+            The time in Normalized Units
+        """
+        return self._rust.dp_of_psi_dzeta(psi, theta, zeta, t)
+
+    def dp_of_psip_dzeta(
+        self, psip: float, theta: float, zeta: float, t: float
+    ) -> float:
+        r"""The perturbation's derivative with respect to $\zeta$, $\partial p(\psi_p, \theta, \zeta, t)/\partial \zeta$
+        in Normalized Units, as a function of $\psi_p$.
+
+        Parameters
+        ----------
+        psip
+            The poloidal flux $\psi_p$ in Normalized Units.
+        theta
+            The $\theta$ angle in $[rads]$.
+        zeta
+            The $\zeta$ angle in $[rads]$.
+        t
+            The time in Normalized Units
+        """
+        return self._rust.dp_of_psip_dzeta(psip, theta, zeta, t)
+
+    def dp_of_psi_dt(self, psi: float, theta: float, zeta: float, t: float) -> float:
+        r"""The perturbation's derivative with respect to the time $t$, $\partial p(\psi, \theta, \zeta, t)/\partial t$
+        in Normalized Units, as a function of $\psi$.
+
+        Parameters
+        ----------
+        psi
+            The toroidal flux $\psi$ in Normalized Units.
+        theta
+            The $\theta$ angle in $[rads]$.
+        zeta
+            The $\zeta$ angle in $[rads]$.
+        t
+            The time in Normalized Units
+        """
+        return self._rust.dp_of_psi_dt(psi, theta, zeta, t)
+
+    def dp_of_psip_dt(self, psip: float, theta: float, zeta: float, t: float) -> float:
+        r"""The perturbation's derivative with respect to the time $t$, $\partial p(\psi_p, \theta, \zeta, t)/\partial t$
+        in Normalized Units, as a function of $\psi_p$.
+
+        Parameters
+        ----------
+        psip
+            The poloidal flux $\psi_p$ in Normalized Units.
+        theta
+            The $\theta$ angle in $[rads]$.
+        zeta
+            The $\zeta$ angle in $[rads]$.
+        t
+            The time in Normalized Units
+        """
+        return self._rust.dp_of_psip_dt(psip, theta, zeta, t)
+
+    def __getitem__(self, index: int):
+        """Makes the object indexable."""
+        return self._rust[index]
+
+    def __len__(self) -> int:
+        """Returns the number of the contained harmonics."""
+        return self._rust.__len__()
+
+    def __str__(self) -> str:
+        return self._rust.__str__()
+
+    def __repr__(self) -> str:
+        return self.__str__()
 
 
 # ================================================================================================
@@ -699,6 +1310,3 @@ Bfield: TypeAlias = LarBfield | NcBfield
 
 Harmonic: TypeAlias = CosHarmonic | NcHarmonic
 """Available 'Harmonic' Objects"""
-
-Perturbation: TypeAlias = CosPerturbation | NcPerturbation
-"""Available 'Perturbation' Objects"""

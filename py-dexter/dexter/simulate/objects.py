@@ -13,34 +13,25 @@ from dexter._core import _PyInitialConditions, _PyIntersectParams, _PyParticle
 from ..equilibrium import Qfactor, Current, Bfield, Perturbation
 from ._plotters import _ParticlePlotter
 
-from dexter.types import Array1, InitialFlux, SteppingMethod, IntegrationStatus
+from dexter.types import (
+    Array1,
+    InitialFlux,
+    Intersection,
+    SteppingMethod,
+    IntegrationStatus,
+)
 
 # ================================================================================================
 # ================================================================================================
 
 
-class InitialConditions(_PyInitialConditions):
+class InitialConditions:
     r"""Initial conditions for a Particle.
 
     The initial conditions are defined on the
     $(t, \theta, \psi, \rho, \zeta, \mu)$ or
     $(t, \theta, \psi_p, \rho, \zeta, \mu)$
     space, depending on the value of `flux0`.
-
-    Parameters
-    ----------
-    t0
-        The initial time, in Normalized Units.
-    flux0
-        The initial $\psi / \psi_p$, in Normalized Units.
-    theta0
-        The initial $\theta$ angle, in Normalized Units.
-    zeta0
-        The initial $\zeta$ angle, in Normalized Units.
-    rho0
-        The initial $\rho_{||}$, in Normalized Units.
-    mu0
-        The initial magnetic moment $\mu$, in Normalized Units.
 
     Example
     -------
@@ -57,15 +48,59 @@ class InitialConditions(_PyInitialConditions):
     ```
     """
 
-    t0: float
-    flux0: InitialFlux
-    theta0: float
-    zeta0: float
-    rho0: float
-    mu0: float
+    _rust: _PyInitialConditions
+
+    def __init__(
+        self,
+        t0: float,
+        flux0: InitialFlux,
+        theta0: float,
+        zeta0: float,
+        rho0: float,
+        mu0: float,
+    ):
+        self._rust = _PyInitialConditions(
+            t0=t0, flux0=flux0, theta0=theta0, zeta0=zeta0, rho0=rho0, mu0=mu0
+        )
+
+    @property
+    def t0(self) -> float:
+        """The initial time, in Normalized Units."""
+        return self._rust.t0
+
+    @property
+    def flux0(self) -> InitialFlux:
+        r"""The initial $\psi / \psi_p$, in Normalized Units."""
+        return self._rust.flux0
+
+    @property
+    def theta0(self) -> float:
+        r"""The initial $\theta$ angle, in Normalized Units."""
+        return self._rust.theta0
+
+    @property
+    def zeta0(self) -> float:
+        r"""The initial $\zeta$ angle, in Normalized Units."""
+        return self._rust.zeta0
+
+    @property
+    def rho0(self) -> float:
+        r"""The initial $\rho_{||}$, in Normalized Units."""
+        return self._rust.rho0
+
+    @property
+    def mu0(self) -> float:
+        r"""The initial magnetic moment $\mu$, in Normalized Units."""
+        return self._rust.mu0
+
+    def __str__(self) -> str:
+        return self._rust.__str__()
+
+    def __repr__(self) -> str:
+        return self.__str__()
 
 
-class IntersectParams(_PyIntersectParams):
+class IntersectParams:
     r"""Parameters for the Particle's `intersect()` method.
 
     Parameters
@@ -90,12 +125,41 @@ class IntersectParams(_PyIntersectParams):
     ```
     """
 
-    intersection: str
-    angle: float
-    turns: int
+    _rust: _PyIntersectParams
+
+    def __init__(
+        self,
+        intersection: Intersection,
+        angle: float,
+        turns: int,
+    ):
+        self._rust = _PyIntersectParams(
+            intersection=intersection, angle=angle, turns=turns
+        )
+
+    @property
+    def intersection(self) -> Intersection:
+        """The intersection surface."""
+        return self._rust.intersection
+
+    @property
+    def angle(self) -> float:
+        """The intersection surface's angle."""
+        return self._rust.angle
+
+    @property
+    def turns(self) -> int:
+        """The number of intersections to calculate."""
+        return self._rust.turns
+
+    def __str__(self) -> str:
+        return self._rust.__str__()
+
+    def __repr__(self) -> str:
+        return self.__str__()
 
 
-class Particle(_PyParticle, _ParticlePlotter):
+class Particle(_ParticlePlotter):
     r"""A Particle.
 
     By taking $\mu = 0$ and $\rho \rightarrow 0$, the particle traces magnetic field
@@ -105,44 +169,6 @@ class Particle(_PyParticle, _ParticlePlotter):
     ----------
     initial_conditions
         The initial conditions set.
-
-    Attributes
-    ----------
-    initial_conditions
-        The initial conditions set.
-    status
-        The particle's integration status.
-    steps_taken
-        The total number of steps taken during the integration. This number is not necessarily
-        the same as the number of steps stored.
-    steps_stored
-        The number of steps stored in the the time series arrays.
-    initial_energy
-        The particle's initial energy before the integration in Normalized Units.
-    final_energy
-        The particle's final energy after the integration in Normalized Units.
-    energy_var
-        The variance of energy throughout the integration.
-    t_array
-        The times of the integration steps.
-    psi_array
-        The $ψ$ time series.
-    psip_array
-        The $ψp$ time series.
-    theta_array
-        The $\theta$ time series.
-    zeta_array
-        The $\zeta$ time series.
-    rho_array
-        The $\rho$ time series.
-    mu_array
-        The $\mu$ time series.
-    ptheta_array
-        The $P_\theta$ time series.
-    pzeta_array
-        The $P_\zeta$ time series.
-    energy_array
-        The energy time series.
 
     Example
     -------
@@ -160,25 +186,98 @@ class Particle(_PyParticle, _ParticlePlotter):
     ```
     """
 
-    initial_conditions: InitialConditions
-    integration_status: IntegrationStatus
-    steps_taken: int
-    steps_stored: int
-    initial_energy: float | None
-    final_energy: float | None
-    energy_var: float | None
-    t_array: Array1
-    psi_array: Array1
-    psip_array: Array1
-    theta_array: Array1
-    zeta_array: Array1
-    rho_array: Array1
-    mu_array: Array1
-    ptheta_array: Array1
-    pzeta_array: Array1
-    energy_array: Array1
+    _rust: _PyParticle
 
-    def __init__(self, initial_conditions: InitialConditions): ...
+    def __init__(self, initial_conditions: InitialConditions) -> None:
+        self._initial_conditions = initial_conditions
+        self._rust = _PyParticle(initial_conditions=initial_conditions._rust)
+
+    @property
+    def initial_conditions(self) -> InitialConditions:
+        """The initial conditions set."""
+        return self._initial_conditions
+
+    @property
+    def integration_status(self) -> IntegrationStatus:
+        """The particle's integration status."""
+        return self._rust.integration_status
+
+    @property
+    def steps_taken(self) -> int:
+        """The total number of steps taken during the integration.
+
+        This number is not necessarily the same as the number of steps stored."""
+        return self._rust.steps_taken
+
+    @property
+    def steps_stored(self) -> int:
+        """The number of steps stored in the the time series arrays."""
+        return self._rust.steps_stored
+
+    @property
+    def initial_energy(self) -> float | None:
+        """The particle's initial energy before the integration in Normalized Units."""
+        return self._rust.initial_energy
+
+    @property
+    def final_energy(self) -> float | None:
+        """The particle's final energy after the integration in Normalized Units."""
+        return self._rust.final_energy
+
+    @property
+    def energy_var(self) -> float | None:
+        """The variance of energy throughout the integration."""
+        return self._rust.energy_var
+
+    @property
+    def t_array(self) -> Array1:
+        """The times of the integration steps."""
+        return self._rust.t_array
+
+    @property
+    def psi_array(self) -> Array1:
+        r"""The $\psi$ time series."""
+        return self._rust.psi_array
+
+    @property
+    def psip_array(self) -> Array1:
+        r"""The $\psi_p$ time series."""
+        return self._rust.psip_array
+
+    @property
+    def theta_array(self) -> Array1:
+        r"""The $\theta$ time series."""
+        return self._rust.theta_array
+
+    @property
+    def zeta_array(self) -> Array1:
+        r"""The $\zeta$ time series."""
+        return self._rust.zeta_array
+
+    @property
+    def rho_array(self) -> Array1:
+        r"""The $\rho$ time series."""
+        return self._rust.rho_array
+
+    @property
+    def mu_array(self) -> Array1:
+        r"""The $\mu$ time series."""
+        return self._rust.mu_array
+
+    @property
+    def ptheta_array(self) -> Array1:
+        r"""The $P_\theta$ time series."""
+        return self._rust.ptheta_array
+
+    @property
+    def pzeta_array(self) -> Array1:
+        r"""The $P_\zeta$ time series."""
+        return self._rust.pzeta_array
+
+    @property
+    def energy_array(self) -> Array1:
+        r"""The energy time series."""
+        return self._rust.energy_array
 
     def integrate(
         self,
@@ -242,7 +341,7 @@ class Particle(_PyParticle, _ParticlePlotter):
         >>> qfactor = dex.ParabolicQfactor(qaxis=1.1, qwall=4.1, flux_wall=("Toroidal", 0.45))
         >>> current = dex.LarCurrent()
         >>> bfield = dex.LarBfield()
-        >>> perturbation = dex.CosPerturbation(
+        >>> perturbation = dex.Perturbation(
         ...     [
         ...         dex.CosHarmonic(alpha=1e-3, m=1, n=3, phase=0),
         ...         dex.CosHarmonic(alpha=1e-3, m=2, n=3, phase=0),
@@ -274,12 +373,12 @@ class Particle(_PyParticle, _ParticlePlotter):
         c = current._dyn
         b = bfield._dyn
         p = perturbation._dyn
-        method_name: Callable = getattr(self, f"{prefix}_{q}_{c}_{b}_{p}")
+        method_name: Callable = getattr(self._rust, f"{prefix}_{q}_{c}_{b}_{p}")
         method_name(
-            qfactor,
-            current,
-            bfield,
-            perturbation,
+            qfactor._rust,
+            current._rust,
+            bfield._rust,
+            perturbation._rust,
             teval,
             stepping_method,
             max_steps,
@@ -356,7 +455,7 @@ class Particle(_PyParticle, _ParticlePlotter):
         >>> qfactor = dex.ParabolicQfactor(qaxis=1.1, qwall=4.1, flux_wall=("Toroidal", 0.45))
         >>> current = dex.LarCurrent()
         >>> bfield = dex.LarBfield()
-        >>> perturbation = dex.CosPerturbation(
+        >>> perturbation = dex.Perturbation(
         ...     [
         ...         dex.CosHarmonic(alpha=1e-3, m=1, n=3, phase=0),
         ...         dex.CosHarmonic(alpha=1e-3, m=2, n=3, phase=0),
@@ -383,7 +482,6 @@ class Particle(_PyParticle, _ParticlePlotter):
         ...     bfield=bfield,
         ...     perturbation=perturbation,
         ...     intersect_params=intersect_params,
-        ...     stepping_method="ErrorAdaptiveStep",
         ... )
 
         ```
@@ -393,13 +491,13 @@ class Particle(_PyParticle, _ParticlePlotter):
         c = current._dyn
         b = bfield._dyn
         p = perturbation._dyn
-        method_name: Callable = getattr(self, f"{prefix}_{q}_{c}_{b}_{p}")
+        method_name: Callable = getattr(self._rust, f"{prefix}_{q}_{c}_{b}_{p}")
         method_name(
-            qfactor,
-            current,
-            bfield,
-            perturbation,
-            intersect_params,
+            qfactor._rust,
+            current._rust,
+            bfield._rust,
+            perturbation._rust,
+            intersect_params._rust,
             stepping_method,
             max_steps,
             first_step,
@@ -409,3 +507,9 @@ class Particle(_PyParticle, _ParticlePlotter):
             error_rel_tol,
             error_abs_tol,
         )
+
+    def __str__(self) -> str:
+        return self._rust.__str__()
+
+    def __repr__(self) -> str:
+        return self.__str__()

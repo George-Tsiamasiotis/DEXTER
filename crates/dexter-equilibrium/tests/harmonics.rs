@@ -1,5 +1,7 @@
 //! Test Harmonics' functionality.
 
+#![allow(unused_variables)]
+
 use dexter_equilibrium::*;
 use ndarray::Array1;
 use std::f64::consts::PI;
@@ -7,7 +9,6 @@ use std::path::PathBuf;
 
 #[test]
 #[rustfmt::skip]
-#[allow(unused_variables)]
 fn cos_harmonic() {
     let har = dbg!(CosHarmonic::new(1e-3, 3, 2, PI));
 
@@ -23,12 +24,12 @@ fn cos_harmonic() {
     let t = 8.0;
     let mut c = har.generate_cache();
 
-    har.h_of_psi(psi, theta, zeta, t, &mut c).unwrap();
-    har.h_of_psip(psi, theta, zeta, t, &mut c).unwrap();
-    har.dh_of_psi_dtheta(psi, theta, zeta, t, &mut c).unwrap();
-    har.dh_of_psip_dtheta(psi, theta, zeta, t, &mut c).unwrap();
-    har.dh_of_psi_dzeta(psi, theta, zeta, t, &mut c).unwrap();
-    har.dh_of_psip_dzeta(psi, theta, zeta, t, &mut c).unwrap();
+    let _: f64 = har.h_of_psi(psi, theta, zeta, t, &mut c).unwrap();
+    let _: f64 = har.h_of_psip(psi, theta, zeta, t, &mut c).unwrap();
+    let _: f64 = har.dh_of_psi_dtheta(psi, theta, zeta, t, &mut c).unwrap();
+    let _: f64 = har.dh_of_psip_dtheta(psi, theta, zeta, t, &mut c).unwrap();
+    let _: f64 = har.dh_of_psi_dzeta(psi, theta, zeta, t, &mut c).unwrap();
+    let _: f64 = har.dh_of_psip_dzeta(psi, theta, zeta, t, &mut c).unwrap();
 
     assert_eq!(har.alpha_of_psi(psi, theta, zeta, t, &mut c).unwrap(), 1e-3);
     assert_eq!(har.alpha_of_psip(psi, theta, zeta, t, &mut c).unwrap(), 1e-3);
@@ -44,9 +45,8 @@ fn cos_harmonic() {
 }
 
 #[test]
-#[allow(unused_variables)]
 fn nc_harmonic() {
-    let path = PathBuf::from(dexter_equilibrium::extract::TEST_NETCDF_PATH);
+    let path = PathBuf::from(extract::TEST_NETCDF_PATH);
     let typ = "steffen";
     let (m, n) = (3, 2);
     use PhaseMethod::Interpolation;
@@ -81,16 +81,16 @@ fn nc_harmonic() {
     let t = 8.0;
     let mut c = har.generate_cache();
 
-    har.alpha_of_psi(psi, theta, zeta, t, &mut c).unwrap();
-    har.alpha_of_psip(psip, theta, zeta, t, &mut c).unwrap();
-    har.phase_of_psi(psi, theta, zeta, t, &mut c).unwrap();
-    har.phase_of_psip(psip, theta, zeta, t, &mut c).unwrap();
-    har.h_of_psi(psi, theta, zeta, t, &mut c).unwrap();
-    har.h_of_psip(psip, theta, zeta, t, &mut c).unwrap();
-    har.dh_of_psi_dtheta(psi, theta, zeta, t, &mut c).unwrap();
-    har.dh_of_psip_dtheta(psip, theta, zeta, t, &mut c).unwrap();
-    har.dh_of_psi_dzeta(psi, theta, zeta, t, &mut c).unwrap();
-    har.dh_of_psip_dzeta(psip, theta, zeta, t, &mut c).unwrap();
+    let _: f64 = har.alpha_of_psi(psi, theta, zeta, t, &mut c).unwrap();
+    let _: f64 = har.alpha_of_psip(psip, theta, zeta, t, &mut c).unwrap();
+    let _: f64 = har.phase_of_psi(psi, theta, zeta, t, &mut c).unwrap();
+    let _: f64 = har.phase_of_psip(psip, theta, zeta, t, &mut c).unwrap();
+    let _: f64 = har.h_of_psi(psi, theta, zeta, t, &mut c).unwrap();
+    let _: f64 = har.h_of_psip(psip, theta, zeta, t, &mut c).unwrap();
+    let _: f64 = har.dh_of_psi_dtheta(psi, theta, zeta, t, &mut c).unwrap();
+    let _: f64 = har.dh_of_psip_dtheta(psip, theta, zeta, t, &mut c).unwrap();
+    let _: f64 = har.dh_of_psi_dzeta(psi, theta, zeta, t, &mut c).unwrap();
+    let _: f64 = har.dh_of_psip_dzeta(psip, theta, zeta, t, &mut c).unwrap();
     assert_eq!(har.dh_of_psi_dt(psi, theta, zeta, t, &mut c).unwrap(), 0.0);
     assert_eq!(har.dh_of_psip_dt(psi, theta, zeta, t, &mut c).unwrap(), 0.0);
 }

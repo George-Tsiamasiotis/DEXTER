@@ -9,7 +9,7 @@ from dexter import (
     NcCurrent,
     NcBfield,
     NcHarmonic,
-    NcPerturbation,
+    Perturbation,
 )
 
 
@@ -51,6 +51,6 @@ def nc_harmonic() -> NcHarmonic:
 
 
 @pytest.fixture(scope="session")
-def nc_perturbation(nc_harmonic) -> NcPerturbation:
+def nc_perturbation(nc_harmonic) -> Perturbation:
     """Creates a Perturbation object with 3 identical NcHarmonics."""
-    return NcPerturbation([nc_harmonic] * 3)
+    return Perturbation([nc_harmonic] * 3)

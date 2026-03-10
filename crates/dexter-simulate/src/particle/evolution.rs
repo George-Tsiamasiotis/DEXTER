@@ -12,19 +12,33 @@ use crate::state::GCState;
 #[non_exhaustive]
 #[derive(Default)]
 pub(crate) struct Evolution {
+    /// The time array.
     pub(crate) t: Vec<f64>,
+    /// The `ψ` time-series.
     pub(crate) psi: Vec<f64>,
+    /// The `ψp` time-series.
     pub(crate) psip: Vec<f64>,
+    /// The `θ` time-series.
     pub(crate) theta: Vec<f64>,
+    /// The `ζ` time-series.
     pub(crate) zeta: Vec<f64>,
+    /// The `ρ` time-series.
     pub(crate) rho: Vec<f64>,
+    /// The `μ` time-series. At the moment, `dμ/dt` is hardcoded to 0, but we treat it as a
+    /// dynamical constant in case we add ξ-dependent perturbations.
     pub(crate) mu: Vec<f64>,
 
+    /// The `Pθ` time-series.
     pub(crate) ptheta: Vec<f64>,
+    /// The `Pζ` time-series.
     pub(crate) pzeta: Vec<f64>,
+    /// The `E` time-series.
     pub(crate) energy: Vec<f64>,
 
+    /// The total duration of the routine.
     pub(crate) duration: Duration,
+    /// The total steps taken. Depending on the routine, this number might not be equal to the
+    /// number of elements in the time arrays.
     pub(crate) steps_taken: usize,
 
     /// Variance of the energy array.
@@ -33,8 +47,8 @@ pub(crate) struct Evolution {
 
 impl Evolution {
     /// Resets all fields.
-    pub(crate) fn reset(&self) -> Self {
-        Self::default()
+    pub(crate) fn reset(&mut self) {
+        *self = Self::default()
     }
 
     /// Pushes the calculated quantities of an *evaluated* [`GCState`] in the time series.
@@ -72,7 +86,7 @@ impl Evolution {
     }
 
     /// Discards the vecs, keeping all the other fields.
-    #[allow(dead_code)]
+    #[expect(dead_code, reason = "to use with Queue")]
     pub(crate) fn discard_arrays(&mut self) {
         *self = Self {
             duration: self.duration,
@@ -83,17 +97,17 @@ impl Evolution {
     }
 }
 
-/// Getters
+/// Getters.
 impl Evolution {
     vec_to_array1D_getter_impl!(t_array, t, time);
-    vec_to_array1D_getter_impl!(psi_array, psi, ψ);
-    vec_to_array1D_getter_impl!(psip_array, psip, ψp);
-    vec_to_array1D_getter_impl!(theta_array, theta, θ);
-    vec_to_array1D_getter_impl!(zeta_array, zeta, ζ);
-    vec_to_array1D_getter_impl!(rho_array, rho, ρ);
-    vec_to_array1D_getter_impl!(mu_array, mu, μ);
-    vec_to_array1D_getter_impl!(ptheta_array, ptheta, Pθ);
-    vec_to_array1D_getter_impl!(pzeta_array, pzeta, Pζ);
+    vec_to_array1D_getter_impl!(psi_array, psi, psi);
+    vec_to_array1D_getter_impl!(psip_array, psip, psip);
+    vec_to_array1D_getter_impl!(theta_array, theta, theta);
+    vec_to_array1D_getter_impl!(zeta_array, zeta, zeta);
+    vec_to_array1D_getter_impl!(rho_array, rho, rho);
+    vec_to_array1D_getter_impl!(mu_array, mu, mu);
+    vec_to_array1D_getter_impl!(ptheta_array, ptheta, Ptheta);
+    vec_to_array1D_getter_impl!(pzeta_array, pzeta, Pzeta);
     vec_to_array1D_getter_impl!(energy_array, energy, E);
 
     /// Returns the final time (last entry on the time array), if it exists.
@@ -101,10 +115,12 @@ impl Evolution {
         self.t.last().copied()
     }
 
+    /// Returns the number of steps stored in the time series.
     pub(crate) fn steps_stored(&self) -> usize {
         self.t.len()
     }
 
+    /// Returns the variance of the Energy time series.
     pub(crate) fn energy_var(&self) -> Option<f64> {
         self.energy_var
     }

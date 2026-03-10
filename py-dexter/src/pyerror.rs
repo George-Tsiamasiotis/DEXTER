@@ -1,6 +1,6 @@
 //! Python wrappers for rust error types.
 
-use dexter::dexter_equilibrium::EqError;
+use dexter::dexter_equilibrium::{EqError, EvalError};
 use dexter::dexter_simulate::SimulationError;
 use pyo3::PyErr;
 use pyo3::exceptions::PyException;
@@ -36,4 +36,5 @@ macro_rules! to_pyerr_impl {
 }
 
 to_pyerr_impl!(EqError, PyEqError);
+to_pyerr_impl!(EvalError, PyEvalError);
 to_pyerr_impl!(SimulationError, PySimulationError);
