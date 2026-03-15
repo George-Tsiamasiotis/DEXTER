@@ -17,24 +17,6 @@ The Python interface directly exposes all underlying objects and routines in the
 
 while also providing plotting methods and scripts for handling and converting netCDF files.
 
-###  NetCDF handling
-
-An `npz` file can be converted to a `netCDF` file with the `npz_to_netcdf` project script:
-
-```bash
-> npz_to_netcdf "data.npz" "data.nc"
-```
-
-### Plots
-
-Plotting scripts are installed with the `dexter` python package as project scripts:
-
-```bash
-> qfactor_plot "data.nc"
-> harmonic_plot "data.nc" 0 1 -t steffen
-> bfield_plot --help # print help message
-```
-
 [netCDF]: https://www.unidata.ucar.edu/software/netcdf
 [Rust]: https://rust-lang.org/
 [crates]: https://rustup.dev/fundamentals/crates.html#crates

@@ -8,7 +8,7 @@ from .objects import Current, LarCurrent, NcCurrent
 from .objects import Bfield, LarBfield, NcBfield
 from .objects import Harmonic, CosHarmonic, NcHarmonic
 from .objects import Perturbation
-from .helpers import NcEquilibrium
+from .nc_equilibrium import NcEquilibrium
 
 __all__ = [
     "_TOROIDAL_TEST_NETCDF_PATH",

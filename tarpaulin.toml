@@ -4,6 +4,7 @@ manifest-path = "./Cargo.toml"
 force-clean = false
 skip-clean = true
 output-dir = "./htmlcov/"
+exclude-files = ["py-dexter/*", "crates/dexter-simulate/bin/*"]
 out = ["Html"]
 no-fail-fast = true
 ignore-panics = true

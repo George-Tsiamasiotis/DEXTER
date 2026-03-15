@@ -3,6 +3,7 @@ import dexter
 import matplotlib
 
 from dexter.equilibrium import _TEST_NETCDF_PATH as netcdf_path
+from dexter.equilibrium import _TOROIDAL_TEST_NETCDF_PATH, _POLOIDAL_TEST_NETCDF_PATH
 from dexter import (
     NcGeometry,
     NcQfactor,
@@ -10,6 +11,7 @@ from dexter import (
     NcBfield,
     NcHarmonic,
     Perturbation,
+    NcEquilibrium,
 )
 
 
@@ -54,3 +56,15 @@ def nc_harmonic() -> NcHarmonic:
 def nc_perturbation(nc_harmonic) -> Perturbation:
     """Creates a Perturbation object with 3 identical NcHarmonics."""
     return Perturbation([nc_harmonic] * 3)
+
+
+@pytest.fixture(scope="session")
+def toroidal_nc_equilibrium() -> NcEquilibrium:
+    """Creates an NcEquilibrium with good ψ coordinate."""
+    return NcEquilibrium(_TOROIDAL_TEST_NETCDF_PATH, "Steffen", "Bicubic")
+
+
+@pytest.fixture(scope="session")
+def poloidal_nc_equilibrium() -> NcEquilibrium:
+    """Creates an NcEquilibrium with good ψp coordinate."""
+    return NcEquilibrium(_POLOIDAL_TEST_NETCDF_PATH, "Steffen", "Bicubic")

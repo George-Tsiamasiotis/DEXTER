@@ -96,6 +96,7 @@ extra_javascript:
 nav:
   - Home: index.md
   - NetCDF: netcdf.md
+  - Scripts: scripts.md
   - API Reference:
     - Types: reference/types.md
     - Equilibrium:

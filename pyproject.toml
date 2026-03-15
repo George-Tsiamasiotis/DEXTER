@@ -1,6 +1,6 @@
 [project]
 name = "dexter"
-version = "0.1.3"
+version = "0.1.4-pre.1"
 description = "Calculations and simulations in analytical and reconstructed equilibria of toroidal fusion devices."
 readme = "README.md"
 authors = [
@@ -61,3 +61,6 @@ addopts = """
     --doctest-modules
      --cov=dexter --cov-report term --cov-report html
 """
+
+[project.scripts]
+bfield_plot = "scripts:bfield_plot"

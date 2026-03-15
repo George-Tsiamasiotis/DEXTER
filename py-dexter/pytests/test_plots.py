@@ -92,6 +92,7 @@ def test_particle_plots(
     particle.plot_evolution()
     particle.plot_evolution(percentage=2)
     particle.plot_evolution(downsample=False)
+    particle.plot_poloidal_drift(percentage=2)
 
 
 def _test_all_flux_plots(obj: Qfactor | NcGeometry):
