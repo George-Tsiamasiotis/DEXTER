@@ -11,7 +11,18 @@
 //! + [`Particle::intersect`]: Integrates the particle, calculating its intersections with a
 //!   constant `θ` or `ζ` surface.
 //!
-//! #### Integration Configuration
+//! ### [`Queue`]: A container for batch initializing and running Particle routines.
+//!
+//! A Queue is conveniently initialized from 1D [`arrays`](ndarray::ArrayBase) of initial conditions with
+//! the help of the [`QueueInitialConditions`] helper struct.
+//!
+//! Using the [`rayon`] crate, particle routines can run in parallel.
+//!
+//! Routines:
+//!
+//! + [`Queue::integrate`]: Integrates the containing particles in a specific time interval.
+//!
+//! ### Integration Configuration
 //!
 //! Each integration routine's set of parameters can be adjusted with the following structs:
 //!
@@ -23,6 +34,7 @@
 
 mod error;
 mod particle;
+mod queue;
 mod solve;
 mod state;
 
@@ -39,3 +51,6 @@ pub use particle::{
     InitialConditions, InitialFlux, IntegrationStatus, IntersectParams, Intersection, Particle,
     ParticleCacheStats,
 };
+
+pub use queue::{Queue, QueueInitialConditions, Routine};
+pub use queue::{poloidal_fluxes, toroidal_fluxes};

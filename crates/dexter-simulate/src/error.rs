@@ -10,4 +10,8 @@ pub enum SimulationError {
     /// From [`dexter_equilibrium::EqError`].
     #[error("{0}")]
     EqError(#[from] dexter_equilibrium::EqError),
+
+    /// Queue initial conditions arrays must be of the same size.
+    #[error("Queue initial conditions arrays must be of the same size")]
+    QueueInitialConditionsMismatch,
 }

@@ -10,7 +10,7 @@ use crate::state::GCState;
 ///
 /// All values are in *Normalized units*.
 #[non_exhaustive]
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub(crate) struct Evolution {
     /// The time array.
     pub(crate) t: Vec<f64>,

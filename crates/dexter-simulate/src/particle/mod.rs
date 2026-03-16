@@ -21,12 +21,21 @@ use evolution::Evolution;
 
 /// Helper enum to define an [`InitialConditions`] set with respect to one of the flux
 /// coordinates.
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 pub enum InitialFlux {
     /// Initial flux `ψ0`.
     Toroidal(f64),
     /// Initial flux `ψp0`.
     Poloidal(f64),
+}
+
+impl InitialFlux {
+    /// Returns the contained value, regardless of which variant.
+    pub(crate) fn value(&self) -> f64 {
+        match *self {
+            Self::Toroidal(value) | Self::Poloidal(value) => value,
+        }
+    }
 }
 
 impl std::fmt::Debug for InitialFlux {
@@ -152,6 +161,7 @@ pub struct ParticleCacheStats {
 // ===============================================================================================
 
 /// Representation of a charged particle.
+#[derive(Clone)]
 pub struct Particle {
     /// The [`InitialConditions`] set of the particle.
     initial: InitialConditions,
@@ -372,6 +382,12 @@ impl Particle {
     #[must_use]
     pub fn steps_stored(&self) -> usize {
         self.evolution.steps_stored()
+    }
+
+    /// Returns the duration of the integration routine.
+    #[must_use]
+    pub fn duration(&self) -> Duration {
+        self.evolution.duration
     }
 
     /// Returns the particle's initial energy.

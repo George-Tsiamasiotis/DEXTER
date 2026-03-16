@@ -34,10 +34,16 @@ pub(super) fn integrate<Q, C, B, H>(
         ..Default::default()
     };
 
+    // Return early if the initial flux happens to be exactly 0.0 or out of bounds.
+    if particle.initial_conditions().flux0.value() == 0.0 {
+        particle.integration_status = IntegrationStatus::OutOfBoundsInitialization;
+        return;
+    }
     let Ok(mut state1) = GCState::new(&particle.initial, objects, &mut caches) else {
         particle.integration_status = IntegrationStatus::OutOfBoundsInitialization;
         return;
     };
+
     particle.initial_energy = Some(state1.energy());
     let mut state2: GCState;
     let mut dt = solver_params.first_step;

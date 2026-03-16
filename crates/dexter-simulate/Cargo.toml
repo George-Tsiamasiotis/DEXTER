@@ -1,6 +1,6 @@
 [package]
 name = "dexter-simulate"
-version = "0.1.1"
+version = "0.1.2-pre.1"
 authors.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -19,6 +19,8 @@ thiserror.workspace = true
 ndarray.workspace = true
 approx.workspace = true
 rsl-interpolation.workspace = true
+rayon = "1.11.0"
+indicatif = "0.18.4"
 
 [lints]
 workspace = true
@@ -34,6 +36,10 @@ path = "examples/intersect.rs"
 [[example]]
 name = "stepping_method"
 path = "examples/stepping_method.rs"
+
+[[example]]
+name = "queue_integrate"
+path = "examples/queue_integrate.rs"
 
 [[bin]]
 name = "analytical_integration"
