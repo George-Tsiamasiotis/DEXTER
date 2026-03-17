@@ -16,6 +16,7 @@ from dexter._core import (
     _PyParticle,
     _PyInitialFluxArray1,
     _PyQueueInitialConditions,
+    _PyQueue,
 )
 
 from ..equilibrium import Qfactor, Current, Bfield, Perturbation
@@ -228,6 +229,7 @@ class Particle(_ParticlePlotter):
     ```
     """
 
+    _initial_conditions: InitialConditions
     _rust: _PyParticle
 
     def __init__(self, initial_conditions: InitialConditions) -> None:
@@ -557,6 +559,32 @@ class Particle(_ParticlePlotter):
         return self.__str__()
 
 
+def _Particle_from_rust(_rust: _PyParticle) -> Particle:
+    """Creates a copy of a Particle by recreating it and copying the `_rust` attribute.
+
+    This is necessary to make `Queue` iterable.
+
+    There is probably a better way to do this...
+    """
+    _initial = _rust.initial_conditions
+    _initial_flux = _initial.flux0
+    initial_flux = InitialFlux(
+        kind=_initial_flux.kind,
+        value=_initial_flux.value,
+    )
+    initial = InitialConditions(
+        t0=_initial.t0,
+        flux0=initial_flux,
+        theta0=_initial.theta0,
+        zeta0=_initial.zeta0,
+        rho0=_initial.rho0,
+        mu0=_initial.mu0,
+    )
+    particle = Particle(initial)
+    particle._rust = _rust
+    return particle
+
+
 class InitialFluxArray1:
     """A 1D array of initial "Toroidal" or "Poloidal" fluxes.
 
@@ -663,6 +691,325 @@ class QueueInitialConditions:
 
     def __len__(self) -> int:
         return self._rust.__len__()
+
+    def __str__(self) -> str:
+        return self._rust.__str__()
+
+    def __repr__(self) -> str:
+        return self.__str__()
+
+
+class Queue:
+    """
+    A collection of multiple [`Particles`][dexter.Particle] , constructed from a
+    [`QueueInitialConditions`][dexter.QueueInitialConditions].
+
+    Offers the ability to batch [`Particle::integrate`][dexter.Particle.integrate] or
+    [`Particle::intersect`][dexter.Particle.intersect] all the contained particles,
+    using multiple threads.
+
+    Parameters
+    ----------
+    initial_conditions
+        The initial conditions sets.
+
+    Example
+    -------
+    ```python title="Queue integration"
+    >>> # Initial Conditions setup
+    >>> num = 10
+    >>> psi0s = InitialFluxArray1("Toroidal", np.linspace(0, 0.5, num))
+    >>>
+    >>> initial_conditions = QueueInitialConditions(
+    ...     t0=np.zeros(num),
+    ...     flux0=psi0s,
+    ...     theta0=np.zeros(num),
+    ...     zeta0=np.zeros(num),
+    ...     rho0=np.logspace(1e-6, 1e-5, num),
+    ...     mu0=np.full(num, 1e-6),
+    ... )
+    >>>
+    >>> # Queue setup
+    >>> queue = dex.Queue(initial_conditions)
+
+    ```
+    """
+
+    _initial_conditions: QueueInitialConditions
+    _rust: _PyQueue
+
+    def __init__(self, initial_conditions: QueueInitialConditions) -> None:
+        self._initial_conditions = initial_conditions
+        self._rust = _PyQueue(initial_conditions=initial_conditions._rust)
+
+    @property
+    def initial_conditions(self) -> QueueInitialConditions:
+        """The Queue's initial conditions."""
+        return self._initial_conditions
+
+    @property
+    def particle_count(self) -> int:
+        """The number of contained Particles."""
+        return self._rust.particle_count
+
+    @property
+    def particles(self) -> list[Particle]:
+        """The contained Particles."""
+        return [self[index] for index in range(self.particle_count)]
+
+    def integrate(
+        self,
+        /,
+        qfactor: Qfactor,
+        current: Current,
+        bfield: Bfield,
+        perturbation: Perturbation,
+        teval: tuple[float, float],
+        *,
+        stepping_method: Optional[SteppingMethod] = "EnergyAdaptiveStep",
+        max_steps: Optional[int] = 1_000_000,
+        first_step: Optional[float] = 1e-1,
+        safety_factor: Optional[float] = 0.9,
+        energy_rel_tol: Optional[float] = 1e-12,
+        energy_abs_tol: Optional[float] = 1e-14,
+        error_rel_tol: Optional[float] = 1e-12,
+        error_abs_tol: Optional[float] = 1e-14,
+    ):
+        r"""Integrates all the contained particles for a specific time interval.
+
+        The time interval is in Normalized Units (inverse gyro-frequency).
+
+        Parameters
+        ----------
+        qfactor
+            The equilibrium's qfactor.
+        current
+            The equilibrium's plasma current.
+        bfield
+            The equilibrium's magnetic field.
+        perturbation
+            The equilibrium's perturbation.
+        teval
+            The time span $(t_0, t_f)$ in which to integrate the particles, in Normalized Units.
+
+        Other Parameters
+        ----------------
+        stepping_method
+            The optimal step calculation method. Defaults to "EnergyAdaptiveStep".
+        max_steps
+            The maximum amount of steps a particle can make before terminating its integration. Defaults to
+            1.000.000.
+        first_step
+            The initial time step for the RKF45 adaptive step method. The value is empirical. Defaults to
+            1e-1.
+        safety_factor
+            The safety factor of the solver. Should be less than 1.0. Defaults to 0.9.
+        energy_rel_tol
+            The relative tolerance of the energy difference in every step. Defaults to 1e-12.
+        energy_abs_tol
+            The absolute tolerance of the energy difference in every step. Defaults to 1e-14.
+        error_rel_tol
+            The relative tolerance of the local truncation error in every step. Defaults to 1e-12.
+        error_abs_tol
+            The absolute tolerance of the local truncation error in every step. Defaults to 1e-14.
+
+        Example
+        -------
+        ```python title="Queue integration"
+        >>> # Equilibrium setup
+        >>> qfactor = dex.ParabolicQfactor(qaxis=1.1, qwall=4.1, flux_wall=("Toroidal", 0.45))
+        >>> current = dex.LarCurrent()
+        >>> bfield = dex.LarBfield()
+        >>> perturbation = dex.Perturbation(
+        ...     [
+        ...         dex.CosHarmonic(alpha=1e-3, m=1, n=3, phase=0),
+        ...         dex.CosHarmonic(alpha=1e-3, m=2, n=3, phase=0),
+        ...     ]
+        ... )
+        >>>
+        >>> # Initial Conditions setup
+        >>> num = 10
+        >>> psi0s = InitialFluxArray1("Toroidal", np.linspace(0, 0.5, num))
+        >>>
+        >>> initial_conditions = QueueInitialConditions(
+        ...     t0=np.zeros(num),
+        ...     flux0=psi0s,
+        ...     theta0=np.zeros(num),
+        ...     zeta0=np.zeros(num),
+        ...     rho0=np.logspace(1e-6, 1e-5, num),
+        ...     mu0=np.full(num, 1e-6),
+        ... )
+        >>>
+        >>> # Queue setup
+        >>> queue = dex.Queue(initial_conditions)
+        >>>
+        >>> # Run
+        >>> queue.integrate(
+        ...     qfactor=qfactor,
+        ...     current=current,
+        ...     bfield=bfield,
+        ...     perturbation=perturbation,
+        ...     teval=(0, 1e2),
+        ...     first_step=1e-3,
+        ...     energy_rel_tol=1e-11,
+        ... )
+
+        ```
+        """
+        prefix = "__integrate"
+        q = qfactor._dyn
+        c = current._dyn
+        b = bfield._dyn
+        p = perturbation._dyn
+        method_name: Callable = getattr(self._rust, f"{prefix}_{q}_{c}_{b}_{p}")
+        method_name(
+            qfactor._rust,
+            current._rust,
+            bfield._rust,
+            perturbation._rust,
+            teval,
+            stepping_method,
+            max_steps,
+            first_step,
+            safety_factor,
+            energy_rel_tol,
+            energy_abs_tol,
+            error_rel_tol,
+            error_abs_tol,
+        )
+
+    def intersect(
+        self,
+        /,
+        qfactor: Qfactor,
+        current: Current,
+        bfield: Bfield,
+        perturbation: Perturbation,
+        intersect_params: IntersectParams,
+        *,
+        stepping_method: Optional[SteppingMethod] = "EnergyAdaptiveStep",
+        max_steps: Optional[int] = 1_000_000,
+        first_step: Optional[float] = 1e-1,
+        safety_factor: Optional[float] = 0.9,
+        energy_rel_tol: Optional[float] = 1e-12,
+        energy_abs_tol: Optional[float] = 1e-14,
+        error_rel_tol: Optional[float] = 1e-12,
+        error_abs_tol: Optional[float] = 1e-14,
+    ):
+        r"""Integrates all the contained particle, calculating their intersections with a constant $\theta$ or $\zeta$ surface.
+
+        Otherwise known as a Poincare map.
+
+        The intersection surface, angle, and number of turns are configured with the helper class
+        [`IntersectParams`][dexter.IntersectParams].
+
+        Parameters
+        ----------
+        qfactor
+            The equilibrium's qfactor.
+        current
+            The equilibrium's plasma current.
+        bfield
+            The equilibrium's magnetic field.
+        perturbation
+            The equilibrium's perturbation.
+        intersect_params
+            The parameters of the integration.
+
+        Other Parameters
+        ----------------
+        stepping_method
+            The optimal step calculation method. Defaults to "EnergyAdaptiveStep".
+        max_steps
+            The maximum amount of steps a particle can make before terminating its integration. Defaults to
+            1.000.000.
+        first_step
+            The initial time step for the RKF45 adaptive step method. The value is empirical. Defaults to
+            1e-1.
+        safety_factor
+            The safety factor of the solver. Should be less than 1.0. Defaults to 0.9.
+        energy_rel_tol
+            The relative tolerance of the energy difference in every step. Defaults to 1e-12.
+        energy_abs_tol
+            The absolute tolerance of the energy difference in every step. Defaults to 1e-14.
+        error_rel_tol
+            The relative tolerance of the local truncation error in every step. Defaults to 1e-12.
+        error_abs_tol
+            The absolute tolerance of the local truncation error in every step. Defaults to 1e-14.
+
+        Example
+        -------
+        ```python title="Queue intersection integration"
+        >>> # Equilibrium setup
+        >>> qfactor = dex.ParabolicQfactor(qaxis=1.1, qwall=4.1, flux_wall=("Toroidal", 0.45))
+        >>> current = dex.LarCurrent()
+        >>> bfield = dex.LarBfield()
+        >>> perturbation = dex.Perturbation(
+        ...     [
+        ...         dex.CosHarmonic(alpha=1e-3, m=1, n=3, phase=0),
+        ...         dex.CosHarmonic(alpha=1e-3, m=2, n=3, phase=0),
+        ...     ]
+        ... )
+        >>>
+        >>> # Initial Conditions setup
+        >>> num = 10
+        >>> psi0s = InitialFluxArray1("Toroidal", np.linspace(0.01, 0.4, num))
+        >>>
+        >>> initial_conditions = QueueInitialConditions(
+        ...     t0=np.zeros(num),
+        ...     flux0=psi0s,
+        ...     theta0=np.zeros(num),
+        ...     zeta0=np.zeros(num),
+        ...     rho0=np.linspace(1e-6, 2e-6, num),
+        ...     mu0=np.full(num, 7e-7),
+        ... )
+        >>>
+        >>> # IntersectParams setup
+        >>> intersect_params = dex.IntersectParams(
+        ...     intersection = "ConstTheta",
+        ...     angle = 0.0,
+        ...     turns = 5,
+        ... )
+        >>>
+        >>> # Queue setup
+        >>> queue = dex.Queue(initial_conditions)
+        >>>
+        >>> # Run
+        >>> queue.intersect(
+        ...     qfactor=qfactor,
+        ...     current=current,
+        ...     bfield=bfield,
+        ...     perturbation=perturbation,
+        ...     intersect_params=intersect_params,
+        ...     energy_rel_tol=1e-11,
+        ... )
+
+        ```
+        """
+        prefix = "__intersect"
+        q = qfactor._dyn
+        c = current._dyn
+        b = bfield._dyn
+        p = perturbation._dyn
+        method_name: Callable = getattr(self._rust, f"{prefix}_{q}_{c}_{b}_{p}")
+        method_name(
+            qfactor._rust,
+            current._rust,
+            bfield._rust,
+            perturbation._rust,
+            intersect_params._rust,
+            stepping_method,
+            max_steps,
+            first_step,
+            safety_factor,
+            energy_rel_tol,
+            energy_abs_tol,
+            error_rel_tol,
+            error_abs_tol,
+        )
+
+    def __getitem__(self, index: int):
+        return _Particle_from_rust(self._rust[index])
 
     def __str__(self) -> str:
         return self._rust.__str__()

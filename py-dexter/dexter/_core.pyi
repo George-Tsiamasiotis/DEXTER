@@ -505,6 +505,8 @@ class _PyParticle:
     def __str__(self) -> str: ...
     def __repr__(self) -> str: ...
 
+# ================================================================================================
+
 class _PyInitialFluxArray1:
     """PyO3 export of `py-dexter::PyInitialFluxArray1`.
 
@@ -536,5 +538,53 @@ class _PyQueueInitialConditions:
         mu0: Array1,
     ) -> None: ...
     def __len__(self) -> int: ...
+    def __str__(self) -> str: ...
+    def __repr__(self) -> str: ...
+
+class _PyQueue:
+    """PyO3 export of `dexter_simulate::Queue`."""
+
+    initial_conditions: _PyQueueInitialConditions
+    particle_count: int
+    particles: list[_PyParticle]
+
+    def __init__(self, initial_conditions: _PyQueueInitialConditions) -> None: ...
+    def integrate(
+        self,
+        /,
+        qfactor: _PyQfactor,
+        current: _PyCurrent,
+        bfield: _PyBfield,
+        perturbation: _PyPerturbation,
+        teval: tuple[float, float],
+        *,
+        stepping_method: Optional[SteppingMethod],
+        max_steps: Optional[int],
+        first_step: Optional[float],
+        safety_factor: Optional[float],
+        energy_rel_tol: Optional[float],
+        energy_abs_tol: Optional[float],
+        error_rel_tol: Optional[float],
+        error_abs_tol: Optional[float],
+    ): ...
+    def intersect(
+        self,
+        /,
+        qfactor: _PyQfactor,
+        current: _PyCurrent,
+        bfield: _PyBfield,
+        perturbation: _PyPerturbation,
+        intersect_params: _PyIntersectParams,
+        *,
+        stepping_method: Optional[SteppingMethod],
+        max_steps: Optional[int],
+        first_step: Optional[float],
+        safety_factor: Optional[float],
+        energy_rel_tol: Optional[float],
+        energy_abs_tol: Optional[float],
+        error_rel_tol: Optional[float],
+        error_abs_tol: Optional[float],
+    ): ...
+    def __getitem__(self, index: int) -> _PyParticle: ...
     def __str__(self) -> str: ...
     def __repr__(self) -> str: ...

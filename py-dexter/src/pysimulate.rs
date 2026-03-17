@@ -1,7 +1,7 @@
 //! `dexter-simulate` newtypes, constructors and method exports.
 
 use dexter::dexter_simulate::{
-    FluxCoordinate, InitialConditions, InitialFlux, IntersectParams, Intersection, Particle,
+    FluxCoordinate, InitialConditions, InitialFlux, IntersectParams, Intersection, Particle, Queue,
     QueueInitialConditions, SolverParams, SteppingMethod,
 };
 use ndarray::Array1;
@@ -13,8 +13,9 @@ use pyo3::types::PyTuple;
 use crate::pyerror::PySimulationError;
 use crate::pylibrium::*;
 use crate::{
-    generic_particle_integrate_impl, generic_particle_intersect_impl, py_debug_impl,
-    py_export_getter, py_export_pub_field, py_get_enum_string, py_get_numpy1D, py_repr_impl,
+    generic_particle_integrate_impl, generic_particle_intersect_impl, generic_queue_integrate_impl,
+    generic_queue_intersect_impl, py_debug_impl, py_export_getter, py_export_pub_field,
+    py_get_enum_string, py_get_numpy1D, py_repr_impl,
 };
 
 // ===============================================================================================
@@ -138,34 +139,37 @@ impl PyParticle {
         Self(Particle::new(&initial_conditions.0))
     }
 
+    #[getter]
+    pub fn get_initial_conditions(&self) -> PyInitialConditions {
+        PyInitialConditions(self.0.initial_conditions())
+    }
+
     pub fn print_stats(&self) {
         self.0.print_cache_stats();
     }
 }
 
-impl PyParticle {
-    /// Attempts to create a valid [`SteppingMethod`] object from the corresponding [`PyAny`] Python
-    /// argument.
-    ///
-    /// Returns early if a valid string is found that matches one of the simple variants,
-    /// otherwise tries to unpack the [`PyAny`] object into a ("FixedStep", f64) tuple and cast it
-    /// into a SteppingMethod::FixedStep.
-    ///
-    /// Returns an Error if both string matching and casting fail.
-    fn resolve_stepping_method<'py>(arg: Bound<'py, PyAny>) -> PyResult<SteppingMethod> {
-        use SteppingMethod::*;
-        match arg.to_string().to_lowercase().as_str() {
-            "energyadaptivestep" => return Ok(EnergyAdaptiveStep),
-            "erroradaptivestep" => return Ok(ErrorAdaptiveStep),
-            _ => (),
-        };
-        let tuple = arg.cast::<PyTuple>()?;
-        let string: String = tuple.get_item(0)?.extract::<String>()?.to_lowercase();
-        let value: f64 = tuple.get_item(1)?.extract::<f64>()?;
-        match string.as_str() {
-            "fixedstep" if value.is_finite() => Ok(FixedStep(value)),
-            _ => Err(PyErr::new::<PyTypeError, _>("Invalid 'method'")),
-        }
+/// Attempts to create a valid [`SteppingMethod`] object from the corresponding [`PyAny`] Python
+/// argument.
+///
+/// Returns early if a valid string is found that matches one of the simple variants,
+/// otherwise tries to unpack the [`PyAny`] object into a ("FixedStep", f64) tuple and cast it
+/// into a SteppingMethod::FixedStep.
+///
+/// Returns an Error if both string matching and casting fail.
+fn resolve_stepping_method<'py>(arg: Bound<'py, PyAny>) -> PyResult<SteppingMethod> {
+    use SteppingMethod::*;
+    match arg.to_string().to_lowercase().as_str() {
+        "energyadaptivestep" => return Ok(EnergyAdaptiveStep),
+        "erroradaptivestep" => return Ok(ErrorAdaptiveStep),
+        _ => (),
+    };
+    let tuple = arg.cast::<PyTuple>()?;
+    let string: String = tuple.get_item(0)?.extract::<String>()?.to_lowercase();
+    let value: f64 = tuple.get_item(1)?.extract::<f64>()?;
+    match string.as_str() {
+        "fixedstep" if value.is_finite() => Ok(FixedStep(value)),
+        _ => Err(PyErr::new::<PyTypeError, _>("Invalid 'method'")),
     }
 }
 
@@ -273,6 +277,47 @@ py_get_numpy1D!(PyQueueInitialConditions, rho_array);
 py_get_numpy1D!(PyQueueInitialConditions, mu_array);
 
 // ===============================================================================================
+
+#[pyclass(name = "_PyQueue")]
+pub struct PyQueue(pub(crate) Queue);
+
+#[pymethods]
+impl PyQueue {
+    #[new]
+    #[pyo3(signature = (initial_conditions))]
+    pub fn new(initial_conditions: &PyQueueInitialConditions) -> Self {
+        Self(Queue::new(&initial_conditions.0))
+    }
+
+    #[getter]
+    pub fn initial_conditions(&self) -> PyQueueInitialConditions {
+        PyQueueInitialConditions(self.0.initial_conditions())
+    }
+
+    #[getter]
+    pub fn particle_count(&self) -> usize {
+        self.0.particle_count()
+    }
+
+    #[getter]
+    /// Creates a python list with the contained particles
+    pub fn particles(&self) -> Vec<PyParticle> {
+        self.0
+            .iter()
+            .map(|particle| PyParticle(particle.clone()))
+            .collect()
+    }
+
+    pub fn __getitem__(&self, index: usize) -> PyParticle {
+        PyParticle(self.0[index].clone())
+    }
+}
+
+py_debug_impl!(PyQueue);
+py_repr_impl!(PyQueue);
+py_get_enum_string!(PyQueue, routine);
+
+// ===============================================================================================
 // ===============================================================================================
 // ===============================================================================================
 
@@ -362,4 +407,62 @@ mod py_particle_generics_impl {
     generic_particle_intersect_impl!(__intersect_ncdQ_ncdC_larB_ncdP, ncdQ, ncdC, larB, ncdP);
     generic_particle_intersect_impl!(__intersect_ncdQ_ncdC_ncdB_cosP, ncdQ, ncdC, ncdB, cosP);
     generic_particle_intersect_impl!(__intersect_ncdQ_ncdC_ncdB_ncdP, ncdQ, ncdC, ncdB, ncdP);
+
+    // ================= Integrate Queue
+
+    generic_queue_integrate_impl!(__integrate_uniQ_larC_larB_cosP, uniQ, larC, larB, cosP);
+    generic_queue_integrate_impl!(__integrate_uniQ_larC_larB_ncdP, uniQ, larC, larB, ncdP);
+    generic_queue_integrate_impl!(__integrate_uniQ_larC_ncdB_cosP, uniQ, larC, ncdB, cosP);
+    generic_queue_integrate_impl!(__integrate_uniQ_larC_ncdB_ncdP, uniQ, larC, ncdB, ncdP);
+    generic_queue_integrate_impl!(__integrate_uniQ_ncdC_larB_cosP, uniQ, ncdC, larB, cosP);
+    generic_queue_integrate_impl!(__integrate_uniQ_ncdC_larB_ncdP, uniQ, ncdC, larB, ncdP);
+    generic_queue_integrate_impl!(__integrate_uniQ_ncdC_ncdB_cosP, uniQ, ncdC, ncdB, cosP);
+    generic_queue_integrate_impl!(__integrate_uniQ_ncdC_ncdB_ncdP, uniQ, ncdC, ncdB, ncdP);
+
+    generic_queue_integrate_impl!(__integrate_parQ_larC_larB_cosP, parQ, larC, larB, cosP);
+    generic_queue_integrate_impl!(__integrate_parQ_larC_larB_ncdP, parQ, larC, larB, ncdP);
+    generic_queue_integrate_impl!(__integrate_parQ_larC_ncdB_cosP, parQ, larC, ncdB, cosP);
+    generic_queue_integrate_impl!(__integrate_parQ_larC_ncdB_ncdP, parQ, larC, ncdB, ncdP);
+    generic_queue_integrate_impl!(__integrate_parQ_ncdC_larB_cosP, parQ, ncdC, larB, cosP);
+    generic_queue_integrate_impl!(__integrate_parQ_ncdC_larB_ncdP, parQ, ncdC, larB, ncdP);
+    generic_queue_integrate_impl!(__integrate_parQ_ncdC_ncdB_cosP, parQ, ncdC, ncdB, cosP);
+    generic_queue_integrate_impl!(__integrate_parQ_ncdC_ncdB_ncdP, parQ, ncdC, ncdB, ncdP);
+
+    generic_queue_integrate_impl!(__integrate_ncdQ_larC_larB_cosP, ncdQ, larC, larB, cosP);
+    generic_queue_integrate_impl!(__integrate_ncdQ_larC_larB_ncdP, ncdQ, larC, larB, ncdP);
+    generic_queue_integrate_impl!(__integrate_ncdQ_larC_ncdB_cosP, ncdQ, larC, ncdB, cosP);
+    generic_queue_integrate_impl!(__integrate_ncdQ_larC_ncdB_ncdP, ncdQ, larC, ncdB, ncdP);
+    generic_queue_integrate_impl!(__integrate_ncdQ_ncdC_larB_cosP, ncdQ, ncdC, larB, cosP);
+    generic_queue_integrate_impl!(__integrate_ncdQ_ncdC_larB_ncdP, ncdQ, ncdC, larB, ncdP);
+    generic_queue_integrate_impl!(__integrate_ncdQ_ncdC_ncdB_cosP, ncdQ, ncdC, ncdB, cosP);
+    generic_queue_integrate_impl!(__integrate_ncdQ_ncdC_ncdB_ncdP, ncdQ, ncdC, ncdB, ncdP);
+
+    // ================= Intersect Queue
+
+    generic_queue_intersect_impl!(__intersect_uniQ_larC_larB_cosP, uniQ, larC, larB, cosP);
+    generic_queue_intersect_impl!(__intersect_uniQ_larC_larB_ncdP, uniQ, larC, larB, ncdP);
+    generic_queue_intersect_impl!(__intersect_uniQ_larC_ncdB_cosP, uniQ, larC, ncdB, cosP);
+    generic_queue_intersect_impl!(__intersect_uniQ_larC_ncdB_ncdP, uniQ, larC, ncdB, ncdP);
+    generic_queue_intersect_impl!(__intersect_uniQ_ncdC_larB_cosP, uniQ, ncdC, larB, cosP);
+    generic_queue_intersect_impl!(__intersect_uniQ_ncdC_larB_ncdP, uniQ, ncdC, larB, ncdP);
+    generic_queue_intersect_impl!(__intersect_uniQ_ncdC_ncdB_cosP, uniQ, ncdC, ncdB, cosP);
+    generic_queue_intersect_impl!(__intersect_uniQ_ncdC_ncdB_ncdP, uniQ, ncdC, ncdB, ncdP);
+
+    generic_queue_intersect_impl!(__intersect_parQ_larC_larB_cosP, parQ, larC, larB, cosP);
+    generic_queue_intersect_impl!(__intersect_parQ_larC_larB_ncdP, parQ, larC, larB, ncdP);
+    generic_queue_intersect_impl!(__intersect_parQ_larC_ncdB_cosP, parQ, larC, ncdB, cosP);
+    generic_queue_intersect_impl!(__intersect_parQ_larC_ncdB_ncdP, parQ, larC, ncdB, ncdP);
+    generic_queue_intersect_impl!(__intersect_parQ_ncdC_larB_cosP, parQ, ncdC, larB, cosP);
+    generic_queue_intersect_impl!(__intersect_parQ_ncdC_larB_ncdP, parQ, ncdC, larB, ncdP);
+    generic_queue_intersect_impl!(__intersect_parQ_ncdC_ncdB_cosP, parQ, ncdC, ncdB, cosP);
+    generic_queue_intersect_impl!(__intersect_parQ_ncdC_ncdB_ncdP, parQ, ncdC, ncdB, ncdP);
+
+    generic_queue_intersect_impl!(__intersect_ncdQ_larC_larB_cosP, ncdQ, larC, larB, cosP);
+    generic_queue_intersect_impl!(__intersect_ncdQ_larC_larB_ncdP, ncdQ, larC, larB, ncdP);
+    generic_queue_intersect_impl!(__intersect_ncdQ_larC_ncdB_cosP, ncdQ, larC, ncdB, cosP);
+    generic_queue_intersect_impl!(__intersect_ncdQ_larC_ncdB_ncdP, ncdQ, larC, ncdB, ncdP);
+    generic_queue_intersect_impl!(__intersect_ncdQ_ncdC_larB_cosP, ncdQ, ncdC, larB, cosP);
+    generic_queue_intersect_impl!(__intersect_ncdQ_ncdC_larB_ncdP, ncdQ, ncdC, larB, ncdP);
+    generic_queue_intersect_impl!(__intersect_ncdQ_ncdC_ncdB_cosP, ncdQ, ncdC, ncdB, cosP);
+    generic_queue_intersect_impl!(__intersect_ncdQ_ncdC_ncdB_ncdP, ncdQ, ncdC, ncdB, ncdP);
 }

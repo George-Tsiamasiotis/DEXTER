@@ -1,6 +1,17 @@
 import numpy as np
 
-from dexter import InitialFluxArray1, QueueInitialConditions
+from dexter import (
+    InitialFluxArray1,
+    QueueInitialConditions,
+    Queue,
+    Particle,
+    ParabolicQfactor,
+    LarCurrent,
+    LarBfield,
+    Perturbation,
+    CosHarmonic,
+    IntersectParams,
+)
 
 
 def test_initial_flux_array1():
@@ -33,3 +44,67 @@ def test_queue_initial_conditions():
     assert q.mu_array.shape == (particle_count,)
     assert isinstance(q.__str__(), str)
     assert isinstance(q.__repr__(), str)
+
+
+def test_queue_intstantiation():
+    particle_count = 10
+    psi0s = InitialFluxArray1("Toroidal", np.linspace(0, 0.5, particle_count))
+    initial_conditions = QueueInitialConditions(
+        t0=np.zeros(particle_count),
+        flux0=psi0s,
+        theta0=np.zeros(particle_count),
+        zeta0=np.zeros(particle_count),
+        rho0=np.full(particle_count, 1e-5),
+        mu0=np.full(particle_count, 1e-6),
+    )
+    queue = Queue(initial_conditions)
+    particles = queue.particles
+    assert queue.particle_count == len(particles) == particle_count
+    assert isinstance(queue.initial_conditions, QueueInitialConditions)
+    assert isinstance(queue[0], Particle)
+
+
+class TestQueue:
+    @classmethod
+    def setup_class(cls) -> None:
+        cls.qfactor = ParabolicQfactor(1.1, 3.9, ("Toroidal", 0.45))
+        cls.current = LarCurrent()
+        cls.bfield = LarBfield()
+        cls.per = Perturbation(
+            [
+                CosHarmonic(1e-3, 1, 3, 0),
+                CosHarmonic(1e-3, 2, 3, 0),
+            ]
+        )
+        cls.eq = (cls.qfactor, cls.current, cls.bfield, cls.per)
+        particle_count = 10
+        psi0s = InitialFluxArray1("Toroidal", np.linspace(0.01, 0.4, particle_count))
+        cls.initial_conditions = QueueInitialConditions(
+            t0=np.zeros(particle_count),
+            flux0=psi0s,
+            theta0=np.zeros(particle_count),
+            zeta0=np.zeros(particle_count),
+            rho0=np.full(particle_count, 1e-6),
+            mu0=np.full(particle_count, 1e-7),
+        )
+
+    def test_queue_integration(self):
+        queue = Queue(self.initial_conditions)
+        queue.integrate(
+            *self.eq,
+            (0, 1e4),
+        )
+        for particle in queue.particles:
+            assert particle.steps_taken > 10
+            assert particle.integration_status == "Integrated"
+
+    def test_queue_intersection(self):
+        queue = Queue(self.initial_conditions)
+        intersect_params = IntersectParams("ConstTheta", 0.0, 5)
+        queue.intersect(
+            *self.eq,
+            intersect_params,
+        )
+        for particle in queue.particles:
+            assert particle.steps_taken > 10
+            assert particle.integration_status == "Intersected"

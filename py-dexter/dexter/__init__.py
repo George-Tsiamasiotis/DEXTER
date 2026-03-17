@@ -34,6 +34,7 @@ from dexter.simulate import (
     Particle,
     InitialFluxArray1,
     QueueInitialConditions,
+    Queue,
 )
 
 __all__ = [
@@ -79,4 +80,5 @@ __all__ = [
     "Particle",
     "InitialFluxArray1",
     "QueueInitialConditions",
+    "Queue",
 ]

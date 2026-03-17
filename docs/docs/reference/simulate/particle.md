@@ -1,6 +1,6 @@
 # Particle
 
-`Particle` class and helper objects for defining one.
+[`Particle`][dexter.Particle] class and helper objects for defining one.
 
 ::: dexter.InitialFlux
     options:
