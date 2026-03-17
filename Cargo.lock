@@ -1125,9 +1125,10 @@ dependencies = [
 
 [[package]]
 name = "py-dexter"
-version = "0.1.4-pre.2"
+version = "0.1.4-pre.3"
 dependencies = [
  "dexter",
+ "ndarray",
  "numpy",
  "pyo3",
  "rsl-interpolation",

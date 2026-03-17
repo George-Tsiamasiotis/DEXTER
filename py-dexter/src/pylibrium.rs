@@ -27,7 +27,7 @@ use crate::{
 // ===============================================================================================
 // ===============================================================================================
 
-#[pyclass(name = "_PyLarGeometry", subclass, frozen)]
+#[pyclass(name = "_PyLarGeometry", frozen)]
 pub struct PyLarGeometry(pub(crate) LarGeometry);
 
 #[pymethods]
@@ -61,7 +61,7 @@ py_get_numpy1D!(PyLarGeometry, zlab_wall);
 
 // ===============================================================================================
 
-#[pyclass(name = "_PyNcGeometry", subclass, frozen)]
+#[pyclass(name = "_PyNcGeometry", frozen)]
 pub struct PyNcGeometry(pub(crate) NcGeometry);
 
 #[pymethods]
@@ -121,7 +121,7 @@ py_get_numpy1D!(PyNcGeometry, zlab_wall);
 // ===============================================================================================
 // ===============================================================================================
 
-#[pyclass(name = "_PyUnityQfactor", subclass, frozen)]
+#[pyclass(name = "_PyUnityQfactor", frozen)]
 pub struct PyUnityQfactor(pub(crate) UnityQfactor);
 
 #[pymethods]
@@ -147,7 +147,7 @@ py_eval1D!(PyUnityQfactor, iota_of_psip);
 
 // ===============================================================================================
 
-#[pyclass(name = "_PyParabolicQfactor", subclass, frozen)]
+#[pyclass(name = "_PyParabolicQfactor", frozen)]
 pub struct PyParabolicQfactor(pub(crate) ParabolicQfactor);
 
 #[pymethods]
@@ -186,7 +186,7 @@ py_eval1D!(PyParabolicQfactor, iota_of_psip);
 
 // ===============================================================================================
 
-#[pyclass(name = "_PyNcQfactor", subclass, frozen)]
+#[pyclass(name = "_PyNcQfactor", frozen)]
 pub struct PyNcQfactor(pub(crate) NcQfactor);
 
 #[pymethods]
@@ -227,7 +227,7 @@ py_eval1D!(PyNcQfactor, iota_of_psip);
 // ===============================================================================================
 // ===============================================================================================
 
-#[pyclass(name = "_PyLarCurrent", subclass, frozen)]
+#[pyclass(name = "_PyLarCurrent", frozen)]
 pub struct PyLarCurrent(pub(crate) LarCurrent);
 
 #[pymethods]
@@ -253,7 +253,7 @@ py_eval1D!(PyLarCurrent, di_dpsip);
 
 // ===============================================================================================
 
-#[pyclass(name = "_PyNcCurrent", subclass, frozen)]
+#[pyclass(name = "_PyNcCurrent", frozen)]
 pub struct PyNcCurrent(pub(crate) NcCurrent);
 
 #[pymethods]
@@ -293,7 +293,7 @@ py_eval1D!(PyNcCurrent, di_dpsip);
 // ===============================================================================================
 // ===============================================================================================
 
-#[pyclass(name = "_PyLarBfield", subclass, frozen)]
+#[pyclass(name = "_PyLarBfield", frozen)]
 pub struct PyLarBfield(pub(crate) LarBfield);
 
 #[pymethods]
@@ -317,7 +317,7 @@ py_eval2D!(PyLarBfield, db_of_psip_dtheta);
 
 // ===============================================================================================
 
-#[pyclass(name = "_PyNcBfield", subclass, frozen)]
+#[pyclass(name = "_PyNcBfield", frozen)]
 pub struct PyNcBfield(pub(crate) NcBfield);
 
 #[pymethods]
@@ -362,7 +362,7 @@ py_eval2D!(PyNcBfield, db_of_psip_dtheta);
 // ===============================================================================================
 
 #[derive(Clone)]
-#[pyclass(name = "_PyCosHarmonic", subclass, frozen)]
+#[pyclass(name = "_PyCosHarmonic", frozen)]
 pub struct PyCosHarmonic(pub(crate) CosHarmonic);
 
 #[pymethods]
@@ -399,7 +399,7 @@ py_eval_harmonic!(PyCosHarmonic, dh_of_psip_dt);
 // ===============================================================================================
 
 #[derive(Clone)]
-#[pyclass(name = "_PyNcHarmonic", subclass, frozen)]
+#[pyclass(name = "_PyNcHarmonic", frozen)]
 pub struct PyNcHarmonic(pub(crate) NcHarmonic);
 
 #[pymethods]
@@ -554,14 +554,14 @@ macro_rules! PyPerturbationImpl {
 
 // ===============================================================================================
 
-#[pyclass(name = "_PyCosPerturbation", subclass, frozen, dict)]
+#[pyclass(name = "_PyCosPerturbation", frozen, dict)]
 pub struct PyCosPerturbation(pub(crate) Perturbation<CosHarmonic>);
 
 PyPerturbationImpl!(PyCosPerturbation, PyCosHarmonic, CosHarmonic);
 
 // ===============================================================================================
 
-#[pyclass(name = "_PyNcPerturbation", subclass, frozen, dict)]
+#[pyclass(name = "_PyNcPerturbation", frozen, dict)]
 pub struct PyNcPerturbation(pub(crate) Perturbation<NcHarmonic>);
 
 PyPerturbationImpl!(PyNcPerturbation, PyNcHarmonic, NcHarmonic);

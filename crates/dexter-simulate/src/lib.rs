@@ -46,8 +46,7 @@ pub use error::SimulationError;
 /// Result type used throughout the crate.
 pub type Result<T> = std::result::Result<T, SimulationError>;
 
-pub(crate) use solve::FluxCoordinate;
-pub use solve::{SolverParams, SteppingMethod};
+pub use solve::{FluxCoordinate, SolverParams, SteppingMethod};
 
 pub use particle::{
     InitialConditions, InitialFlux, IntegrationStatus, IntersectParams, Intersection, Particle,

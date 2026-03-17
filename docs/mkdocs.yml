@@ -115,3 +115,4 @@ nav:
       - Helpers: reference/equilibrium/helpers.md
     - Simulate:
       - Particle: reference/simulate/particle.md
+      - Queue: reference/simulate/queue.md

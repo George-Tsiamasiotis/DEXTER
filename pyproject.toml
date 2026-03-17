@@ -1,6 +1,6 @@
 [project]
 name = "dexter"
-version = "0.1.4-pre.2"
+version = "0.1.4-pre.3"
 description = "Calculations and simulations in analytical and reconstructed equilibria of toroidal fusion devices."
 readme = "README.md"
 authors = [
@@ -34,6 +34,9 @@ dev = [
     "patchelf>=0.17.2.4",
     "xarray>=2025.10.1",
     "netcdf4>=1.7.3",
+]
+plot = [
+    "pygobject>=3.56.1",
 ]
 test = [
     "pytest>=8.4.2",

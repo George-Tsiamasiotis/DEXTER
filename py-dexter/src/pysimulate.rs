@@ -1,14 +1,16 @@
 //! `dexter-simulate` newtypes, constructors and method exports.
 
 use dexter::dexter_simulate::{
-    InitialConditions, InitialFlux, IntersectParams, Intersection, Particle, SolverParams,
-    SteppingMethod,
+    FluxCoordinate, InitialConditions, InitialFlux, IntersectParams, Intersection, Particle,
+    QueueInitialConditions, SolverParams, SteppingMethod,
 };
+use ndarray::Array1;
 use numpy::{IntoPyArray, PyArray1};
 use pyo3::exceptions::PyTypeError;
 use pyo3::prelude::*;
 use pyo3::types::PyTuple;
 
+use crate::pyerror::PySimulationError;
 use crate::pylibrium::*;
 use crate::{
     generic_particle_integrate_impl, generic_particle_intersect_impl, py_debug_impl,
@@ -17,7 +19,7 @@ use crate::{
 
 // ===============================================================================================
 
-#[pyclass(name = "_PyInitialFlux", subclass, frozen)]
+#[pyclass(name = "_PyInitialFlux", frozen)]
 pub struct PyInitialFlux(pub(crate) InitialFlux);
 
 #[pymethods]
@@ -51,7 +53,7 @@ py_repr_impl!(PyInitialFlux);
 
 // ===============================================================================================
 #[derive(Clone)]
-#[pyclass(name = "_PyInitialConditions", subclass, frozen)]
+#[pyclass(name = "_PyInitialConditions", frozen)]
 pub struct PyInitialConditions(pub(crate) InitialConditions);
 
 #[pymethods]
@@ -93,7 +95,7 @@ py_export_pub_field!(PyInitialConditions, mu0, f64);
 // ===============================================================================================
 
 #[derive(Clone)]
-#[pyclass(name = "_PyIntersectParams", subclass, frozen)]
+#[pyclass(name = "_PyIntersectParams", frozen)]
 pub struct PyIntersectParams(pub(crate) IntersectParams);
 
 #[pymethods]
@@ -125,7 +127,7 @@ py_export_pub_field!(PyIntersectParams, turns, usize);
 
 // ===============================================================================================
 
-#[pyclass(name = "_PyParticle", subclass)]
+#[pyclass(name = "_PyParticle")]
 pub struct PyParticle(pub(crate) Particle);
 
 #[pymethods]
@@ -185,6 +187,90 @@ py_get_numpy1D!(PyParticle, mu_array);
 py_get_numpy1D!(PyParticle, ptheta_array);
 py_get_numpy1D!(PyParticle, pzeta_array);
 py_get_numpy1D!(PyParticle, energy_array);
+
+// ===============================================================================================
+
+#[pyclass(name = "_PyInitialFluxArray1", frozen)]
+pub struct PyInitialFluxArray1 {
+    kind: FluxCoordinate,
+    values: Array1<f64>,
+}
+
+#[pymethods]
+impl PyInitialFluxArray1 {
+    #[new]
+    #[pyo3(signature = (kind, values))]
+    pub fn new(kind: &str, values: Vec<f64>) -> PyResult<Self> {
+        let kind = match kind.to_lowercase().as_str() {
+            "toroidal" => FluxCoordinate::Toroidal,
+            "poloidal" => FluxCoordinate::Poloidal,
+            _ => return Err(PyErr::new::<PyTypeError, _>("Invalid 'kind'")),
+        };
+        let values = Array1::from_vec(values);
+        Ok(Self { kind, values })
+    }
+
+    #[getter]
+    pub fn get_kind(&self) -> String {
+        format!("{:?}", self.kind)
+    }
+
+    #[getter]
+    pub fn get_values<'py>(&self, py: Python<'py>) -> Bound<'py, PyArray1<f64>> {
+        self.values.clone().into_pyarray(py)
+    }
+}
+
+// ===============================================================================================
+
+#[pyclass(name = "_PyQueueInitialConditions", frozen)]
+pub struct PyQueueInitialConditions(pub(crate) QueueInitialConditions);
+
+#[pymethods]
+impl PyQueueInitialConditions {
+    #[new]
+    #[pyo3(signature = (t0, flux0, theta0, zeta0, rho0, mu0))]
+    pub fn new<'py>(
+        t0: Vec<f64>,
+        flux0: &PyInitialFluxArray1,
+        theta0: Vec<f64>,
+        zeta0: Vec<f64>,
+        rho0: Vec<f64>,
+        mu0: Vec<f64>,
+    ) -> Result<Self, PySimulationError> {
+        let flux0_rust: Array1<InitialFlux>;
+        match flux0.kind {
+            FluxCoordinate::Toroidal => {
+                flux0_rust =
+                    Array1::from_iter(flux0.values.map(|value| InitialFlux::Toroidal(*value)))
+            }
+            FluxCoordinate::Poloidal => {
+                flux0_rust =
+                    Array1::from_iter(flux0.values.map(|value| InitialFlux::Poloidal(*value)))
+            }
+        };
+        Ok(Self(QueueInitialConditions::build(
+            &t0,
+            &flux0_rust.as_slice().unwrap_or_default(), // let rust handle it
+            &theta0,
+            &zeta0,
+            &rho0,
+            &mu0,
+        )?))
+    }
+
+    pub fn __len__(&self) -> usize {
+        self.0.len()
+    }
+}
+
+py_debug_impl!(PyQueueInitialConditions);
+py_repr_impl!(PyQueueInitialConditions);
+py_get_numpy1D!(PyQueueInitialConditions, t_array);
+py_get_numpy1D!(PyQueueInitialConditions, theta_array);
+py_get_numpy1D!(PyQueueInitialConditions, zeta_array);
+py_get_numpy1D!(PyQueueInitialConditions, rho_array);
+py_get_numpy1D!(PyQueueInitialConditions, mu_array);
 
 // ===============================================================================================
 // ===============================================================================================

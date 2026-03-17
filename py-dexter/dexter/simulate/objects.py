@@ -7,12 +7,15 @@ Python methods that wrap rust 'generic' methods, assemble the monomorphized meth
 using the generic object's `_dyn` attribute.
 """
 
-from typing import Callable, Optional, Any, Literal
+from typing import Callable, Optional
+
 from dexter._core import (
     _PyInitialFlux,
     _PyInitialConditions,
     _PyIntersectParams,
     _PyParticle,
+    _PyInitialFluxArray1,
+    _PyQueueInitialConditions,
 )
 
 from ..equilibrium import Qfactor, Current, Bfield, Perturbation
@@ -20,6 +23,7 @@ from ._plotters import _ParticlePlotter
 
 from dexter.types import (
     Array1,
+    FluxCoordinate,
     Intersection,
     SteppingMethod,
     IntegrationStatus,
@@ -43,11 +47,11 @@ class InitialFlux:
 
     _rust: _PyInitialFlux
 
-    def __init__(self, kind: Literal["Toroidal", "Poloidal"], value: float) -> None:
+    def __init__(self, kind: FluxCoordinate, value: float) -> None:
         self._rust = _PyInitialFlux(kind=kind, value=value)
 
     @property
-    def kind(self) -> Literal["Toroidal", "Poloidal"]:
+    def kind(self) -> FluxCoordinate:
         r"""The kind of initial flux ($\psi$ or $\psi_p$)"""
         return self._rust.kind
 
@@ -435,7 +439,7 @@ class Particle(_ParticlePlotter):
         current: Current,
         bfield: Bfield,
         perturbation: Perturbation,
-        intersect_params: Any,
+        intersect_params: IntersectParams,
         *,
         stepping_method: Optional[SteppingMethod] = "EnergyAdaptiveStep",
         max_steps: Optional[int] = 1_000_000,
@@ -545,6 +549,120 @@ class Particle(_ParticlePlotter):
             error_rel_tol,
             error_abs_tol,
         )
+
+    def __str__(self) -> str:
+        return self._rust.__str__()
+
+    def __repr__(self) -> str:
+        return self.__str__()
+
+
+class InitialFluxArray1:
+    """A 1D array of initial "Toroidal" or "Poloidal" fluxes.
+
+    Useful when creating a [`QueueInitialConditions`][dexter.QueueInitialConditions].
+
+    Example
+    -------
+    ```python title="InitialFluxArray1 definition"
+    >>> psi0s = InitialFluxArray1("Toroidal", np.linspace(0, 0.5, 10))
+    >>> psip0s = InitialFluxArray1("Poloidal", np.linspace(0, 0.8, 20))
+
+    ```
+    """
+
+    _rust: _PyInitialFluxArray1
+
+    def __init__(self, kind: FluxCoordinate, values: Array1):
+        self._rust = _PyInitialFluxArray1(kind=kind, values=values)
+
+    @property
+    def kind(self) -> FluxCoordinate:
+        """The kind of the contained fluxes ("Toroidal" or "Poloidal")."""
+        return self._rust.kind
+
+    @property
+    def values(self) -> Array1:
+        """The flux values."""
+        return self._rust.values
+
+    def __str__(self) -> str:
+        return f"kind: {self.kind}\nvalues: {self.values}"
+
+    def __repr__(self) -> str:
+        return self.__str__()
+
+
+class QueueInitialConditions:
+    r"""Sets of initial conditions for initializing a Queue.
+
+    Use the [`InitialFluxArray1`][dexter.InitialFluxArray1] helper object to initialize the $\psi$/$\psi_p$ variables.
+
+    Example
+    -------
+    ```python title="QueueInitialConditions definition"
+    >>> num = 10
+    >>> psi0s = InitialFluxArray1("Toroidal", np.linspace(0, 0.5, num))
+    >>>
+    >>> initial_conditions = QueueInitialConditions(
+    ...     t0=np.zeros(num),
+    ...     flux0=psi0s,
+    ...     theta0=np.zeros(num),
+    ...     zeta0=np.zeros(num),
+    ...     rho0=np.logspace(1e-6, 1e-5, num),
+    ...     mu0=np.full(num, 1e-6),
+    ... )
+
+    ```
+    """
+
+    _rust: _PyQueueInitialConditions
+
+    def __init__(
+        self,
+        t0: Array1,
+        flux0: InitialFluxArray1,
+        theta0: Array1,
+        zeta0: Array1,
+        rho0: Array1,
+        mu0: Array1,
+    ) -> None:
+        self._rust = _PyQueueInitialConditions(
+            t0=t0,
+            flux0=flux0._rust,
+            theta0=theta0,
+            zeta0=zeta0,
+            rho0=rho0,
+            mu0=mu0,
+        )
+
+    @property
+    def t_array(self) -> Array1:
+        """The initial times array."""
+        return self._rust.t_array
+
+    @property
+    def theta_array(self) -> Array1:
+        r"""The initial $\theta$ array."""
+        return self._rust.theta_array
+
+    @property
+    def zeta_array(self) -> Array1:
+        r"""The initial $\zeta$ array."""
+        return self._rust.zeta_array
+
+    @property
+    def rho_array(self) -> Array1:
+        r"""The initial $\rho$ array."""
+        return self._rust.rho_array
+
+    @property
+    def mu_array(self) -> Array1:
+        r"""The initial $\mu$ array."""
+        return self._rust.mu_array
+
+    def __len__(self) -> int:
+        return self._rust.__len__()
 
     def __str__(self) -> str:
         return self._rust.__str__()

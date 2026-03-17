@@ -57,7 +57,7 @@ impl Default for SolverParams {
 
 /// Defines the flux coordinate of the System.
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) enum FluxCoordinate {
+pub enum FluxCoordinate {
     /// Use the toroidal flux `ψ` as the dynamic variable.
     #[default]
     Toroidal,

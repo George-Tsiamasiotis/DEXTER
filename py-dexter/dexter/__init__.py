@@ -27,7 +27,14 @@ from dexter.types import (
     SteppingMethod,
 )
 
-from dexter.simulate import InitialFlux, InitialConditions, IntersectParams, Particle
+from dexter.simulate import (
+    InitialFlux,
+    InitialConditions,
+    IntersectParams,
+    Particle,
+    InitialFluxArray1,
+    QueueInitialConditions,
+)
 
 __all__ = [
     # Types
@@ -70,4 +77,6 @@ __all__ = [
     "InitialConditions",
     "IntersectParams",
     "Particle",
+    "InitialFluxArray1",
+    "QueueInitialConditions",
 ]
