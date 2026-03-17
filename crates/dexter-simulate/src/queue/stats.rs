@@ -133,6 +133,8 @@ impl std::fmt::Debug for QueueStats {
 struct ParticleDuration {
     /// The total number of steps taken.
     steps_taken: usize,
+    /// The total number of steps stored.
+    steps_stored: usize,
     /// The total duration.
     duration: Duration,
 }
@@ -142,6 +144,7 @@ impl From<Option<&Particle>> for ParticleDuration {
         if let Some(particle) = value {
             Self {
                 steps_taken: particle.steps_taken(),
+                steps_stored: particle.steps_stored(),
                 duration: particle.duration(),
             }
         } else {
@@ -154,8 +157,8 @@ impl std::fmt::Debug for ParticleDuration {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "duration: {:?} ({} steps taken)",
-            self.duration, self.steps_taken
+            "duration: {:?} ({} steps taken, {} stored)",
+            self.duration, self.steps_taken, self.steps_stored
         )
     }
 }

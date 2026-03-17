@@ -20,7 +20,7 @@ from dexter._core import (
 )
 
 from ..equilibrium import Qfactor, Current, Bfield, Perturbation
-from ._plotters import _ParticlePlotter
+from ._plotters import _ParticlePlotter, _QueuePlotter
 
 from dexter.types import (
     Array1,
@@ -700,7 +700,7 @@ class QueueInitialConditions:
         return self.__str__()
 
 
-class Queue:
+class Queue(_QueuePlotter):
     """
     A collection of multiple [`Particles`][dexter.Particle] , constructed from a
     [`QueueInitialConditions`][dexter.QueueInitialConditions].
@@ -737,6 +737,7 @@ class Queue:
     """
 
     _initial_conditions: QueueInitialConditions
+    _intersect_params: IntersectParams  # for plot use
     _rust: _PyQueue
 
     def __init__(self, initial_conditions: QueueInitialConditions) -> None:
@@ -992,6 +993,7 @@ class Queue:
 
         ```
         """
+        self._intersect_params = intersect_params
         prefix = "__intersect"
         q = qfactor._dyn
         c = current._dyn

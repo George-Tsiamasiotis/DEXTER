@@ -3,15 +3,26 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from math import floor, log10
+from math import pi as PI
 from warnings import warn
+from cycler import cycler
 
-from dexter._core import _PyParticle
+from dexter._core import _PyParticle, _PyQueue
 
 dpi = 120
 figsize = (10, 7)
 target_points = 50_000
 SCATTER_KW = {"s": 0.8, "c": "blue"}
 LABEL_KW = {"labelpad": 10, "rotation": 0, "fontsize": 15}
+CARTESIAN_POINCARE_FIG_KW = {"figsize": (9, 6), "layout": "constrained", "dpi": 120}
+CARTESIAN_POINCARE_SCATTER_KW = {"s": 0.3, "marker": "o"}
+CARTESIAN_POINCARE_INITIAL_KW = {
+    "c": "k",
+    "marker": "x",
+    "markersize": 3,
+    "alpha": 0.4,
+    "zorder": -2,
+}
 
 
 class _ParticlePlotter:
@@ -149,3 +160,135 @@ class _ParticlePlotter:
 
         plt.show()
         plt.close()
+
+
+class _QueuePlotter:
+    """Provides plotting functions for the Queue Class."""
+
+    _rust: _PyQueue
+
+    def plot_const_zeta_cartesian_poincare(
+        self,
+        initial: bool = False,
+        color: bool = False,
+    ):
+        r"""Plots the poincare map on the $\theta-\psi$ cartesian plane.
+
+        Parameters
+        ----------
+        color
+            Whether or not to use a different color for each orbit. Defaults to False.
+        initial
+            Whether or not to plot the initial points. Note that the initial $\theta_0$ should be equal to the
+            intersection angle, and the initial flux coordinate should be $\psi$. Defaults to False.
+        """
+
+        try:
+            intersect_params = getattr(self, "_intersect_params")._rust
+        except:
+            raise RuntimeError("Queue must have run the 'intersect' routine.")
+
+        if intersect_params.intersection != "ConstZeta":
+            raise RuntimeError("Intersection surface must be 'ConstZeta'")
+
+        if initial and self._rust[0].initial_conditions.flux0.kind == "Poloidal":
+            raise ValueError("Cannot plot 'ψp0' in an 'theta-psi' plot")
+
+        fig = plt.figure(**CARTESIAN_POINCARE_FIG_KW)
+        ax = fig.add_subplot()
+
+        if color:
+            ax.set_prop_cycle(cycler(color="brcmk"))
+        else:
+            ax.set_prop_cycle(cycler(color=["blue"]))
+
+        ax.set_xlabel(r"$\theta\ [rads]$")
+        ax.set_ylabel(r"$\psi\ [Normalized]$")
+        ax.set_xlim(-PI, PI)
+        ax.set_xticks(
+            np.linspace(-np.pi, np.pi, 5),
+            [r"$-\pi$", r"$-\pi/2$", r"$0$", r"$\pi/2$", r"$\pi$"],
+        )
+        ax.set_title(
+            rf"$\psi$ - $\theta$ cross section at $\zeta$ = {intersect_params.angle}"
+        )
+
+        for particle in self._rust.particles:
+            theta = pi_mod(particle.theta_array)
+            psi = particle.psi_array
+            ax.scatter(theta, psi, **CARTESIAN_POINCARE_SCATTER_KW)
+            if initial:
+                init = particle.initial_conditions
+                initial_point = (init.theta0, init.flux0.value)
+                ax.plot(*initial_point, **CARTESIAN_POINCARE_INITIAL_KW)
+
+        plt.show()
+        plt.close()
+
+    def plot_const_theta_cartesian_poincare(
+        self,
+        initial: bool = False,
+        color: bool = False,
+    ):
+        r"""Plots the poincare map on the $\zeta-\psi_p$ cartesian plane.
+
+        Parameters
+        ----------
+        color
+            Whether or not to use a different color for each orbit. Defaults to False.
+        initial
+            Whether or not to plot the initial points. Note that the initial $\zeta_0$ should be equal to the
+            intersection angle, and the initial flux coordinate should be $\psi_p$. Defaults to False.
+        """
+
+        try:
+            intersect_params = getattr(self, "_intersect_params")._rust
+        except:
+            raise RuntimeError("Queue must have run the 'intersect' routine.")
+
+        if intersect_params.intersection != "ConstTheta":
+            raise RuntimeError("Intersection surface must be 'ConstTheta'")
+
+        if initial and self._rust[0].initial_conditions.flux0.kind == "Toroidal":
+            raise ValueError("Cannot plot 'ψ0' in an 'zeta-psip' plot")
+
+        fig = plt.figure(**CARTESIAN_POINCARE_FIG_KW)
+        ax = fig.add_subplot()
+
+        if color:
+            ax.set_prop_cycle(cycler(color="brcmk"))
+        else:
+            ax.set_prop_cycle(cycler(color=["blue"]))
+
+        ax.set_xlabel(r"$\zeta\ [rads]$")
+        ax.set_ylabel(r"$\psi_p\ [Normalized]$")
+        ax.set_xlim(-PI, PI)
+        ax.set_xticks(
+            np.linspace(-np.pi, np.pi, 5),
+            [r"$-\pi$", r"$-\pi/2$", r"$0$", r"$\pi/2$", r"$\pi$"],
+        )
+        ax.set_title(
+            rf"$\psi_p$ - $\zeta$ cross section at $\theta$ = {intersect_params.angle}"
+        )
+
+        for particle in self._rust.particles:
+            zeta = pi_mod(particle.zeta_array)
+            psip = particle.psip_array
+            ax.scatter(zeta, psip, **CARTESIAN_POINCARE_SCATTER_KW)
+            if initial:
+                init = particle.initial_conditions
+                initial_point = (init.theta0, init.flux0.value)
+                ax.plot(*initial_point, **CARTESIAN_POINCARE_INITIAL_KW)
+
+        plt.show()
+        plt.close()
+
+
+# ================================================================================================
+
+
+def pi_mod(arr: np.ndarray):
+    """Mods an angle time series in the interval [-π, π]."""
+    a = np.mod(arr, 2 * np.pi)
+    a = a - 2 * np.pi * (a > np.pi)
+    return a

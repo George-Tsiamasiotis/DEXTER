@@ -19,4 +19,5 @@
         docstring_section_style: list
         inherited_members: true
         summary:
+            functions: true
             attributes: true

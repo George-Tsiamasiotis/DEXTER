@@ -1,5 +1,7 @@
+import matplotlib
 import matplotlib.pyplot
 
+matplotlib.use("gtk3agg")
 matplotlib.pyplot.rcParams["text.usetex"] = True
 
 from dexter.equilibrium import Geometry, LarGeometry, NcGeometry

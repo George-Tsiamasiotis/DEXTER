@@ -151,10 +151,10 @@ class NcEquilibrium:
                 db_dflux_array[i, j] = db_dflux(psi_grid[i, j], theta_grid[i, j])
                 db_dtheta_array[i, j] = db_dtheta(psi_grid[i, j], theta_grid[i, j])
 
-        contour = ax[0].contourf(rlab_array, zlab_array, db_dflux_array, **contour_kw)
-        contour = ax[1].contourf(rlab_array, zlab_array, db_dtheta_array, **contour_kw)
-        plt.colorbar(contour, ax=ax[0], label=rf"$dB/d\{flux}[Normalized\quad Units]$")
-        plt.colorbar(contour, ax=ax[1], label=r"$dB/d\theta[Normalized\quad Units]$")
+        contour1 = ax[0].contourf(rlab_array, zlab_array, db_dflux_array, **contour_kw)
+        contour2 = ax[1].contourf(rlab_array, zlab_array, db_dtheta_array, **contour_kw)
+        plt.colorbar(contour1, ax=ax[0], label=rf"$dB/d\{flux}[Normalized\quad Units]$")
+        plt.colorbar(contour2, ax=ax[1], label=r"$dB/d\theta[Normalized\quad Units]$")
         ax[0].plot(rlab_wall, zlab_wall, color="k", linewidth=2)
         ax[1].plot(rlab_wall, zlab_wall, color="k", linewidth=2)
 
