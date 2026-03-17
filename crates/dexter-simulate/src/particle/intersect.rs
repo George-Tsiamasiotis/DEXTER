@@ -28,7 +28,7 @@ pub enum Intersection {
 
 /// Defines all necessary parameters for the [`Particle::intersect`] routine.
 #[non_exhaustive]
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub struct IntersectParams {
     /// The surface of section Σ, defined by an equation xᵢ= α, where xᵢ= θ or ζ.
     pub intersection: Intersection,

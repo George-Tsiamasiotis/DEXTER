@@ -20,7 +20,9 @@
 //!
 //! Routines:
 //!
-//! + [`Queue::integrate`]: Integrates the containing particles in a specific time interval.
+//! + [`Queue::integrate`]: Integrates the contained particles in a specific time interval.
+//! + [`Queue::intersect`]: Integrates the contained particles, calculating their intersections with a
+//!   constant `θ` or `ζ` surface. Otherwise known as a `Poincare map`.
 //!
 //! ### Integration Configuration
 //!

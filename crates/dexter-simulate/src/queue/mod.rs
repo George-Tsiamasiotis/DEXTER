@@ -7,7 +7,7 @@ mod stats;
 pub use initials::QueueInitialConditions;
 pub use initials::{poloidal_fluxes, toroidal_fluxes};
 
-use pbars::IntegratePbar;
+use pbars::{IntegratePbar, IntersectPbar};
 use stats::QueueStats;
 
 use rayon::iter::{IntoParallelRefMutIterator, ParallelIterator};
@@ -16,7 +16,7 @@ use std::slice::Iter;
 
 use dexter_equilibrium::{Bfield, Current, FluxCommute, Harmonic, Perturbation, Qfactor};
 
-use crate::{Particle, SolverParams};
+use crate::{IntersectParams, Particle, SolverParams};
 
 /// Indicates the routine Queue's particles executed.
 #[derive(Default, Clone, Debug, PartialEq, Eq)]
@@ -129,6 +129,85 @@ impl Queue {
 
         self.particles.par_iter_mut().for_each(|particle| {
             particle.integrate(qfactor, current, bfield, perturbation, teval, solver_params);
+            pbar.inc(&particle.integration_status());
+            pbar.print_stats();
+        });
+        pbar.finish();
+
+        self.routine = Routine::Integrate;
+        self.stats = QueueStats::from_completed_queue(self);
+    }
+
+    /// Integrates all the contained particle, calculating their intersections with a constant θ or ζ surface.
+    ///
+    /// Otherwise known as a `Poincare map`.
+    ///
+    /// The intersection surface, angle, and number of turns are configured with the helper struct [`IntersectParams`].
+    ///
+    /// # Example
+    /// ```
+    /// # use dexter_equilibrium::*;
+    /// # use dexter_simulate::*;
+    /// # use std::path::PathBuf;
+    /// #
+    /// let path = PathBuf::from("./netcdf.nc");
+    /// let qfactor = NcQfactorBuilder::new(&path, "steffen").build()?;
+    /// let current = NcCurrentBuilder::new(&path, "steffen").build()?;
+    /// let bfield = NcBfieldBuilder::new(&path, "bicubic").build()?;
+    /// let perturbation = Perturbation::new(&[
+    ///     CosHarmonic::new(1e-3, 1, 1, 0.0),
+    ///     CosHarmonic::new(1e-3, 1, 2, 0.0),
+    ///     CosHarmonic::new(1e-3, 1, 3, 0.0),
+    /// ]);
+    ///
+    /// use InitialFlux::*;
+    /// let initial_conditions = QueueInitialConditions::build(
+    ///     &[0.0, 0.1],
+    ///     &[Toroidal(0.15), Toroidal(0.3)],
+    ///     &[1e-3, 2e-3],
+    ///     &[0.0, 0.1],
+    ///     &[0.0, 0.0],
+    ///     &[7e-6, 7e-6],
+    /// )?;
+    /// let mut queue = Queue::new(&initial_conditions);
+    /// let intersect_params = IntersectParams::new(Intersection::ConstTheta, 0.0, 100);
+    /// queue.intersect(
+    ///     &qfactor,
+    ///     &current,
+    ///     &bfield,
+    ///     &perturbation,
+    ///     &intersect_params,
+    ///     &SolverParams::default(),
+    /// );
+    /// # Ok::<_, SimulationError>(())
+    /// ```
+    #[doc(alias = "poincare_map")]
+    pub fn intersect<Q, C, B, H>(
+        &mut self,
+        qfactor: &Q,
+        current: &C,
+        bfield: &B,
+        perturbation: &Perturbation<H>,
+        intersect_params: &IntersectParams,
+        solver_params: &SolverParams,
+    ) where
+        Q: Qfactor + FluxCommute + Send + Sync,
+        C: Current + Send + Sync,
+        B: Bfield + Send + Sync,
+        H: Harmonic + Send + Sync,
+    {
+        let pbar = IntersectPbar::new(self, intersect_params);
+        pbar.print_prelude();
+
+        self.particles.par_iter_mut().for_each(|particle| {
+            particle.intersect(
+                qfactor,
+                current,
+                bfield,
+                perturbation,
+                intersect_params,
+                solver_params,
+            );
             pbar.inc(&particle.integration_status());
             pbar.print_stats();
         });
