@@ -17,6 +17,7 @@ from dexter.types import (
     Intersection,
     IntegrationStatus,
     SteppingMethod,
+    Routine,
 )
 
 # ================================================================================================
@@ -547,6 +548,7 @@ class _PyQueue:
     initial_conditions: _PyQueueInitialConditions
     particle_count: int
     particles: list[_PyParticle]
+    routine: Routine
 
     def __init__(self, initial_conditions: _PyQueueInitialConditions) -> None: ...
     def integrate(

@@ -106,3 +106,6 @@ SteppingMethod = (
       local truncation error.
     - `FixedStep(float)`: Fixed step size.
 """
+
+Routine: TypeAlias = Literal["None", "Integrate", "Intersect"]
+"""The routine run by a Queue."""

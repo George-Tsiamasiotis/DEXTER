@@ -25,6 +25,7 @@ from dexter.types import (
     Intersection,
     IntegrationStatus,
     SteppingMethod,
+    Routine,
 )
 
 from dexter.simulate import (
@@ -53,6 +54,7 @@ __all__ = [
     "Intersection",
     "IntegrationStatus",
     "SteppingMethod",
+    "Routine",
     # Equilibrium
     "Geometry",
     "Qfactor",

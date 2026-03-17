@@ -26,6 +26,8 @@ pub enum Routine {
     None,
     /// [`Queue`] has run the [`Particle::integrate`] routine.
     Integrate,
+    /// [`Queue`] has run the [`Particle::intersect`] routine.
+    Intersect,
 }
 
 /// A collection of multiple [`Particles`](Particle), constructed from a
@@ -213,7 +215,7 @@ impl Queue {
         });
         pbar.finish();
 
-        self.routine = Routine::Integrate;
+        self.routine = Routine::Intersect;
         self.stats = QueueStats::from_completed_queue(self);
     }
 }

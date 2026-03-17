@@ -26,3 +26,4 @@
 ::: dexter.Intersection
 ::: dexter.IntegrationStatus
 ::: dexter.SteppingMethod
+::: dexter.Routine

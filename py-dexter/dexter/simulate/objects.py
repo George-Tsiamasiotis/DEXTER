@@ -28,6 +28,7 @@ from dexter.types import (
     Intersection,
     SteppingMethod,
     IntegrationStatus,
+    Routine,
 )
 
 # ================================================================================================
@@ -756,6 +757,11 @@ class Queue:
     def particles(self) -> list[Particle]:
         """The contained Particles."""
         return [self[index] for index in range(self.particle_count)]
+
+    @property
+    def routine(self) -> Routine:
+        """The routine run by the Queue."""
+        return self._rust.routine
 
     def integrate(
         self,
