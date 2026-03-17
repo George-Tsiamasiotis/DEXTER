@@ -17,6 +17,39 @@ use crate::{
 
 // ===============================================================================================
 
+#[pyclass(name = "_PyInitialFlux", subclass, frozen)]
+pub struct PyInitialFlux(pub(crate) InitialFlux);
+
+#[pymethods]
+impl PyInitialFlux {
+    #[new]
+    #[pyo3(signature = (kind, value))]
+    pub fn new(kind: &str, value: f64) -> PyResult<Self> {
+        match kind.to_lowercase().as_str() {
+            "toroidal" => Ok(Self(InitialFlux::Toroidal(value))),
+            "poloidal" => Ok(Self(InitialFlux::Poloidal(value))),
+            _ => Err(PyErr::new::<PyTypeError, _>("Invalid 'InitialFlux'")),
+        }
+    }
+
+    #[getter]
+    pub fn get_kind(&self) -> &str {
+        match self.0 {
+            InitialFlux::Toroidal(_) => "Toroidal",
+            InitialFlux::Poloidal(_) => "Poloidal",
+        }
+    }
+
+    #[getter]
+    pub fn get_value(&self) -> f64 {
+        self.0.value()
+    }
+}
+
+py_debug_impl!(PyInitialFlux);
+py_repr_impl!(PyInitialFlux);
+
+// ===============================================================================================
 #[derive(Clone)]
 #[pyclass(name = "_PyInitialConditions", subclass, frozen)]
 pub struct PyInitialConditions(pub(crate) InitialConditions);
@@ -26,20 +59,13 @@ impl PyInitialConditions {
     #[new]
     pub fn new<'py>(
         t0: f64,
-        flux0: Bound<'py, PyTuple>,
+        flux0: &PyInitialFlux,
         theta0: f64,
         zeta0: f64,
         rho0: f64,
         mu0: f64,
     ) -> PyResult<Self> {
-        let tuple = flux0.cast::<PyTuple>()?;
-        let flux: String = tuple.get_item(0)?.extract::<String>()?.to_lowercase();
-        let value: f64 = tuple.get_item(1)?.extract::<f64>()?;
-        let flux0 = match flux.as_str() {
-            "toroidal" if value.is_finite() => InitialFlux::Toroidal(value),
-            "poloidal" if value.is_finite() => InitialFlux::Poloidal(value),
-            _ => return Err(PyErr::new::<PyTypeError, _>("Invalid 'flux0'")),
-        };
+        let flux0: InitialFlux = flux0.0;
         Ok(Self(InitialConditions {
             t0,
             flux0,
@@ -51,14 +77,8 @@ impl PyInitialConditions {
     }
 
     #[getter]
-    pub fn get_flux0<'py>(&self, py: Python<'py>) -> Result<Bound<'py, PyTuple>, PyErr> {
-        use InitialFlux::*;
-        let tuple: (String, f64);
-        match self.0.flux0 {
-            Toroidal(psi) => tuple = ("Toroidal".into(), psi),
-            Poloidal(psip) => tuple = ("Poloidal".into(), psip),
-        }
-        tuple.into_pyobject(py)
+    pub fn get_flux0(&self) -> PyInitialFlux {
+        PyInitialFlux(self.0.flux0)
     }
 }
 

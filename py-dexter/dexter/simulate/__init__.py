@@ -1,6 +1,7 @@
-from .objects import InitialConditions, IntersectParams, Particle
+from .objects import InitialFlux, InitialConditions, IntersectParams, Particle
 
 __all__ = [
+    "InitialFlux",
     "InitialConditions",
     "IntersectParams",
     "Particle",

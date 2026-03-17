@@ -1,6 +1,6 @@
 """This file mirrors all the definitions made in the `py-dexter` Rust API."""
 
-from typing import Any, Optional
+from typing import Any, Optional, Literal
 
 from dexter.types import (
     ArrayShape,
@@ -13,7 +13,6 @@ from dexter.types import (
     FluxWall,
     FluxState,
     PhaseMethod,
-    InitialFlux,
     Intersection,
     IntegrationStatus,
     SteppingMethod,
@@ -365,11 +364,19 @@ class _PyNcPerturbation:
 # ================================================================================================
 # ================================================================================================
 
+class _PyInitialFlux:
+    """PyO3 export of `dexter_simulate::InitialFlux`."""
+
+    kind: Literal["Toroidal", "Poloidal"]
+    value: float
+
+    def __init__(self, kind: Literal["Toroidal", "Poloidal"], value: float) -> None: ...
+
 class _PyInitialConditions:
     """PyO3 export of `dexter_simulate::InitialConditions`."""
 
     t0: float
-    flux0: InitialFlux
+    flux0: Any
     theta0: float
     zeta0: float
     rho0: float
@@ -378,7 +385,7 @@ class _PyInitialConditions:
     def __init__(
         self,
         t0: float,
-        flux0: InitialFlux,
+        flux0: Any,
         theta0: float,
         zeta0: float,
         rho0: float,
@@ -397,7 +404,7 @@ class _PyIntersectParams:
         intersection: Intersection,
         angle: float,
         turns: int,
-    ): ...
+    ) -> None: ...
 
 class _PyParticle:
     """PyO3 export of `dexter_simulate::Particle`."""
@@ -422,7 +429,7 @@ class _PyParticle:
     pzeta_array: Array1
     energy_array: Array1
 
-    def __init__(self, initial_conditions: Any): ...
+    def __init__(self, initial_conditions: Any) -> None: ...
     def integrate(
         self,
         /,

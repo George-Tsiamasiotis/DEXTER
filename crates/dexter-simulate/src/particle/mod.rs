@@ -31,7 +31,8 @@ pub enum InitialFlux {
 
 impl InitialFlux {
     /// Returns the contained value, regardless of which variant.
-    pub(crate) fn value(&self) -> f64 {
+    #[must_use]
+    pub fn value(&self) -> f64 {
         match *self {
             Self::Toroidal(value) | Self::Poloidal(value) => value,
         }

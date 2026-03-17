@@ -61,9 +61,6 @@ r""" Defines the calculation method of the phase $\phi$ in a Numerical Harmonic.
 
 # =================== Simulate
 
-InitialFlux: TypeAlias = tuple[Literal["Toroidal"] | Literal["Poloidal"], float]
-"""Defines the flux coordinate to be used in the initial conditions of a `Particle`."""
-
 Intersection: TypeAlias = Literal["ConstZeta"] | Literal["ConstTheta"]
 r""" Defines the surface of the Poincare section.
 

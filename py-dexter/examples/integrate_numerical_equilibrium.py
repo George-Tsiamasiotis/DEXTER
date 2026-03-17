@@ -20,7 +20,7 @@ perturbation = dex.Perturbation(
 
 initial_conditions = dex.InitialConditions(
     t0=0,
-    flux0=("Poloidal", 0.8 * qfactor.psip_wall),
+    flux0=dex.InitialFlux("Poloidal", 0.8 * qfactor.psip_wall),
     theta0=1.0,
     zeta0=0.0,
     rho0=1e-3,

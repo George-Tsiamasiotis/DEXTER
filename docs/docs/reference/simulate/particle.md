@@ -1,5 +1,13 @@
 # Particle
 
+Particle class and helper object for defining one.
+
+::: dexter.InitialFlux
+    options:
+        docstring_section_style: list
+        summary:
+            attributes: true
+
 ::: dexter.InitialConditions
     options:
         inherited_members: true

@@ -8,6 +8,7 @@ from dexter import (
     NcGeometry,
     CosHarmonic,
     NcHarmonic,
+    InitialFlux,
     InitialConditions,
     Particle,
 )
@@ -74,7 +75,7 @@ def test_particle_plots(
 
     initial = InitialConditions(
         t0=0,
-        flux0=("Toroidal", 0.1),
+        flux0=InitialFlux("Toroidal", 0.1),
         theta0=3.14,
         zeta0=0,
         rho0=1e-4,

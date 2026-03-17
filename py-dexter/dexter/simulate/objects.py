@@ -7,15 +7,19 @@ Python methods that wrap rust 'generic' methods, assemble the monomorphized meth
 using the generic object's `_dyn` attribute.
 """
 
-from typing import Callable, Optional, Any
-from dexter._core import _PyInitialConditions, _PyIntersectParams, _PyParticle
+from typing import Callable, Optional, Any, Literal
+from dexter._core import (
+    _PyInitialFlux,
+    _PyInitialConditions,
+    _PyIntersectParams,
+    _PyParticle,
+)
 
 from ..equilibrium import Qfactor, Current, Bfield, Perturbation
 from ._plotters import _ParticlePlotter
 
 from dexter.types import (
     Array1,
-    InitialFlux,
     Intersection,
     SteppingMethod,
     IntegrationStatus,
@@ -23,6 +27,40 @@ from dexter.types import (
 
 # ================================================================================================
 # ================================================================================================
+
+
+class InitialFlux:
+    """Defines the flux coordinate to be used in the initial conditions of a `Particle`.
+
+    Example
+    -------
+    ```python title="InitialFlux definition"
+    >>> flux0=("Toroidal", 0.1), # ψ0 = 0.1
+    >>> flux0=("Poloidal", 0.5), # ψp0 = 0.5
+
+    ```
+    """
+
+    _rust: _PyInitialFlux
+
+    def __init__(self, kind: Literal["Toroidal", "Poloidal"], value: float) -> None:
+        self._rust = _PyInitialFlux(kind=kind, value=value)
+
+    @property
+    def kind(self) -> Literal["Toroidal", "Poloidal"]:
+        r"""The kind of initial flux ($\psi$ or $\psi_p$)"""
+        return self._rust.kind
+
+    @property
+    def value(self) -> float:
+        r"""The contained value, regardless of kind."""
+        return self._rust.value
+
+    def __str__(self) -> str:
+        return self._rust.__str__()
+
+    def __repr__(self) -> str:
+        return self.__str__()
 
 
 class InitialConditions:
@@ -38,7 +76,7 @@ class InitialConditions:
     ```python title="InitialConditions definition"
     >>> initial_conditions = dex.InitialConditions(
     ...     t0=0,
-    ...     flux0=("Toroidal", 0.1), # ψ0 = 0.1
+    ...     flux0=dex.InitialFlux("Toroidal", 0.1), # ψ0 = 0.1
     ...     theta0=3.14,
     ...     zeta0=0,
     ...     rho0=1e-4,
@@ -60,7 +98,7 @@ class InitialConditions:
         mu0: float,
     ):
         self._rust = _PyInitialConditions(
-            t0=t0, flux0=flux0, theta0=theta0, zeta0=zeta0, rho0=rho0, mu0=mu0
+            t0=t0, flux0=flux0._rust, theta0=theta0, zeta0=zeta0, rho0=rho0, mu0=mu0
         )
 
     @property
@@ -71,7 +109,7 @@ class InitialConditions:
     @property
     def flux0(self) -> InitialFlux:
         r"""The initial $\psi / \psi_p$, in Normalized Units."""
-        return self._rust.flux0
+        return InitialFlux(kind=self._rust.flux0.kind, value=self._rust.flux0.value)
 
     @property
     def theta0(self) -> float:
@@ -175,7 +213,7 @@ class Particle(_ParticlePlotter):
     ```python title="Particle creation"
     >>> initial_conditions = dex.InitialConditions(
     ...     t0=0,
-    ...     flux0=("Toroidal", 0.1),
+    ...     flux0=dex.InitialFlux("Toroidal", 0.1),
     ...     theta0=3.14,
     ...     zeta0=0,
     ...     rho0=1e-4,
@@ -349,7 +387,7 @@ class Particle(_ParticlePlotter):
         ... )
         >>> initial_conditions = dex.InitialConditions(
         ...     t0=0,
-        ...     flux0=("Toroidal", 0.1),
+        ...     flux0=dex.InitialFlux("Toroidal", 0.1),
         ...     theta0=3.14,
         ...     zeta0=0,
         ...     rho0=1e-4,
@@ -463,7 +501,7 @@ class Particle(_ParticlePlotter):
         ... )
         >>> initial_conditions = dex.InitialConditions(
         ...     t0=0,
-        ...     flux0=("Toroidal", 0.1),
+        ...     flux0=dex.InitialFlux("Toroidal", 0.1),
         ...     theta0=3.14,
         ...     zeta0=0,
         ...     rho0=1e-4,

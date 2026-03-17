@@ -23,7 +23,6 @@
 
 ## Simulate
 
-::: dexter.InitialFlux
 ::: dexter.Intersection
 ::: dexter.IntegrationStatus
 ::: dexter.SteppingMethod

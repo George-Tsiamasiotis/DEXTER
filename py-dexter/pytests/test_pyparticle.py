@@ -10,6 +10,7 @@ from dexter import (
     NcQfactor,
     NcHarmonic,
     ParabolicQfactor,
+    InitialFlux,
     InitialConditions,
     IntersectParams,
     Particle,
@@ -18,26 +19,37 @@ from dexter import (
 from dexter.equilibrium import _TEST_NETCDF_PATH as netcdf_path
 
 
+def test_initial_flux():
+    i = InitialFlux("Toroidal", 0.1)
+    assert i.kind == "Toroidal"
+    assert i.value == 0.1
+    i = InitialFlux("Poloidal", 0.2)
+    assert i.kind == "Poloidal"
+    assert i.value == 0.2
+    assert isinstance(i.__str__(), str)
+    assert isinstance(i.__repr__(), str)
+
+
 def test_initial_conditions_psi():
     i = InitialConditions(
         t0=0,
-        flux0=("Toroidal", 0.1),
+        flux0=InitialFlux("Toroidal", 0.1),
         theta0=3.14,
         zeta0=0,
         rho0=1e-4,
         mu0=7e-6,
     )
-    assert i.flux0 == ("Toroidal", 0.1)
+    assert isinstance(i.flux0, InitialFlux)
     i = InitialConditions(
         t0=0,
-        flux0=("Poloidal", 0.1),
+        flux0=InitialFlux("Poloidal", 0.1),
         theta0=3.14,
         zeta0=0,
         rho0=1e-4,
         mu0=7e-6,
     )
     assert i.t0 == 0
-    assert i.flux0 == ("Poloidal", 0.1)
+    assert isinstance(i.flux0, InitialFlux)
     assert i.theta0 == 3.14
     assert i.zeta0 == 0
     assert i.rho0 == 1e-4
@@ -56,7 +68,7 @@ def test_intersect_params():
 def test_particle_instantiation():
     initial = InitialConditions(
         t0=0,
-        flux0=("Toroidal", 0.1),
+        flux0=InitialFlux("Toroidal", 0.1),
         theta0=3.14,
         zeta0=0,
         rho0=1e-4,
@@ -93,7 +105,7 @@ class TestToroidalParticle:
         cls.eq = (cls.qfactor, cls.current, cls.bfield, cls.per)
         cls.initial = InitialConditions(
             t0=0,
-            flux0=("Toroidal", 0.1),
+            flux0=InitialFlux("Toroidal", 0.1),
             theta0=3.14,
             zeta0=0,
             rho0=1e-4,
@@ -146,7 +158,7 @@ class TestToroidalParticle:
     def test_const_theta_intersection(self):
         initial = InitialConditions(
             t0=0,
-            flux0=("Toroidal", 0.1),
+            flux0=InitialFlux("Toroidal", 0.1),
             theta0=0.0,
             zeta0=0.0,
             rho0=1e-6,
@@ -167,7 +179,7 @@ class TestToroidalParticle:
     def test_const_zeta_intersection(self):
         initial = InitialConditions(
             t0=0,
-            flux0=("Toroidal", 0.1),
+            flux0=InitialFlux("Toroidal", 0.1),
             theta0=0.0,
             zeta0=0.0,
             rho0=1e-6,
@@ -202,7 +214,7 @@ class TestPoloidalParticle:
         cls.eq = (cls.qfactor, cls.current, cls.bfield, cls.per)
         cls.initial = InitialConditions(
             t0=0,
-            flux0=("Poloidal", 0.01),
+            flux0=InitialFlux("Poloidal", 0.01),
             theta0=1.14,
             zeta0=0,
             rho0=1e-4,
@@ -257,7 +269,7 @@ class TestPoloidalParticle:
     def test_const_theta_intersection(self):
         initial = InitialConditions(
             t0=0,
-            flux0=("Poloidal", 0.1),
+            flux0=InitialFlux("Poloidal", 0.1),
             theta0=0.0,
             zeta0=0.0,
             rho0=1e-6,
@@ -278,7 +290,7 @@ class TestPoloidalParticle:
     def test_const_zeta_intersection(self):
         initial = InitialConditions(
             t0=0,
-            flux0=("Poloidal", 0.1),
+            flux0=InitialFlux("Poloidal", 0.1),
             theta0=0.0,
             zeta0=0.0,
             rho0=1e-6,

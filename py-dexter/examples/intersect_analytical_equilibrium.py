@@ -16,7 +16,7 @@ perturbation = dex.Perturbation(
 
 initial_conditions = dex.InitialConditions(
     t0=0,
-    flux0=("Toroidal", 0.03),
+    flux0=dex.InitialFlux("Toroidal", 0.03),
     theta0=1.0,
     zeta0=0.0,
     rho0=8e-3,

@@ -22,13 +22,12 @@ from dexter.types import (
     FluxCoordinate,
     FluxState,
     PhaseMethod,
-    InitialFlux,
     Intersection,
     IntegrationStatus,
     SteppingMethod,
 )
 
-from dexter.simulate import InitialConditions, IntersectParams, Particle
+from dexter.simulate import InitialFlux, InitialConditions, IntersectParams, Particle
 
 __all__ = [
     # Types
@@ -43,7 +42,6 @@ __all__ = [
     "FluxCoordinate",
     "FluxState",
     "PhaseMethod",
-    "InitialFlux",
     "Intersection",
     "IntegrationStatus",
     "SteppingMethod",
@@ -68,6 +66,7 @@ __all__ = [
     "Perturbation",
     "NcEquilibrium",
     # Simulate
+    "InitialFlux",
     "InitialConditions",
     "IntersectParams",
     "Particle",
