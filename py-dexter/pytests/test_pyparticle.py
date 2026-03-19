@@ -3,6 +3,7 @@ import numpy as np
 
 from dexter import (
     CosHarmonic,
+    Equilibrium,
     LarBfield,
     LarCurrent,
     NcBfield,
@@ -93,16 +94,17 @@ class TestToroidalParticle:
 
     @classmethod
     def setup_class(cls) -> None:
-        cls.qfactor = ParabolicQfactor(1.1, 3.9, ("Toroidal", 0.45))
-        cls.current = LarCurrent()
-        cls.bfield = LarBfield()
-        cls.per = Perturbation(
-            [
-                CosHarmonic(1e-3, 1, 3, 0),
-                CosHarmonic(1e-3, 2, 3, 0),
-            ]
+        cls.equilibrium = Equilibrium(
+            qfactor=ParabolicQfactor(1.1, 3.9, ("Toroidal", 0.45)),
+            current=LarCurrent(),
+            bfield=LarBfield(),
+            perturbation=Perturbation(
+                [
+                    CosHarmonic(1e-3, 1, 3, 0),
+                    CosHarmonic(1e-3, 2, 3, 0),
+                ]
+            ),
         )
-        cls.eq = (cls.qfactor, cls.current, cls.bfield, cls.per)
         cls.initial = InitialConditions(
             t0=0,
             flux0=InitialFlux("Toroidal", 0.1),
@@ -115,7 +117,7 @@ class TestToroidalParticle:
     def test_integration_default(self):
         particle = Particle(self.initial)
         particle.integrate(
-            *self.eq,
+            self.equilibrium,
             (0, 2e3),
         )
         assert particle.integration_status == "Integrated"
@@ -125,7 +127,7 @@ class TestToroidalParticle:
     def test_integration_error_adaptive_step(self):
         particle = Particle(self.initial)
         particle.integrate(
-            *self.eq,
+            self.equilibrium,
             (0, 600),
             stepping_method="ErrorAdaptiveStep",
             first_step=1e-5,
@@ -138,7 +140,7 @@ class TestToroidalParticle:
     def test_integration_fixed_step(self):
         particle = Particle(self.initial)
         particle.integrate(
-            *self.eq,
+            self.equilibrium,
             (0, 600),
             stepping_method=("FixedStep", 0.5),
         )
@@ -148,7 +150,7 @@ class TestToroidalParticle:
     def test_integration_few_steps(self):
         particle = Particle(self.initial)
         particle.integrate(
-            *self.eq,
+            self.equilibrium,
             (0, 1e20),
             max_steps=1001,
         )
@@ -166,7 +168,7 @@ class TestToroidalParticle:
         )
         particle = Particle(initial)
         intersect_params = IntersectParams("ConstTheta", 1.0, 5)
-        particle.intersect(*self.eq, intersect_params)
+        particle.intersect(self.equilibrium, intersect_params)
         assert particle.steps_stored == 5
         assert particle.integration_status == "Intersected"
         assert np.all(
@@ -187,7 +189,7 @@ class TestToroidalParticle:
         )
         particle = Particle(initial)
         intersect_params = IntersectParams("ConstZeta", 1.0, 5)
-        particle.intersect(*self.eq, intersect_params)
+        particle.intersect(self.equilibrium, intersect_params)
         assert particle.steps_stored == 5
         assert particle.integration_status == "Intersected"
         assert np.all(
@@ -202,16 +204,17 @@ class TestPoloidalParticle:
 
     @classmethod
     def setup_class(cls) -> None:
-        cls.qfactor = NcQfactor(netcdf_path, "Steffen")
-        cls.current = NcCurrent(netcdf_path, "Steffen")
-        cls.bfield = NcBfield(netcdf_path, "Bicubic")
-        cls.per = Perturbation(
-            [
-                NcHarmonic(netcdf_path, "Steffen", 2, 1, "Interpolation"),
-                NcHarmonic(netcdf_path, "Steffen", 3, 2, "Interpolation"),
-            ]
+        cls.equilibrium = Equilibrium(
+            qfactor=NcQfactor(netcdf_path, "Steffen"),
+            current=NcCurrent(netcdf_path, "Steffen"),
+            bfield=NcBfield(netcdf_path, "Bicubic"),
+            perturbation=Perturbation(
+                [
+                    NcHarmonic(netcdf_path, "Steffen", 2, 1, "Interpolation"),
+                    NcHarmonic(netcdf_path, "Steffen", 3, 2, "Interpolation"),
+                ]
+            ),
         )
-        cls.eq = (cls.qfactor, cls.current, cls.bfield, cls.per)
         cls.initial = InitialConditions(
             t0=0,
             flux0=InitialFlux("Poloidal", 0.01),
@@ -224,7 +227,7 @@ class TestPoloidalParticle:
     def test_integration_default(self):
         particle = Particle(self.initial)
         particle.integrate(
-            *self.eq,
+            self.equilibrium,
             (0, 30000),
         )
         assert particle.integration_status == "Integrated"
@@ -234,7 +237,7 @@ class TestPoloidalParticle:
     def test_integration_error_adaptive_step(self):
         particle = Particle(self.initial)
         particle.integrate(
-            *self.eq,
+            self.equilibrium,
             (0, 6000),
             stepping_method="ErrorAdaptiveStep",
             first_step=1e-5,
@@ -247,7 +250,7 @@ class TestPoloidalParticle:
     def test_integration_fixed_step(self):
         particle = Particle(self.initial)
         particle.integrate(
-            *self.eq,
+            self.equilibrium,
             (0, 300),
             stepping_method=("FixedStep", 0.1),
         )
@@ -258,7 +261,7 @@ class TestPoloidalParticle:
     def test_integration_few_steps(self):
         particle = Particle(self.initial)
         particle.integrate(
-            *self.eq,
+            self.equilibrium,
             (0, 1e20),
             max_steps=1001,
         )
@@ -277,7 +280,7 @@ class TestPoloidalParticle:
         )
         particle = Particle(initial)
         intersect_params = IntersectParams("ConstTheta", 1.0, 5)
-        particle.intersect(*self.eq, intersect_params)
+        particle.intersect(self.equilibrium, intersect_params)
         assert particle.steps_stored == 5
         assert particle.integration_status == "Intersected"
         assert np.all(
@@ -298,7 +301,7 @@ class TestPoloidalParticle:
         )
         particle = Particle(initial)
         intersect_params = IntersectParams("ConstZeta", 1.0, 5)
-        particle.intersect(*self.eq, intersect_params)
+        particle.intersect(self.equilibrium, intersect_params)
         assert particle.steps_stored == 5
         assert particle.integration_status == "Intersected"
         assert np.all(

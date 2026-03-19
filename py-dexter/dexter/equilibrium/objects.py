@@ -1082,7 +1082,7 @@ class Perturbation:
     ```
     """
 
-    _dyn: str
+    _dyn: str = "cosP"  # treat it as zero CosHarmonic
     _rust: _PyCosPerturbation | _PyNcPerturbation
 
     def __init__(self, harmonics: list[CosHarmonic] | list[NcHarmonic]) -> None:

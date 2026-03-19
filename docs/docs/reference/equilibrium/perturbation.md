@@ -7,8 +7,3 @@ $$
 with '$\psi/\psi_p$' meaning it can be expressed as a function of either/both flux coordinates.
 
 ::: dexter.Perturbation
-    options:
-        inherited_members: true
-        docstring_section_style: list
-        summary:
-            functions: true

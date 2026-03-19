@@ -7,24 +7,23 @@ import numpy as np
 import dexter as dex
 from math import pi as PI
 
-flux_wall = ("Toroidal", 0.5)
-qfactor = dex.ParabolicQfactor(1.1, 4.2, flux_wall)
-current = dex.LarCurrent()
-bfield = dex.LarBfield()
-perturbation = dex.Perturbation(
-    [
-        dex.CosHarmonic(8e-4, 3, 1, PI),
-        dex.CosHarmonic(8e-4, 5, 3, PI),
-    ]
+equilibrium = dex.Equilibrium(
+    qfactor=dex.ParabolicQfactor(1.1, 4.2, ("Toroidal", 0.5)),
+    current=dex.LarCurrent(),
+    bfield=dex.LarBfield(),
+    perturbation=dex.Perturbation(
+        [
+            dex.CosHarmonic(8e-4, 3, 1, PI),
+            dex.CosHarmonic(8e-4, 5, 3, PI),
+        ]
+    ),
 )
 
 particle_count = 80
+psi0s = np.linspace(0, 1, particle_count) * equilibrium.psi_wall
 initial_conditions = dex.QueueInitialConditions(
     t0=np.zeros(particle_count),
-    flux0=dex.InitialFluxArray1(
-        "Toroidal",
-        np.linspace(0, 1, particle_count) * qfactor.psi_wall,
-    ),
+    flux0=dex.InitialFluxArray1("Toroidal", psi0s),
     theta0=np.zeros(particle_count),
     zeta0=np.zeros(particle_count),
     rho0=1e-7 * np.ones(particle_count),
@@ -35,10 +34,7 @@ intersect_params = dex.IntersectParams("ConstZeta", 0.0, 300)
 queue = dex.Queue(initial_conditions)
 
 queue.intersect(
-    qfactor=qfactor,
-    current=current,
-    bfield=bfield,
-    perturbation=perturbation,
+    equilibrium=equilibrium,
     intersect_params=intersect_params,
     max_steps=1_000_000,
     energy_rel_tol=1e-11,

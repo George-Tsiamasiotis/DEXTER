@@ -5,6 +5,7 @@ from dexter import (
     QueueInitialConditions,
     Queue,
     Particle,
+    Equilibrium,
     ParabolicQfactor,
     LarCurrent,
     LarBfield,
@@ -67,16 +68,17 @@ def test_queue_intstantiation():
 class TestQueue:
     @classmethod
     def setup_class(cls) -> None:
-        cls.qfactor = ParabolicQfactor(1.1, 3.9, ("Toroidal", 0.45))
-        cls.current = LarCurrent()
-        cls.bfield = LarBfield()
-        cls.per = Perturbation(
-            [
-                CosHarmonic(1e-3, 1, 3, 0),
-                CosHarmonic(1e-3, 2, 3, 0),
-            ]
+        cls.equilibrium = Equilibrium(
+            qfactor=ParabolicQfactor(1.1, 3.9, ("Toroidal", 0.45)),
+            current=LarCurrent(),
+            bfield=LarBfield(),
+            perturbation=Perturbation(
+                [
+                    CosHarmonic(1e-3, 1, 3, 0),
+                    CosHarmonic(1e-3, 2, 3, 0),
+                ]
+            ),
         )
-        cls.eq = (cls.qfactor, cls.current, cls.bfield, cls.per)
         particle_count = 10
         psi0s = InitialFluxArray1("Toroidal", np.linspace(0.01, 0.4, particle_count))
         cls.initial_conditions = QueueInitialConditions(
@@ -91,7 +93,7 @@ class TestQueue:
     def test_queue_integration(self):
         queue = Queue(self.initial_conditions)
         queue.integrate(
-            *self.eq,
+            self.equilibrium,
             (0, 1e4),
         )
         for particle in queue.particles:
@@ -102,7 +104,7 @@ class TestQueue:
         queue = Queue(self.initial_conditions)
         intersect_params = IntersectParams("ConstTheta", 0.0, 5)
         queue.intersect(
-            *self.eq,
+            self.equilibrium,
             intersect_params,
         )
         for particle in queue.particles:

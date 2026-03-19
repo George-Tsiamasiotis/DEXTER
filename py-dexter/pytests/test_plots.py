@@ -1,5 +1,6 @@
 from dexter.equilibrium import _TEST_NETCDF_PATH as netcdf_path
 from dexter import (
+    Equilibrium,
     UnityQfactor,
     ParabolicQfactor,
     NcQfactor,
@@ -12,7 +13,7 @@ from dexter import (
     InitialConditions,
     Particle,
 )
-from dexter import Geometry, Qfactor, Current, Harmonic, NcBfield, Perturbation
+from dexter import Geometry, Qfactor, Current, Harmonic
 from dexter.types import FluxWall
 
 # Unsure
@@ -66,13 +67,7 @@ def test_nc_harmonic(nc_harmonic: NcHarmonic):
     _test_all_harmonic_plots(nc_harmonic)
 
 
-def test_particle_plots(
-    nc_qfactor: NcQfactor,
-    nc_current: NcCurrent,
-    nc_bfield: NcBfield,
-    nc_perturbation: Perturbation,
-):
-
+def test_particle_plots(nc_equilibrium: Equilibrium):
     initial = InitialConditions(
         t0=0,
         flux0=InitialFlux("Toroidal", 0.1),
@@ -83,10 +78,7 @@ def test_particle_plots(
     )
     particle = Particle(initial)
     particle.integrate(
-        nc_qfactor,
-        nc_current,
-        nc_bfield,
-        nc_perturbation,
+        nc_equilibrium,
         (0, 100),
         stepping_method=("FixedStep", 0.5),
     )

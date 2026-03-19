@@ -22,6 +22,8 @@ plugins:
           type_parameter_headings: true
           # docstrings
           docstring_style: numpy
+          docstring_section_style: list
+          inherited_members: true
           docstring_options:
             ignore_init_summary: false
             trim_doctest_flags: true
@@ -100,6 +102,7 @@ nav:
   - API Reference:
     - Types: reference/types.md
     - Equilibrium:
+      - Equilibrium: reference/equilibrium/equilibrium.md
       - LarGeometry: reference/equilibrium/lar_geometry.md
       - NcGeometry: reference/equilibrium/nc_geometry.md
       - UnityQfactor: reference/equilibrium/unity_qfactor.md
@@ -112,7 +115,6 @@ nav:
       - CosHarmonic: reference/equilibrium/cos_harmonic.md
       - NcHarmonic: reference/equilibrium/nc_harmonic.md
       - Perturbation: reference/equilibrium/perturbation.md
-      - Helpers: reference/equilibrium/helpers.md
     - Simulate:
       - Particle: reference/simulate/particle.md
       - Queue: reference/simulate/queue.md

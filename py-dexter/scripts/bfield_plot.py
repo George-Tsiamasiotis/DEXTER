@@ -1,7 +1,7 @@
 """Creates contour plots for an NcEquilibrium's magnetic field strength and derivatives."""
 
 import argparse
-from dexter import NcEquilibrium
+from dexter import numerical_equilibrium
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument(
@@ -17,7 +17,7 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
-equilibrium = NcEquilibrium(args.nc_file, "Cubic", "Bicubic")
+equilibrium = numerical_equilibrium(args.nc_file, "Cubic", "Bicubic")
 
 equilibrium.plot_b(args.levels)
 equilibrium.plot_db(args.levels)

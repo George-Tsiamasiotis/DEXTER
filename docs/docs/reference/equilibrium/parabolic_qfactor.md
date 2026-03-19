@@ -36,8 +36,3 @@ $$
 $^*$ Identity: $\dfrac{1}{\cos^2\theta} = 1 + \tan^2\theta$
 
 ::: dexter.ParabolicQfactor
-    options:
-        inherited_members: true
-        docstring_section_style: list
-        summary:
-            functions: true

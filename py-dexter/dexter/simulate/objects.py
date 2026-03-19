@@ -19,7 +19,7 @@ from dexter._core import (
     _PyQueue,
 )
 
-from ..equilibrium import Qfactor, Current, Bfield, Perturbation
+from ..equilibrium import Equilibrium, Qfactor, Current, Bfield, Perturbation
 from ._plotters import _ParticlePlotter, _QueuePlotter
 
 from dexter.types import (
@@ -327,10 +327,7 @@ class Particle(_ParticlePlotter):
     def integrate(
         self,
         /,
-        qfactor: Qfactor,
-        current: Current,
-        bfield: Bfield,
-        perturbation: Perturbation,
+        equilibrium: Equilibrium,
         teval: tuple[float, float],
         *,
         stepping_method: Optional[SteppingMethod] = "EnergyAdaptiveStep",
@@ -348,14 +345,8 @@ class Particle(_ParticlePlotter):
 
         Parameters
         ----------
-        qfactor
-            The equilibrium's qfactor.
-        current
-            The equilibrium's plasma current.
-        bfield
-            The equilibrium's magnetic field.
-        perturbation
-            The equilibrium's perturbation.
+        equilibrium
+            The equilibrium in which to integrate the particle.
         teval
             The time span $(t_0, t_f)$ in which to integrate the particle, in Normalized Units.
 
@@ -383,14 +374,16 @@ class Particle(_ParticlePlotter):
         Example
         -------
         ```python title="Particle integration"
-        >>> qfactor = dex.ParabolicQfactor(qaxis=1.1, qwall=4.1, flux_wall=("Toroidal", 0.45))
-        >>> current = dex.LarCurrent()
-        >>> bfield = dex.LarBfield()
-        >>> perturbation = dex.Perturbation(
-        ...     [
-        ...         dex.CosHarmonic(alpha=1e-3, m=1, n=3, phase=0),
-        ...         dex.CosHarmonic(alpha=1e-3, m=2, n=3, phase=0),
-        ...     ]
+        >>> equilibrium = dex.Equilibrium(
+        ...     qfactor=dex.ParabolicQfactor(qaxis=1.1, qwall=4.1, flux_wall=("Toroidal", 0.45)),
+        ...     current=dex.LarCurrent(),
+        ...     bfield=dex.LarBfield(),
+        ...     perturbation=dex.Perturbation(
+        ...         [
+        ...             dex.CosHarmonic(alpha=1e-3, m=1, n=3, phase=0),
+        ...             dex.CosHarmonic(alpha=1e-3, m=2, n=3, phase=0),
+        ...         ]
+        ...     )
         ... )
         >>> initial_conditions = dex.InitialConditions(
         ...     t0=0,
@@ -402,10 +395,7 @@ class Particle(_ParticlePlotter):
         ... )
         >>> particle = dex.Particle(initial_conditions)
         >>> particle.integrate(
-        ...     qfactor=qfactor,
-        ...     current=current,
-        ...     bfield=bfield,
-        ...     perturbation=perturbation,
+        ...     equilibrium=equilibrium,
         ...     teval=(0, 1e2),
         ...     first_step=1e-3,
         ...     energy_rel_tol=1e-11,
@@ -414,16 +404,16 @@ class Particle(_ParticlePlotter):
         ```
         """
         prefix = "__integrate"
-        q = qfactor._dyn
-        c = current._dyn
-        b = bfield._dyn
-        p = perturbation._dyn
+        q = equilibrium.qfactor._dyn
+        c = equilibrium.current._dyn
+        b = equilibrium.bfield._dyn
+        p = equilibrium.perturbation._dyn
         method_name: Callable = getattr(self._rust, f"{prefix}_{q}_{c}_{b}_{p}")
         method_name(
-            qfactor._rust,
-            current._rust,
-            bfield._rust,
-            perturbation._rust,
+            equilibrium.qfactor._rust,
+            equilibrium.current._rust,
+            equilibrium.bfield._rust,
+            equilibrium.perturbation._rust,
             teval,
             stepping_method,
             max_steps,
@@ -438,10 +428,7 @@ class Particle(_ParticlePlotter):
     def intersect(
         self,
         /,
-        qfactor: Qfactor,
-        current: Current,
-        bfield: Bfield,
-        perturbation: Perturbation,
+        equilibrium: Equilibrium,
         intersect_params: IntersectParams,
         *,
         stepping_method: Optional[SteppingMethod] = "EnergyAdaptiveStep",
@@ -462,14 +449,8 @@ class Particle(_ParticlePlotter):
 
         Parameters
         ----------
-        qfactor
-            The equilibrium's qfactor.
-        current
-            The equilibrium's plasma current.
-        bfield
-            The equilibrium's magnetic field.
-        perturbation
-            The equilibrium's perturbation.
+        equilibrium
+            The equilibrium in which to integrate the particle.
         intersect_params
             The parameters of the integration.
 
@@ -497,14 +478,16 @@ class Particle(_ParticlePlotter):
         Example
         -------
         ```python title="Particle intersection integration"
-        >>> qfactor = dex.ParabolicQfactor(qaxis=1.1, qwall=4.1, flux_wall=("Toroidal", 0.45))
-        >>> current = dex.LarCurrent()
-        >>> bfield = dex.LarBfield()
-        >>> perturbation = dex.Perturbation(
-        ...     [
-        ...         dex.CosHarmonic(alpha=1e-3, m=1, n=3, phase=0),
-        ...         dex.CosHarmonic(alpha=1e-3, m=2, n=3, phase=0),
-        ...     ]
+        >>> equilibrium = dex.Equilibrium(
+        ...     qfactor=dex.ParabolicQfactor(qaxis=1.1, qwall=4.1, flux_wall=("Toroidal", 0.45)),
+        ...     current=dex.LarCurrent(),
+        ...     bfield=dex.LarBfield(),
+        ...     perturbation=dex.Perturbation(
+        ...         [
+        ...             dex.CosHarmonic(alpha=1e-3, m=1, n=3, phase=0),
+        ...             dex.CosHarmonic(alpha=1e-3, m=2, n=3, phase=0),
+        ...         ]
+        ...     )
         ... )
         >>> initial_conditions = dex.InitialConditions(
         ...     t0=0,
@@ -522,26 +505,23 @@ class Particle(_ParticlePlotter):
         >>>
         >>> particle = dex.Particle(initial_conditions)
         >>> particle.intersect(
-        ...     qfactor=qfactor,
-        ...     current=current,
-        ...     bfield=bfield,
-        ...     perturbation=perturbation,
+        ...     equilibrium=equilibrium,
         ...     intersect_params=intersect_params,
         ... )
 
         ```
         """
         prefix = "__intersect"
-        q = qfactor._dyn
-        c = current._dyn
-        b = bfield._dyn
-        p = perturbation._dyn
+        q = equilibrium.qfactor._dyn
+        c = equilibrium.current._dyn
+        b = equilibrium.bfield._dyn
+        p = equilibrium.perturbation._dyn
         method_name: Callable = getattr(self._rust, f"{prefix}_{q}_{c}_{b}_{p}")
         method_name(
-            qfactor._rust,
-            current._rust,
-            bfield._rust,
-            perturbation._rust,
+            equilibrium.qfactor._rust,
+            equilibrium.current._rust,
+            equilibrium.bfield._rust,
+            equilibrium.perturbation._rust,
             intersect_params._rust,
             stepping_method,
             max_steps,
@@ -767,10 +747,7 @@ class Queue(_QueuePlotter):
     def integrate(
         self,
         /,
-        qfactor: Qfactor,
-        current: Current,
-        bfield: Bfield,
-        perturbation: Perturbation,
+        equilibrium: Equilibrium,
         teval: tuple[float, float],
         *,
         stepping_method: Optional[SteppingMethod] = "EnergyAdaptiveStep",
@@ -788,14 +765,8 @@ class Queue(_QueuePlotter):
 
         Parameters
         ----------
-        qfactor
-            The equilibrium's qfactor.
-        current
-            The equilibrium's plasma current.
-        bfield
-            The equilibrium's magnetic field.
-        perturbation
-            The equilibrium's perturbation.
+        equilibrium
+            The equilibrium in which to integrate the particle.
         teval
             The time span $(t_0, t_f)$ in which to integrate the particles, in Normalized Units.
 
@@ -824,14 +795,16 @@ class Queue(_QueuePlotter):
         -------
         ```python title="Queue integration"
         >>> # Equilibrium setup
-        >>> qfactor = dex.ParabolicQfactor(qaxis=1.1, qwall=4.1, flux_wall=("Toroidal", 0.45))
-        >>> current = dex.LarCurrent()
-        >>> bfield = dex.LarBfield()
-        >>> perturbation = dex.Perturbation(
-        ...     [
-        ...         dex.CosHarmonic(alpha=1e-3, m=1, n=3, phase=0),
-        ...         dex.CosHarmonic(alpha=1e-3, m=2, n=3, phase=0),
-        ...     ]
+        >>> equilibrium = dex.Equilibrium(
+        ...     qfactor=dex.ParabolicQfactor(qaxis=1.1, qwall=4.1, flux_wall=("Toroidal", 0.45)),
+        ...     current=dex.LarCurrent(),
+        ...     bfield=dex.LarBfield(),
+        ...     perturbation = dex.Perturbation(
+        ...         [
+        ...             dex.CosHarmonic(alpha=1e-3, m=1, n=3, phase=0),
+        ...             dex.CosHarmonic(alpha=1e-3, m=2, n=3, phase=0),
+        ...         ]
+        ...     )
         ... )
         >>>
         >>> # Initial Conditions setup
@@ -852,10 +825,7 @@ class Queue(_QueuePlotter):
         >>>
         >>> # Run
         >>> queue.integrate(
-        ...     qfactor=qfactor,
-        ...     current=current,
-        ...     bfield=bfield,
-        ...     perturbation=perturbation,
+        ...     equilibrium=    equilibrium,
         ...     teval=(0, 1e2),
         ...     first_step=1e-3,
         ...     energy_rel_tol=1e-11,
@@ -864,16 +834,16 @@ class Queue(_QueuePlotter):
         ```
         """
         prefix = "__integrate"
-        q = qfactor._dyn
-        c = current._dyn
-        b = bfield._dyn
-        p = perturbation._dyn
+        q = equilibrium.qfactor._dyn
+        c = equilibrium.current._dyn
+        b = equilibrium.bfield._dyn
+        p = equilibrium.perturbation._dyn
         method_name: Callable = getattr(self._rust, f"{prefix}_{q}_{c}_{b}_{p}")
         method_name(
-            qfactor._rust,
-            current._rust,
-            bfield._rust,
-            perturbation._rust,
+            equilibrium.qfactor._rust,
+            equilibrium.current._rust,
+            equilibrium.bfield._rust,
+            equilibrium.perturbation._rust,
             teval,
             stepping_method,
             max_steps,
@@ -888,10 +858,7 @@ class Queue(_QueuePlotter):
     def intersect(
         self,
         /,
-        qfactor: Qfactor,
-        current: Current,
-        bfield: Bfield,
-        perturbation: Perturbation,
+        equilibrium: Equilibrium,
         intersect_params: IntersectParams,
         *,
         stepping_method: Optional[SteppingMethod] = "EnergyAdaptiveStep",
@@ -912,14 +879,8 @@ class Queue(_QueuePlotter):
 
         Parameters
         ----------
-        qfactor
-            The equilibrium's qfactor.
-        current
-            The equilibrium's plasma current.
-        bfield
-            The equilibrium's magnetic field.
-        perturbation
-            The equilibrium's perturbation.
+        equilibrium
+            The equilibrium in which to integrate the particle.
         intersect_params
             The parameters of the integration.
 
@@ -948,14 +909,16 @@ class Queue(_QueuePlotter):
         -------
         ```python title="Queue intersection integration"
         >>> # Equilibrium setup
-        >>> qfactor = dex.ParabolicQfactor(qaxis=1.1, qwall=4.1, flux_wall=("Toroidal", 0.45))
-        >>> current = dex.LarCurrent()
-        >>> bfield = dex.LarBfield()
-        >>> perturbation = dex.Perturbation(
-        ...     [
-        ...         dex.CosHarmonic(alpha=1e-3, m=1, n=3, phase=0),
-        ...         dex.CosHarmonic(alpha=1e-3, m=2, n=3, phase=0),
-        ...     ]
+        >>> equilibrium = dex.Equilibrium(
+        ...     qfactor=dex.ParabolicQfactor(qaxis=1.1, qwall=4.1, flux_wall=("Toroidal", 0.45)),
+        ...     current=dex.LarCurrent(),
+        ...     bfield=dex.LarBfield(),
+        ...     perturbation = dex.Perturbation(
+        ...         [
+        ...             dex.CosHarmonic(alpha=1e-3, m=1, n=3, phase=0),
+        ...             dex.CosHarmonic(alpha=1e-3, m=2, n=3, phase=0),
+        ...         ]
+        ...     )
         ... )
         >>>
         >>> # Initial Conditions setup
@@ -983,10 +946,7 @@ class Queue(_QueuePlotter):
         >>>
         >>> # Run
         >>> queue.intersect(
-        ...     qfactor=qfactor,
-        ...     current=current,
-        ...     bfield=bfield,
-        ...     perturbation=perturbation,
+        ...     equilibrium=equilibrium,
         ...     intersect_params=intersect_params,
         ...     energy_rel_tol=1e-11,
         ... )
@@ -995,16 +955,16 @@ class Queue(_QueuePlotter):
         """
         self._intersect_params = intersect_params
         prefix = "__intersect"
-        q = qfactor._dyn
-        c = current._dyn
-        b = bfield._dyn
-        p = perturbation._dyn
+        q = equilibrium.qfactor._dyn
+        c = equilibrium.current._dyn
+        b = equilibrium.bfield._dyn
+        p = equilibrium.perturbation._dyn
         method_name: Callable = getattr(self._rust, f"{prefix}_{q}_{c}_{b}_{p}")
         method_name(
-            qfactor._rust,
-            current._rust,
-            bfield._rust,
-            perturbation._rust,
+            equilibrium.qfactor._rust,
+            equilibrium.current._rust,
+            equilibrium.bfield._rust,
+            equilibrium.perturbation._rust,
             intersect_params._rust,
             stepping_method,
             max_steps,

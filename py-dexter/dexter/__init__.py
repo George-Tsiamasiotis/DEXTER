@@ -10,7 +10,7 @@ from dexter.equilibrium import Current, LarCurrent, NcCurrent
 from dexter.equilibrium import Bfield, LarBfield, NcBfield
 from dexter.equilibrium import Harmonic, CosHarmonic, NcHarmonic
 from dexter.equilibrium import Perturbation
-from dexter.equilibrium import NcEquilibrium
+from dexter.equilibrium import Equilibrium, numerical_equilibrium
 
 from dexter.types import (
     ArrayShape,
@@ -76,7 +76,8 @@ __all__ = [
     "CosHarmonic",
     "NcHarmonic",
     "Perturbation",
-    "NcEquilibrium",
+    "Equilibrium",
+    "numerical_equilibrium",
     # Simulate
     "InitialFlux",
     "InitialConditions",

@@ -12,7 +12,8 @@ from dexter import (
     NcBfield,
     NcHarmonic,
     Perturbation,
-    NcEquilibrium,
+    Equilibrium,
+    numerical_equilibrium,
 )
 
 
@@ -61,12 +62,18 @@ def nc_perturbation(nc_harmonic) -> Perturbation:
 
 
 @pytest.fixture(scope="session")
-def toroidal_nc_equilibrium() -> NcEquilibrium:
+def nc_equilibrium() -> Equilibrium:
     """Creates an NcEquilibrium with good ψ coordinate."""
-    return NcEquilibrium(_TOROIDAL_TEST_NETCDF_PATH, "Steffen", "Bicubic")
+    return numerical_equilibrium(netcdf_path, "Steffen", "Bicubic")
 
 
 @pytest.fixture(scope="session")
-def poloidal_nc_equilibrium() -> NcEquilibrium:
+def toroidal_nc_equilibrium() -> Equilibrium:
+    """Creates an NcEquilibrium with good ψ coordinate."""
+    return numerical_equilibrium(_TOROIDAL_TEST_NETCDF_PATH, "Steffen", "Bicubic")
+
+
+@pytest.fixture(scope="session")
+def poloidal_nc_equilibrium() -> Equilibrium:
     """Creates an NcEquilibrium with good ψp coordinate."""
-    return NcEquilibrium(_POLOIDAL_TEST_NETCDF_PATH, "Steffen", "Bicubic")
+    return numerical_equilibrium(_POLOIDAL_TEST_NETCDF_PATH, "Steffen", "Bicubic")
