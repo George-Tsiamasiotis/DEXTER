@@ -82,3 +82,4 @@ def _test_plots(nc_equilibrium: Equilibrium):
     nc_equilibrium.plot_b()
     nc_equilibrium.plot_db()
     nc_equilibrium.plot_flux_surfaces()
+    nc_equilibrium.plot_boozer_theta()

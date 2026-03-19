@@ -306,9 +306,10 @@ class Equilibrium:
         rlab_wall = self.geometry.rlab_wall
         zlab_wall = self.geometry.zlab_wall
 
-        step = max([1, int(self.geometry.shape[0] / number)])
-        print(f"Displaying {int(self.geometry.shape[0]/step)} surfaces.")
-        for i in range(0, self.geometry.shape[0], step):
+        shape = self.geometry.shape
+        step = max([1, int(shape[0] / number)])
+        print(f"Displaying {int(shape[0]/step)} surfaces.")
+        for i in range(0, shape[0], step):
             ax.plot(rlab_array[i], zlab_array[i], color="blue", zorder=-1)
 
         # Cursor
@@ -322,6 +323,56 @@ class Equilibrium:
         setattr(ax, "format_coord", format_coord)
 
         ax.set_title(r"$Poloidal\ flux\ surfaces$")
+        ax.set_xlabel(r"$R[m]$")
+        ax.set_ylabel(r"$Z[m]$")
+
+        ax.plot(*axis_point, "ko", markersize=4, label="$R_{axis}$")
+        ax.plot(*geom_center, "ro", markersize=4, label="$R_{geometric}$")
+
+        ax.plot(rlab_wall, zlab_wall, color="k", linewidth=2)
+        ax.legend()
+
+        plt.show()
+
+    def plot_boozer_theta(self, number: int = 80):
+        r"""Plots the $\theta_B = const$ lines on a numerical equilibrium.
+
+        Parameters
+        ----------
+        number
+            The number of lines to (try to) plot. Defaults to 80.",
+        """
+
+        fig = plt.figure(figsize=(8, 7), layout="constrained", dpi=120)
+        ax = fig.add_subplot(aspect="equal")
+
+        if (not isinstance(self.geometry, NcGeometry)) or (
+            not isinstance(self.bfield, NcBfield)
+        ):
+            raise TypeError("'geometry' and 'bfield' must be netCDF objects")
+
+        rlab_array = self.geometry.rlab_array.T
+        zlab_array = self.geometry.zlab_array.T
+        rlab_wall = self.geometry.rlab_wall
+        zlab_wall = self.geometry.zlab_wall
+
+        shape = self.geometry.shape
+        step = max([1, int(shape[1] / number)])
+        print(f"Displaying {int(shape[1]/step)} surfaces.")
+        for i in range(0, shape[1], step):
+            ax.plot(rlab_array[i], zlab_array[i], color="blue", zorder=-1)
+
+        # Cursor
+        geom_center = (self.geometry.rgeo, self.geometry.zaxis)
+        axis_point = (self.geometry.raxis, self.geometry.zaxis)
+
+        def format_coord(x, y):
+            r = sqrt((axis_point[0] - x) ** 2 + (axis_point[1] - y) ** 2)
+            return f"(R, Z) = ({x:.5g}, {y:.5g}), r={r:.5g} "
+
+        setattr(ax, "format_coord", format_coord)
+
+        ax.set_title(r"$Boozer\ theta\ '\theta_B=const'\ lines$")
         ax.set_xlabel(r"$R[m]$")
         ax.set_ylabel(r"$Z[m]$")
 
