@@ -3,6 +3,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+from math import sqrt
 from typing import Optional, Any
 
 from dexter.types import Interp1DType, Interp2DType
@@ -175,7 +176,7 @@ class Equilibrium:
         self._perturbation = perturbation
 
     def plot_b(self, levels: int = 20):
-        """Plots a contour plot of the magnetic field strength.
+        """Plots a contour plot of the magnetic field strength for a numerical equilibrium.
 
         Parameters
         ----------
@@ -213,7 +214,7 @@ class Equilibrium:
         plt.show()
 
     def plot_db(self, levels: int = 20):
-        """Plots contour plots of the magnetic field's derivatives.
+        """Plots contour plots of the magnetic field's derivatives for a numerical equilibrium.
 
         Parameters
         ----------
@@ -280,5 +281,54 @@ class Equilibrium:
         ax[1].use_sticky_edges = False
         ax[0].margins(0.04, 0.04)
         ax[1].margins(0.04, 0.04)
+
+        plt.show()
+
+    def plot_flux_surfaces(self, number: int = 20):
+        """Plots the flux surfaces of a numerical equilibrium.
+
+        Parameters
+        ----------
+        number
+            The number of flux surfaces to (try to) plot. Defaults to 20.",
+        """
+
+        fig = plt.figure(figsize=(8, 7), layout="constrained", dpi=120)
+        ax = fig.add_subplot(aspect="equal")
+
+        if (not isinstance(self.geometry, NcGeometry)) or (
+            not isinstance(self.bfield, NcBfield)
+        ):
+            raise TypeError("'geometry' and 'bfield' must be netCDF objects")
+
+        rlab_array = self.geometry.rlab_array
+        zlab_array = self.geometry.zlab_array
+        rlab_wall = self.geometry.rlab_wall
+        zlab_wall = self.geometry.zlab_wall
+
+        step = max([1, int(self.geometry.shape[0] / number)])
+        print(f"Displaying {int(self.geometry.shape[0]/step)} surfaces.")
+        for i in range(0, self.geometry.shape[0], step):
+            ax.plot(rlab_array[i], zlab_array[i], color="blue", zorder=-1)
+
+        # Cursor
+        geom_center = (self.geometry.rgeo, self.geometry.zaxis)
+        axis_point = (self.geometry.raxis, self.geometry.zaxis)
+
+        def format_coord(x, y):
+            r = sqrt((axis_point[0] - x) ** 2 + (axis_point[1] - y) ** 2)
+            return f"(R, Z) = ({x:.5g}, {y:.5g}), r={r:.5g} "
+
+        setattr(ax, "format_coord", format_coord)
+
+        ax.set_title(r"$Poloidal\ flux\ surfaces$")
+        ax.set_xlabel(r"$R[m]$")
+        ax.set_ylabel(r"$Z[m]$")
+
+        ax.plot(*axis_point, "ko", markersize=4, label="$R_{axis}$")
+        ax.plot(*geom_center, "ro", markersize=4, label="$R_{geometric}$")
+
+        ax.plot(rlab_wall, zlab_wall, color="k", linewidth=2)
+        ax.legend()
 
         plt.show()

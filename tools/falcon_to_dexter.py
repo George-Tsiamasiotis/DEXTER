@@ -91,7 +91,6 @@ def nan_array(shape: tuple[int, ...]) -> np.ndarray:
 baxis = get(BAXIS, None)
 raxis = get(RAXIS, None)
 zaxis = get(ZAXIS, None)
-rgeo = get(RGEO, None)
 
 theta = get(THETA, nan_array(shape[1]))
 psi_norm = np.insert(get(PSI_NORM, nan_array(shape[0])), 0, 0)
@@ -119,6 +118,8 @@ _g_norm = get(G_NORM, nan_array(shape[0]))
 g_norm = np.insert(_g_norm, 0, _g_norm[0])
 i_norm = np.insert(get(I_NORM, nan_array(shape[0])), 0, 0)
 b_norm = np.insert(get(B_NORM, nan_array(shape)), 0, np.full(shape[1], 1), axis=0)
+
+rgeo = (rlab[-1].min() + rlab[-1].max()) / 2  # Geometrical axis [meters]
 
 # ======================= Scalars
 

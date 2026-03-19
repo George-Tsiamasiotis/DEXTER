@@ -81,3 +81,4 @@ def test_plots(
 def _test_plots(nc_equilibrium: Equilibrium):
     nc_equilibrium.plot_b()
     nc_equilibrium.plot_db()
+    nc_equilibrium.plot_flux_surfaces()

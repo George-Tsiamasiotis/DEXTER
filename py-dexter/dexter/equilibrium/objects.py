@@ -202,7 +202,7 @@ class NcGeometry(
     @property
     def zaxis(self) -> float:
         """The vertical position of the magnetic axis in $[m]$."""
-        return self._rust.raxis
+        return self._rust.zaxis
 
     @property
     def rgeo(self) -> float:

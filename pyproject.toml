@@ -1,6 +1,6 @@
 [project]
 name = "dexter"
-version = "0.1.4-pre.6"
+version = "0.1.4-pre.7"
 description = "Calculations and simulations in analytical and reconstructed equilibria of toroidal fusion devices."
 readme = "README.md"
 authors = [
@@ -67,3 +67,4 @@ addopts = """
 
 [project.scripts]
 bfield_plot = "scripts:bfield_plot"
+flux_surface_plot = "scripts:flux_surface_plot "
