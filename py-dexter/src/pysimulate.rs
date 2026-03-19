@@ -69,14 +69,9 @@ impl PyInitialConditions {
         mu0: f64,
     ) -> PyResult<Self> {
         let flux0: InitialFlux = flux0.0;
-        Ok(Self(InitialConditions {
-            t0,
-            flux0,
-            theta0,
-            zeta0,
-            rho0,
-            mu0,
-        }))
+        Ok(Self(InitialConditions::boozer(
+            t0, flux0, theta0, zeta0, rho0, mu0,
+        )))
     }
 
     #[getter]

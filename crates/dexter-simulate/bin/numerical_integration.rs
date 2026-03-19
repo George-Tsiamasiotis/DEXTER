@@ -28,14 +28,7 @@ fn main() {
     ]);
 
     // Particle setup
-    let initial = InitialConditions {
-        t0: 0.0,
-        flux0: InitialFlux::Toroidal(0.2),
-        theta0: 1.0,
-        zeta0: 0.0,
-        rho0: 1e-4,
-        mu0: 1e-6,
-    };
+    let initial = InitialConditions::boozer(0.0, InitialFlux::Toroidal(0.2), 1.0, 0.0, 1e-4, 1e-6);
     let mut particle = Particle::new(&initial);
 
     // Integrate

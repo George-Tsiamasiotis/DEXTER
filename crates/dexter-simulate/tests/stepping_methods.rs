@@ -10,7 +10,6 @@ use ndarray::Axis;
 #[test]
 #[rustfmt::skip]
 fn different_stepping_methods() {
-    use InitialFlux::*;
     let qfactor = UnityQfactor::new();
     let current = LarCurrent::new();
     let bfield = LarBfield::new();
@@ -37,7 +36,7 @@ fn different_stepping_methods() {
             ..Default::default()
         };
 
-    let initial = InitialConditions {t0: 0.0, flux0: Toroidal(0.3), theta0: 0.0, zeta0: 0.0, rho0: 1e-4, mu0: 1e-6};
+    let initial = InitialConditions::boozer(0.0, InitialFlux::Toroidal(0.3), 0.0, 0.0, 1e-4, 1e-6);
 
     let mut energy_particle = Particle::new(&initial);
     let mut error_particle = Particle::new(&initial);

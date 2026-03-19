@@ -21,14 +21,7 @@ fn analytical_equilibrium_integration() {
     ]);
 
     // Particle setup
-    let initial = InitialConditions {
-        t0: 0.0,
-        flux0: InitialFlux::Toroidal(0.2),
-        theta0: 0.0,
-        zeta0: 0.0,
-        rho0: 1e-4,
-        mu0: 7e-6,
-    };
+    let initial = InitialConditions::boozer(0.0, InitialFlux::Toroidal(0.2), 0.0, 0.0, 1e-4, 7e-6);
     let mut particle = Particle::new(&initial);
 
     // Integrate
@@ -61,14 +54,7 @@ fn numerical_equilibrium_integration() {
     ]);
 
     // Particle setup
-    let initial = InitialConditions {
-        t0: 0.0,
-        flux0: InitialFlux::Poloidal(0.2),
-        theta0: 0.0,
-        zeta0: 0.0,
-        rho0: 1e-4,
-        mu0: 7e-6,
-    };
+    let initial = InitialConditions::boozer(0.0, InitialFlux::Poloidal(0.2), 0.0, 0.0, 1e-4, 7e-6);
     let mut particle = Particle::new(&initial);
 
     // Integrate

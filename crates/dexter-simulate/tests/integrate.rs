@@ -28,7 +28,7 @@ fn gc_toroidal_integration_uniQ_larC_larB_cosP() {
 
     let solver_params = SolverParams::default();
 
-    let initial = InitialConditions {t0: 0.0, flux0: Toroidal(0.3), theta0: 0.0, zeta0: 0.0, rho0: 1e-4, mu0: 1e-6};
+    let initial = InitialConditions::boozer(0.0, Toroidal(0.3), 0.0, 0.0, 1e-4, 1e-6);
 
     let mut particle = Particle::new(&initial);
     assert!(matches!(particle.integration_status(), IntegrationStatus::Initialized));
@@ -63,7 +63,7 @@ fn gc_toroidal_integration_ncdQ_ncdC_ncdB_ncdP() {
 
     let solver_params = SolverParams::default();
 
-    let initial = InitialConditions {t0: 0.0, flux0: Toroidal(0.2), theta0: 0.0, zeta0: 0.0, rho0: 1e-4, mu0: 1e-6};
+    let initial = InitialConditions::boozer(0.0, Toroidal(0.2), 0.0, 0.0, 1e-4, 1e-6);
 
     let mut particle = Particle::new(&initial);
     assert!(matches!(particle.integration_status(), IntegrationStatus::Initialized));
@@ -98,7 +98,7 @@ fn gc_poloidal_integration_ncdQ_ncdC_ncdB_ncdP() {
 
     let solver_params = SolverParams::default();
 
-    let initial = InitialConditions {t0: 0.0, flux0: Poloidal(0.2), theta0: 0.0, zeta0: 0.0, rho0: 1e-4, mu0: 1e-6};
+    let initial = InitialConditions::boozer(0.0, Poloidal(0.2), 0.0, 0.0, 1e-4, 1e-6);
 
     let mut particle = Particle::new(&initial);
     assert!(matches!(particle.integration_status(), IntegrationStatus::Initialized));
@@ -129,14 +129,7 @@ fn gc_toroidal_integration_gcmotion_check_uniQ_larC_larB_cosP() {
     let solver_params = SolverParams::default();
 
     let psi0 = 0.018365472910927463;
-    let initial = InitialConditions {
-        t0: 0.0,
-        flux0: Toroidal(psi0),
-        theta0: 0.0,
-        zeta0: 0.0,
-        rho0: -0.006634527089072539,
-        mu0: 1e-6,
-    };
+    let initial = InitialConditions::boozer(0.0, Toroidal(psi0), 0.0, 0.0, -0.006634527089072539, 1e-6);
 
     let mut particle = Particle::new(&initial);
     assert!(matches!(
@@ -193,8 +186,8 @@ fn gc_toroidal_poloidal_equivalence() {
 
     let psi0 = 0.2;
     let psip0 = qfactor.psip_of_psi(psi0, &mut Accelerator::new()).unwrap();
-    let tor_initial = InitialConditions {t0: 0.0, flux0: Toroidal(psi0), theta0: 0.0, zeta0: 0.0, rho0: 1e-4, mu0: 1e-6};
-    let pol_initial = InitialConditions {t0: 0.0, flux0: Poloidal(psip0), theta0: 0.0, zeta0: 0.0, rho0: 1e-4, mu0: 1e-6};
+    let tor_initial = InitialConditions::boozer(0.0, Toroidal(psi0), 0.0, 0.0, 1e-4, 1e-6);
+    let pol_initial = InitialConditions::boozer(0.0, Poloidal(psip0), 0.0, 0.0, 1e-4, 1e-6);
 
     let mut tor_particle = Particle::new(&tor_initial);
     let mut pol_particle = Particle::new(&pol_initial);

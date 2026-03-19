@@ -32,14 +32,7 @@ fn main() {
         ..Default::default()
     };
 
-    let initial = InitialConditions {
-        t0: 0.0,
-        flux0: Toroidal(0.3),
-        theta0: 0.0,
-        zeta0: 0.0,
-        rho0: 1e-4,
-        mu0: 1e-6,
-    };
+    let initial = InitialConditions::boozer(0.0, Toroidal(0.3), 0.0, 0.0, 1e-4, 1e-6);
 
     let mut energy_particle = Particle::new(&initial);
     let mut error_particle = Particle::new(&initial);

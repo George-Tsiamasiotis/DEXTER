@@ -93,14 +93,14 @@ impl QueueInitialConditions {
     /// Creates an [`InitialConditions`] from the `index` position of the arrays.
     #[must_use]
     pub(crate) fn initial_from_index(&self, index: usize) -> InitialConditions {
-        InitialConditions {
-            t0: self.t0[[index]],
-            flux0: self.flux0[[index]],
-            theta0: self.theta0[[index]],
-            zeta0: self.zeta0[[index]],
-            rho0: self.rho0[[index]],
-            mu0: self.mu0[[index]],
-        }
+        InitialConditions::boozer(
+            self.t0[[index]],
+            self.flux0[[index]],
+            self.theta0[[index]],
+            self.zeta0[[index]],
+            self.rho0[[index]],
+            self.mu0[[index]],
+        )
     }
 
     /// Returns the number of [`InitialConditions`] sets.

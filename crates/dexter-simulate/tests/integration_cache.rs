@@ -21,14 +21,8 @@ fn integration_cache_analytical_eq_cos_harmonic() {
         CosHarmonic::new(1e-3, 2, 4, 0.0),
     ]);
 
-    let initial = InitialConditions {
-        t0: 0.0,
-        flux0: Toroidal(0.2),
-        theta0: 0.0,
-        zeta0: 0.0,
-        rho0: 1e-4,
-        mu0: 1e-6,
-    };
+    let initial = InitialConditions::boozer(0.0, Toroidal(0.2), 0.0, 0.0, 1e-4, 1e-6);
+
     let mut particle = Particle::new(&initial);
 
     particle.integrate(
@@ -78,14 +72,7 @@ fn integration_cache_nc_eq_nc_harmonic() {
             .unwrap(),
     ]);
 
-    let initial = InitialConditions {
-        t0: 0.0,
-        flux0: Toroidal(0.2),
-        theta0: 0.0,
-        zeta0: 0.0,
-        rho0: 1e-8,
-        mu0: 1e-10,
-    };
+    let initial = InitialConditions::boozer(0.0, Toroidal(0.2), 0.0, 0.0, 1e-8, 1e-10);
     let mut particle = Particle::new(&initial);
 
     particle.integrate(

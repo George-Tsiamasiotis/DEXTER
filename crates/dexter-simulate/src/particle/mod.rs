@@ -1,10 +1,12 @@
 //! Representation of a charged particle.
 
 mod evolution;
+mod initial;
 mod integrate;
 mod intersect;
 
 use crate::SolverParams;
+pub use initial::InitialConditions;
 pub use intersect::{IntersectParams, Intersection};
 
 // ===============================================================================================
@@ -87,36 +89,6 @@ pub(crate) struct IntegrationCaches<C: HarmonicCache> {
 
 // ===============================================================================================
 
-/// A set of initial conditions in the `(t, ψ/ψp, θ, ζ, ρ, μ)` space.
-///
-/// # Example
-/// ```
-/// # use dexter_simulate::*;
-/// let initial_conditions = InitialConditions {
-///     t0: 0.0,
-///     flux0: InitialFlux::Toroidal(0.01),
-///     theta0: 0.0,
-///     zeta0: 3.14,
-///     rho0: 1e-5,
-///     mu0: 1e-6,
-/// };
-/// ```
-#[derive(Debug, Clone)]
-pub struct InitialConditions {
-    /// The initial time.
-    pub t0: f64,
-    /// The initial toroidal/poloidal flux, depending on the value of [`InitialFlux`].
-    pub flux0: InitialFlux,
-    /// The initial `θ` angle.
-    pub theta0: f64,
-    /// The initial `ζ` angle.
-    pub zeta0: f64,
-    /// The initial parallel gyro radius `ρ`.
-    pub rho0: f64,
-    /// The magnetic moment `μ`.
-    pub mu0: f64,
-}
-
 /// A [`Particle`]'s integration status.
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub enum IntegrationStatus {
@@ -192,15 +164,9 @@ impl Particle {
     /// # let path = PathBuf::from("./netcdf.nc");
     /// # let geometry = NcGeometryBuilder::new(&path, "steffen", "bicubic").build()?;
     /// # let psip_wall = geometry.psip_wall().unwrap();
-    /// let initial_conditions = InitialConditions {
-    ///     t0: 0.0,
-    ///     flux0: InitialFlux::Poloidal(0.5 * psip_wall),
-    ///     theta0: 0.0,
-    ///     zeta0: 3.14,
-    ///     rho0: 1e-5,
-    ///     mu0: 1e-6,
-    /// };
-    /// let mut particle = Particle::new(&initial_conditions);
+    /// let psip0 = InitialFlux::Poloidal(0.5 * psip_wall);
+    /// let initial = InitialConditions::boozer(0.0, psip0, 0.0, 3.14, 1e-5, 1e-6);
+    /// let mut particle = Particle::new(&initial);
     /// # Ok::<_, SimulationError>(())
     ///
     /// ```
@@ -240,15 +206,9 @@ impl Particle {
     ///     CosHarmonic::new(1e-3, 1, 3, 0.0),
     /// ]);
     ///
-    /// let initial_conditions = InitialConditions {
-    ///     t0: 0.0,
-    ///     flux0: InitialFlux::Poloidal(0.015),
-    ///     theta0: 0.0,
-    ///     zeta0: 3.14,
-    ///     rho0: 1e-5,
-    ///     mu0: 1e-6,
-    /// };
-    /// let mut particle = Particle::new(&initial_conditions);
+    /// let psip0 = InitialFlux::Poloidal(0.015);
+    /// let initial = InitialConditions::boozer(0.0, psip0, 0.0, 3.14, 1e-5, 1e-6);
+    /// let mut particle = Particle::new(&initial);
     /// particle.integrate(
     ///     &qfactor,
     ///     &current,
@@ -308,17 +268,11 @@ impl Particle {
     /// let bfield = LarBfield::new();
     /// let perturbation = Perturbation::zero();
     ///
-    /// let initial_conditions = InitialConditions {
-    ///     t0: 0.0,
-    ///     flux0: InitialFlux::Toroidal(0.02),
-    ///     theta0: 3.14,
-    ///     zeta0: 0.0,
-    ///     rho0: 1e-4,
-    ///     mu0: 1e-6,
-    /// };
+    /// let psi0 = InitialFlux::Toroidal(0.02);
+    /// let initial = InitialConditions::boozer(0.0, psi0, 3.14, 0.0, 1e-4, 1e-6);
     /// let intersect_params = IntersectParams::new(Intersection::ConstTheta, 3.14, 10);
     ///
-    /// let mut particle = Particle::new(&initial_conditions);
+    /// let mut particle = Particle::new(&initial);
     /// particle.intersect(
     ///     &qfactor,
     ///     &current,

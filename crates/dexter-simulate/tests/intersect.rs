@@ -21,7 +21,7 @@ fn gc_toroidal_intersect_uniQ_larC_larB_noP() {
     let bfield = LarBfield::new();
     let perturbation = Perturbation::zero();
 
-    let initial = InitialConditions {t0: 0.0, flux0: Toroidal(0.02), theta0: 3.14, zeta0: 0.0, rho0: 1e-4, mu0: 1e-6};
+    let initial = InitialConditions::boozer(0.0, Toroidal(0.02), 3.14, 0.0, 1e-4, 1e-6);
     let solver_params = SolverParams::default();
 
     // ConstZeta
@@ -67,7 +67,7 @@ fn gc_poloidal_intersect_ncdQ_ncdC_ncdB_noP() {
     let bfield = NcBfieldBuilder::new(&path, "bicubic").build().unwrap();
     let perturbation = Perturbation::zero();
 
-    let initial = InitialConditions {t0: 0.0, flux0: Poloidal(0.1), theta0: 3.14, zeta0: 0.0, rho0: 1e-4, mu0: 1e-6};
+    let initial = InitialConditions::boozer(0.0, Poloidal(0.1), 3.14, 0.0, 1e-4, 1e-6);
     let solver_params = SolverParams::default();
 
     // ConstZeta
@@ -123,8 +123,8 @@ fn gc_toroidal_poloidal_equivalence_const_theta() {
 
     let psi0 = 0.2;
     let psip0 = qfactor.psip_of_psi(psi0, &mut Accelerator::new()).unwrap();
-    let tor_initial = InitialConditions {t0: 0.0, flux0: Toroidal(psi0), theta0: 0.0, zeta0: 0.0, rho0: 1e-4, mu0: 0.0};
-    let pol_initial = InitialConditions {t0: 0.0, flux0: Poloidal(psip0), theta0: 0.0, zeta0: 0.0, rho0: 1e-4, mu0: 0.0};
+    let tor_initial = InitialConditions::boozer(0.0, Toroidal(psi0), 0.0, 0.0, 1e-4, 0.0);
+    let pol_initial = InitialConditions::boozer(0.0, Poloidal(psip0), 0.0, 0.0, 1e-4, 0.0);
 
     let mut tor_particle = Particle::new(&tor_initial);
     let mut pol_particle = Particle::new(&pol_initial);
@@ -179,8 +179,8 @@ fn gc_toroidal_poloidal_equivalence_const_zeta() {
 
     let psi0 = 0.2;
     let psip0 = qfactor.psip_of_psi(psi0, &mut Accelerator::new()).unwrap();
-    let tor_initial = InitialConditions {t0: 0.0, flux0: Toroidal(psi0), theta0: 0.0, zeta0: 0.0, rho0: 1e-4, mu0: 0.0};
-    let pol_initial = InitialConditions {t0: 0.0, flux0: Poloidal(psip0), theta0: 0.0, zeta0: 0.0, rho0: 1e-4, mu0: 0.0};
+    let tor_initial = InitialConditions::boozer(0.0, Toroidal(psi0), 0.0, 0.0, 1e-4, 0.0);
+    let pol_initial = InitialConditions::boozer(0.0, Poloidal(psip0), 0.0, 0.0, 1e-4, 0.0);
 
     let mut tor_particle = Particle::new(&tor_initial);
     let mut pol_particle = Particle::new(&pol_initial);
