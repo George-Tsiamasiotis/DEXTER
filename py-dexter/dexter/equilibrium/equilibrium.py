@@ -8,6 +8,7 @@ from typing import Optional, Any
 
 from dexter.types import Interp1DType, Interp2DType
 from .objects import (
+    LarBfield,
     NcGeometry,
     NcQfactor,
     NcCurrent,
@@ -359,7 +360,9 @@ class Equilibrium:
         shape = self.geometry.shape
         step = max([1, int(shape[1] / number)])
         print(f"Displaying {int(shape[1]/step)} surfaces.")
-        for i in range(0, shape[1], step):
+        for i in range(
+            0, shape[1] - step, step
+        ):  # last one lands too close to the first one
             ax.plot(rlab_array[i], zlab_array[i], color="blue", zorder=-1)
 
         # Cursor
@@ -380,6 +383,94 @@ class Equilibrium:
         ax.plot(*geom_center, "ro", markersize=4, label="$R_{geometric}$")
 
         ax.plot(rlab_wall, zlab_wall, color="k", linewidth=2)
+        ax.legend()
+
+        plt.show()
+
+    def plot_midplane(self):
+        r"""Plots $B$, $dB/d(\psi/\psi_p)$ and $dB/d\theta$ on the midplane.
+
+        The midplane is defined as two $\theta=const$ lines:
+
+        + $\theta = \pi$ and $\psi=[0, \psi_{wall}]$ (or $\psi_p=[0, \psi_{p,wall}]$)
+        + $\theta = 0$ and $\psi=[0, \psi_{wall}]$ (or $\psi_p=[0, \psi_{p,wall}]$)
+        """
+        length = 1000
+
+        if isinstance(self.bfield, LarBfield) or self.bfield.psi_state == "Good":
+            _b_of_flux = self.bfield.b_of_psi
+            _db_dflux = self.bfield.db_dpsi
+            _db_dtheta = self.bfield.db_of_psi_dtheta
+            flux_wall = self.psi_wall
+            flux_str = r"\psi"
+            flux_wall_str = r"\psi_{wall}"
+        else:
+            _b_of_flux = self.bfield.b_of_psip
+            _db_dflux = self.bfield.db_dpsip
+            _db_dtheta = self.bfield.db_of_psip_dtheta
+            flux_wall = self.psip_wall
+            flux_str = r"\psi_p"
+            flux_wall_str = r"\psi_{p,wall}"
+
+        @np.vectorize
+        def b_of_flux(flux: float, theta: float) -> float:
+            return _b_of_flux(flux, theta)
+
+        @np.vectorize
+        def db_dflux(flux: float, theta: float) -> float:
+            return _db_dflux(flux, theta)
+
+        @np.vectorize
+        def db_dtheta(flux: float, theta: float) -> float:
+            return _db_dtheta(flux, theta)
+
+        fluxes = np.concat(
+            (
+                np.linspace(flux_wall, 0, length // 2),
+                np.linspace(0, flux_wall, length // 2),
+            )
+        )
+        thetas = np.concat(
+            (
+                np.full(length // 2, np.pi),
+                np.full(length // 2, 0),
+            ),
+        )
+
+        fig = plt.figure(figsize=(8, 7), layout="constrained", dpi=120)
+        fig.suptitle(r"$Magnetic\ field\ quantities\ on\ midplane$")
+        ax = fig.add_subplot()
+
+        bs_of_flux = b_of_flux(fluxes, thetas)
+        dbs_dflux = db_dflux(fluxes, thetas)
+        dbs_dtheta = db_dtheta(fluxes, thetas)
+        xs = np.linspace(-1, 1, length)
+        ax.plot(
+            xs,
+            bs_of_flux,
+            linewidth=2,
+            color="b",
+            label=rf"$B$",
+        )
+        ax.plot(
+            xs,
+            dbs_dflux,
+            linewidth=2,
+            color="r",
+            label=rf"$dB/d{flux_str}$",
+        )
+        ax.plot(
+            xs,
+            dbs_dtheta,
+            linewidth=2,
+            color="k",
+            label=rf"$dB/d\theta$",
+        )
+
+        ax.set_xlabel(rf"${flux_str} / {flux_wall_str}$")
+        ax.set_ylabel(rf"$Amplitude$")
+        ax.grid(True)
+        ax.margins(0)
         ax.legend()
 
         plt.show()
