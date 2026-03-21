@@ -53,8 +53,8 @@ py_debug_impl!(PyInitialFlux);
 py_repr_impl!(PyInitialFlux);
 
 // ===============================================================================================
-#[derive(Clone)]
-#[pyclass(name = "_PyInitialConditions", frozen)]
+
+#[pyclass(name = "_PyInitialConditions", frozen, subclass)]
 pub struct PyInitialConditions(pub(crate) InitialConditions);
 
 #[pymethods]
@@ -68,27 +68,101 @@ impl PyInitialConditions {
         rho0: f64,
         mu0: f64,
     ) -> PyResult<Self> {
-        let flux0: InitialFlux = flux0.0;
+        let flux0 = flux0.0;
         Ok(Self(InitialConditions::boozer(
             t0, flux0, theta0, zeta0, rho0, mu0,
         )))
     }
 
-    #[getter]
+    /// set getters as `_<>()` to make Python export clearer
+
+    #[getter(_t0)]
+    pub fn get_t0(&self) -> f64 {
+        self.0.t0()
+    }
+
+    #[getter(_flux0)]
     pub fn get_flux0(&self) -> PyInitialFlux {
-        PyInitialFlux(self.0.flux0)
+        PyInitialFlux(self.0.flux0())
+    }
+
+    #[getter(_theta0)]
+    pub fn get_theta0(&self) -> f64 {
+        self.0.theta0()
+    }
+
+    #[getter(_zeta0)]
+    pub fn get_zeta0(&self) -> f64 {
+        self.0.zeta0()
+    }
+
+    #[getter(_mu0)]
+    pub fn get_mu0(&self) -> f64 {
+        self.0.mu0()
+    }
+
+    #[getter(_rho0)]
+    pub fn get_rho0(&self) -> Option<f64> {
+        if self.0.rho0().is_finite() {
+            Some(self.0.rho0())
+        } else {
+            None
+        }
+    }
+
+    #[getter(_pzeta0)]
+    pub fn get_pzeta0(&self) -> Option<f64> {
+        if self.0.pzeta0().is_finite() {
+            Some(self.0.pzeta0())
+        } else {
+            None
+        }
+    }
+
+    #[getter]
+    pub fn get_coordinate_set(&self) -> String {
+        format!("{:?}", self.0.coordinate_set())
     }
 }
 
 py_debug_impl!(PyInitialConditions);
 py_repr_impl!(PyInitialConditions);
-py_export_pub_field!(PyInitialConditions, t0, f64);
-py_export_pub_field!(PyInitialConditions, theta0, f64);
-py_export_pub_field!(PyInitialConditions, zeta0, f64);
-py_export_pub_field!(PyInitialConditions, rho0, f64);
-py_export_pub_field!(PyInitialConditions, mu0, f64);
 
-// ===============================================================================================
+impl<'a, 'py> FromPyObject<'a, 'py> for PyInitialConditions {
+    type Error = PyErr;
+
+    fn extract(obj: Borrowed<'a, 'py, PyAny>) -> Result<Self, Self::Error> {
+        // Exist in both sets
+        let t0: f64 = obj.getattr("_t0")?.extract()?;
+        let theta0: f64 = obj.getattr("_theta0")?.extract()?;
+        let zeta0: f64 = obj.getattr("_zeta0")?.extract()?;
+        let mu0: f64 = obj.getattr("_mu0")?.extract()?;
+
+        // Initial flux extraction
+        let attr = obj.getattr("_flux0")?;
+        let flux0_kind: &str = &attr.getattr("kind")?.to_string().to_lowercase();
+        let flux0_value: f64 = attr.getattr("value")?.extract()?;
+        let flux0 = match flux0_kind {
+            "toroidal" => InitialFlux::Toroidal(flux0_value),
+            "poloidal" => InitialFlux::Poloidal(flux0_value),
+            _ => panic!(),
+        };
+
+        // Construct final object depending on the exist of `rho0` or `pzeta0`
+        let initial: InitialConditions;
+        if let Some(value) = obj.getattr("_rho0").ok() {
+            let rho0: f64 = value.extract()?;
+            initial = InitialConditions::boozer(t0, flux0, theta0, zeta0, rho0, mu0);
+        } else if let Some(value) = obj.getattr("_pzeta0").ok() {
+            let pzeta0: f64 = value.extract()?;
+            initial = InitialConditions::mixed(t0, pzeta0, flux0, theta0, zeta0, mu0);
+        } else {
+            unreachable!("At least one of '_rho0' or '_pzeta0' exist")
+        }
+
+        Ok(Self(initial))
+    }
+}
 
 #[derive(Clone)]
 #[pyclass(name = "_PyIntersectParams", frozen)]

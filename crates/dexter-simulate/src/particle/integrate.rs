@@ -39,7 +39,11 @@ pub(super) fn integrate<Q, C, B, H>(
         particle.integration_status = IntegrationStatus::OutOfBoundsInitialization;
         return;
     }
-    let Ok(mut state1) = GCState::new(&particle.initial, objects, &mut caches) else {
+    if particle.initial_conditions.finalize(objects).is_err() {
+        particle.integration_status = IntegrationStatus::InvalidInitialConditions;
+        return;
+    }
+    let Ok(mut state1) = GCState::new(&particle.initial_conditions, objects, &mut caches) else {
         particle.integration_status = IntegrationStatus::OutOfBoundsInitialization;
         return;
     };

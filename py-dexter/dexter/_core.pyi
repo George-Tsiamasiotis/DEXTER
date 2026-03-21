@@ -1,6 +1,6 @@
 """This file mirrors all the definitions made in the `py-dexter` Rust API."""
 
-from typing import Optional, TypeAlias
+from typing import Any, Optional, TypeAlias
 
 from dexter.types import (
     ArrayShape,
@@ -403,24 +403,25 @@ class _PyInitialFlux:
     def __repr__(self) -> str: ...
 
 class _PyInitialConditions:
-    """PyO3 export of `dexter_simulate::InitialConditions`."""
+    """PyO3 export of `dexter_simulate::InitialConditions`.
 
-    t0: float
-    flux0: _PyInitialFlux
-    theta0: float
-    zeta0: float
-    rho0: float
-    mu0: float
+    This object should be inherited and not constructed. Its children must ensure that the
+    attributes below are set and that it can be casted into `py-dexter::PyInitialConditions` (see
+    `FromPyObject` implementation. This means that one of `_rho0` or `_pzeta0` must be `None`.
+    """
 
-    def __init__(
-        self,
-        t0: float,
-        flux0: _PyInitialFlux,
-        theta0: float,
-        zeta0: float,
-        rho0: float,
-        mu0: float,
-    ): ...
+    _t0: float
+    _flux0: _PyInitialFlux
+    _theta0: float
+    _zeta0: float
+    _mu0: float
+
+    _rho0: Optional[float]
+    _pzeta0: Optional[float]
+
+    def __init__(self) -> None:
+        raise RuntimeError("This object should not be constructed directly")
+
     def __str__(self) -> str: ...
     def __repr__(self) -> str: ...
 
@@ -466,7 +467,8 @@ class _PyParticle:
     pzeta_array: Array1
     energy_array: Array1
 
-    def __init__(self, initial_conditions: _PyInitialConditions) -> None: ...
+    # Any: `SupportsInitialConditions`
+    def __init__(self, initial_conditions: Any) -> None: ...
     def integrate(
         self,
         /,

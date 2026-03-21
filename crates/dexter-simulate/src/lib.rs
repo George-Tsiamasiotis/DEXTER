@@ -49,8 +49,8 @@ pub type Result<T> = std::result::Result<T, SimulationError>;
 pub use solve::{FluxCoordinate, SolverParams, SteppingMethod};
 
 pub use particle::{
-    InitialConditions, InitialFlux, IntegrationStatus, IntersectParams, Intersection, Particle,
-    ParticleCacheStats,
+    CoordinateSet, InitialConditions, InitialFlux, IntegrationStatus, IntersectParams,
+    Intersection, Particle, ParticleCacheStats,
 };
 
 pub use queue::{Queue, QueueInitialConditions, Routine};

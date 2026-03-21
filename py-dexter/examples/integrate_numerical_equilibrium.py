@@ -17,7 +17,7 @@ equilibrium.perturbation = dex.Perturbation(
     ]
 )
 
-initial_conditions = dex.InitialConditions(
+initial_conditions = dex.BoozerInitialConditions(
     t0=0,
     flux0=dex.InitialFlux("Poloidal", 0.8 * equilibrium.psip_wall),
     theta0=1.0,

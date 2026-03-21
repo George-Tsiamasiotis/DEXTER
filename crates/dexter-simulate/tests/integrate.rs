@@ -152,7 +152,7 @@ fn gc_toroidal_integration_gcmotion_check_uniQ_larC_larB_cosP() {
     assert_relative_eq!(particle.initial_energy().unwrap(), particle.final_energy().unwrap(), epsilon = 1e-8);
 
     assert_relative_eq!(particle.initial_energy().unwrap(), 1.5189224863170239e-05, epsilon = 1e-20);
-    assert_relative_eq!(initial.mu0 * bfield.b_of_psi(psi0, 0.0, &mut Accelerator::new(), &mut Accelerator::new(), &mut Cache::new()).unwrap(),
+    assert_relative_eq!(initial.mu0() * bfield.b_of_psi(psi0, 0.0, &mut Accelerator::new(), &mut Accelerator::new(), &mut Cache::new()).unwrap(),
         8.083468084746437e-07,
         epsilon = 1e-15
     );
@@ -232,7 +232,7 @@ fn gc_toroidal_poloidal_equivalence() {
     assert_abs_diff_eq!(
         tor_particle.rho_array().last().copied().unwrap(),
         pol_particle.rho_array().last().copied().unwrap(),
-        epsilon = 1e-2*tor_initial.rho0 // This deviation might be because rho varies quite fast
+        epsilon = 1e-2*tor_initial.rho0() // This deviation might be because rho varies quite fast
     );
     assert_abs_diff_eq!(
         tor_particle.theta_array().last().copied().unwrap(),

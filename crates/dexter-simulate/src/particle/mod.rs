@@ -6,7 +6,7 @@ mod integrate;
 mod intersect;
 
 use crate::SolverParams;
-pub use initial::InitialConditions;
+pub use initial::{CoordinateSet, InitialConditions};
 pub use intersect::{IntersectParams, Intersection};
 
 // ===============================================================================================
@@ -90,11 +90,15 @@ pub(crate) struct IntegrationCaches<C: HarmonicCache> {
 // ===============================================================================================
 
 /// A [`Particle`]'s integration status.
-#[derive(Debug, Default, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum IntegrationStatus {
     /// Initialized by [`InitialConditions`], not integrated.
-    #[default]
     Initialized,
+    /// [`InitialConditions`] have not been fully calculated yet.
+    Uninitialized,
+    /// Invalid [`InitialConditions`]. May occur when using Mixed variables with objects that
+    /// cannot define them.
+    InvalidInitialConditions,
     /// [`InitialConditions`] were out of bounds.
     OutOfBoundsInitialization,
     /// Reached the end of the integration successfully.
@@ -137,7 +141,7 @@ pub struct ParticleCacheStats {
 #[derive(Clone)]
 pub struct Particle {
     /// The [`InitialConditions`] set of the particle.
-    initial: InitialConditions,
+    initial_conditions: InitialConditions,
     /// Status of the particle's integration.
     integration_status: IntegrationStatus,
     /// The time evolution of the particle.
@@ -171,10 +175,15 @@ impl Particle {
     ///
     /// ```
     #[must_use]
-    pub fn new(initial: &InitialConditions) -> Self {
+    pub fn new(initial_conditions: &InitialConditions) -> Self {
+        use CoordinateSet::*;
+        let integration_status = match initial_conditions.coordinate_set() {
+            BoozerToroidal | BoozerPoloidal => IntegrationStatus::Initialized, // Always succeeds
+            MixedToroidal | MixedPoloidal => IntegrationStatus::Uninitialized,
+        };
         Self {
-            initial: initial.to_owned(),
-            integration_status: IntegrationStatus::default(),
+            initial_conditions: initial_conditions.to_owned(),
+            integration_status,
             evolution: Evolution::default(),
             stats: ParticleCacheStats::default(),
             initial_energy: None,
@@ -316,7 +325,7 @@ impl Particle {
     /// Returns the Particle's [`InitialConditions`].
     #[must_use]
     pub fn initial_conditions(&self) -> InitialConditions {
-        self.initial.clone()
+        self.initial_conditions.clone()
     }
 
     /// Returns the Particle's [`IntegrationStatus`].
@@ -391,7 +400,7 @@ impl Particle {
 impl std::fmt::Debug for Particle {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Particle")
-            .field("initial", &self.initial)
+            .field("initial conditions", &self.initial_conditions)
             .field("integration status", &self.integration_status)
             .field("evolution", &self.evolution)
             .field("initial energy", &self.initial_energy.unwrap_or(f64::NAN))

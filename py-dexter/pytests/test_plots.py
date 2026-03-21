@@ -10,7 +10,7 @@ from dexter import (
     CosHarmonic,
     NcHarmonic,
     InitialFlux,
-    InitialConditions,
+    BoozerInitialConditions,
     Particle,
 )
 from dexter import Geometry, Qfactor, Current, Harmonic
@@ -68,7 +68,7 @@ def test_nc_harmonic(nc_harmonic: NcHarmonic):
 
 
 def test_particle_plots(nc_equilibrium: Equilibrium):
-    initial = InitialConditions(
+    initial = BoozerInitialConditions(
         t0=0,
         flux0=InitialFlux("Toroidal", 0.1),
         theta0=3.14,

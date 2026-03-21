@@ -61,7 +61,8 @@ r""" Defines the calculation method of the phase $\phi$ in a Numerical Harmonic.
 
 # =================== Simulate
 
-Intersection: TypeAlias = Literal["ConstZeta"] | Literal["ConstTheta"]
+
+Intersection: TypeAlias = Literal["ConstZeta", "ConstTheta"]
 r""" Defines the surface of the Poincare section.
 
     - `ConstTheta`: Defines a surface of $\chi_i = \theta$.
@@ -70,6 +71,8 @@ r""" Defines the surface of the Poincare section.
 
 IntegrationStatus: TypeAlias = Literal[
     "Initialized",
+    "Uninitialized",
+    "InvalidInitialConditions",
     "OutOfBoundsInitialization",
     "Integrated",
     "Intersected",
@@ -79,9 +82,13 @@ IntegrationStatus: TypeAlias = Literal[
     "TimedOut(...)",
     "Failed(...)",
 ]
-"""The integration status of a Particle.
+r"""The integration status of a Particle.
 
     - `Initialized`: Initialized by InitialConditions, not integrated.
+    - `Uninitialized`: InitialConditions have not been fully calculated yet.
+    - `InvalidInitialConditions`: Invalid InitialConditions. May occur when using Mixed variables
+      with objects that cannot define them, for example Mixed Toroidal coordinates when $g(\psi)$ is
+      not defined.
     - `OutOfBoundsInitialization`: InitialConditions where out of bounds.
     - `Integrated`: Reached the end of the integration successfully.
     - `Escaped`: Escaped/Hit the wall.

@@ -15,7 +15,7 @@ equilibrium = dex.Equilibrium(
     ),
 )
 
-initial_conditions = dex.InitialConditions(
+initial_conditions = dex.BoozerInitialConditions(
     t0=0,
     flux0=dex.InitialFlux("Toroidal", 0.025),
     theta0=0.0,
