@@ -25,7 +25,7 @@ psis = np.asarray([equilibrium.qfactor.psi_of_psip(psip) for psip in psips])
 
 initial_conditions = dex.QueueInitialConditions(
     t0=np.zeros(particle_count),
-    flux0=dex.InitialFluxArray1("Toroidal", psis),
+    flux0=dex.InitialFluxArray("Toroidal", psis),
     theta0=np.zeros(particle_count),
     zeta0=np.zeros(particle_count),
     rho0=1e-7 * np.ones(particle_count),

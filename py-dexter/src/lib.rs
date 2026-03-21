@@ -27,7 +27,7 @@ fn _core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<pysimulate::PyInitialConditions>()?;
     m.add_class::<pysimulate::PyIntersectParams>()?;
     m.add_class::<pysimulate::PyParticle>()?;
-    m.add_class::<pysimulate::PyInitialFluxArray1>()?;
+    m.add_class::<pysimulate::PyInitialFluxArray>()?;
     m.add_class::<pysimulate::PyQueueInitialConditions>()?;
     m.add_class::<pysimulate::PyQueue>()?;
     Ok(())

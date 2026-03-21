@@ -14,7 +14,7 @@ from dexter._core import (
     _PyInitialConditions,
     _PyIntersectParams,
     _PyParticle,
-    _PyInitialFluxArray1,
+    _PyInitialFluxArray,
     _PyQueueInitialConditions,
     _PyQueue,
 )
@@ -731,24 +731,24 @@ def _Particle_from_rust(_rust: _PyParticle) -> Particle:
     return particle
 
 
-class InitialFluxArray1:
+class InitialFluxArray:
     """A 1D array of initial "Toroidal" or "Poloidal" fluxes.
 
     Useful when creating a [`QueueInitialConditions`][dexter.QueueInitialConditions].
 
     Example
     -------
-    ```python title="InitialFluxArray1 definition"
-    >>> psi0s = InitialFluxArray1("Toroidal", np.linspace(0, 0.5, 10))
-    >>> psip0s = InitialFluxArray1("Poloidal", np.linspace(0, 0.8, 20))
+    ```python title="InitialFluxArray definition"
+    >>> psi0s = InitialFluxArray("Toroidal", np.linspace(0, 0.5, 10))
+    >>> psip0s = InitialFluxArray("Poloidal", np.linspace(0, 0.8, 20))
 
     ```
     """
 
-    _rust: _PyInitialFluxArray1
+    _rust: _PyInitialFluxArray
 
     def __init__(self, kind: FluxCoordinate, values: Array1):
-        self._rust = _PyInitialFluxArray1(kind=kind, values=values)
+        self._rust = _PyInitialFluxArray(kind=kind, values=values)
 
     @property
     def kind(self) -> FluxCoordinate:
@@ -770,13 +770,13 @@ class InitialFluxArray1:
 class QueueInitialConditions:
     r"""Sets of initial conditions for initializing a Queue.
 
-    Use the [`InitialFluxArray1`][dexter.InitialFluxArray1] helper object to initialize the $\psi$/$\psi_p$ variables.
+    Use the [`InitialFluxArray`][dexter.InitialFluxArray] helper object to initialize the $\psi$/$\psi_p$ variables.
 
     Example
     -------
     ```python title="QueueInitialConditions definition"
     >>> num = 10
-    >>> psi0s = InitialFluxArray1("Toroidal", np.linspace(0, 0.5, num))
+    >>> psi0s = InitialFluxArray("Toroidal", np.linspace(0, 0.5, num))
     >>>
     >>> initial_conditions = QueueInitialConditions(
     ...     t0=np.zeros(num),
@@ -795,7 +795,7 @@ class QueueInitialConditions:
     def __init__(
         self,
         t0: Array1,
-        flux0: InitialFluxArray1,
+        flux0: InitialFluxArray,
         theta0: Array1,
         zeta0: Array1,
         rho0: Array1,
@@ -864,7 +864,7 @@ class Queue(_QueuePlotter):
     ```python title="Queue integration"
     >>> # Initial Conditions setup
     >>> num = 10
-    >>> psi0s = InitialFluxArray1("Toroidal", np.linspace(0, 0.5, num))
+    >>> psi0s = InitialFluxArray("Toroidal", np.linspace(0, 0.5, num))
     >>>
     >>> initial_conditions = QueueInitialConditions(
     ...     t0=np.zeros(num),
@@ -974,7 +974,7 @@ class Queue(_QueuePlotter):
         >>>
         >>> # Initial Conditions setup
         >>> num = 10
-        >>> psi0s = InitialFluxArray1("Toroidal", np.linspace(0, 0.5, num))
+        >>> psi0s = InitialFluxArray("Toroidal", np.linspace(0, 0.5, num))
         >>>
         >>> initial_conditions = QueueInitialConditions(
         ...     t0=np.zeros(num),
@@ -1088,7 +1088,7 @@ class Queue(_QueuePlotter):
         >>>
         >>> # Initial Conditions setup
         >>> num = 10
-        >>> psi0s = InitialFluxArray1("Toroidal", np.linspace(0.01, 0.4, num))
+        >>> psi0s = InitialFluxArray("Toroidal", np.linspace(0.01, 0.4, num))
         >>>
         >>> initial_conditions = QueueInitialConditions(
         ...     t0=np.zeros(num),

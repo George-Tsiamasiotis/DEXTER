@@ -263,14 +263,14 @@ py_get_numpy1D!(PyParticle, energy_array);
 
 // ===============================================================================================
 
-#[pyclass(name = "_PyInitialFluxArray1", frozen)]
-pub struct PyInitialFluxArray1 {
+#[pyclass(name = "_PyInitialFluxArray", frozen)]
+pub struct PyInitialFluxArray {
     kind: FluxCoordinate,
     values: Array1<f64>,
 }
 
 #[pymethods]
-impl PyInitialFluxArray1 {
+impl PyInitialFluxArray {
     #[new]
     #[pyo3(signature = (kind, values))]
     pub fn new(kind: &str, values: Vec<f64>) -> PyResult<Self> {
@@ -305,7 +305,7 @@ impl PyQueueInitialConditions {
     #[pyo3(signature = (t0, flux0, theta0, zeta0, rho0, mu0))]
     pub fn new<'py>(
         t0: Vec<f64>,
-        flux0: &PyInitialFluxArray1,
+        flux0: &PyInitialFluxArray,
         theta0: Vec<f64>,
         zeta0: Vec<f64>,
         rho0: Vec<f64>,

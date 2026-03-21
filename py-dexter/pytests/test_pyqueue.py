@@ -1,7 +1,7 @@
 import numpy as np
 
 from dexter import (
-    InitialFluxArray1,
+    InitialFluxArray,
     QueueInitialConditions,
     Queue,
     Particle,
@@ -16,10 +16,10 @@ from dexter import (
 
 
 def test_initial_flux_array1():
-    i = InitialFluxArray1("Toroidal", np.linspace(0, 0.5, 10))
+    i = InitialFluxArray("Toroidal", np.linspace(0, 0.5, 10))
     assert i.kind == "Toroidal"
     assert isinstance(i.values, np.ndarray)
-    i = InitialFluxArray1("Poloidal", np.linspace(0, 0.5, 10))
+    i = InitialFluxArray("Poloidal", np.linspace(0, 0.5, 10))
     assert i.kind == "Poloidal"
     assert isinstance(i.values, np.ndarray)
     assert isinstance(i.__str__(), str)
@@ -28,7 +28,7 @@ def test_initial_flux_array1():
 
 def test_queue_initial_conditions():
     particle_count = 10
-    psi0s = InitialFluxArray1("Toroidal", np.linspace(0, 0.5, particle_count))
+    psi0s = InitialFluxArray("Toroidal", np.linspace(0, 0.5, particle_count))
     q = QueueInitialConditions(
         t0=np.zeros(particle_count),
         flux0=psi0s,
@@ -49,7 +49,7 @@ def test_queue_initial_conditions():
 
 def test_queue_intstantiation():
     particle_count = 10
-    psi0s = InitialFluxArray1("Toroidal", np.linspace(0, 0.5, particle_count))
+    psi0s = InitialFluxArray("Toroidal", np.linspace(0, 0.5, particle_count))
     initial_conditions = QueueInitialConditions(
         t0=np.zeros(particle_count),
         flux0=psi0s,
@@ -80,7 +80,7 @@ class TestQueue:
             ),
         )
         particle_count = 10
-        psi0s = InitialFluxArray1("Toroidal", np.linspace(0.01, 0.4, particle_count))
+        psi0s = InitialFluxArray("Toroidal", np.linspace(0.01, 0.4, particle_count))
         cls.initial_conditions = QueueInitialConditions(
             t0=np.zeros(particle_count),
             flux0=psi0s,

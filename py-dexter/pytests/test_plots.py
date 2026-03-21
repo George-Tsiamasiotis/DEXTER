@@ -18,7 +18,7 @@ from dexter import (
     InitialFlux,
     BoozerInitialConditions,
     Particle,
-    InitialFluxArray1,
+    InitialFluxArray,
     IntersectParams,
     Queue,
     QueueInitialConditions,
@@ -101,7 +101,7 @@ def test_particle_plots(nc_equilibrium: Equilibrium):
 def test_queue_plots(nc_equilibrium: Equilibrium):
     initials = QueueInitialConditions(
         t0=np.zeros(3),
-        flux0=InitialFluxArray1("Toroidal", np.linspace(0, 0.001, 3)),
+        flux0=InitialFluxArray("Toroidal", np.linspace(0, 0.001, 3)),
         theta0=np.zeros(3),
         zeta0=np.zeros(3),
         rho0=np.full(3, 1e-6),

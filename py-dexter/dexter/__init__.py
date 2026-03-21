@@ -39,7 +39,7 @@ from dexter.simulate import (
     SupportsInitialConditions,
     IntersectParams,
     Particle,
-    InitialFluxArray1,
+    InitialFluxArray,
     QueueInitialConditions,
     Queue,
 )
@@ -91,7 +91,7 @@ __all__ = [
     "SupportsInitialConditions",
     "IntersectParams",
     "Particle",
-    "InitialFluxArray1",
+    "InitialFluxArray",
     "QueueInitialConditions",
     "Queue",
 ]

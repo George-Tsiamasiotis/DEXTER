@@ -510,8 +510,8 @@ class _PyParticle:
 
 # ================================================================================================
 
-class _PyInitialFluxArray1:
-    """PyO3 export of `py-dexter::PyInitialFluxArray1`.
+class _PyInitialFluxArray:
+    """PyO3 export of `py-dexter::PyInitialFluxArray`.
 
     Helper object to initialize an array of InitialFluxes.
     """
@@ -534,7 +534,7 @@ class _PyQueueInitialConditions:
     def __init__(
         self,
         t0: Array1,
-        flux0: _PyInitialFluxArray1,
+        flux0: _PyInitialFluxArray,
         theta0: Array1,
         zeta0: Array1,
         rho0: Array1,
