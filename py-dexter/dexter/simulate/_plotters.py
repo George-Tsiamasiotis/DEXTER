@@ -139,7 +139,7 @@ class _ParticlePlotter:
         theta = self._rust.theta_array
 
         bfield = equilibrium.bfield
-        coordinate = self._rust.initial_conditions._flux0.kind
+        coordinate = self._rust.initial_conditions.flux0.kind
         if coordinate == "toroidal":
             b = bfield.b_of_psi(psi, theta % (2 * PI))
         else:
@@ -234,7 +234,7 @@ class _QueuePlotter:
         if intersect_params.intersection != "ConstZeta":
             raise RuntimeError("Intersection surface must be 'ConstZeta'")
 
-        if initial and self._rust[0].initial_conditions._flux0.kind == "Poloidal":
+        if initial and self._rust[0].initial_conditions.flux0.kind == "Poloidal":
             raise ValueError("Cannot plot 'ψp0' in an 'theta-psi' plot")
 
         fig = plt.figure(**CARTESIAN_POINCARE_FIG_KW)
@@ -262,7 +262,7 @@ class _QueuePlotter:
             ax.scatter(theta, psi, **CARTESIAN_POINCARE_SCATTER_KW)
             if initial:
                 init = particle.initial_conditions
-                initial_point = (init._theta0, init._flux0.value)
+                initial_point = (init.theta0, init.flux0.value)
                 ax.plot(*initial_point, **CARTESIAN_POINCARE_INITIAL_KW)
 
         plt.show()
@@ -292,7 +292,7 @@ class _QueuePlotter:
         if intersect_params.intersection != "ConstTheta":
             raise RuntimeError("Intersection surface must be 'ConstTheta'")
 
-        if initial and self._rust[0].initial_conditions._flux0.kind == "Toroidal":
+        if initial and self._rust[0].initial_conditions.flux0.kind == "Toroidal":
             raise ValueError("Cannot plot 'ψ0' in an 'zeta-psip' plot")
 
         fig = plt.figure(**CARTESIAN_POINCARE_FIG_KW)
@@ -320,7 +320,7 @@ class _QueuePlotter:
             ax.scatter(zeta, psip, **CARTESIAN_POINCARE_SCATTER_KW)
             if initial:
                 init = particle.initial_conditions
-                initial_point = (init._theta0, init._flux0.value)
+                initial_point = (init.theta0, init.flux0.value)
                 ax.plot(*initial_point, **CARTESIAN_POINCARE_INITIAL_KW)
 
         plt.show()

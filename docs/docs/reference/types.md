@@ -25,7 +25,6 @@
 
 ## Simulate
 
-::: dexter.SupportsInitialConditions
 ::: dexter.Intersection
 ::: dexter.IntegrationStatus
 ::: dexter.SteppingMethod

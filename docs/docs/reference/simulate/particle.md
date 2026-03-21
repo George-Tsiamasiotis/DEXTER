@@ -4,9 +4,7 @@
 
 ::: dexter.InitialFlux
 
-::: dexter.BoozerInitialConditions
-
-::: dexter.MixedInitialConditions
+::: dexter.InitialConditions
 
 ::: dexter.IntersectParams
 

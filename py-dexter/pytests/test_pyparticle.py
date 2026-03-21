@@ -12,8 +12,7 @@ from dexter import (
     NcHarmonic,
     ParabolicQfactor,
     InitialFlux,
-    BoozerInitialConditions,
-    MixedInitialConditions,
+    InitialConditions,
     IntersectParams,
     Particle,
     Perturbation,
@@ -33,7 +32,7 @@ def test_initial_flux():
 
 
 def test_boozer_initial_conditions():
-    i = BoozerInitialConditions(
+    i = InitialConditions.boozer(
         t0=0,
         flux0=InitialFlux("Toroidal", 0.1),
         theta0=3.14,
@@ -42,7 +41,7 @@ def test_boozer_initial_conditions():
         mu0=7e-6,
     )
     assert isinstance(i.flux0, InitialFlux)
-    i = BoozerInitialConditions(
+    i = InitialConditions.boozer(
         t0=0,
         flux0=InitialFlux("Poloidal", 0.1),
         theta0=3.14,
@@ -61,7 +60,7 @@ def test_boozer_initial_conditions():
 
 
 def test_mixed_initial_conditions():
-    i = MixedInitialConditions(
+    i = InitialConditions.mixed(
         t0=0,
         pzeta0=-0.027,
         flux0=InitialFlux("Toroidal", 0.1),
@@ -70,7 +69,7 @@ def test_mixed_initial_conditions():
         mu0=7e-6,
     )
     assert isinstance(i.flux0, InitialFlux)
-    i = MixedInitialConditions(
+    i = InitialConditions.mixed(
         t0=0,
         pzeta0=-0.027,
         flux0=InitialFlux("Poloidal", 0.1),
@@ -89,7 +88,7 @@ def test_mixed_initial_conditions():
 
 
 def test_undefined_mixed_initial_conditions(poloidal_nc_equilibrium: Equilibrium):
-    initial = MixedInitialConditions(
+    initial = InitialConditions.mixed(
         t0=0,
         pzeta0=-0.027,
         flux0=InitialFlux("Toroidal", 0.1),
@@ -110,7 +109,7 @@ def test_intersect_params():
 
 
 def test_particle_instantiation():
-    initial = BoozerInitialConditions(
+    initial = InitialConditions.boozer(
         t0=0,
         flux0=InitialFlux("Toroidal", 0.1),
         theta0=3.14,
@@ -121,7 +120,7 @@ def test_particle_instantiation():
     particle = Particle(initial)
     assert isinstance(particle.__str__(), str)
     assert isinstance(particle.__repr__(), str)
-    assert isinstance(particle.initial_conditions, BoozerInitialConditions)
+    assert isinstance(particle.initial_conditions, InitialConditions)
     assert particle.integration_status == "Initialized"
     assert particle.initial_energy is None
     assert particle.final_energy is None
@@ -134,7 +133,7 @@ def test_particle_instantiation():
 
 
 def test_mixed_toroidal_integration_default(toroidal_nc_equilibrium: Equilibrium):
-    toroidal_initial = MixedInitialConditions(
+    toroidal_initial = InitialConditions.mixed(
         t0=0,
         pzeta0=-0.025,
         flux0=InitialFlux("Toroidal", 0.1),
@@ -152,7 +151,7 @@ def test_mixed_toroidal_integration_default(toroidal_nc_equilibrium: Equilibrium
 
 
 def test_mixed_poloidal_integration_default(poloidal_nc_equilibrium: Equilibrium):
-    poloidal_initial = MixedInitialConditions(
+    poloidal_initial = InitialConditions.mixed(
         t0=0,
         pzeta0=-0.025,
         flux0=InitialFlux("Poloidal", 0.1),
@@ -187,7 +186,7 @@ class TestToroidalParticle:
                 ]
             ),
         )
-        cls.initial = BoozerInitialConditions(
+        cls.initial = InitialConditions.boozer(
             t0=0,
             flux0=InitialFlux("Toroidal", 0.1),
             theta0=3.14,
@@ -240,7 +239,7 @@ class TestToroidalParticle:
         _check_valid_integration(particle)
 
     def test_const_theta_intersection(self):
-        initial = BoozerInitialConditions(
+        initial = InitialConditions.boozer(
             t0=0,
             flux0=InitialFlux("Toroidal", 0.1),
             theta0=0.0,
@@ -261,7 +260,7 @@ class TestToroidalParticle:
         _check_valid_intersection(particle, intersect_params)
 
     def test_const_zeta_intersection(self):
-        initial = BoozerInitialConditions(
+        initial = InitialConditions.boozer(
             t0=0,
             flux0=InitialFlux("Toroidal", 0.1),
             theta0=0.0,
@@ -298,7 +297,7 @@ class TestPoloidalParticle:
                 ]
             ),
         )
-        cls.initial = BoozerInitialConditions(
+        cls.initial = InitialConditions.boozer(
             t0=0,
             flux0=InitialFlux("Poloidal", 0.01),
             theta0=1.14,
@@ -353,7 +352,7 @@ class TestPoloidalParticle:
         assert particle.steps_taken == 1001
 
     def test_const_theta_intersection(self):
-        initial = BoozerInitialConditions(
+        initial = InitialConditions.boozer(
             t0=0,
             flux0=InitialFlux("Poloidal", 0.1),
             theta0=0.0,
@@ -374,7 +373,7 @@ class TestPoloidalParticle:
         _check_valid_intersection(particle, intersect_params)
 
     def test_const_zeta_intersection(self):
-        initial = BoozerInitialConditions(
+        initial = InitialConditions.boozer(
             t0=0,
             flux0=InitialFlux("Poloidal", 0.1),
             theta0=0.0,

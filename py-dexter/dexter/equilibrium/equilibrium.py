@@ -253,17 +253,13 @@ class Equilibrium:
         else:
             raise Exception("unreachable")
 
-        db_dflux_array = np.full(shape, np.nan)
-        db_dtheta_array = np.full(shape, np.nan)
         psi_grid, theta_grid = np.meshgrid(
             np.linspace(0, wall, shape[0]),
             np.linspace(0, 2 * np.pi, shape[1]),
             indexing="ij",
         )
-        for i in range(shape[0]):
-            for j in range(shape[1]):
-                db_dflux_array[i, j] = db_dflux(psi_grid[i, j], theta_grid[i, j])
-                db_dtheta_array[i, j] = db_dtheta(psi_grid[i, j], theta_grid[i, j])
+        db_dflux_array = db_dflux(psi_grid, theta_grid)
+        db_dtheta_array = db_dtheta(psi_grid, theta_grid)
 
         contour1 = ax[0].contourf(rlab_array, zlab_array, db_dflux_array, **contour_kw)
         contour2 = ax[1].contourf(rlab_array, zlab_array, db_dtheta_array, **contour_kw)

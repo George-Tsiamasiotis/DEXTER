@@ -203,6 +203,9 @@ fn gc_toroidal_poloidal_equivalence() {
     assert!(matches!(tor_particle.integration_status(), IntegrationStatus::Integrated));
     assert!(matches!(pol_particle.integration_status(), IntegrationStatus::Integrated));
 
+    // Make sure we dont integrate the same particle twice
+    assert_ne!(tor_particle.steps_stored(), pol_particle.steps_stored());
+
     assert!(tor_particle.steps_stored() > 10_000);
     assert!(pol_particle.steps_stored() > 10_000);
     assert!(tor_particle.steps_stored() < 10_100);
@@ -232,7 +235,7 @@ fn gc_toroidal_poloidal_equivalence() {
     assert_abs_diff_eq!(
         tor_particle.rho_array().last().copied().unwrap(),
         pol_particle.rho_array().last().copied().unwrap(),
-        epsilon = 1e-2*tor_initial.rho0() // This deviation might be because rho varies quite fast
+        epsilon = 1e-2*tor_initial.rho0().unwrap() // This deviation might be because rho varies quite fast
     );
     assert_abs_diff_eq!(
         tor_particle.theta_array().last().copied().unwrap(),
@@ -252,6 +255,100 @@ fn gc_toroidal_poloidal_equivalence() {
     assert_relative_eq!(
         tor_particle.pzeta_array().last().copied().unwrap(),
         pol_particle.pzeta_array().last().copied().unwrap(),
+        epsilon = 1e-5
+    );
+}
+
+#[test]
+#[rustfmt::skip]
+fn gc_mixed_boozer_equivalence() {
+    use InitialFlux::*;
+    use PhaseMethod::Interpolation;
+    let path = PathBuf::from(POLOIDAL_TEST_NETCDF_PATH);
+    let qfactor = NcQfactorBuilder::new(&path, "steffen").build().unwrap();
+    let current = NcCurrentBuilder::new(&path, "steffen").build().unwrap();
+    let bfield = NcBfieldBuilder::new(&path, "bicubic").build().unwrap();
+    let perturbation = Perturbation::new(&[
+        NcHarmonicBuilder::new(&path, "steffen", 2, 1).with_phase_method(Interpolation).build().unwrap(),
+        NcHarmonicBuilder::new(&path, "steffen", 3, 2).with_phase_method(Interpolation).build().unwrap(),
+    ]);
+
+    let solver_params = SolverParams::default();
+
+    let rho0 = 1e-4;
+    let psip0 = 0.2;
+    let g0 = current.g_of_psip(psip0, &mut Accelerator::new()).unwrap();
+    let pzeta0 = rho0 * g0 - psip0;
+
+    let boozer_initial = InitialConditions::boozer(0.0, Poloidal(psip0), 0.0, 0.0, rho0, 1e-6);
+    let mixed_initial = InitialConditions::mixed(0.0, Poloidal(psip0), 0.0, 0.0, pzeta0, 1e-6);
+
+    let mut boozer_particle = Particle::new(&boozer_initial);
+    let mut mixed_particle = Particle::new(&mixed_initial);
+    assert!(matches!(boozer_particle.integration_status(), IntegrationStatus::Initialized));
+    assert!(matches!(mixed_particle.integration_status(), IntegrationStatus::Uninitialized));
+
+    let teval = (0.0, 2.41e5);
+    boozer_particle.integrate(&qfactor, &current, &bfield, &perturbation, teval, &solver_params);
+    mixed_particle.integrate(&qfactor, &current, &bfield, &perturbation, teval, &solver_params);
+    dbg!(&boozer_particle);
+    dbg!(&mixed_particle);
+
+    assert!(matches!(boozer_particle.integration_status(), IntegrationStatus::Integrated));
+    assert!(matches!(mixed_particle.integration_status(), IntegrationStatus::Integrated));
+
+    // Make sure we dont integrate the same particle twice
+    assert_ne!(boozer_particle.steps_stored(), mixed_particle.steps_stored());
+
+    assert!(boozer_particle.steps_stored() > 10_000);
+    assert!(mixed_particle.steps_stored() > 10_000);
+    assert!(boozer_particle.steps_stored() < 10_100);
+    assert!(mixed_particle.steps_stored() < 10_100);
+
+    check_integrated_particle_arrays(&boozer_particle);
+    check_integrated_particle_arrays(&mixed_particle);
+
+    assert_relative_eq!(boozer_particle.initial_energy().unwrap(), mixed_particle.initial_energy().unwrap(), epsilon=1e-12);
+    assert_relative_eq!(boozer_particle.final_energy().unwrap(), mixed_particle.final_energy().unwrap(), epsilon=1e-11);
+
+    assert_abs_diff_eq!(
+        boozer_particle.t_array().last().copied().unwrap(),
+        mixed_particle.t_array().last().copied().unwrap(),
+        epsilon = teval.1 * 1e-3
+    );
+    assert_abs_diff_eq!(
+        boozer_particle.psi_array().last().copied().unwrap(),
+        mixed_particle.psi_array().last().copied().unwrap(),
+        epsilon = 1e-3*qfactor.psi_wall().unwrap()
+    );
+    assert_abs_diff_eq!(
+        boozer_particle.psip_array().last().copied().unwrap(),
+        mixed_particle.psip_array().last().copied().unwrap(),
+        epsilon = 1e-3*qfactor.psip_wall().unwrap()
+    );
+    assert_abs_diff_eq!(
+        boozer_particle.rho_array().last().copied().unwrap(),
+        mixed_particle.rho_array().last().copied().unwrap(),
+        epsilon = 1e-2*boozer_initial.rho0().unwrap() // This deviation might be because rho varies quite fast
+    );
+    assert_abs_diff_eq!(
+        boozer_particle.theta_array().last().copied().unwrap(),
+        mixed_particle.theta_array().last().copied().unwrap(),
+        epsilon = 1e-3*TAU
+    );
+    assert_abs_diff_eq!(
+        boozer_particle.zeta_array().last().copied().unwrap(),
+        mixed_particle.zeta_array().last().copied().unwrap(),
+        epsilon = 1e-3*TAU
+    );
+    assert_relative_eq!(
+        boozer_particle.ptheta_array().last().copied().unwrap(),
+        mixed_particle.ptheta_array().last().copied().unwrap(),
+        epsilon = 1e-5
+    );
+    assert_relative_eq!(
+        boozer_particle.pzeta_array().last().copied().unwrap(),
+        mixed_particle.pzeta_array().last().copied().unwrap(),
         epsilon = 1e-5
     );
 }

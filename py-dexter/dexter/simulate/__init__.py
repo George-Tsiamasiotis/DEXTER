@@ -1,8 +1,6 @@
 from .objects import (
     InitialFlux,
-    BoozerInitialConditions,
-    MixedInitialConditions,
-    SupportsInitialConditions,
+    InitialConditions,
     IntersectParams,
     Particle,
     InitialFluxArray,
@@ -12,9 +10,7 @@ from .objects import (
 
 __all__ = [
     "InitialFlux",
-    "BoozerInitialConditions",
-    "MixedInitialConditions",
-    "SupportsInitialConditions",
+    "InitialConditions",
     "IntersectParams",
     "Particle",
     "InitialFluxArray",

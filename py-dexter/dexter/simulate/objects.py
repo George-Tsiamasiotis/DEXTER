@@ -7,7 +7,7 @@ Python methods that wrap rust 'generic' methods, assemble the monomorphized meth
 using the generic object's `_dyn` attribute.
 """
 
-from typing import Callable, Optional, TypeAlias
+from typing import Callable, Optional
 
 from dexter._core import (
     _PyInitialFlux,
@@ -76,213 +76,170 @@ class InitialFlux:
         return self.__str__()
 
 
-class _InitialConditions:
-    r"""Base class for `SupportsInitialConditions` objects.
+class InitialConditions:
+    r"""Initial Conditions set for a Particle.
 
-    Used for @properties setup and documentation.
+    The set can be in either `Boozer` or `Mixed` coordinates.
+
+    Use [`InitialConditions.boozer`][dexter.InitialConditions.boozer]
+    and [`InitialConditions.mixed`][dexter.InitialConditions.mixed] class methods to
+    construct the set.
     """
 
-    _t0: float
-    _flux0: _PyInitialFlux
-    _theta0: float
-    _zeta0: float
-    _mu0: float
+    _rust: _PyInitialConditions
 
     def __init__(self) -> None:
-        raise RuntimeError("This object should not be constructed directly")
+        raise RuntimeError(
+            "Use 'InitialConditions.boozer' or InitialConditions.mixed' "
+            + "to construct an InitialConditions set."
+        )
 
-    @property
-    def t0(self) -> float:
-        """The initial time, in Normalized Units."""
-        return self._t0
-
-    @property
-    def flux0(self) -> InitialFlux:
-        r"""The initial $\psi / \psi_p$, in Normalized Units."""
-        return InitialFlux(kind=self._flux0.kind, value=self._flux0.value)
-
-    @property
-    def theta0(self) -> float:
-        r"""The initial $\theta$ angle, in Normalized Units."""
-        return self._theta0
-
-    @property
-    def zeta0(self) -> float:
-        r"""The initial $\zeta$ angle, in Normalized Units."""
-        return self._zeta0
-
-    @property
-    def mu0(self) -> float:
-        r"""The initial magnetic moment $\mu$, in Normalized Units."""
-        return self._mu0
-
-
-class BoozerInitialConditions(_InitialConditions):
-    r"""Initial conditions for a Particle in Boozer coordinates.
-
-    The initial conditions are defined on the
-    $(t, \theta, \psi, \rho, \zeta, \mu)$ or
-    $(t, \theta, \psi_p, \rho, \zeta, \mu)$
-    space, depending on the value of `flux0`.
-
-    Parameters
-    ----------
-    t0
-        The initial time, in Normalized Units.
-    flux0
-        The initial $\psi / \psi_p$, in Normalized Units.
-    theta0
-        The initial $\theta$ angle, in rads.
-    zeta0
-        The initial $\zeta$ angle, in rads.
-    rho0
-        The initial $\rho_{||}$, in Normalized Units.
-    mu0
-        The initial magnetic moment $\mu$, in Normalized Units.
-
-
-    Example
-    -------
-    ```python title="BoozerInitialConditions definition"
-    >>> initial_conditions = dex.BoozerInitialConditions(
-    ...     t0=0,
-    ...     flux0=dex.InitialFlux("Toroidal", 0.1), # ψ0 = 0.1
-    ...     theta0=3.14,
-    ...     zeta0=0,
-    ...     rho0=1e-4,
-    ...     mu0=7e-6,
-    ... )
-
-    ```
-    """
-
-    def __init__(
-        self,
+    @classmethod
+    def boozer(
+        cls,
         t0: float,
         flux0: InitialFlux,
         theta0: float,
         zeta0: float,
         rho0: float,
         mu0: float,
-    ) -> None:
-        self._t0 = t0
-        self._flux0 = flux0._rust
-        self._theta0 = theta0
-        self._zeta0 = zeta0
-        self._rho0 = rho0
-        self._mu0 = mu0
+    ) -> InitialConditions:
+        r"""Initial conditions for a Particle in Boozer coordinates.
 
-    @property
-    def rho0(self) -> float:
-        r"""The initial $\rho_{||}$, in Normalized Units."""
-        if self._rho0 is None:
-            raise Exception("unreachable")
-        else:
-            return self._rho0
+        The initial conditions are defined on the
+        $(t, \psi, \theta, \zeta, \rho, \mu)$ or
+        $(t, \psi_p, \theta, \zeta, \rho, \mu)$
+        space, depending on the value of `flux0`.
 
-    def __str__(self) -> str:
-        return (
-            "BoozerInitialConditions {\n"
-            f"    t0: {self.t0}\n"
-            f"    flux0: {self.flux0}\n"
-            f"    theta0: {self.theta0}\n"
-            f"    zeta0: {self.zeta0}\n"
-            f"    rho0: {self.rho0}\n"
-            f"    mu0: {self.mu0}\n"
-            "}"
+        Parameters
+        ----------
+        t0
+            The initial time, in Normalized Units.
+        flux0
+            The initial $\psi / \psi_p$, in Normalized Units.
+        theta0
+            The initial $\theta$ angle, in rads.
+        zeta0
+            The initial $\zeta$ angle, in rads.
+        rho0
+            The initial $\rho_{||}$, in Normalized Units.
+        mu0
+            The initial magnetic moment $\mu$, in Normalized Units.
+
+        Example
+        -------
+        ```python title="InitialConditions definition in Boozer coordinates"
+        >>> initial_conditions = dex.InitialConditions.boozer(
+        ...     t0=0,
+        ...     flux0=dex.InitialFlux("Toroidal", 0.1), # ψ0 = 0.1
+        ...     theta0=3.14,
+        ...     zeta0=0,
+        ...     rho0=1e-4,
+        ...     mu0=7e-6,
+        ... )
+
+        ```
+        """
+        initial = InitialConditions.__new__(InitialConditions)
+        initial._rust = _PyInitialConditions.boozer(
+            t0=t0, flux0=flux0._rust, theta0=theta0, zeta0=zeta0, rho0=rho0, mu0=mu0
         )
+        return initial
 
-    def __repr__(self) -> str:
-        return self.__str__()
-
-
-class MixedInitialConditions(_InitialConditions):
-    r"""Initial conditions for a Particle in Mixed coordinates.
-
-    The initial conditions are defined on the
-    $(t, P\zeta, \psi, \theta, \zeta, \mu)$ or
-    $(t, P\zeta, \psi_p, \theta, \zeta, \mu)$
-    space, depending on the value of `flux0`.
-
-    Parameters
-    ----------
-    t0
-        The initial time, in Normalized Units.
-    pzeta0
-        The initial $P_\zeta$, in Normalized Units.
-    flux0
-        The initial $\psi / \psi_p$, in Normalized Units.
-    theta0
-        The initial $\theta$ angle, in rads.
-    zeta0
-        The initial $\zeta$ angle, in rads.
-    mu0
-        The initial magnetic moment $\mu$, in Normalized Units.
-
-    Example
-    -------
-    ```python title="MixedInitialConditions definition"
-    >>> initial_conditions = dex.MixedInitialConditions(
-    ...     t0=0,
-    ...     pzeta0=-0.025,
-    ...     theta0=3.14,
-    ...     flux0=dex.InitialFlux("Toroidal", 0.1), # ψ0 = 0.1
-    ...     zeta0=0,
-    ...     mu0=7e-6,
-    ... )
-
-    ```
-    """
-
-    def __init__(
-        self,
+    @classmethod
+    def mixed(
+        cls,
         t0: float,
-        pzeta0: float,
         flux0: InitialFlux,
         theta0: float,
         zeta0: float,
+        pzeta0: float,
         mu0: float,
-    ):
-        self._t0 = t0
-        self._pzeta0 = pzeta0
-        self._flux0 = flux0._rust
-        self._theta0 = theta0
-        self._zeta0 = zeta0
-        self._mu0 = mu0
+    ) -> InitialConditions:
+        r"""Initial conditions for a Particle in Mixed coordinates.
+
+        The initial conditions are defined on the
+        $(t, \psi, \theta, \zeta, P\zeta, \mu)$ or
+        $(t, \zeta, \psi_p, \theta, \zeta, P\zeta, \mu)$
+        space, depending on the value of `flux0`.
+
+        Parameters
+        ----------
+        t0
+            The initial time, in Normalized Units.
+        pzeta0
+            The initial $P_\zeta$, in Normalized Units.
+        flux0
+            The initial $\psi / \psi_p$, in Normalized Units.
+        theta0
+            The initial $\theta$ angle, in rads.
+        zeta0
+            The initial $\zeta$ angle, in rads.
+        mu0
+            The initial magnetic moment $\mu$, in Normalized Units.
+
+        Example
+        -------
+        ```python title="nitialConditions definition in Mixed Coordinates"
+        >>> initial_conditions = dex.InitialConditions.mixed(
+        ...     t0=0,
+        ...     flux0=dex.InitialFlux("Toroidal", 0.1), # ψ0 = 0.1
+        ...     theta0=3.14,
+        ...     zeta0=0,
+        ...     pzeta0=-0.025,
+        ...     mu0=7e-6,
+        ... )
+
+        ```
+        """
+        initial = InitialConditions.__new__(InitialConditions)
+        initial._rust = _PyInitialConditions.mixed(
+            t0=t0, flux0=flux0._rust, theta0=theta0, zeta0=zeta0, pzeta0=pzeta0, mu0=mu0
+        )
+        return initial
+
+    @property
+    def t0(self) -> float:
+        """The initial time, in Normalized Units."""
+        return self._rust.t0
+
+    @property
+    def flux0(self) -> InitialFlux:
+        r"""The initial $\psi / \psi_p$, in Normalized Units."""
+        initial_flux = InitialFlux.__new__(InitialFlux)
+        initial_flux._rust = self._rust.flux0
+        return initial_flux
+
+    @property
+    def theta0(self) -> float:
+        r"""The initial $\theta$ angle, in Normalized Units."""
+        return self._rust.theta0
+
+    @property
+    def zeta0(self) -> float:
+        r"""The initial $\zeta$ angle, in Normalized Units."""
+        return self._rust.zeta0
+
+    @property
+    def mu0(self) -> float:
+        r"""The initial magnetic moment $\mu$, in Normalized Units."""
+        return self._rust.mu0
+
+    @property
+    def rho0(self) -> Optional[float]:
+        r"""The initial parallel radius $\rho_{||}$, in Normalized Units."""
+        return self._rust.rho0
 
     @property
     def pzeta0(self) -> Optional[float]:
         r"""The initial canonical momentum $P_\zeta$, in Normalized Units."""
-        if self._pzeta0 is None:
-            raise Exception("unreachable")
-        else:
-            return self._pzeta0
+        return self._rust.pzeta0
 
     def __str__(self) -> str:
-        return (
-            "MixedInitialConditions {\n"
-            f"    t0: {self.t0}\n"
-            f"    pzeta0: {self.pzeta0}\n"
-            f"    flux0: {self.flux0}\n"
-            f"    theta0: {self.theta0}\n"
-            f"    zeta0: {self.zeta0}\n"
-            f"    mu0: {self.mu0}\n"
-            "}"
-        )
+        return self._rust.__str__()
 
     def __repr__(self) -> str:
         return self.__str__()
-
-
-# NOTE: Objects that can be cast into `_PyInitialConditions`.
-SupportsInitialConditions: TypeAlias = BoozerInitialConditions | MixedInitialConditions
-r"""Object that can be used to initialize a Particle.
-
-    - [`BoozerInitialConditions`][dexter.BoozerInitialConditions] - Initial conditions set
-    in Boozer coordinates $(t, \theta, \psi/\psi_p, \rho, \zeta, \mu)$
-    - [`MixedInitialConditions`][dexter.MixedInitialConditions] - Initial conditions set
-    in Mixed coordinates $(t, P\zeta, \psi/\psi_p, \theta, \zeta, \mu)$
-"""
 
 
 class IntersectParams:
@@ -358,7 +315,7 @@ class Particle(_ParticlePlotter):
     Example
     -------
     ```python title="Particle creation from a Boozer Coordinates set"
-    >>> initial_conditions = dex.BoozerInitialConditions(
+    >>> initial_conditions = dex.InitialConditions.boozer(
     ...     t0=0,
     ...     flux0=dex.InitialFlux("Toroidal", 0.1),
     ...     theta0=3.14,
@@ -370,12 +327,12 @@ class Particle(_ParticlePlotter):
 
     ```
     ```python title="Particle creation from a Mixed Coordinates set"
-    >>> initial_conditions = dex.MixedInitialConditions(
+    >>> initial_conditions = dex.InitialConditions.mixed(
     ...     t0=0,
-    ...     pzeta0=-0.025,
     ...     flux0=dex.InitialFlux("Toroidal", 0.1),
     ...     theta0=3.14,
     ...     zeta0=0,
+    ...     pzeta0=-0.025,
     ...     mu0=7e-6,
     ... )
     >>> particle = dex.Particle(initial_conditions)
@@ -383,15 +340,26 @@ class Particle(_ParticlePlotter):
     ```
     """
 
-    _initial_conditions: SupportsInitialConditions
+    _initial_conditions: InitialConditions
     _rust: _PyParticle
 
-    def __init__(self, initial_conditions: SupportsInitialConditions) -> None:
+    def __init__(self, initial_conditions: InitialConditions) -> None:
         self._initial_conditions = initial_conditions
-        self._rust = _PyParticle(initial_conditions=initial_conditions)
+        self._rust = _PyParticle(initial_conditions=initial_conditions._rust)
+
+    @classmethod
+    def _from_rust_pyparticle(cls, _rust: _PyParticle) -> Particle:
+        """Creates a new empty Particle and manually sets its `_rust: _PyParticle` field to
+        the passed `_rust: _PyParticle`, essentially creating a copy.
+
+        This is necessary to make `Queue` iterable.
+        """
+        particle = Particle.__new__(Particle)
+        particle._rust = _rust
+        return particle
 
     @property
-    def initial_conditions(self) -> SupportsInitialConditions:
+    def initial_conditions(self) -> InitialConditions:
         """The initial conditions set."""
         return self._initial_conditions
 
@@ -538,7 +506,7 @@ class Particle(_ParticlePlotter):
         ...         ]
         ...     )
         ... )
-        >>> initial_conditions = dex.BoozerInitialConditions(
+        >>> initial_conditions = dex.InitialConditions.boozer(
         ...     t0=0,
         ...     flux0=dex.InitialFlux("Toroidal", 0.1),
         ...     theta0=3.14,
@@ -642,7 +610,7 @@ class Particle(_ParticlePlotter):
         ...         ]
         ...     )
         ... )
-        >>> initial_conditions = dex.BoozerInitialConditions(
+        >>> initial_conditions = dex.InitialConditions.boozer(
         ...     t0=0,
         ...     flux0=dex.InitialFlux("Toroidal", 0.1),
         ...     theta0=3.14,
@@ -691,44 +659,6 @@ class Particle(_ParticlePlotter):
 
     def __repr__(self) -> str:
         return self.__str__()
-
-
-def _Particle_from_rust(_rust: _PyParticle) -> Particle:
-    """Creates a copy of a Particle by recreating it and copying the `_rust` attribute.
-
-    This is necessary to make `Queue` iterable.
-
-    There is probably a better way to do this...
-    """
-    _initial: _PyInitialConditions = _rust.initial_conditions
-    _initial_flux = _initial._flux0
-    initial_flux = InitialFlux(
-        kind=_initial_flux.kind,
-        value=_initial_flux.value,
-    )
-    if _initial._rho0 is not None:
-        initial = BoozerInitialConditions(
-            t0=_initial._t0,
-            flux0=initial_flux,
-            theta0=_initial._theta0,
-            zeta0=_initial._zeta0,
-            rho0=_initial._rho0,
-            mu0=_initial._mu0,
-        )
-    elif _initial._pzeta0 is not None:
-        initial = MixedInitialConditions(
-            t0=_initial._t0,
-            pzeta0=_initial._pzeta0,
-            flux0=initial_flux,
-            theta0=_initial._theta0,
-            zeta0=_initial._zeta0,
-            mu0=_initial._mu0,
-        )
-    else:
-        raise Exception("unreachable")
-    particle = Particle(initial)
-    particle._rust = _rust  # copy everything
-    return particle
 
 
 class InitialFluxArray:
@@ -1035,7 +965,7 @@ class Queue(_QueuePlotter):
         error_rel_tol: Optional[float] = 1e-12,
         error_abs_tol: Optional[float] = 1e-14,
     ):
-        r"""Integrates all the contained particle, calculating their intersections with a constant $\theta$ or $\zeta$ surface.
+        r"""Integrates all the contained particles, calculating their intersections with a constant $\theta$ or $\zeta$ surface.
 
         Otherwise known as a Poincare map.
 
@@ -1142,7 +1072,7 @@ class Queue(_QueuePlotter):
         )
 
     def __getitem__(self, index: int):
-        return _Particle_from_rust(self._rust[index])
+        return Particle._from_rust_pyparticle(self._rust[index])
 
     def __str__(self) -> str:
         return self._rust.__str__()

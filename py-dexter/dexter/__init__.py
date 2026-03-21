@@ -34,9 +34,7 @@ from dexter.types import (
 
 from dexter.simulate import (
     InitialFlux,
-    BoozerInitialConditions,
-    MixedInitialConditions,
-    SupportsInitialConditions,
+    InitialConditions,
     IntersectParams,
     Particle,
     InitialFluxArray,
@@ -86,9 +84,7 @@ __all__ = [
     "numerical_equilibrium",
     # Simulate
     "InitialFlux",
-    "BoozerInitialConditions",
-    "MixedInitialConditions",
-    "SupportsInitialConditions",
+    "InitialConditions",
     "IntersectParams",
     "Particle",
     "InitialFluxArray",

@@ -38,12 +38,12 @@ pub struct InitialConditions {
     pub(crate) theta0: f64,
     /// The initial `ζ` angle.
     pub(crate) zeta0: f64,
-    /// The initial parallel gyro radius `ρ`.
-    pub(crate) rho0: f64,
     /// The magnetic moment `μ`.
     pub(crate) mu0: f64,
+    /// The initial parallel gyro radius `ρ`.
+    pub(crate) rho0: Option<f64>,
     /// The canonical momentum `Pζ`.
-    pub(crate) pzeta0: f64,
+    pub(crate) pzeta0: Option<f64>,
     /// Which coordinate set were the initial conditions defined.
     coordinate_set: CoordinateSet,
 }
@@ -77,10 +77,10 @@ impl InitialConditions {
             flux0,
             theta0,
             zeta0,
-            rho0,
             mu0,
+            rho0: Some(rho0),
+            pzeta0: None,
             coordinate_set,
-            pzeta0: f64::NAN,
         }
     }
 
@@ -93,15 +93,15 @@ impl InitialConditions {
     /// # use dexter_simulate::*;
     /// # use std::f64::consts::PI;
     /// let psip0 = InitialFlux::Poloidal(0.01);
-    /// let initial = InitialConditions::mixed(0.0, -0.027, psip0, PI, PI/2.0, 1e-6);
+    /// let initial = InitialConditions::mixed(0.0, psip0, PI, PI/2.0, -0.027, 1e-6);
     /// ```
     #[must_use]
     pub fn mixed(
         t0: f64,
-        pzeta0: f64,
         flux0: InitialFlux,
         theta0: f64,
         zeta0: f64,
+        pzeta0: f64,
         mu0: f64,
     ) -> Self {
         let coordinate_set = match flux0 {
@@ -110,13 +110,13 @@ impl InitialConditions {
         };
         Self {
             t0,
-            pzeta0,
             flux0,
             theta0,
             zeta0,
             mu0,
+            rho0: None,
+            pzeta0: Some(pzeta0),
             coordinate_set,
-            rho0: f64::NAN,
         }
     }
 
@@ -141,12 +141,12 @@ impl InitialConditions {
                 let psi0 = self.flux0.value();
                 let g_of_psi0 = objects.current.g_of_psi(psi0, acc)?;
                 let psip0 = objects.qfactor.psip_of_psi(psi0, acc)?;
-                self.rho0 = (self.pzeta0 + psip0) / g_of_psi0;
+                self.rho0 = Some((self.pzeta0.expect("mixed") + psip0) / g_of_psi0);
             }
             CoordinateSet::MixedPoloidal => {
                 let psip0 = self.flux0.value();
                 let g_of_psip0 = objects.current.g_of_psip(psip0, acc)?;
-                self.rho0 = (self.pzeta0 + psip0) / g_of_psip0;
+                self.rho0 = Some((self.pzeta0.expect("mixed") + psip0) / g_of_psip0);
             }
             _ => (), // Boozer is ready for integration
         };
@@ -155,13 +155,16 @@ impl InitialConditions {
     }
 
     /// Asserts the necessary coordinates are initialized.
+    ///
+    /// `t0`, `flux0`, `theta0`, `zeta0` and `mu0` are guaranteed to exist, and we must ensure
+    /// `rho0` is initialized as well.
     fn assert_integration_ready(&self) {
         assert!(
             self.t0.is_finite()
                 && self.flux0.value().is_finite()
                 && self.theta0.is_finite()
                 && self.zeta0.is_finite()
-                && self.rho0.is_finite()
+                && self.rho0.is_some_and(f64::is_finite)
                 && self.mu0.is_finite(),
             "Invalid InitialConditions"
         )
@@ -196,7 +199,7 @@ impl InitialConditions {
 
     /// Returns the initial `ρ`.
     #[must_use]
-    pub fn rho0(&self) -> f64 {
+    pub fn rho0(&self) -> Option<f64> {
         self.rho0
     }
 
@@ -208,7 +211,7 @@ impl InitialConditions {
 
     /// Returns the initial `Pζ`.
     #[must_use]
-    pub fn pzeta0(&self) -> f64 {
+    pub fn pzeta0(&self) -> Option<f64> {
         self.pzeta0
     }
 
@@ -264,7 +267,7 @@ mod test {
             bfield: &LarBfield::new(),
             perturbation: &Perturbation::zero(),
         };
-        let mut initial = InitialConditions::mixed(0.0, -0.027, Toroidal(0.01), PI, PI, 1e-6);
+        let mut initial = InitialConditions::mixed(0.0, Toroidal(0.01), PI, PI, -0.027, 1e-6);
         initial.finalize(&objects).unwrap();
         assert_eq!(initial.coordinate_set, CoordinateSet::MixedToroidal);
 
@@ -281,7 +284,7 @@ mod test {
         assert!(particle.integration_status() == IntegrationStatus::Integrated);
 
         // LarCurrent defines ψp evaluations but LarBfield cannot integrate with respect to ψp.
-        InitialConditions::mixed(0.0, -0.027, Poloidal(0.01), PI, PI, 1e-6)
+        InitialConditions::mixed(0.0, Poloidal(0.01), PI, PI, -0.027, 1e-6)
             .finalize(&objects)
             .unwrap();
     }
@@ -301,7 +304,7 @@ mod test {
             perturbation,
         };
 
-        let mut initial = InitialConditions::mixed(0.0, -0.027, Poloidal(0.01), PI, PI, 1e-6);
+        let mut initial = InitialConditions::mixed(0.0, Poloidal(0.01), PI, PI, -0.027, 1e-6);
         initial.finalize(&objects).unwrap();
 
         let mut particle = Particle::new(&initial);
@@ -316,7 +319,7 @@ mod test {
         assert!(particle.steps_taken() > 10);
         assert!(particle.integration_status() == IntegrationStatus::Integrated);
 
-        let _ = InitialConditions::mixed(0.0, -0.027, Toroidal(0.01), PI, PI, 1e-6)
+        let _ = InitialConditions::mixed(0.0, Toroidal(0.01), PI, PI, -0.027, 1e-6)
             .finalize(&objects)
             .unwrap_err();
     }

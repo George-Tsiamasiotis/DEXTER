@@ -113,12 +113,15 @@ impl GCState {
                 coordinate = FluxCoordinate::Poloidal;
             }
         }
+        let Some(rho0) = initial.rho0 else {
+            unreachable!("rho0 must be initialized at this point")
+        };
         Self {
             t: initial.t0,
             psi,
             psip,
+            rho: rho0,
             theta: initial.theta0,
-            rho: initial.rho0,
             zeta: initial.zeta0,
             mu: initial.mu0,
             coordinate,

@@ -1,6 +1,6 @@
 """This file mirrors all the definitions made in the `py-dexter` Rust API."""
 
-from typing import Any, Optional, TypeAlias
+from typing import Optional, TypeAlias
 
 from dexter.types import (
     ArrayShape,
@@ -403,25 +403,40 @@ class _PyInitialFlux:
     def __repr__(self) -> str: ...
 
 class _PyInitialConditions:
-    """PyO3 export of `dexter_simulate::InitialConditions`.
+    """PyO3 export of `dexter_simulate::InitialConditions`."""
 
-    This object should be inherited and not constructed. Its children must ensure that the
-    attributes below are set and that it can be casted into `py-dexter::PyInitialConditions` (see
-    `FromPyObject` implementation. This means that one of `_rho0` or `_pzeta0` must be `None`.
-    """
+    t0: float
+    flux0: _PyInitialFlux
+    theta0: float
+    zeta0: float
+    mu0: float
 
-    _t0: float
-    _flux0: _PyInitialFlux
-    _theta0: float
-    _zeta0: float
-    _mu0: float
-
-    _rho0: Optional[float]
-    _pzeta0: Optional[float]
+    rho0: Optional[float]
+    pzeta0: Optional[float]
 
     def __init__(self) -> None:
         raise RuntimeError("This object should not be constructed directly")
 
+    @classmethod
+    def boozer(
+        cls,
+        t0: float,
+        flux0: _PyInitialFlux,
+        theta0: float,
+        zeta0: float,
+        rho0: float,
+        mu0: float,
+    ) -> _PyInitialConditions: ...
+    @classmethod
+    def mixed(
+        cls,
+        t0: float,
+        flux0: _PyInitialFlux,
+        theta0: float,
+        zeta0: float,
+        pzeta0: float,
+        mu0: float,
+    ) -> _PyInitialConditions: ...
     def __str__(self) -> str: ...
     def __repr__(self) -> str: ...
 
@@ -467,8 +482,7 @@ class _PyParticle:
     pzeta_array: Array1
     energy_array: Array1
 
-    # Any: `SupportsInitialConditions`
-    def __init__(self, initial_conditions: Any) -> None: ...
+    def __init__(self, initial_conditions: _PyInitialConditions) -> None: ...
     def integrate(
         self,
         /,
