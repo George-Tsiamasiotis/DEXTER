@@ -6,7 +6,13 @@ Note
 Some objects have a `_dyn` class attribute. This is an attempt at reflection for methods that are generic on
 the corresponding wrapped types. The string is used to compose the final (manually) monomorphized method and
 call it.
+
+Also see `.traits` module.
 """
+
+import numpy as np
+from typing import TypeAlias
+from numpy.typing import ArrayLike, NDArray
 
 from dexter._core import _PyLarGeometry, _PyNcGeometry
 from dexter._core import _PyUnityQfactor, _PyParabolicQfactor, _PyNcQfactor
@@ -43,8 +49,6 @@ from dexter.types import (
     PhaseMethod,
 )
 
-from typing import TypeAlias
-
 
 class LarGeometry(_GeometryTrait, _GeometryPlotter):
     r"""Analytical Large Aspect Ratio Geometry of a circular cross section device.
@@ -71,6 +75,7 @@ class LarGeometry(_GeometryTrait, _GeometryPlotter):
 
     def __init__(self, baxis: float, raxis: float, rwall: float) -> None:
         setattr(self, "_rust", _PyLarGeometry(baxis=baxis, raxis=raxis, rwall=rwall))
+        _GeometryTrait.__init__(self)
 
     @property
     def equilibrium_type(self) -> EquilibriumType:
@@ -163,6 +168,8 @@ class NcGeometry(
                 interp2d_type=interp2d_type,
             ),
         )
+        _FluxCommuteTrait.__init__(self)
+        _GeometryTrait.__init__(self)
 
     @property
     def path(self) -> str:
@@ -313,6 +320,8 @@ class UnityQfactor(_QfactorTrait, _FluxCommuteTrait, _FluxPlotter, _QfactorPlott
 
     def __init__(self) -> None:
         setattr(self, "_rust", _PyUnityQfactor())
+        _FluxCommuteTrait.__init__(self)
+        _QfactorTrait.__init__(self)
 
     @property
     def equilibrium_type(self) -> EquilibriumType:
@@ -373,6 +382,8 @@ class ParabolicQfactor(_QfactorTrait, _FluxCommuteTrait, _FluxPlotter, _QfactorP
                 flux_wall=flux_wall,
             ),
         )
+        _FluxCommuteTrait.__init__(self)
+        _QfactorTrait.__init__(self)
 
     @property
     def equilibrium_type(self) -> EquilibriumType:
@@ -442,6 +453,8 @@ class NcQfactor(_FluxCommuteTrait, _QfactorTrait, _FluxPlotter, _QfactorPlotter)
                 interp_type=interp_type,
             ),
         )
+        _FluxCommuteTrait.__init__(self)
+        _QfactorTrait.__init__(self)
 
     @property
     def path(self) -> str:
@@ -534,6 +547,7 @@ class LarCurrent(_CurrentTrait, _CurrentPlotter):
 
     def __init__(self) -> None:
         setattr(self, "_rust", _PyLarCurrent())
+        _CurrentTrait.__init__(self)
 
     @property
     def equilibrium_type(self) -> EquilibriumType:
@@ -583,6 +597,7 @@ class NcCurrent(_CurrentTrait, _CurrentPlotter):
                 interp_type=interp_type,
             ),
         )
+        _CurrentTrait.__init__(self)
 
     @property
     def path(self) -> str:
@@ -671,6 +686,7 @@ class LarBfield(_BfieldTrait):
 
     def __init__(self) -> None:
         setattr(self, "_rust", _PyLarBfield())
+        _BfieldTrait.__init__(self)
 
     @property
     def equilibrium_type(self) -> EquilibriumType:
@@ -720,6 +736,7 @@ class NcBfield(_BfieldTrait):
                 interp_type=interp_type,
             ),
         )
+        _BfieldTrait.__init__(self)
 
     @property
     def path(self) -> str:
@@ -846,6 +863,7 @@ class CosHarmonic(_HarmonicTrait, _HarmonicPlotter):
                 phase=phase,
             ),
         )
+        _HarmonicTrait.__init__(self)
 
     @property
     def equilibrium_type(self) -> EquilibriumType:
@@ -934,6 +952,7 @@ class NcHarmonic(_HarmonicTrait, _HarmonicPlotter):
                 phase_method=phase_method,
             ),
         )
+        _HarmonicTrait.__init__(self)
 
     @property
     def path(self) -> str:
@@ -1101,11 +1120,28 @@ class Perturbation:
             case _:
                 raise TypeError("All harmonics must be of the same type")
 
+        self._p_of_psi = np.vectorize(self._rust.p_of_psi)
+        self._p_of_psip = np.vectorize(self._rust.p_of_psip)
+        self._dp_dpsi = np.vectorize(self._rust.dp_dpsi)
+        self._dp_dpsip = np.vectorize(self._rust.dp_dpsip)
+        self._dp_of_psi_dtheta = np.vectorize(self._rust.dp_of_psi_dtheta)
+        self._dp_of_psip_dtheta = np.vectorize(self._rust.dp_of_psip_dtheta)
+        self._dp_of_psi_dzeta = np.vectorize(self._rust.dp_of_psi_dzeta)
+        self._dp_of_psip_dzeta = np.vectorize(self._rust.dp_of_psip_dzeta)
+        self._dp_of_psi_dt = np.vectorize(self._rust.dp_of_psi_dt)
+        self._dp_of_psip_dt = np.vectorize(self._rust.dp_of_psip_dt)
+
     @property
     def harmonics(self) -> list[CosHarmonic] | list[NcHarmonic]:
         return self._harmonics
 
-    def p_of_psi(self, psi: float, theta: float, zeta: float, t: float) -> float:
+    def p_of_psi(
+        self,
+        psi: ArrayLike,
+        theta: ArrayLike,
+        zeta: ArrayLike,
+        t: ArrayLike,
+    ) -> NDArray:
         r"""The perturbation's value $p(\psi, \theta, \zeta, t)$ value in Normalized Units.
 
         Parameters
@@ -1119,9 +1155,15 @@ class Perturbation:
         t
             The time in Normalized Units
         """
-        return self._rust.p_of_psi(psi, theta, zeta, t)
+        return self._p_of_psi(psi, theta, zeta, t)[()]
 
-    def p_of_psip(self, psip: float, theta: float, zeta: float, t: float) -> float:
+    def p_of_psip(
+        self,
+        psip: ArrayLike,
+        theta: ArrayLike,
+        zeta: ArrayLike,
+        t: ArrayLike,
+    ) -> NDArray:
         r"""The perturbation's value $p(\psi_p, \theta, \zeta, t)$ value in Normalized Units.
 
         Parameters
@@ -1135,9 +1177,15 @@ class Perturbation:
         t
             The time in Normalized Units
         """
-        return self._rust.p_of_psip(psip, theta, zeta, t)
+        return self._p_of_psip(psip, theta, zeta, t)[()]
 
-    def dp_dpsi(self, psi: float, theta: float, zeta: float, t: float) -> float:
+    def dp_dpsi(
+        self,
+        psi: ArrayLike,
+        theta: ArrayLike,
+        zeta: ArrayLike,
+        t: ArrayLike,
+    ) -> NDArray:
         r"""The perturbation's derivative with respect to $\psi$, $\partial p(\psi, \theta, \zeta, t)/\partial\psi$
         in Normalized Units.
 
@@ -1152,9 +1200,15 @@ class Perturbation:
         t
             The time in Normalized Units
         """
-        return self._rust.dp_dpsi(psi, theta, zeta, t)
+        return self._dp_dpsi(psi, theta, zeta, t)[()]
 
-    def dp_dpsip(self, psip: float, theta: float, zeta: float, t: float) -> float:
+    def dp_dpsip(
+        self,
+        psip: ArrayLike,
+        theta: ArrayLike,
+        zeta: ArrayLike,
+        t: ArrayLike,
+    ) -> NDArray:
         r"""The perturbation's derivative with respect to $\psi_p$, $\partial p(\psi_p, \theta, \zeta, t)/\partial \psi_p$
         in Normalized Units.
 
@@ -1169,11 +1223,15 @@ class Perturbation:
         t
             The time in Normalized Units
         """
-        return self._rust.dp_dpsip(psip, theta, zeta, t)
+        return self._dp_dpsip(psip, theta, zeta, t)[()]
 
     def dp_of_psi_dtheta(
-        self, psi: float, theta: float, zeta: float, t: float
-    ) -> float:
+        self,
+        psi: ArrayLike,
+        theta: ArrayLike,
+        zeta: ArrayLike,
+        t: ArrayLike,
+    ) -> NDArray:
         r"""The perturbation's derivative with respect to $\theta$, $\partial p(\psi, \theta, \zeta, t)/\partial \theta$
         in Normalized Units, as a function of $\psi$.
 
@@ -1188,11 +1246,15 @@ class Perturbation:
         t
             The time in Normalized Units
         """
-        return self._rust.dp_of_psi_dtheta(psi, theta, zeta, t)
+        return self._dp_of_psi_dtheta(psi, theta, zeta, t)[()]
 
     def dp_of_psip_dtheta(
-        self, psip: float, theta: float, zeta: float, t: float
-    ) -> float:
+        self,
+        psip: ArrayLike,
+        theta: ArrayLike,
+        zeta: ArrayLike,
+        t: ArrayLike,
+    ) -> NDArray:
         r"""The perturbation's derivative with respect to $\theta$, $\partial p(\psi_p, \theta, \zeta, t)/\partial \theta$
         in Normalized Units, as a function of $\psi_p$.
 
@@ -1207,9 +1269,15 @@ class Perturbation:
         t
             The time in Normalized Units
         """
-        return self._rust.dp_of_psip_dtheta(psip, theta, zeta, t)
+        return self._dp_of_psip_dtheta(psip, theta, zeta, t)[()]
 
-    def dp_of_psi_dzeta(self, psi: float, theta: float, zeta: float, t: float) -> float:
+    def dp_of_psi_dzeta(
+        self,
+        psi: ArrayLike,
+        theta: ArrayLike,
+        zeta: ArrayLike,
+        t: ArrayLike,
+    ) -> NDArray:
         r"""The perturbation's derivative with respect to $\zeta$, $\partial p(\psi, \theta, \zeta, t)/\partial \zeta$
         in Normalized Units, as a function of $\psi$.
 
@@ -1224,11 +1292,15 @@ class Perturbation:
         t
             The time in Normalized Units
         """
-        return self._rust.dp_of_psi_dzeta(psi, theta, zeta, t)
+        return self._dp_of_psi_dzeta(psi, theta, zeta, t)[()]
 
     def dp_of_psip_dzeta(
-        self, psip: float, theta: float, zeta: float, t: float
-    ) -> float:
+        self,
+        psip: ArrayLike,
+        theta: ArrayLike,
+        zeta: ArrayLike,
+        t: ArrayLike,
+    ) -> NDArray:
         r"""The perturbation's derivative with respect to $\zeta$, $\partial p(\psi_p, \theta, \zeta, t)/\partial \zeta$
         in Normalized Units, as a function of $\psi_p$.
 
@@ -1243,9 +1315,15 @@ class Perturbation:
         t
             The time in Normalized Units
         """
-        return self._rust.dp_of_psip_dzeta(psip, theta, zeta, t)
+        return self._dp_of_psip_dzeta(psip, theta, zeta, t)[()]
 
-    def dp_of_psi_dt(self, psi: float, theta: float, zeta: float, t: float) -> float:
+    def dp_of_psi_dt(
+        self,
+        psi: ArrayLike,
+        theta: ArrayLike,
+        zeta: ArrayLike,
+        t: ArrayLike,
+    ) -> NDArray:
         r"""The perturbation's derivative with respect to the time $t$, $\partial p(\psi, \theta, \zeta, t)/\partial t$
         in Normalized Units, as a function of $\psi$.
 
@@ -1260,9 +1338,15 @@ class Perturbation:
         t
             The time in Normalized Units
         """
-        return self._rust.dp_of_psi_dt(psi, theta, zeta, t)
+        return self._dp_of_psi_dt(psi, theta, zeta, t)[()]
 
-    def dp_of_psip_dt(self, psip: float, theta: float, zeta: float, t: float) -> float:
+    def dp_of_psip_dt(
+        self,
+        psip: ArrayLike,
+        theta: ArrayLike,
+        zeta: ArrayLike,
+        t: ArrayLike,
+    ) -> NDArray:
         r"""The perturbation's derivative with respect to the time $t$, $\partial p(\psi_p, \theta, \zeta, t)/\partial t$
         in Normalized Units, as a function of $\psi_p$.
 
@@ -1277,7 +1361,7 @@ class Perturbation:
         t
             The time in Normalized Units
         """
-        return self._rust.dp_of_psip_dt(psip, theta, zeta, t)
+        return self._dp_of_psip_dt(psip, theta, zeta, t)[()]
 
     def __getitem__(self, index: int):
         """Makes the object indexable."""

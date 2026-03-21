@@ -398,31 +398,19 @@ class Equilibrium:
         length = 1000
 
         if isinstance(self.bfield, LarBfield) or self.bfield.psi_state == "Good":
-            _b_of_flux = self.bfield.b_of_psi
-            _db_dflux = self.bfield.db_dpsi
-            _db_dtheta = self.bfield.db_of_psi_dtheta
+            b_of_flux = self.bfield.b_of_psi
+            db_dflux = self.bfield.db_dpsi
+            db_dtheta = self.bfield.db_of_psi_dtheta
             flux_wall = self.psi_wall
             flux_str = r"\psi"
             flux_wall_str = r"\psi_{wall}"
         else:
-            _b_of_flux = self.bfield.b_of_psip
-            _db_dflux = self.bfield.db_dpsip
-            _db_dtheta = self.bfield.db_of_psip_dtheta
+            b_of_flux = self.bfield.b_of_psip
+            db_dflux = self.bfield.db_dpsip
+            db_dtheta = self.bfield.db_of_psip_dtheta
             flux_wall = self.psip_wall
             flux_str = r"\psi_p"
             flux_wall_str = r"\psi_{p,wall}"
-
-        @np.vectorize
-        def b_of_flux(flux: float, theta: float) -> float:
-            return _b_of_flux(flux, theta)
-
-        @np.vectorize
-        def db_dflux(flux: float, theta: float) -> float:
-            return _db_dflux(flux, theta)
-
-        @np.vectorize
-        def db_dtheta(flux: float, theta: float) -> float:
-            return _db_dtheta(flux, theta)
 
         fluxes = np.concat(
             (

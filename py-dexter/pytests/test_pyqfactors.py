@@ -1,4 +1,5 @@
 import pytest
+import numpy as np
 from math import isfinite
 from dexter.equilibrium import _TOROIDAL_TEST_NETCDF_PATH, _POLOIDAL_TEST_NETCDF_PATH
 from dexter import Qfactor, UnityQfactor, ParabolicQfactor, NcQfactor
@@ -8,7 +9,7 @@ from dexter.types import FluxWall
 def test_unity_qfactor():
     qfactor = UnityQfactor()
     assert qfactor.equilibrium_type == "Analytical"
-    _test_qfactor_evals(qfactor)
+    _test_qfactor_vectorized_evals(qfactor)
     assert isinstance(qfactor.__str__(), str)
     assert isinstance(qfactor.__repr__(), str)
 
@@ -21,7 +22,7 @@ def test_parabolic_qfactor_toroidal_flux_wall():
     assert qfactor.qwall == 3.8
     assert qfactor.psi_wall == 0.45
     assert isfinite(qfactor.psip_wall)
-    _test_qfactor_evals(qfactor)
+    _test_qfactor_vectorized_evals(qfactor)
     assert isinstance(qfactor.__str__(), str)
     assert isinstance(qfactor.__repr__(), str)
 
@@ -34,7 +35,7 @@ def test_parabolic_qfactor_poloidal_flux_wall():
     assert qfactor.qwall == 3.8
     assert isfinite(qfactor.psip_wall)
     assert qfactor.psip_wall == 0.45
-    _test_qfactor_evals(qfactor)
+    _test_qfactor_vectorized_evals(qfactor)
     assert isinstance(qfactor.__str__(), str)
     assert isinstance(qfactor.__repr__(), str)
 
@@ -59,7 +60,7 @@ def test_nc_qfactor_getters(nc_qfactor: NcQfactor):
 
 
 def test_nc_qfactor_eval(nc_qfactor: NcQfactor):
-    _test_qfactor_evals(nc_qfactor)
+    _test_qfactor_vectorized_evals(nc_qfactor)
 
 
 def test_toroidal_nc_qfactor():
@@ -98,14 +99,33 @@ def test_poloidal_nc_qfactor():
         nc_qfactor.dpsip_dpsi(0.01)
 
 
-def _test_qfactor_evals(qfactor: Qfactor):
-    psi = 0.01
-    psip = 0.015
-    assert isfinite(qfactor.q_of_psi(psi))
-    assert isfinite(qfactor.q_of_psip(psip))
-    assert isfinite(qfactor.psip_of_psi(psi))
-    assert isfinite(qfactor.psi_of_psip(psip))
-    assert isfinite(qfactor.iota_of_psi(psi))
-    assert isfinite(qfactor.iota_of_psip(psip))
-    assert isfinite(qfactor.dpsip_dpsi(psi))
-    assert isfinite(qfactor.dpsi_dpsip(psip))
+def _test_qfactor_vectorized_evals(qfactor: Qfactor):
+    methods = [
+        qfactor.q_of_psi,
+        qfactor.q_of_psip,
+        qfactor.psip_of_psi,
+        qfactor.psip_of_psi,
+        qfactor.iota_of_psi,
+        qfactor.iota_of_psip,
+        qfactor.dpsip_dpsi,
+        qfactor.dpsi_dpsip,
+    ]
+
+    # 0D evaluations
+    flux = 1e-5
+    for method in methods:
+        assert isfinite(method(flux))
+        assert isinstance(method(flux), float)
+
+    # 1D Evaluations
+    fluxes = np.linspace(1e-5, 1e-4, 5)
+    for method in methods:
+        assert method(fluxes).ndim == 1
+        assert isinstance(method(fluxes), np.ndarray)
+
+    # 4D Evaluations
+    grid = np.random.random([2] * 4) * 1e-5
+    assert grid.ndim == 4
+    for method in methods:
+        assert method(grid).ndim == 4
+        assert isinstance(method(grid), np.ndarray)

@@ -1,4 +1,5 @@
 import pytest
+import numpy as np
 from math import isfinite
 from dexter.equilibrium import _TOROIDAL_TEST_NETCDF_PATH, _POLOIDAL_TEST_NETCDF_PATH
 from dexter import Current, NcCurrent, LarCurrent
@@ -7,7 +8,7 @@ from dexter import Current, NcCurrent, LarCurrent
 def test_lar_current():
     current = LarCurrent()
     assert current.equilibrium_type == "Analytical"
-    _test_current_evals(current)
+    _test_current_vectorized_evals(current)
     assert isinstance(current.__str__(), str)
     assert isinstance(current.__repr__(), str)
 
@@ -30,7 +31,7 @@ def test_nc_current_getters(nc_current: NcCurrent):
 
 
 def test_nc_current_eval(nc_current: NcCurrent):
-    _test_current_evals(nc_current)
+    _test_current_vectorized_evals(nc_current)
 
 
 def test_toroidal_nc_current():
@@ -69,14 +70,33 @@ def test_poloidal_nc_current():
         nc_current.di_dpsi(0.01)
 
 
-def _test_current_evals(current: Current):
-    psi = 0.01
-    psip = 0.015
-    assert isfinite(current.g_of_psi(psi))
-    assert isfinite(current.g_of_psip(psip))
-    assert isfinite(current.i_of_psi(psi))
-    assert isfinite(current.i_of_psip(psip))
-    assert isfinite(current.dg_dpsi(psi))
-    assert isfinite(current.dg_dpsip(psip))
-    assert isfinite(current.di_dpsi(psi))
-    assert isfinite(current.di_dpsip(psip))
+def _test_current_vectorized_evals(current: Current):
+    methods = [
+        current.g_of_psi,
+        current.g_of_psip,
+        current.i_of_psi,
+        current.i_of_psip,
+        current.dg_dpsi,
+        current.dg_dpsip,
+        current.di_dpsi,
+        current.di_dpsip,
+    ]
+
+    # 0D evaluations
+    flux = 1e-4
+    for method in methods:
+        assert isfinite(method(flux))
+        assert isinstance(method(flux), float)
+
+    # 1D Evaluations
+    fluxes = np.linspace(1e-5, 1e-4, 5)
+    for method in methods:
+        assert method(fluxes).ndim == 1
+        assert isinstance(method(fluxes), np.ndarray)
+
+    # 4D Evaluations
+    grid = np.random.random([2] * 4) * 1e-5
+    assert grid.ndim == 4
+    for method in methods:
+        assert method(grid).ndim == 4
+        assert isinstance(method(grid), np.ndarray)

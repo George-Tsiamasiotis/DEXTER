@@ -737,9 +737,17 @@ impl SingleNcHarmonic {
             Some(interp) => interp.eval_deriv(self.flux.uvalues(), &self.alpha_values, flux, acc)?,
             None => return Err(EvalError::UndefinedEvaluation("da(flux)/dflux".into())),
         };
-        cache.cache[5] = match self.phase_interp.as_ref() {
-            Some(interp) => interp.eval(self.flux.uvalues(), &self.phase_values, flux, acc)?,
-            None => return Err(EvalError::UndefinedEvaluation("φ(flux)".into())),
+        cache.cache[5] = match self.phase_method {
+            PhaseMethod::Zero => 0.0,
+            PhaseMethod::Average => self.phase_average.expect("Exists"),
+            PhaseMethod::Resonance => self.phase_resonance.expect("Exists"),
+            PhaseMethod::Custom(custom_phase) => custom_phase,
+            PhaseMethod::Interpolation => {
+                match self.phase_interp.as_ref() {
+                    Some(interp) => interp.eval(self.flux.uvalues(), &self.phase_values, flux, acc)?,
+                    None => return Err(EvalError::UndefinedEvaluation("φ(flux)".into())),
+                }
+            }
         };
         Ok(())
     }
@@ -772,20 +780,11 @@ impl SingleNcHarmonic {
         t: f64,
         cache: &mut NcHarmonicCache,
     ) -> Result<f64, EvalError> {
-        let result = match self.phase_method {
-            PhaseMethod::Zero => 0.0,
-            PhaseMethod::Average => self.phase_average.expect("Exists"),
-            PhaseMethod::Resonance => self.phase_resonance.expect("Exists"),
-            PhaseMethod::Custom(custom_phase) => custom_phase,
-            PhaseMethod::Interpolation => {
-                if !cache.is_updated(flux, theta, zeta, t) {
-                    self.update_cache_interps(flux, cache)?;
-                    cache.update(flux, theta, zeta, t);
-                };
-                cache.cache[5]
-            }
+        if !cache.is_updated(flux, theta, zeta, t) {
+            self.update_cache_interps(flux, cache)?;
+            cache.update(flux, theta, zeta, t);
         };
-        Ok(debug_assert_is_finite!(result))
+        Ok(debug_assert_is_finite!(cache.cache[5]))
     }
 
     /// Calculates the single harmonic's value.

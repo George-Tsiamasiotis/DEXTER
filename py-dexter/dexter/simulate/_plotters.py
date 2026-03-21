@@ -8,6 +8,7 @@ from warnings import warn
 from cycler import cycler
 
 from dexter._core import _PyParticle, _PyQueue
+from dexter import Equilibrium
 
 dpi = 120
 figsize = (10, 7)
@@ -46,10 +47,7 @@ class _ParticlePlotter:
             Defaults to True
         """
 
-        if self._rust.integration_status in [
-            "Initialized",
-            "OutOfBoundsInitialization",
-        ]:
+        if self._rust.steps_stored == 0:
             raise Exception("Particle hasn't been integrated")
 
         if percentage < 0 or percentage > 100:
@@ -123,6 +121,54 @@ class _ParticlePlotter:
         plt.show()
         plt.close()
 
+    def plot_db_drift(self, equilibrium: Equilibrium):
+        r"""Plots the magnetic field strength $B(\psi/\psi_p, \theta) along the particle's orbit.
+
+        Parameters
+        ----------
+        equilibrium
+            The equilibrium in which the particle was integrated.
+        """
+
+        if self._rust.steps_stored == 0:
+            raise Exception("Particle hasn't been integrated")
+
+        t = self._rust.t_array
+        psi = self._rust.psi_array
+        psip = self._rust.psip_array
+        theta = self._rust.theta_array
+
+        bfield = equilibrium.bfield
+        coordinate = self._rust.initial_conditions._flux0.kind
+        if coordinate == "toroidal":
+            b = bfield.b_of_psi(psi, theta % (2 * PI))
+        else:
+            b = bfield.b_of_psip(psip, theta % (2 * PI))
+
+        # ===========================
+
+        fig = plt.figure(figsize=figsize, layout="constrained", dpi=dpi)
+        fig.suptitle(r"$\Delta B(\psi/\psi_p, \theta)\ drift\ during\ transit$")
+
+        axes: list = fig.subplots(4, 1, sharex=True)
+        for ax in axes:
+            ax.yaxis.set_ticks_position("right")
+            ax.yaxis.set_label_position("left")
+
+        axes[0].scatter(t, b, **SCATTER_KW)
+        axes[1].scatter(t, psi, **SCATTER_KW)
+        axes[2].scatter(t, psip, **SCATTER_KW)
+        axes[3].scatter(t, theta, **SCATTER_KW)
+
+        axes[0].set_ylabel(r"$B$", **LABEL_KW)
+        axes[1].set_ylabel(r"$\psi$", **LABEL_KW)
+        axes[2].set_ylabel(r"$\psi_p$", **LABEL_KW)
+        axes[3].set_ylabel(r"$\theta$", **LABEL_KW)
+        axes[3].set_xlabel(r"$t[Normalized]$", **LABEL_KW)
+
+        plt.show()
+        plt.close()
+
     def plot_poloidal_drift(self, percentage: float = 100):
         r"""Plots the $\theta-\psi$ drift of the particle.
 
@@ -138,10 +184,7 @@ class _ParticlePlotter:
             The percentage of the evolution to plot. Defaults to 100.
         """
 
-        if self._rust.integration_status in [
-            "Initialized",
-            "OutOfBoundsInitialization",
-        ]:
+        if self._rust.steps_stored == 0:
             raise Exception("Particle hasn't been integrated")
 
         if percentage < 0 or percentage > 100:

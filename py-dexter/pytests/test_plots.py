@@ -1,6 +1,12 @@
+import numpy as np
+
 from dexter.equilibrium import _TEST_NETCDF_PATH as netcdf_path
 from dexter import (
     Equilibrium,
+    Geometry,
+    Qfactor,
+    Current,
+    Harmonic,
     UnityQfactor,
     ParabolicQfactor,
     NcQfactor,
@@ -12,8 +18,11 @@ from dexter import (
     InitialFlux,
     BoozerInitialConditions,
     Particle,
+    InitialFluxArray1,
+    IntersectParams,
+    Queue,
+    QueueInitialConditions,
 )
-from dexter import Geometry, Qfactor, Current, Harmonic
 from dexter.types import FluxWall
 
 # Unsure
@@ -86,6 +95,29 @@ def test_particle_plots(nc_equilibrium: Equilibrium):
     particle.plot_evolution(percentage=2)
     particle.plot_evolution(downsample=False)
     particle.plot_poloidal_drift(percentage=2)
+    particle.plot_db_drift(nc_equilibrium)
+
+
+def test_queue_plots(nc_equilibrium: Equilibrium):
+    initials = QueueInitialConditions(
+        t0=np.zeros(3),
+        flux0=InitialFluxArray1("Toroidal", np.linspace(0, 0.001, 3)),
+        theta0=np.zeros(3),
+        zeta0=np.zeros(3),
+        rho0=np.full(3, 1e-6),
+        mu0=np.zeros(3),
+    )
+    queue = Queue(initials)
+    intersect_params = IntersectParams("ConstTheta", 0.0, 5)
+    queue.intersect(nc_equilibrium, intersect_params)
+    queue.plot_const_theta_cartesian_poincare()
+
+    intersect_params = IntersectParams("ConstZeta", 0.0, 5)
+    queue.intersect(nc_equilibrium, intersect_params)
+    queue.plot_const_zeta_cartesian_poincare(initial=True)
+
+
+# ================================================================================================
 
 
 def _test_all_flux_plots(obj: Qfactor | NcGeometry):
@@ -143,6 +175,10 @@ def _test_all_harmonic_plots(harmonic: Harmonic):
     harmonic.plot_alpha_of_psi(points=50, data=False)
     harmonic.plot_alpha_of_psip(points=50, data=True)
     harmonic.plot_alpha_of_psip(points=50, data=False)
+    harmonic.plot_dalpha_of_psi(points=50)
+    harmonic.plot_dalpha_of_psi(points=50)
+    harmonic.plot_dalpha_of_psip(points=50)
+    harmonic.plot_dalpha_of_psip(points=50)
     harmonic.plot_phase_of_psi(points=50, data=True)
     harmonic.plot_phase_of_psi(points=50, data=False)
     harmonic.plot_phase_of_psip(points=50, data=True)

@@ -1,5 +1,7 @@
 ## General
 
+::: dexter.ArrayLike
+::: dexter.Array
 ::: dexter.Array1
 ::: dexter.Array2
 ::: dexter.ArrayShape

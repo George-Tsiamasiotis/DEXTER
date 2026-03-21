@@ -1,5 +1,7 @@
 import pytest
+import numpy as np
 from math import isfinite
+from math import pi as PI
 from dexter.equilibrium import _TOROIDAL_TEST_NETCDF_PATH, _POLOIDAL_TEST_NETCDF_PATH
 from dexter import LarBfield, NcBfield
 
@@ -41,13 +43,7 @@ def test_nc_bfield_getters(nc_bfield: NcBfield):
 
 
 def test_nc_bfield_eval(nc_bfield: NcBfield):
-    args = (0.01, 3.14)
-    assert isfinite(nc_bfield.b_of_psi(*args))
-    assert isfinite(nc_bfield.b_of_psip(*args))
-    assert isfinite(nc_bfield.db_dpsi(*args))
-    assert isfinite(nc_bfield.db_dpsip(*args))
-    assert isfinite(nc_bfield.db_of_psi_dtheta(*args))
-    assert isfinite(nc_bfield.db_of_psip_dtheta(*args))
+    _test_bfield_vectorized_evals(nc_bfield)
 
 
 def test_toroidal_nc_bfield():
@@ -80,3 +76,36 @@ def test_poloidal_nc_bfield():
         nc_bfield.db_dpsi(*args)
     with pytest.raises(BaseException):
         nc_bfield.db_of_psi_dtheta(*args)
+
+
+def _test_bfield_vectorized_evals(bfield: NcBfield):
+    methods = [
+        bfield.b_of_psi,
+        bfield.b_of_psip,
+        bfield.db_dpsi,
+        bfield.db_dpsip,
+        bfield.db_of_psi_dtheta,
+        bfield.db_of_psip_dtheta,
+    ]
+
+    # 0D evaluations
+    flux = 1e-5
+    theta = PI
+    for method in methods:
+        assert isfinite(method(flux, theta))
+        assert isinstance(method(flux, theta), float)
+
+    # 1D Evaluations
+    fluxes = np.linspace(1e-5, 1e-4, 5)
+    thetas = np.linspace(0, PI, 5)
+    for method in methods:
+        assert method(fluxes, thetas).ndim == 1
+        assert isinstance(method(fluxes, thetas), np.ndarray)
+
+    # 4D Evaluations
+    flux_grid = np.random.random([2] * 4) * 1e-5
+    theta_grid = np.random.random([2] * 4) * PI
+    assert flux_grid.ndim == 4
+    for method in methods:
+        assert method(flux_grid, theta_grid).ndim == 4
+        assert isinstance(method(flux_grid, theta_grid), np.ndarray)

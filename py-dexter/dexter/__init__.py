@@ -13,9 +13,11 @@ from dexter.equilibrium import Perturbation
 from dexter.equilibrium import Equilibrium, numerical_equilibrium
 
 from dexter.types import (
-    ArrayShape,
+    ArrayLike,
+    Array,
     Array1,
     Array2,
+    ArrayShape,
     NetCDFVersion,
     EquilibriumType,
     Interp1DType,
@@ -44,9 +46,11 @@ from dexter.simulate import (
 
 __all__ = [
     # Types
-    "ArrayShape",
+    "ArrayLike",
+    "Array",
     "Array1",
     "Array2",
+    "ArrayShape",
     "NetCDFVersion",
     "EquilibriumType",
     "Interp1DType",

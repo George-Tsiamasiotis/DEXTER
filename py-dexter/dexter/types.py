@@ -2,17 +2,24 @@ r"""Type Aliases used throughout the package."""
 
 import numpy as np
 from typing import Literal, TypeAlias
+from collections.abc import Sequence
 
 # =================== Common
 
-ArrayShape: TypeAlias = tuple[int, ...]
-"""Shape of a numpy array."""
+Array: TypeAlias = np.ndarray[tuple[int, ...], np.dtype[np.float64]]
+"""ND numpy array."""
 
 Array1: TypeAlias = np.ndarray[tuple[int], np.dtype[np.float64]]
 """1D numpy array."""
 
 Array2: TypeAlias = np.ndarray[tuple[int, int], np.dtype[np.float64]]
 """2D numpy array."""
+
+ArrayLike: TypeAlias = float | Array | Sequence
+"""Objects that can be converted to arrays, i.e. float, np.ndarray, sequences, ..."""
+
+ArrayShape: TypeAlias = tuple[int, ...]
+"""Shape of a numpy array."""
 
 # =================== Equilibrium
 

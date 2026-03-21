@@ -1,6 +1,7 @@
 import pytest
 import numpy as np
 from math import isfinite
+from math import pi as PI
 from dexter.equilibrium import _TOROIDAL_TEST_NETCDF_PATH, _POLOIDAL_TEST_NETCDF_PATH
 from dexter import LarGeometry, NcGeometry
 
@@ -62,7 +63,8 @@ def test_nc_geometry_getters(nc_geometry: NcGeometry):
 
 
 def test_nc_geometry_eval(nc_geometry: NcGeometry):
-    _test_geometry_evals(nc_geometry)
+    _test_geometry_1d_vectorized_evals(nc_geometry)
+    _test_geometry_2d_vectorized_evals(nc_geometry)
 
 
 def test_toroidal_nc_geometry():
@@ -111,20 +113,64 @@ def test_poloidal_nc_geometry():
         nc_geometry.jacobian_of_psi(0.01, 3.14)
 
 
-def _test_geometry_evals(geometry: NcGeometry):
-    r = 0.02
-    psi = 0.01
-    psip = 0.015
-    theta = 3.14
-    assert isfinite(geometry.psip_of_psi(psi))
-    assert isfinite(geometry.psi_of_psip(psip))
-    assert isfinite(geometry.r_of_psi(psi))
-    assert isfinite(geometry.r_of_psip(psip))
-    assert isfinite(geometry.psi_of_r(r))
-    assert isfinite(geometry.psip_of_r(r))
-    assert isfinite(geometry.rlab_of_psi(psi, theta))
-    assert isfinite(geometry.rlab_of_psip(psip, theta))
-    assert isfinite(geometry.zlab_of_psi(psi, theta))
-    assert isfinite(geometry.zlab_of_psip(psip, theta))
-    assert isfinite(geometry.jacobian_of_psi(psi, theta))
-    assert isfinite(geometry.jacobian_of_psip(psip, theta))
+def _test_geometry_1d_vectorized_evals(geometry: NcGeometry):
+    methods = [
+        geometry.psip_of_psi,
+        geometry.psi_of_psip,
+        geometry.r_of_psi,
+        geometry.r_of_psip,
+        geometry.psi_of_r,
+        geometry.psip_of_r,
+    ]
+
+    # 0D evaluations
+    fluxr = 1e-5
+    for method in methods:
+        assert isfinite(method(fluxr))
+        assert isinstance(method(fluxr), float)
+
+    # 1D Evaluations
+    fluxes = np.linspace(1e-5, 1e-4, 5)
+    for method in methods:
+        assert method(fluxes).ndim == 1
+        assert isinstance(method(fluxes), np.ndarray)
+
+    # 4D Evaluations
+    grid = np.random.random([2] * 4) * 1e-5
+    assert grid.ndim == 4
+    for method in methods:
+        assert method(grid).ndim == 4
+        assert isinstance(method(grid), np.ndarray)
+
+
+def _test_geometry_2d_vectorized_evals(geometry: NcGeometry):
+    methods = [
+        geometry.rlab_of_psi,
+        geometry.rlab_of_psip,
+        geometry.zlab_of_psi,
+        geometry.zlab_of_psip,
+        geometry.jacobian_of_psi,
+        geometry.jacobian_of_psip,
+    ]
+
+    # 0D evaluations
+    flux = 1e-5
+    theta = PI
+    for method in methods:
+        assert isfinite(method(flux, theta))
+        assert isinstance(method(flux, theta), float)
+
+    # 1D Evaluations
+    fluxes = np.linspace(1e-5, 1e-4, 5)
+    thetas = np.linspace(0, PI, 5)
+    for method in methods:
+        assert method(fluxes, thetas).ndim == 1
+        assert isinstance(method(fluxes, thetas), np.ndarray)
+
+    # 4D Evaluations
+    flux_grid = np.random.random([2] * 4) * 1e-5
+    theta_grid = np.random.random([2] * 4) * PI
+    assert flux_grid.ndim == 4
+    for method in methods:
+        assert method(flux_grid, theta_grid).ndim == 4
+        assert isinstance(method(flux_grid, theta_grid), np.ndarray)
