@@ -95,7 +95,7 @@ pub enum IntegrationStatus {
     /// Initialized by [`InitialConditions`], not integrated.
     Initialized,
     /// [`InitialConditions`] have not been fully calculated yet.
-    Uninitialized,
+    PartlyInitialized,
     /// Invalid [`InitialConditions`]. May occur when using Mixed variables with objects that
     /// cannot define them.
     InvalidInitialConditions,
@@ -179,7 +179,7 @@ impl Particle {
         use CoordinateSet::*;
         let integration_status = match initial_conditions.coordinate_set() {
             BoozerToroidal | BoozerPoloidal => IntegrationStatus::Initialized, // Always succeeds
-            MixedToroidal | MixedPoloidal => IntegrationStatus::Uninitialized,
+            MixedToroidal | MixedPoloidal => IntegrationStatus::PartlyInitialized, // Needs `finalize()`
         };
         Self {
             initial_conditions: initial_conditions.to_owned(),

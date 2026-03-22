@@ -286,7 +286,7 @@ fn gc_mixed_boozer_equivalence() {
     let mut boozer_particle = Particle::new(&boozer_initial);
     let mut mixed_particle = Particle::new(&mixed_initial);
     assert!(matches!(boozer_particle.integration_status(), IntegrationStatus::Initialized));
-    assert!(matches!(mixed_particle.integration_status(), IntegrationStatus::Uninitialized));
+    assert!(matches!(mixed_particle.integration_status(), IntegrationStatus::PartlyInitialized));
 
     let teval = (0.0, 2.41e5);
     boozer_particle.integrate(&qfactor, &current, &bfield, &perturbation, teval, &solver_params);

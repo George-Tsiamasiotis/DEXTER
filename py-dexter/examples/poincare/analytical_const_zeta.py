@@ -21,7 +21,7 @@ equilibrium = dex.Equilibrium(
 
 particle_count = 80
 psi0s = np.linspace(0, 1, particle_count) * equilibrium.psi_wall
-initial_conditions = dex.QueueInitialConditions(
+initial_conditions = dex.QueueInitialConditions.boozer(
     t0=np.zeros(particle_count),
     flux0=dex.InitialFluxArray("Toroidal", psi0s),
     theta0=np.zeros(particle_count),

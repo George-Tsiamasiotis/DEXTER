@@ -23,7 +23,7 @@ particle_count = 80
 psips = np.linspace(0, 1, particle_count) * equilibrium.psip_wall
 psis = np.asarray([equilibrium.qfactor.psi_of_psip(psip) for psip in psips])
 
-initial_conditions = dex.QueueInitialConditions(
+initial_conditions = dex.QueueInitialConditions.boozer(
     t0=np.zeros(particle_count),
     flux0=dex.InitialFluxArray("Toroidal", psis),
     theta0=np.zeros(particle_count),

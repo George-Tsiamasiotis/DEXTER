@@ -25,6 +25,7 @@
 
 ## Simulate
 
+::: dexter.CoordinateSet
 ::: dexter.Intersection
 ::: dexter.IntegrationStatus
 ::: dexter.SteppingMethod

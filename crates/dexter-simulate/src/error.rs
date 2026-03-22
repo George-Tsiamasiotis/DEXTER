@@ -11,6 +11,10 @@ pub enum SimulationError {
     #[error("{0}")]
     EqError(#[from] dexter_equilibrium::EqError),
 
+    /// Queue initial conditions arrays must have a length of at least 1.
+    #[error("Queue initial conditions arrays must have a length of at least 1")]
+    QueueInitialConditionsEmptyInput,
+
     /// Queue initial conditions arrays must be of the same size.
     #[error("Queue initial conditions arrays must be of the same size")]
     QueueInitialConditionsMismatch,

@@ -57,16 +57,30 @@ PhaseMethod: TypeAlias = (
 )
 r""" Defines the calculation method of the phase $\phi$ in a Numerical Harmonic.
 
-    - Zero: Corresponds to $\phi = 0$.
-    - Average: Corresponds to $\phi = const =$ the average of all the values of the `phase_array`.
-    - Resonance: Corresponds to $\phi = const =$ the value of $\phi$ at the resonance $m/n$. In the
+    - `Zero`: Corresponds to $\phi = 0$.
+    - `Average`: Corresponds to $\phi = const =$ the average of all the values of the `phase_array`.
+    - `Resonance`: Corresponds to $\phi = const =$ the value of $\phi$ at the resonance $m/n$. In the
       case that the resonance falls outside the wall, or does not correspond to a valid q-factor
       value, it defaults to `Zero`.
-    - Interpolation: Interpolation over the `phase_array`.
-    - Custom(f64): Use a custom value for $\phi = const$.
+    - `Interpolation`: Interpolation over the `phase_array`.
+    - `Custom(f64)`: Use a custom value for $\phi = const$.
 """
 
 # =================== Simulate
+
+CoordinateSet: TypeAlias = Literal[
+    "BoozerToroidal",
+    "BoozerPoloidal",
+    "MixedToroidal",
+    "MixedPoloidal",
+]
+r""" The kind of InitialConditions set.
+
+    - `BoozerToroidal`: Initial conditions set in the $(t, \psi, \theta, \zeta, \rho, \mu)$ space.
+    - `BoozerPoloidal`: Initial conditions set in the $(t, \psi_p, \theta, \zeta, \rho, \mu)$ space.
+    - `MixedToroidal`: Initial conditions set in the $(t, P_\zeta, \psi, \theta, \zeta, \mu)$ space.
+    - `MixedPoloidal`: Initial conditions set in the $(t, P_\zeta, \psi_p, \theta, \zeta, \mu)$ space.
+"""
 
 
 Intersection: TypeAlias = Literal["ConstZeta", "ConstTheta"]
@@ -78,7 +92,7 @@ r""" Defines the surface of the Poincare section.
 
 IntegrationStatus: TypeAlias = Literal[
     "Initialized",
-    "Uninitialized",
+    "PartlyInitialized",
     "InvalidInitialConditions",
     "OutOfBoundsInitialization",
     "Integrated",
@@ -92,7 +106,7 @@ IntegrationStatus: TypeAlias = Literal[
 r"""The integration status of a Particle.
 
     - `Initialized`: Initialized by InitialConditions, not integrated.
-    - `Uninitialized`: InitialConditions have not been fully calculated yet.
+    - `PartlyInitialized`: InitialConditions have not been fully calculated yet.
     - `InvalidInitialConditions`: Invalid InitialConditions. May occur when using Mixed variables
       with objects that cannot define them, for example Mixed Toroidal coordinates when $g(\psi)$ is
       not defined.

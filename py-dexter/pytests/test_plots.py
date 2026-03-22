@@ -99,7 +99,7 @@ def test_particle_plots(nc_equilibrium: Equilibrium):
 
 
 def test_queue_plots(nc_equilibrium: Equilibrium):
-    initials = QueueInitialConditions(
+    initials = QueueInitialConditions.boozer(
         t0=np.zeros(3),
         flux0=InitialFluxArray("Toroidal", np.linspace(0, 0.001, 3)),
         theta0=np.zeros(3),

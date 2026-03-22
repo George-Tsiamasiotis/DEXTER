@@ -2,7 +2,7 @@
 
 use dexter::dexter_simulate::{
     FluxCoordinate, InitialConditions, InitialFlux, IntersectParams, Intersection, Particle, Queue,
-    QueueInitialConditions, SolverParams, SteppingMethod,
+    QueueInitialConditions, SolverParams, SteppingMethod, poloidal_fluxes, toroidal_fluxes,
 };
 use ndarray::Array1;
 use numpy::{IntoPyArray, PyArray1};
@@ -11,12 +11,12 @@ use pyo3::prelude::*;
 use pyo3::types::{PyTuple, PyType};
 
 use crate::pyerror::PySimulationError;
-use crate::pylibrium::*;
 use crate::{
     generic_particle_integrate_impl, generic_particle_intersect_impl, generic_queue_integrate_impl,
     generic_queue_intersect_impl, py_debug_impl, py_export_getter, py_export_pub_field,
     py_get_enum_string, py_get_numpy1D, py_repr_impl,
 };
+use crate::{py_get_numpy1D_fallible, pylibrium::*};
 
 // ===============================================================================================
 
@@ -61,6 +61,7 @@ pub struct PyInitialConditions(pub(crate) InitialConditions);
 #[pymethods]
 impl PyInitialConditions {
     #[classmethod]
+    #[pyo3(signature = (t0, flux0, theta0, zeta0, rho0, mu0))]
     pub fn boozer(
         _: &Bound<'_, PyType>,
         t0: f64,
@@ -76,6 +77,7 @@ impl PyInitialConditions {
     }
 
     #[classmethod]
+    #[pyo3(signature = (t0, flux0, theta0, zeta0, pzeta0, mu0))]
     pub fn mixed(
         _: &Bound<'_, PyType>,
         t0: f64,
@@ -249,9 +251,10 @@ pub struct PyQueueInitialConditions(pub(crate) QueueInitialConditions);
 
 #[pymethods]
 impl PyQueueInitialConditions {
-    #[new]
+    #[classmethod]
     #[pyo3(signature = (t0, flux0, theta0, zeta0, rho0, mu0))]
-    pub fn new<'py>(
+    pub fn boozer(
+        _: &Bound<'_, PyType>,
         t0: Vec<f64>,
         flux0: &PyInitialFluxArray,
         theta0: Vec<f64>,
@@ -259,20 +262,17 @@ impl PyQueueInitialConditions {
         rho0: Vec<f64>,
         mu0: Vec<f64>,
     ) -> Result<Self, PySimulationError> {
-        let flux0_rust: Array1<InitialFlux>;
-        match flux0.kind {
-            FluxCoordinate::Toroidal => {
-                flux0_rust =
-                    Array1::from_iter(flux0.values.map(|value| InitialFlux::Toroidal(*value)))
-            }
-            FluxCoordinate::Poloidal => {
-                flux0_rust =
-                    Array1::from_iter(flux0.values.map(|value| InitialFlux::Poloidal(*value)))
-            }
+        let flux0_values = flux0
+            .values
+            .as_slice()
+            .expect("should be in standard layout");
+        let flux0_rust = match flux0.kind {
+            FluxCoordinate::Toroidal => toroidal_fluxes(flux0_values).to_vec(),
+            FluxCoordinate::Poloidal => poloidal_fluxes(flux0_values).to_vec(),
         };
-        Ok(Self(QueueInitialConditions::build(
+        Ok(Self(QueueInitialConditions::boozer(
             &t0,
-            &flux0_rust.as_slice().unwrap_or_default(), // let rust handle it
+            &flux0_rust,
             &theta0,
             &zeta0,
             &rho0,
@@ -280,8 +280,41 @@ impl PyQueueInitialConditions {
         )?))
     }
 
+    #[classmethod]
+    #[pyo3(signature = (t0, flux0, theta0, zeta0, pzeta0, mu0))]
+    pub fn mixed(
+        _: &Bound<'_, PyType>,
+        t0: Vec<f64>,
+        flux0: &PyInitialFluxArray,
+        theta0: Vec<f64>,
+        zeta0: Vec<f64>,
+        pzeta0: Vec<f64>,
+        mu0: Vec<f64>,
+    ) -> Result<Self, PySimulationError> {
+        let flux0_values = flux0
+            .values
+            .as_slice()
+            .expect("should be in standard layout");
+        let flux0_rust = match flux0.kind {
+            FluxCoordinate::Toroidal => toroidal_fluxes(flux0_values).to_vec(),
+            FluxCoordinate::Poloidal => poloidal_fluxes(flux0_values).to_vec(),
+        };
+        Ok(Self(QueueInitialConditions::mixed(
+            &t0,
+            &flux0_rust,
+            &theta0,
+            &zeta0,
+            &pzeta0,
+            &mu0,
+        )?))
+    }
+
     pub fn __len__(&self) -> usize {
         self.0.len()
+    }
+
+    pub fn __getitem__(&self, index: usize) -> PyInitialConditions {
+        PyInitialConditions(self.0.initial_from_index(index).clone())
     }
 }
 
@@ -290,8 +323,9 @@ py_repr_impl!(PyQueueInitialConditions);
 py_get_numpy1D!(PyQueueInitialConditions, t_array);
 py_get_numpy1D!(PyQueueInitialConditions, theta_array);
 py_get_numpy1D!(PyQueueInitialConditions, zeta_array);
-py_get_numpy1D!(PyQueueInitialConditions, rho_array);
 py_get_numpy1D!(PyQueueInitialConditions, mu_array);
+py_get_numpy1D_fallible!(PyQueueInitialConditions, rho_array);
+py_get_numpy1D_fallible!(PyQueueInitialConditions, pzeta_array);
 
 // ===============================================================================================
 

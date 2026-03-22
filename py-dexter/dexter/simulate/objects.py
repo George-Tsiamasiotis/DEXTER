@@ -25,6 +25,7 @@ from ._plotters import _ParticlePlotter, _QueuePlotter
 from dexter.types import (
     Array1,
     FluxCoordinate,
+    CoordinateSet,
     Intersection,
     SteppingMethod,
     IntegrationStatus,
@@ -90,9 +91,23 @@ class InitialConditions:
 
     def __init__(self) -> None:
         raise RuntimeError(
-            "Use 'InitialConditions.boozer' or InitialConditions.mixed' "
+            "Use 'InitialConditions.boozer' or 'InitialConditions.mixed' "
             + "to construct an InitialConditions set."
         )
+
+    @classmethod
+    def _from_rust_pyinitial_conditions(
+        cls,
+        _rust: _PyInitialConditions,
+    ) -> InitialConditions:
+        """Creates a new empty `InitialConditions` and manually sets its `_rust: _PyInitialConditions`
+        field to the passed `_rust: _PyInitialConditions`, essentially creating a copy.
+
+        This is necessary to make `QueueInitialConditions` iterable.
+        """
+        initial = InitialConditions.__new__(InitialConditions)
+        initial._rust = _rust
+        return initial
 
     @classmethod
     def boozer(
@@ -104,7 +119,7 @@ class InitialConditions:
         rho0: float,
         mu0: float,
     ) -> InitialConditions:
-        r"""Initial conditions for a Particle in Boozer coordinates.
+        r"""Creates initial conditions for a Particle in Boozer coordinates.
 
         The initial conditions are defined on the
         $(t, \psi, \theta, \zeta, \rho, \mu)$ or
@@ -156,7 +171,7 @@ class InitialConditions:
         pzeta0: float,
         mu0: float,
     ) -> InitialConditions:
-        r"""Initial conditions for a Particle in Mixed coordinates.
+        r"""Creates initial conditions for a Particle in Mixed coordinates.
 
         The initial conditions are defined on the
         $(t, \psi, \theta, \zeta, P\zeta, \mu)$ or
@@ -180,7 +195,7 @@ class InitialConditions:
 
         Example
         -------
-        ```python title="nitialConditions definition in Mixed Coordinates"
+        ```python title="InitialConditions definition in Mixed Coordinates"
         >>> initial_conditions = dex.InitialConditions.mixed(
         ...     t0=0,
         ...     flux0=dex.InitialFlux("Toroidal", 0.1), # ψ0 = 0.1
@@ -234,6 +249,11 @@ class InitialConditions:
     def pzeta0(self) -> Optional[float]:
         r"""The initial canonical momentum $P_\zeta$, in Normalized Units."""
         return self._rust.pzeta0
+
+    @property
+    def coordinate_set(self) -> CoordinateSet:
+        """The kind of InitialConditions set."""
+        return self._rust.coordinate_set
 
     def __str__(self) -> str:
         return self._rust.__str__()
@@ -700,45 +720,131 @@ class InitialFluxArray:
 class QueueInitialConditions:
     r"""Sets of initial conditions for initializing a Queue.
 
-    Use the [`InitialFluxArray`][dexter.InitialFluxArray] helper object to initialize the $\psi$/$\psi_p$ variables.
+    Use [`QueueInitialConditions.boozer`][dexter.QueueInitialConditions.boozer]
+    and [`QueueInitialConditions.mixed`][dexter.QueueInitialConditions.mixed] class
+    methods to construct the set.
 
-    Example
-    -------
-    ```python title="QueueInitialConditions definition"
-    >>> num = 10
-    >>> psi0s = InitialFluxArray("Toroidal", np.linspace(0, 0.5, num))
-    >>>
-    >>> initial_conditions = QueueInitialConditions(
-    ...     t0=np.zeros(num),
-    ...     flux0=psi0s,
-    ...     theta0=np.zeros(num),
-    ...     zeta0=np.zeros(num),
-    ...     rho0=np.logspace(1e-6, 1e-5, num),
-    ...     mu0=np.full(num, 1e-6),
-    ... )
-
-    ```
+    Use the [`InitialFluxArray`][dexter.InitialFluxArray] helper object to initialize
+    the $\psi$/$\psi_p$ variables.
     """
 
     _rust: _PyQueueInitialConditions
 
-    def __init__(
-        self,
+    def __init__(self) -> None:
+        raise RuntimeError(
+            "Use 'QueueInitialConditions.boozer' or 'QueueInitialConditions.mixed' "
+            + "to construct a QueueInitialConditions set."
+        )
+
+    @classmethod
+    def boozer(
+        cls,
         t0: Array1,
         flux0: InitialFluxArray,
         theta0: Array1,
         zeta0: Array1,
         rho0: Array1,
         mu0: Array1,
-    ) -> None:
-        self._rust = _PyQueueInitialConditions(
-            t0=t0,
-            flux0=flux0._rust,
-            theta0=theta0,
-            zeta0=zeta0,
-            rho0=rho0,
-            mu0=mu0,
+    ) -> QueueInitialConditions:
+        r"""Creates initial conditions for a Queue in Boozer coordinates.
+
+        The initial conditions are defined on the
+        $(t, \psi, \theta, \zeta, \rho, \mu)$ or
+        $(t, \psi_p, \theta, \zeta, \rho, \mu)$
+        space, depending on the value of `flux0`.
+
+        Parameters
+        ----------
+        t0
+            The initial times, in Normalized Units.
+        flux0
+            The initial $\psi / \psi_p$, in Normalized Units.
+        theta0
+            The initial $\theta$ angles, in rads.
+        zeta0
+            The initial $\zeta$ angles, in rads.
+        rho0
+            The initial $\rho_{||}$, in Normalized Units.
+        mu0
+            The initial magnetic moments $\mu$, in Normalized Units.
+
+        Example
+        -------
+        ```python title="QueueInitialConditions definition in Boozer coordinates"
+        >>> num = 10
+        >>> psi0s = InitialFluxArray("Toroidal", np.linspace(0, 0.5, num))
+        >>>
+        >>> initial_conditions = QueueInitialConditions.boozer(
+        ...     t0=np.zeros(num),
+        ...     flux0=psi0s,
+        ...     theta0=np.zeros(num),
+        ...     zeta0=np.zeros(num),
+        ...     rho0=np.logspace(1e-6, 1e-5, num),
+        ...     mu0=np.full(num, 1e-6),
+        ... )
+
+        ```
+        """
+        initial = QueueInitialConditions.__new__(QueueInitialConditions)
+        initial._rust = _PyQueueInitialConditions.boozer(
+            t0=t0, flux0=flux0._rust, theta0=theta0, zeta0=zeta0, rho0=rho0, mu0=mu0
         )
+        return initial
+
+    @classmethod
+    def mixed(
+        cls,
+        t0: Array1,
+        flux0: InitialFluxArray,
+        theta0: Array1,
+        zeta0: Array1,
+        pzeta0: Array1,
+        mu0: Array1,
+    ) -> QueueInitialConditions:
+        r"""Creates initial conditions for a Queue in Mixed coordinates.
+
+        The initial conditions are defined on the
+        $(t, \psi, \theta, \zeta, P_\zeta, \mu)$ or
+        $(t, \psi_p, \theta, \zeta, P_\zeta, \mu)$
+        space, depending on the value of `flux0`.
+
+        Parameters
+        ----------
+        t0
+            The initial times, in Normalized Units.
+        flux0
+            The initial $\psi / \psi_p$, in Normalized Units.
+        theta0
+            The initial $\theta$ angles, in rads.
+        zeta0
+            The initial $\zeta$ angles, in rads.
+        pzeta0
+            The initial $P_\zeta$, in Normalized Units.
+        mu0
+            The initial magnetic moments $\mu$, in Normalized Units.
+
+        Example
+        -------
+        ```python title="QueueInitialConditions definition in Boozer coordinates"
+        >>> num = 10
+        >>> psi0s = InitialFluxArray("Toroidal", np.linspace(0, 0.5, num))
+        >>>
+        >>> initial_conditions = QueueInitialConditions.mixed(
+        ...     t0=np.zeros(num),
+        ...     flux0=psi0s,
+        ...     theta0=np.zeros(num),
+        ...     zeta0=np.zeros(num),
+        ...     pzeta0=np.linspace(-0.02, -0.01, num),
+        ...     mu0=np.full(num, 1e-6),
+        ... )
+
+        ```
+        """
+        initial = QueueInitialConditions.__new__(QueueInitialConditions)
+        initial._rust = _PyQueueInitialConditions.mixed(
+            t0=t0, flux0=flux0._rust, theta0=theta0, zeta0=zeta0, pzeta0=pzeta0, mu0=mu0
+        )
+        return initial
 
     @property
     def t_array(self) -> Array1:
@@ -756,14 +862,36 @@ class QueueInitialConditions:
         return self._rust.zeta_array
 
     @property
-    def rho_array(self) -> Array1:
+    def mu_array(self) -> Array1:
+        r"""The initial $\mu$ array."""
+        return self._rust.mu_array
+
+    @property
+    def rho_array(self) -> Optional[Array1]:
         r"""The initial $\rho$ array."""
         return self._rust.rho_array
 
     @property
-    def mu_array(self) -> Array1:
-        r"""The initial $\mu$ array."""
-        return self._rust.mu_array
+    def pzeta_array(self) -> Optional[Array1]:
+        r"""The initial $P_\zeta$ array."""
+        return self._rust.pzeta_array
+
+    def __iter__(self):
+        self._iter_index = 0
+        return self
+
+    def __next__(self):
+        if self._iter_index < len(self):
+            initial = InitialConditions._from_rust_pyinitial_conditions(
+                self._rust[self._iter_index]
+            )
+            self._iter_index += 1
+            return initial
+        else:
+            raise StopIteration
+
+    def __getitem__(self, index: int):
+        return InitialConditions._from_rust_pyinitial_conditions(self._rust[index])
 
     def __len__(self) -> int:
         return self._rust.__len__()
@@ -796,7 +924,7 @@ class Queue(_QueuePlotter):
     >>> num = 10
     >>> psi0s = InitialFluxArray("Toroidal", np.linspace(0, 0.5, num))
     >>>
-    >>> initial_conditions = QueueInitialConditions(
+    >>> initial_conditions = QueueInitialConditions.boozer(
     ...     t0=np.zeros(num),
     ...     flux0=psi0s,
     ...     theta0=np.zeros(num),
@@ -906,7 +1034,7 @@ class Queue(_QueuePlotter):
         >>> num = 10
         >>> psi0s = InitialFluxArray("Toroidal", np.linspace(0, 0.5, num))
         >>>
-        >>> initial_conditions = QueueInitialConditions(
+        >>> initial_conditions = QueueInitialConditions.boozer(
         ...     t0=np.zeros(num),
         ...     flux0=psi0s,
         ...     theta0=np.zeros(num),
@@ -1020,18 +1148,18 @@ class Queue(_QueuePlotter):
         >>> num = 10
         >>> psi0s = InitialFluxArray("Toroidal", np.linspace(0.01, 0.4, num))
         >>>
-        >>> initial_conditions = QueueInitialConditions(
+        >>> initial_conditions = QueueInitialConditions.mixed(
         ...     t0=np.zeros(num),
         ...     flux0=psi0s,
         ...     theta0=np.zeros(num),
         ...     zeta0=np.zeros(num),
-        ...     rho0=np.linspace(1e-6, 2e-6, num),
+        ...     pzeta0=np.logspace(-0.02, 0.01, num),
         ...     mu0=np.full(num, 7e-7),
         ... )
         >>>
         >>> # IntersectParams setup
         >>> intersect_params = dex.IntersectParams(
-        ...     intersection = "ConstTheta",
+        ...     intersection = "ConstZeta",
         ...     angle = 0.0,
         ...     turns = 5,
         ... )

@@ -50,15 +50,35 @@ impl Queue {
     /// Creates a [`Queue`] from a [`QueueInitialConditions`].
     ///
     /// # Example
+    ///
+    /// Initial conditions in Boozer coordinates.
     /// ```
     /// # use dexter_simulate::*;
     /// use InitialFlux::*;
-    /// let initial_conditions = QueueInitialConditions::build(
+    /// let initial_conditions = QueueInitialConditions::boozer(
     ///     &[0.0, 0.1],
     ///     &[Toroidal(0.15), Toroidal(0.3)],
-    ///     &[1e-3, 2e-3],
     ///     &[0.0, 0.1],
     ///     &[0.0, 0.0],
+    ///     &[1e-3, 2e-3],
+    ///     &[7e-6, 7e-6],
+    /// )?;
+    /// let queue = Queue::new(&initial_conditions);
+    /// # Ok::<_, SimulationError>(())
+    /// ```
+    ///
+    /// # Example
+    ///
+    /// Initial conditions in Mixed coordinates.
+    /// ```
+    /// # use dexter_simulate::*;
+    /// use InitialFlux::*;
+    /// let initial_conditions = QueueInitialConditions::mixed(
+    ///     &[0.0, 0.1],
+    ///     &[Toroidal(0.15), Toroidal(0.3)],
+    ///     &[0.0, 0.1],
+    ///     &[0.0, 0.0],
+    ///     &[-0.025, -0.027],
     ///     &[7e-6, 7e-6],
     /// )?;
     /// let queue = Queue::new(&initial_conditions);
@@ -93,12 +113,12 @@ impl Queue {
     /// ]);
     ///
     /// use InitialFlux::*;
-    /// let initial_conditions = QueueInitialConditions::build(
+    /// let initial_conditions = QueueInitialConditions::boozer(
     ///     &[0.0, 0.1],
     ///     &[Toroidal(0.15), Toroidal(0.3)],
-    ///     &[1e-3, 2e-3],
     ///     &[0.0, 0.1],
     ///     &[0.0, 0.0],
+    ///     &[1e-4, 2e-4],
     ///     &[7e-6, 7e-6],
     /// )?;
     /// let mut queue = Queue::new(&initial_conditions);
@@ -152,10 +172,9 @@ impl Queue {
     /// # use dexter_simulate::*;
     /// # use std::path::PathBuf;
     /// #
-    /// let path = PathBuf::from("./netcdf.nc");
-    /// let qfactor = NcQfactorBuilder::new(&path, "steffen").build()?;
-    /// let current = NcCurrentBuilder::new(&path, "steffen").build()?;
-    /// let bfield = NcBfieldBuilder::new(&path, "bicubic").build()?;
+    /// let qfactor = ParabolicQfactor::new(1.1, 4.2, FluxWall::Toroidal(0.6));
+    /// let current = LarCurrent::new();
+    /// let bfield = LarBfield::new();
     /// let perturbation = Perturbation::new(&[
     ///     CosHarmonic::new(1e-3, 1, 1, 0.0),
     ///     CosHarmonic::new(1e-3, 1, 2, 0.0),
@@ -163,12 +182,12 @@ impl Queue {
     /// ]);
     ///
     /// use InitialFlux::*;
-    /// let initial_conditions = QueueInitialConditions::build(
+    /// let initial_conditions = QueueInitialConditions::boozer(
     ///     &[0.0, 0.1],
     ///     &[Toroidal(0.15), Toroidal(0.3)],
-    ///     &[1e-3, 2e-3],
     ///     &[0.0, 0.1],
     ///     &[0.0, 0.0],
+    ///     &[1e-4, 2e-4],
     ///     &[7e-6, 7e-6],
     /// )?;
     /// let mut queue = Queue::new(&initial_conditions);

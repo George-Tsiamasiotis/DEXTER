@@ -23,7 +23,7 @@ fn queue_intersect_const_theta_parQ_larC_larB_cosP() -> Result<()> {
     let particle_count = 10;
     let psis = qfactor.psi_wall() * Array1::linspace(0.0, 1.0, particle_count);
     let psis = toroidal_fluxes(&psis.to_vec());
-    let initial_conditions = QueueInitialConditions::build(
+    let initial_conditions = QueueInitialConditions::boozer(
         &vec![0.0; particle_count],
         &psis.to_vec(),
         &vec![0.0; particle_count],
@@ -91,7 +91,7 @@ fn queue_poloidal_intersect_const_zeta_ncdQ_ncdC_ncdB_ncdP() -> Result<()> {
     let particle_count = 10;
     let psips = qfactor.psip_wall().unwrap() * Array1::linspace(0.0, 0.97, particle_count);
     let psips = poloidal_fluxes(&psips.to_vec());
-    let initial_conditions = QueueInitialConditions::build(
+    let initial_conditions = QueueInitialConditions::boozer(
         &vec![0.0; particle_count],
         &psips.to_vec(),
         &vec![0.0; particle_count],

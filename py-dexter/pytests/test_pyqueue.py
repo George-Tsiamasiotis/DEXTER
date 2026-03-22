@@ -1,6 +1,7 @@
 import numpy as np
 
 from dexter import (
+    InitialConditions,
     InitialFluxArray,
     QueueInitialConditions,
     Queue,
@@ -26,10 +27,10 @@ def test_initial_flux_array1():
     assert isinstance(i.__repr__(), str)
 
 
-def test_queue_initial_conditions():
+def test_queue_boozer_initial_conditions():
     particle_count = 10
     psi0s = InitialFluxArray("Toroidal", np.linspace(0, 0.5, particle_count))
-    q = QueueInitialConditions(
+    init = QueueInitialConditions.boozer(
         t0=np.zeros(particle_count),
         flux0=psi0s,
         theta0=np.zeros(particle_count),
@@ -37,25 +38,72 @@ def test_queue_initial_conditions():
         rho0=np.full(particle_count, 1e-5),
         mu0=np.full(particle_count, 1e-6),
     )
-    assert len(q) == particle_count
-    assert q.t_array.shape == (particle_count,)
-    assert q.theta_array.shape == (particle_count,)
-    assert q.zeta_array.shape == (particle_count,)
-    assert q.rho_array.shape == (particle_count,)
-    assert q.mu_array.shape == (particle_count,)
-    assert isinstance(q.__str__(), str)
-    assert isinstance(q.__repr__(), str)
+    for i in init:
+        assert isinstance(i, InitialConditions)
+        assert i.coordinate_set == "BoozerToroidal"
+    assert len(init) == particle_count
+    assert init.t_array.shape == (particle_count,)
+    assert init.theta_array.shape == (particle_count,)
+    assert init.zeta_array.shape == (particle_count,)
+    assert init.mu_array.shape == (particle_count,)
+    assert init.rho_array is not None and init.rho_array.shape == (particle_count,)
+    assert init.pzeta_array is None
+    assert isinstance(init.__str__(), str)
+    assert isinstance(init.__repr__(), str)
 
 
-def test_queue_intstantiation():
+def test_queue_mixed_initial_conditions():
+    particle_count = 10
+    psi0s = InitialFluxArray("Poloidal", np.linspace(0, 0.5, particle_count))
+    init = QueueInitialConditions.mixed(
+        t0=np.zeros(particle_count),
+        flux0=psi0s,
+        theta0=np.zeros(particle_count),
+        zeta0=np.zeros(particle_count),
+        pzeta0=np.full(particle_count, -0.025),
+        mu0=np.full(particle_count, 1e-6),
+    )
+    for i in init:
+        assert isinstance(i, InitialConditions)
+        assert i.coordinate_set == "MixedPoloidal"
+    assert len(init) == particle_count
+    assert init.t_array.shape == (particle_count,)
+    assert init.theta_array.shape == (particle_count,)
+    assert init.zeta_array.shape == (particle_count,)
+    assert init.mu_array.shape == (particle_count,)
+    assert init.rho_array is None
+    assert init.pzeta_array is not None and init.pzeta_array.shape == (particle_count,)
+    assert isinstance(init.__str__(), str)
+    assert isinstance(init.__repr__(), str)
+
+
+def test_queue_boozer_instantiation():
     particle_count = 10
     psi0s = InitialFluxArray("Toroidal", np.linspace(0, 0.5, particle_count))
-    initial_conditions = QueueInitialConditions(
+    initial_conditions = QueueInitialConditions.boozer(
         t0=np.zeros(particle_count),
         flux0=psi0s,
         theta0=np.zeros(particle_count),
         zeta0=np.zeros(particle_count),
         rho0=np.full(particle_count, 1e-5),
+        mu0=np.full(particle_count, 1e-6),
+    )
+    queue = Queue(initial_conditions)
+    particles = queue.particles
+    assert queue.particle_count == len(particles) == particle_count
+    assert isinstance(queue.initial_conditions, QueueInitialConditions)
+    assert isinstance(queue[0], Particle)
+
+
+def test_queue_mixed_instantiation():
+    particle_count = 10
+    psi0s = InitialFluxArray("Toroidal", np.linspace(0, 0.5, particle_count))
+    initial_conditions = QueueInitialConditions.mixed(
+        t0=np.zeros(particle_count),
+        flux0=psi0s,
+        theta0=np.zeros(particle_count),
+        zeta0=np.zeros(particle_count),
+        pzeta0=np.full(particle_count, -0.025),
         mu0=np.full(particle_count, 1e-6),
     )
     queue = Queue(initial_conditions)
@@ -81,7 +129,7 @@ class TestQueue:
         )
         particle_count = 10
         psi0s = InitialFluxArray("Toroidal", np.linspace(0.01, 0.4, particle_count))
-        cls.initial_conditions = QueueInitialConditions(
+        cls.initial_conditions = QueueInitialConditions.boozer(
             t0=np.zeros(particle_count),
             flux0=psi0s,
             theta0=np.zeros(particle_count),
@@ -108,5 +156,6 @@ class TestQueue:
             intersect_params,
         )
         for particle in queue.particles:
+            assert isinstance(particle, Particle)
             assert particle.steps_taken > 10
             assert particle.integration_status == "Intersected"

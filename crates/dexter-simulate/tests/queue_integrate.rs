@@ -21,7 +21,7 @@ fn queue_integrate_parQ_larC_larB_cosP() -> Result<()> {
     let particle_count = 10;
     let psis = qfactor.psi_wall() * Array1::linspace(0.0, 1.0, particle_count);
     let psis = toroidal_fluxes(&psis.to_vec());
-    let initial_conditions = QueueInitialConditions::build(
+    let initial_conditions = QueueInitialConditions::boozer(
         &vec![0.0; particle_count],
         &psis.to_vec(),
         &vec![0.0; particle_count],

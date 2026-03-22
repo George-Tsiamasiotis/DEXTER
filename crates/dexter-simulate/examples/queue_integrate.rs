@@ -18,7 +18,7 @@ fn main() -> Result<()> {
     let particle_count = 200;
     let psis = qfactor.psi_wall() * Array1::linspace(0.1, 0.9, particle_count);
     let psis = toroidal_fluxes(&psis.to_vec());
-    let initial_conditions = QueueInitialConditions::build(
+    let initial_conditions = QueueInitialConditions::boozer(
         &vec![0.0; particle_count],
         &psis.to_vec(),
         &vec![0.0; particle_count],

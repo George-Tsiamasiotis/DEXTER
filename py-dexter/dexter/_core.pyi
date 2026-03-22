@@ -14,6 +14,7 @@ from dexter.types import (
     FluxWall,
     FluxState,
     PhaseMethod,
+    CoordinateSet,
     Intersection,
     IntegrationStatus,
     SteppingMethod,
@@ -414,6 +415,8 @@ class _PyInitialConditions:
     rho0: Optional[float]
     pzeta0: Optional[float]
 
+    coordinate_set: CoordinateSet
+
     def __init__(self) -> None:
         raise RuntimeError("This object should not be constructed directly")
 
@@ -542,19 +545,36 @@ class _PyQueueInitialConditions:
     flux_array: Array1
     theta_array: Array1
     zeta_array: Array1
-    rho_array: Array1
     mu_array: Array1
 
-    def __init__(
-        self,
+    rho_array: Optional[Array1]
+    pzeta_array: Optional[Array1]
+
+    def __init__(self) -> None:
+        raise RuntimeError("This object should not be constructed directly")
+
+    @classmethod
+    def boozer(
+        cls,
         t0: Array1,
         flux0: _PyInitialFluxArray,
         theta0: Array1,
         zeta0: Array1,
         rho0: Array1,
         mu0: Array1,
-    ) -> None: ...
+    ) -> _PyQueueInitialConditions: ...
+    @classmethod
+    def mixed(
+        cls,
+        t0: Array1,
+        flux0: _PyInitialFluxArray,
+        theta0: Array1,
+        zeta0: Array1,
+        pzeta0: Array1,
+        mu0: Array1,
+    ) -> _PyQueueInitialConditions: ...
     def __len__(self) -> int: ...
+    def __getitem__(self, index: int) -> _PyInitialConditions: ...
     def __str__(self) -> str: ...
     def __repr__(self) -> str: ...
 
