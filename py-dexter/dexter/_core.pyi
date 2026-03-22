@@ -29,6 +29,8 @@ class _PyLarGeometry:
     equilibrium_type: EquilibriumType
     baxis: float
     raxis: float
+    zaxis: float
+    rgeo: float
     rwall: float
     psi_wall: float
     rlab_wall: Array1

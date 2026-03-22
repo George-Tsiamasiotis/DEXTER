@@ -7,14 +7,16 @@ import numpy as np
 import dexter as dex
 from math import pi as PI
 
+geometry = dex.LarGeometry(4, 1.75, 0.5)
 equilibrium = dex.Equilibrium(
-    qfactor=dex.ParabolicQfactor(1.1, 4.2, ("Toroidal", 0.5)),
+    geometry=geometry,
+    qfactor=dex.ParabolicQfactor(1.1, 4.2, ("Toroidal", geometry.psi_wall)),
     current=dex.LarCurrent(),
     bfield=dex.LarBfield(),
     perturbation=dex.Perturbation(
         [
-            dex.CosHarmonic(8e-4, 3, 1, PI),
-            dex.CosHarmonic(8e-4, 5, 3, PI),
+            dex.CosHarmonic(8e-5, 3, 1, PI),
+            dex.CosHarmonic(8e-5, 5, 3, PI),
         ]
     ),
 )
@@ -41,3 +43,4 @@ queue.intersect(
 )
 print(queue)
 queue.plot_const_zeta_cartesian_poincare(initial=True)
+queue.plot_const_zeta_rz_poincare(equilibrium=equilibrium, initial=True)

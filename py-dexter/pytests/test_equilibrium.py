@@ -25,6 +25,9 @@ def test_numerical_equilibrium(
     assert isinstance(eq.bfield, NcBfield)
     assert isinstance(eq.psi_wall, float)
     assert isinstance(eq.psip_wall, float)
+    assert isinstance(eq.rwall, float)
+    assert isinstance(eq.raxis, float)
+    assert isinstance(eq.baxis, float)
 
     eq = poloidal_nc_equilibrium
     assert isinstance(eq.geometry, NcGeometry)
@@ -33,6 +36,9 @@ def test_numerical_equilibrium(
     assert isinstance(eq.bfield, NcBfield)
     assert isinstance(eq.psi_wall, float)
     assert isinstance(eq.psip_wall, float)
+    assert isinstance(eq.rwall, float)
+    assert isinstance(eq.raxis, float)
+    assert isinstance(eq.baxis, float)
 
 
 def test_minimum_equilibrium():
@@ -64,8 +70,6 @@ def test_full_equilibrium():
             ]
         ),
     )
-    with pytest.raises(AttributeError):
-        equilibrium.psi_wall
     with pytest.raises(AttributeError):
         equilibrium.psip_wall
 

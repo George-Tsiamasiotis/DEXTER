@@ -2,13 +2,13 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
-from math import floor, log10
+from math import floor, log10, sqrt
 from math import pi as PI
 from warnings import warn
 from cycler import cycler
 
 from dexter._core import _PyParticle, _PyQueue
-from dexter import Equilibrium
+from dexter import Equilibrium, LarGeometry
 
 dpi = 120
 figsize = (10, 7)
@@ -18,6 +18,14 @@ LABEL_KW = {"labelpad": 10, "rotation": 0, "fontsize": 15}
 CARTESIAN_POINCARE_FIG_KW = {"figsize": (9, 6), "layout": "constrained", "dpi": 120}
 CARTESIAN_POINCARE_SCATTER_KW = {"s": 0.3, "marker": "o"}
 CARTESIAN_POINCARE_INITIAL_KW = {
+    "c": "k",
+    "marker": "x",
+    "markersize": 3,
+    "alpha": 0.4,
+    "zorder": -2,
+}
+RZ_POINCARE_SCATTER_KW = {"s": 0.3, "marker": "o"}
+RZ_POINCARE_INITIAL_KW = {
     "c": "k",
     "marker": "x",
     "markersize": 3,
@@ -215,7 +223,7 @@ class _QueuePlotter:
         initial: bool = False,
         color: bool = False,
     ):
-        r"""Plots the poincare map on the $\theta-\psi$ cartesian plane.
+        r"""Plots the $\zeta=const$ poincare map on the $\theta-\psi$ cartesian plane.
 
         Parameters
         ----------
@@ -273,7 +281,7 @@ class _QueuePlotter:
         initial: bool = False,
         color: bool = False,
     ):
-        r"""Plots the poincare map on the $\zeta-\psi_p$ cartesian plane.
+        r"""Plots the $\theta=const$ poincare map on the $\zeta-\psi_p$ cartesian plane.
 
         Parameters
         ----------
@@ -322,6 +330,99 @@ class _QueuePlotter:
                 init = particle.initial_conditions
                 initial_point = (init.theta0, init.flux0.value)
                 ax.plot(*initial_point, **CARTESIAN_POINCARE_INITIAL_KW)
+
+        plt.show()
+        plt.close()
+
+    def plot_const_zeta_rz_poincare(
+        self,
+        equilibrium: Equilibrium,
+        initial: bool = False,
+        color: bool = False,
+    ):
+        r"""Plots the $\zeta=const$ poincare map on the $R-Z$ coordinate system.
+
+        Parameters
+        ----------
+        color
+            Whether or not to use a different color for each orbit. Defaults to False.
+        initial
+            Whether or not to plot the initial points. Note that the initial $\theta_0$ should be equal to the
+            intersection angle, and the initial flux coordinate should be $\psi$. Defaults to False.
+        """
+
+        try:
+            intersect_params = getattr(self, "_intersect_params")._rust
+        except:
+            raise RuntimeError("Queue must have run the 'intersect' routine.")
+
+        if equilibrium.geometry is None:
+            raise RuntimeError("Equilibrium's 'Geometry' must be initialized.")
+
+        if intersect_params.intersection != "ConstZeta":
+            raise RuntimeError("Intersection surface must be 'ConstZeta'")
+
+        if initial and self._rust[0].initial_conditions.flux0.kind == "Poloidal":
+            raise ValueError("Cannot plot 'ψp0' in an 'theta-psi' plot")
+
+        fig = plt.figure(**CARTESIAN_POINCARE_FIG_KW)
+        ax = fig.add_subplot(aspect="equal")
+
+        if color:
+            ax.set_prop_cycle(cycler(color="brcmk"))
+        else:
+            ax.set_prop_cycle(cycler(color=["blue"]))
+
+        ax.set_xlabel(r"$R\ [m]$")
+        ax.set_xlabel(r"$Z\ [m]$")
+        ax.set_title(
+            rf"Poincare map at $\zeta$ = {intersect_params.angle} cross section"
+        )
+
+        geom = equilibrium.geometry
+        if isinstance(geom, LarGeometry) or geom.psi_state == "Good":
+            rlab_of_flux = geom.rlab_of_psi
+            zlab_of_flux = geom.zlab_of_psi
+        else:
+            rlab_of_flux = geom.rlab_of_psip
+            zlab_of_flux = geom.zlab_of_psip
+
+        for particle in self._rust.particles:
+            if particle.steps_stored == 0:  # Empty arrays mess with vectorized methods
+                continue
+            theta = particle.theta_array % (2 * PI)
+            if particle.initial_conditions.flux0.kind == "Toroidal":
+                flux = particle.psi_array
+            else:
+                flux = particle.psip_array
+            rlab = rlab_of_flux(flux, theta)
+            zlab = zlab_of_flux(flux, theta)
+            ax.scatter(rlab, zlab, **RZ_POINCARE_SCATTER_KW)
+            if initial:
+                init = particle.initial_conditions
+                psi0 = init.flux0.value
+                theta0 = init.theta0 % (2 * PI)
+                rlab0 = rlab_of_flux(psi0, theta0)
+                zlab0 = zlab_of_flux(psi0, theta0)
+                initial_point = (rlab0, zlab0)
+                ax.plot(*initial_point, **RZ_POINCARE_INITIAL_KW)
+
+        # Cursor
+        geom_center = (geom.rgeo, geom.zaxis)
+        axis_point = (geom.raxis, geom.zaxis)
+
+        def format_coord(x, y):
+            r = sqrt((axis_point[0] - x) ** 2 + (axis_point[1] - y) ** 2)
+            return f"(R, Z) = ({x:.5g}, {y:.5g}), r={r:.5g} "
+
+        setattr(ax, "format_coord", format_coord)
+        ax.plot(*axis_point, "ko", markersize=4, label="$R_{axis}$")
+        ax.plot(*geom_center, "ro", markersize=4, label="$R_{geometric}$")
+
+        rlab_wall = equilibrium.geometry.rlab_wall
+        zlab_wall = equilibrium.geometry.zlab_wall
+        ax.plot(rlab_wall, zlab_wall, color="k", linewidth=2)
+        ax.legend()
 
         plt.show()
         plt.close()

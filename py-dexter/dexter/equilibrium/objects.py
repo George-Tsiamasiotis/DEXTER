@@ -93,6 +93,16 @@ class LarGeometry(_GeometryTrait, _GeometryPlotter):
         return self._rust.raxis
 
     @property
+    def zaxis(self) -> float:
+        """The vertical position of the magnetic axis in $[m]$."""
+        return self._rust.zaxis
+
+    @property
+    def rgeo(self) -> float:
+        """The geometrical axis (device major radius) in $[m]$."""
+        return self._rust.rgeo
+
+    @property
     def rwall(self) -> float:
         """The value of the $r_{wall}$ coordinate at the wall in $[m]$."""
         return self._rust.rwall

@@ -7,6 +7,7 @@ Python methods that wrap rust 'generic' methods, assemble the monomorphized meth
 using the generic object's `_dyn` attribute.
 """
 
+import numpy as np
 from typing import Callable, Optional
 
 from dexter._core import (
@@ -698,7 +699,7 @@ class InitialFluxArray:
     _rust: _PyInitialFluxArray
 
     def __init__(self, kind: FluxCoordinate, values: Array1):
-        self._rust = _PyInitialFluxArray(kind=kind, values=values)
+        self._rust = _PyInitialFluxArray(kind=kind, values=np.atleast_1d(values))
 
     @property
     def kind(self) -> FluxCoordinate:

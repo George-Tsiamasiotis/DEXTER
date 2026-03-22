@@ -154,27 +154,58 @@ class Equilibrium:
         r"""The poloidal flux' value at the wall, $\psi_{p,wall}$."""
         return self._try_getattr("psip_wall")
 
+    @property
+    def baxis(self) -> float:
+        r"""The magnetic field strength on the axis, $B_{axis}$."""
+        return self._try_getattr("baxis")
+
+    @property
+    def raxis(self) -> float:
+        r"""The device's major radius, $R_{axis}$."""
+        return self._try_getattr("raxis")
+
+    @property
+    def rwall(self) -> float:
+        r"""The radial coordinate's value at the wall, $r_{wall}$."""
+        return self._try_getattr("rwall")
+
     def _try_getattr(self, name: str) -> Any:
         """Tries to find the attribute 'name' in all mandatory fields, raising an AttributeError if no object
         has defined it.
         """
         try:
-            return getattr(self.qfactor, name)
+            return getattr(self.geometry, name)
         except AttributeError:
             try:
-                return getattr(self.current, name)
+                return getattr(self.qfactor, name)
             except AttributeError:
                 try:
                     return getattr(self.current, name)
                 except:
-                    raise AttributeError(
-                        f"None of the equilibrium objects define '{name}'"
-                    )
+                    try:
+                        return getattr(self.bfield, name)
+                    except:
+                        raise AttributeError(
+                            f"None of the equilibrium objects define '{name}'"
+                        )
 
     @perturbation.setter
     def perturbation(self, perturbation: Perturbation):
         """Sets the equilibrium's Perturbation."""
         self._perturbation = perturbation
+
+    def __str__(self) -> str:
+        return (
+            "Equilibrium:\n"
+            + str(self.geometry)
+            + str(self.qfactor)
+            + str(self.current)
+            + str(self.bfield)
+            + str(self.perturbation)
+        )
+
+    def __repr__(self) -> str:
+        return self.__str__()
 
     def plot_b(self, levels: int = 20):
         """Plots a contour plot of the magnetic field strength for a numerical equilibrium.

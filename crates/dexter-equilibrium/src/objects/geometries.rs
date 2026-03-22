@@ -54,7 +54,8 @@ impl LarGeometry {
     /// ```
     #[must_use]
     pub fn new(baxis: f64, raxis: f64, rwall: f64) -> Self {
-        let psi_wall = (rwall / raxis).powi(2) / 2.0; // Normalized
+        let psi_wall_si = baxis * rwall.powi(2) / 2.0;
+        let psi_wall = psi_wall_si / (baxis * raxis.powi(2));
         Self {
             equilibrium_type: EquilibriumType::Analytical,
             baxis,
@@ -209,6 +210,18 @@ impl LarGeometry {
     /// Returns the horizontal position of the magnetic axis `R0` in **\[m\]**.
     #[must_use]
     pub fn raxis(&self) -> f64 {
+        self.raxis
+    }
+
+    /// Returns the vertical position of the magnetic axis **in \[m\]**.
+    #[must_use]
+    pub fn zaxis(&self) -> f64 {
+        0.0
+    }
+
+    /// Returns the geometrical axis (device major radius) **in \[m\]**.
+    #[must_use]
+    pub fn rgeo(&self) -> f64 {
         self.raxis
     }
 

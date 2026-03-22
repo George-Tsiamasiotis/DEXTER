@@ -1,3 +1,4 @@
+from dexter import equilibrium
 import numpy as np
 
 from dexter.equilibrium import _TEST_NETCDF_PATH as netcdf_path
@@ -115,6 +116,7 @@ def test_queue_plots(nc_equilibrium: Equilibrium):
     intersect_params = IntersectParams("ConstZeta", 0.0, 5)
     queue.intersect(nc_equilibrium, intersect_params)
     queue.plot_const_zeta_cartesian_poincare(initial=True)
+    queue.plot_const_zeta_rz_poincare(equilibrium=nc_equilibrium)
 
 
 # ================================================================================================

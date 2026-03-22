@@ -44,6 +44,8 @@ py_repr_impl!(PyLarGeometry);
 py_get_enum_string!(PyLarGeometry, equilibrium_type);
 py_export_getter!(PyLarGeometry, baxis, f64);
 py_export_getter!(PyLarGeometry, raxis, f64);
+py_export_getter!(PyLarGeometry, zaxis, f64);
+py_export_getter!(PyLarGeometry, rgeo, f64);
 py_export_getter!(PyLarGeometry, rwall, f64);
 py_export_getter!(PyLarGeometry, psi_wall, f64);
 py_eval1D!(PyLarGeometry, r_of_psi);

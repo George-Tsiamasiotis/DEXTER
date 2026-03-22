@@ -104,7 +104,7 @@ pub(super) fn intersect<Q, C, B, H>(
             break;
         }
         if particle.evolution.steps_stored() == intersect_params.turns {
-            particle.integration_status = IntegrationStatus::Integrated;
+            // Resolve integration status at the end
             break;
         }
 
@@ -180,17 +180,23 @@ pub(super) fn intersect<Q, C, B, H>(
         harmonic_cache_hits: caches.harmonic_caches.iter().map(H::Cache::hits).sum(),
         harmonic_cache_misses: caches.harmonic_caches.iter().map(H::Cache::misses).sum(),
     };
-    match check_mapping_accuracy(&particle.evolution, &intersect_params.intersection) {
-        Ok(_) => {
-            if particle.steps_stored() == 0 {
-                // TimedOut with correct duration
-            } else if particle.steps_stored() < intersect_params.turns {
-                particle.integration_status = IntegrationStatus::IntersectedTimedOut;
-            } else {
-                particle.integration_status = IntegrationStatus::Intersected
-            }
+
+    if particle.integration_status == IntegrationStatus::Escaped {
+        return;
+    }
+    // Further categorize successful intersection
+    if check_mapping_accuracy(&particle.evolution, &intersect_params.intersection).is_ok() {
+        if particle.steps_stored() == intersect_params.turns {
+            particle.integration_status = IntegrationStatus::Intersected
+        } else if particle.steps_stored() == 0 {
+            particle.integration_status = IntegrationStatus::TimedOut(particle.evolution.duration);
+        } else if particle.steps_stored() < intersect_params.turns {
+            particle.integration_status = IntegrationStatus::IntersectedTimedOut;
+        } else {
+            unreachable!("`steps_stored` is always less that `intersect_params.turns")
         }
-        Err(_) => particle.integration_status = IntegrationStatus::InvalidIntersections,
+    } else {
+        particle.integration_status = IntegrationStatus::InvalidIntersections;
     }
 }
 
