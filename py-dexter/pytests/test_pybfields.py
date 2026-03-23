@@ -30,8 +30,8 @@ def test_nc_bfield_getters(nc_bfield: NcBfield):
     assert isinstance(nc_bfield.interp_type, str)
     assert isfinite(nc_bfield.baxis)
     assert len(nc_bfield.shape) == 2
-    assert isfinite(nc_bfield.psi_wall)
-    assert isfinite(nc_bfield.psip_wall)
+    assert isfinite(nc_bfield.psi_last)
+    assert isfinite(nc_bfield.psip_last)
     assert nc_bfield.psi_state == "Good"
     assert nc_bfield.psip_state == "Good"
     assert nc_bfield.psi_array.ndim == 1

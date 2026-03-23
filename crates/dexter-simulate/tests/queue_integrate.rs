@@ -9,7 +9,7 @@ use ndarray::Array1;
 #[test]
 fn queue_integrate_parQ_larC_larB_cosP() -> Result<()> {
     // Equilibrium setup
-    let qfactor = ParabolicQfactor::new(1.1, 1.9, FluxWall::Toroidal(0.45));
+    let qfactor = ParabolicQfactor::new(1.1, 1.9, LastClosedFluxSurface::Toroidal(0.45));
     let current = LarCurrent::new();
     let bfield = LarBfield::new();
     let perturbation = Perturbation::new(&[
@@ -19,7 +19,7 @@ fn queue_integrate_parQ_larC_larB_cosP() -> Result<()> {
 
     // Initial Conditions setup
     let particle_count = 10;
-    let psis = qfactor.psi_wall() * Array1::linspace(0.0, 1.0, particle_count);
+    let psis = qfactor.psi_last() * Array1::linspace(0.0, 1.0, particle_count);
     let psis = toroidal_fluxes(&psis.to_vec());
     let initial_conditions = QueueInitialConditions::boozer(
         &vec![0.0; particle_count],

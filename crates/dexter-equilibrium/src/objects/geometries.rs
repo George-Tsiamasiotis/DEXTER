@@ -3,9 +3,8 @@
 use crate::{
     debug_assert_is_finite, debug_assert_non_negative_psi, debug_assert_non_negative_psip,
     debug_assert_non_negative_r, equilibrium_type_getter_impl, fluxes_state_getter_impl,
-    fluxes_values_array_getter_impl, fluxes_wall_value_getter_impl, fortran_vec_to_carray2d_impl,
-    interp_type_getter_impl, netcdf_path_getter_impl, netcdf_version_getter_impl,
-    shape2d_getter_impl,
+    fluxes_values_array_getter_impl, fortran_vec_to_carray2d_impl, interp_type_getter_impl,
+    lcfs_getter_impl, netcdf_path_getter_impl, netcdf_version_getter_impl, shape2d_getter_impl,
 };
 use dexter_common::vec_to_array1D_getter_impl;
 use ndarray::{Array1, Array2, Order::ColumnMajor};
@@ -38,10 +37,14 @@ pub struct LarGeometry {
     baxis: f64,
     /// The horizontal position of the magnetic axis `R0` in [m].
     raxis: f64,
-    /// The minor radius `rwall` in [m].
-    rwall: f64,
-    /// The toroidal flux's value at the wall `ψ_wall` in Normalized units.
-    psi_wall: f64,
+    /// The `r` coordinate's value at the last closed flux surface `rlast` in [m].
+    ///
+    /// In LAR configuration, `rlast` coincides with the device's minor radius.
+    rlast: f64,
+    /// The value of the last closed toroidal flux surface `ψ_last` in Normalized units.
+    ///
+    /// In LAR configuration, the wall coincides with the last closed flux surface.
+    psi_last: f64,
 }
 
 impl LarGeometry {
@@ -53,15 +56,15 @@ impl LarGeometry {
     /// let geometry = LarGeometry::new(2.0, 1.75, 0.5);
     /// ```
     #[must_use]
-    pub fn new(baxis: f64, raxis: f64, rwall: f64) -> Self {
-        let psi_wall_si = baxis * rwall.powi(2) / 2.0;
-        let psi_wall = psi_wall_si / (baxis * raxis.powi(2));
+    pub fn new(baxis: f64, raxis: f64, rlast: f64) -> Self {
+        let psi_last_si = baxis * rlast.powi(2) / 2.0;
+        let psi_last = psi_last_si / (baxis * raxis.powi(2));
         Self {
             equilibrium_type: EquilibriumType::Analytical,
             baxis,
             raxis,
-            rwall,
-            psi_wall,
+            rlast,
+            psi_last,
         }
     }
 }
@@ -169,29 +172,29 @@ impl Geometry for LarGeometry {
         ))
     }
 
-    fn rlab_wall(&self) -> Array1<f64> {
+    fn rlab_last(&self) -> Array1<f64> {
         use core::f64::consts::PI;
         let arr = Array1::linspace(0.0, 2.0 * PI, 1000);
         let mut acc2 = Accelerator::new();
         let mut acc1 = Accelerator::new();
         let mut cache = Cache::new();
         arr.mapv(|theta| {
-            match self.rlab_of_psi(self.psi_wall, theta, &mut acc2, &mut acc1, &mut cache) {
-                Ok(rlab_wall_value) => rlab_wall_value,
+            match self.rlab_of_psi(self.psi_last, theta, &mut acc2, &mut acc1, &mut cache) {
+                Ok(rlab_lcfs_value) => rlab_lcfs_value,
                 Err(_) => unreachable!("Expression is analytical, cannot fail"),
             }
         })
     }
 
-    fn zlab_wall(&self) -> Array1<f64> {
+    fn zlab_last(&self) -> Array1<f64> {
         use core::f64::consts::PI;
         let arr = Array1::linspace(0.0, 2.0 * PI, 1000);
         let mut acc1 = Accelerator::new();
         let mut acc2 = Accelerator::new();
         let mut cache = Cache::new();
         arr.mapv(|theta| {
-            match self.zlab_of_psi(self.psi_wall, theta, &mut acc1, &mut acc2, &mut cache) {
-                Ok(zlab_wall_value) => zlab_wall_value,
+            match self.zlab_of_psi(self.psi_last, theta, &mut acc1, &mut acc2, &mut cache) {
+                Ok(zlab_lcfs_value) => zlab_lcfs_value,
                 Err(_) => unreachable!("Expression is analytical, cannot fail"),
             }
         })
@@ -225,16 +228,16 @@ impl LarGeometry {
         self.raxis
     }
 
-    /// Returns the `r` coordinate's value at the wall in **\[m\]**.
+    /// Returns the `r` coordinate's value at the last closed flux surface **in \[m\]**.
     #[must_use]
-    pub fn rwall(&self) -> f64 {
-        self.rwall
+    pub fn rlast(&self) -> f64 {
+        self.rlast
     }
 
-    /// Returns the todoidal flux's `ψ` value at the wall.
+    /// Returns the value of the last closed toroidal flux surface `ψ_last`.
     #[must_use]
-    pub fn psi_wall(&self) -> f64 {
-        self.psi_wall
+    pub fn psi_last(&self) -> f64 {
+        self.psi_last
     }
 }
 
@@ -764,12 +767,12 @@ impl Geometry for NcGeometry {
         }
     }
 
-    fn rlab_wall(&self) -> Array1<f64> {
+    fn rlab_last(&self) -> Array1<f64> {
         // Get the last row of the C-ordered `rlab_array`
         self.rlab_array().row(self.shape().0 - 1).to_owned()
     }
 
-    fn zlab_wall(&self) -> Array1<f64> {
+    fn zlab_last(&self) -> Array1<f64> {
         // Get the last row of the C-ordered `zlab_array`
         self.zlab_array().row(self.shape().0 - 1).to_owned()
     }
@@ -806,17 +809,17 @@ impl NcGeometry {
         self.rgeo
     }
 
-    /// Returns the `r` coordinate's value at the wall **in \[m\]**.
+    /// Returns the `r` coordinate's value at the last closed flux surface **in \[m\]**.
     #[must_use]
-    pub fn rwall(&self) -> f64 {
+    pub fn rlast(&self) -> f64 {
         match self.r_values.last().copied() {
-            Some(rwall) => rwall,
+            Some(rlast) => rlast,
             None => unreachable!("NcGeometry cannot be created if `r_values` dont exist"),
         }
     }
 
     shape2d_getter_impl!();
-    fluxes_wall_value_getter_impl!();
+    lcfs_getter_impl!();
     fluxes_state_getter_impl!();
     fluxes_values_array_getter_impl!();
     vec_to_array1D_getter_impl!(theta_array, theta_values, theta);
@@ -838,7 +841,7 @@ impl std::fmt::Debug for NcGeometry {
             .field("raxis [m]", &self.raxis)
             .field("zaxis [m]", &self.zaxis)
             .field("rgeo [m]", &self.rgeo)
-            .field("rwall [m]", &self.rwall())
+            .field("rlast [m]", &self.rlast())
             .field("shape (ψ/ψp, θ)", &self.shape())
             .field("psi", &self.psi)
             .field("psip", &self.psip)

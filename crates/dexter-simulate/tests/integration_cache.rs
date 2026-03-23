@@ -8,7 +8,7 @@ use dexter_simulate::*;
 #[test]
 fn integration_cache_analytical_eq_cos_harmonic() {
     use InitialFlux::*;
-    let qfactor = ParabolicQfactor::new(1.1, 3.9, FluxWall::Toroidal(0.45));
+    let qfactor = ParabolicQfactor::new(1.1, 3.9, LastClosedFluxSurface::Toroidal(0.45));
     let current = LarCurrent::new();
     let bfield = LarBfield::new();
     let perturbation = Perturbation::new(&[

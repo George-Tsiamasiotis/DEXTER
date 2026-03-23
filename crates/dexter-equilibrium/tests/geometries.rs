@@ -18,10 +18,10 @@ fn lar_geometry() {
     let equilibrium_type: EquilibriumType = geometry.equilibrium_type();
     let baxis: f64 = geometry.baxis();
     let raxis: f64 = geometry.raxis();
-    let rwall: f64 = geometry.rwall();
-    let psi_wall: f64 = geometry.psi_wall();
-    let rlab_wall: Array1<f64> = geometry.rlab_wall();
-    let zlab_wall: Array1<f64> = geometry.zlab_wall();
+    let rlast: f64 = geometry.rlast();
+    let psi_last: f64 = geometry.psi_last();
+    let rlab_last: Array1<f64> = geometry.rlab_last();
+    let zlab_last: Array1<f64> = geometry.zlab_last();
 
     let r_acc = &mut Accelerator::new();
     let psi_acc = &mut Accelerator::new();
@@ -82,12 +82,12 @@ fn nc_geometry() {
     let raxis: f64 = geometry.raxis();
     let zaxis: f64 = geometry.zaxis();
     let rgeo: f64 = geometry.rgeo();
-    let rwall: f64 = geometry.rwall();
+    let rlast: f64 = geometry.rlast();
     let shape: (usize, usize) = geometry.shape();
     let psi_state: NcFluxState = geometry.psi_state();
     let psip_state: NcFluxState = geometry.psip_state();
-    let psi_wall: f64 = geometry.psi_wall().unwrap();
-    let psip_wall: f64 = geometry.psip_wall().unwrap();
+    let psi_last: f64 = geometry.psi_last().unwrap();
+    let psip_last: f64 = geometry.psip_last().unwrap();
     let psi_array: Array1<f64> = geometry.psi_array().unwrap();
     let psip_array: Array1<f64> = geometry.psip_array().unwrap();
     let theta_array: Array1<f64> = geometry.theta_array();
@@ -95,8 +95,8 @@ fn nc_geometry() {
     let rlab_array: Array2<f64> = geometry.rlab_array();
     let zlab_array: Array2<f64> = geometry.rlab_array();
     let jacobian_array: Array2<f64> = geometry.rlab_array();
-    let rlab_wall: Array1<f64> = geometry.rlab_wall();
-    let zlab_wall: Array1<f64> = geometry.zlab_wall();
+    let rlab_last: Array1<f64> = geometry.rlab_last();
+    let zlab_last: Array1<f64> = geometry.zlab_last();
 
     let r_acc = &mut Accelerator::new();
     let psi_acc = &mut Accelerator::new();

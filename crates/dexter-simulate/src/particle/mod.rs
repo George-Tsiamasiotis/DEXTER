@@ -103,7 +103,7 @@ pub enum IntegrationStatus {
     OutOfBoundsInitialization,
     /// Reached the end of the integration successfully.
     Integrated,
-    /// Escaped/Hit the wall.
+    /// Escaped the last closed flux surface (LCFS).
     Escaped,
     /// Intersections calculation successful.
     Intersected,
@@ -167,8 +167,8 @@ impl Particle {
     /// #
     /// # let path = PathBuf::from("./netcdf.nc");
     /// # let geometry = NcGeometryBuilder::new(&path, "steffen", "bicubic").build()?;
-    /// # let psip_wall = geometry.psip_wall().unwrap();
-    /// let psip0 = InitialFlux::Poloidal(0.5 * psip_wall);
+    /// # let psip_last = geometry.psip_last().unwrap();
+    /// let psip0 = InitialFlux::Poloidal(0.5 * psip_last);
     /// let initial = InitialConditions::boozer(0.0, psip0, 0.0, 3.14, 1e-5, 1e-6);
     /// let mut particle = Particle::new(&initial);
     /// # Ok::<_, SimulationError>(())

@@ -1,4 +1,3 @@
-from dexter import equilibrium
 import numpy as np
 
 from dexter.equilibrium import _TEST_NETCDF_PATH as netcdf_path
@@ -24,12 +23,7 @@ from dexter import (
     Queue,
     QueueInitialConditions,
 )
-from dexter.types import FluxWall
-
-# Unsure
-# def test_lar_geometry():
-#     geometry = LarGeometry(baxis=2, raxis=1.75, rwall=0.5)
-#     _test_all_geometry_plots(geometry)
+from dexter.types import LastClosedFluxSurface
 
 
 def test_nc_geometry():
@@ -46,8 +40,8 @@ def test_unity_qfactor():
 
 
 def test_parabolic_qfactor():
-    flux_wall: FluxWall = ("Toroidal", 0.45)
-    qfactor = ParabolicQfactor(1.1, 3.8, flux_wall)
+    lcfs: LastClosedFluxSurface = ("Toroidal", 0.45)
+    qfactor = ParabolicQfactor(1.1, 3.8, lcfs)
     _test_all_qfactor_plots(qfactor)
     _test_all_flux_plots(qfactor)
 

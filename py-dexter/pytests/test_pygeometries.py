@@ -7,14 +7,14 @@ from dexter import LarGeometry, NcGeometry
 
 
 def test_lar_geometry():
-    geometry = LarGeometry(baxis=2, raxis=1.75, rwall=0.5)
+    geometry = LarGeometry(baxis=2, raxis=1.75, rlast=0.5)
     assert geometry.equilibrium_type == "Analytical"
     assert geometry.baxis == 2
     assert geometry.raxis == 1.75
-    assert geometry.rwall == 0.5
-    assert isfinite(geometry.psi_wall)
-    assert np.all(np.isfinite(geometry.rlab_wall))
-    assert np.all(np.isfinite(geometry.zlab_wall))
+    assert geometry.rlast == 0.5
+    assert isfinite(geometry.psi_last)
+    assert np.all(np.isfinite(geometry.rlab_last))
+    assert np.all(np.isfinite(geometry.zlab_last))
     assert isfinite(geometry.r_of_psi(0.01))
     assert isfinite(geometry.psi_of_r(0.01))
     assert isfinite(geometry.rlab_of_psi(0.01, 3.14))
@@ -45,10 +45,10 @@ def test_nc_geometry_getters(nc_geometry: NcGeometry):
     assert isfinite(nc_geometry.raxis)
     assert isfinite(nc_geometry.zaxis)
     assert isfinite(nc_geometry.rgeo)
-    assert isfinite(nc_geometry.rwall)
+    assert isfinite(nc_geometry.rlast)
     assert len(nc_geometry.shape) == 2
-    assert isfinite(nc_geometry.psi_wall)
-    assert isfinite(nc_geometry.psip_wall)
+    assert isfinite(nc_geometry.psi_last)
+    assert isfinite(nc_geometry.psip_last)
     assert nc_geometry.psi_state == "Good"
     assert nc_geometry.psip_state == "Good"
     assert nc_geometry.psi_array.ndim == 1

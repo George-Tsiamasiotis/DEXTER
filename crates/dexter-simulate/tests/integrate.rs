@@ -225,12 +225,12 @@ fn gc_toroidal_poloidal_equivalence() {
     assert_abs_diff_eq!(
         tor_particle.psi_array().last().copied().unwrap(),
         pol_particle.psi_array().last().copied().unwrap(),
-        epsilon = 1e-3*qfactor.psi_wall().unwrap()
+        epsilon = 1e-3*qfactor.psi_last().unwrap()
     );
     assert_abs_diff_eq!(
         tor_particle.psip_array().last().copied().unwrap(),
         pol_particle.psip_array().last().copied().unwrap(),
-        epsilon = 1e-3*qfactor.psip_wall().unwrap()
+        epsilon = 1e-3*qfactor.psip_last().unwrap()
     );
     assert_abs_diff_eq!(
         tor_particle.rho_array().last().copied().unwrap(),
@@ -319,12 +319,12 @@ fn gc_mixed_boozer_equivalence() {
     assert_abs_diff_eq!(
         boozer_particle.psi_array().last().copied().unwrap(),
         mixed_particle.psi_array().last().copied().unwrap(),
-        epsilon = 1e-3*qfactor.psi_wall().unwrap()
+        epsilon = 1e-3*qfactor.psi_last().unwrap()
     );
     assert_abs_diff_eq!(
         boozer_particle.psip_array().last().copied().unwrap(),
         mixed_particle.psip_array().last().copied().unwrap(),
-        epsilon = 1e-3*qfactor.psip_wall().unwrap()
+        epsilon = 1e-3*qfactor.psip_last().unwrap()
     );
     assert_abs_diff_eq!(
         boozer_particle.rho_array().last().copied().unwrap(),

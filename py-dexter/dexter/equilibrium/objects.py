@@ -40,7 +40,7 @@ from dexter.types import (
     ArrayShape,
     Array1,
     Array2,
-    FluxWall,
+    LastClosedFluxSurface,
     NetCDFVersion,
     EquilibriumType,
     Interp1DType,
@@ -59,13 +59,13 @@ class LarGeometry(_GeometryTrait, _GeometryPlotter):
         The magnetic field strength on the magnetic axis $B_0$ in $[T]$.
     raxis
         The horizontal position of the magnetic axis $R_0$ in $[m]$.
-    rwall
-        The value of the $r_{wall}$ coordinate at the wall in $[m]$.
+    rlast
+        The value of the $r$ coordinate at the at the last closed flux surface, $r_{LCFS}$, in $[m]$.
 
     Example
     -------
     ```python title="LarGeometry creation"
-    >>> geometry = dex.LarGeometry(baxis=2, raxis=1.75, rwall=0.5)
+    >>> geometry = dex.LarGeometry(baxis=2, raxis=1.75, rlast=0.5)
 
     ```
     """
@@ -73,8 +73,8 @@ class LarGeometry(_GeometryTrait, _GeometryPlotter):
     _dyn: str = "larG"
     _rust: _PyLarGeometry  # type: ignore[assignment]
 
-    def __init__(self, baxis: float, raxis: float, rwall: float) -> None:
-        setattr(self, "_rust", _PyLarGeometry(baxis=baxis, raxis=raxis, rwall=rwall))
+    def __init__(self, baxis: float, raxis: float, rlast: float) -> None:
+        setattr(self, "_rust", _PyLarGeometry(baxis=baxis, raxis=raxis, rlast=rlast))
         _GeometryTrait.__init__(self)
 
     @property
@@ -103,24 +103,24 @@ class LarGeometry(_GeometryTrait, _GeometryPlotter):
         return self._rust.rgeo
 
     @property
-    def rwall(self) -> float:
-        """The value of the $r_{wall}$ coordinate at the wall in $[m]$."""
-        return self._rust.rwall
+    def rlast(self) -> float:
+        """The value of the $r$ coordinate at the last closed flux surfarce $r_{LCFS}$, in $[m]$."""
+        return self._rust.rlast
 
     @property
-    def psi_wall(self) -> float:
-        r"""The toroidal flux value at the wall $\psi_{wall}$ in Normalized Units."""
-        return self._rust.psi_wall
+    def psi_last(self) -> float:
+        r"""The value of the last closed toroidal flux surface $\psi_{LCFS}$ in Normalized Units."""
+        return self._rust.psi_last
 
     @property
-    def rlab_wall(self) -> Array1:
-        """Last $R_{lab}$ values that correspond to the device's wall (last closed flux surface)."""
-        return self._rust.rlab_wall
+    def rlab_last(self) -> Array1:
+        """the last $R_{lab}$ values that correspond to the device’s last closed flux surface."""
+        return self._rust.rlab_last
 
     @property
-    def zlab_wall(self) -> Array1:
-        """Last $Z_{lab}$ values that correspond to the device's wall (last closed flux surface)."""
-        return self._rust.zlab_wall
+    def zlab_last(self) -> Array1:
+        """the last $Z_{lab}$ values that correspond to the device’s last closed flux surface."""
+        return self._rust.zlab_last
 
     def __str__(self) -> str:
         return self._rust.__str__()
@@ -227,9 +227,9 @@ class NcGeometry(
         return self._rust.rgeo
 
     @property
-    def rwall(self) -> float:
-        """The value of the $r_{wall}$ coordinate at the wall in $[m]$."""
-        return self._rust.rwall
+    def rlast(self) -> float:
+        """The value of the $r$ coordinate at the last closed flux surface $r_{LCFS}$, in $[m]$."""
+        return self._rust.rlast
 
     @property
     def shape(self) -> ArrayShape:
@@ -240,14 +240,14 @@ class NcGeometry(
         return self._rust.shape
 
     @property
-    def psi_wall(self) -> float:
-        r"""The toroidal flux value at the wall $\psi_{wall}$ in Normalized Units."""
-        return self._rust.psi_wall
+    def psi_last(self) -> float:
+        r"""The value of the last closed toroidal flux surface $\psi_{LCFS}$ in Normalized Units."""
+        return self._rust.psi_last
 
     @property
-    def psip_wall(self) -> float:
-        r"""The poloidal flux value at the wall $\psi_{p,wall}$ in Normalized Units."""
-        return self._rust.psip_wall
+    def psip_last(self) -> float:
+        r"""The value of the last closed poloidal flux surface $\psi_{p,LCFS}$ in Normalized Units."""
+        return self._rust.psip_last
 
     @property
     def psi_state(self) -> FluxState:
@@ -295,14 +295,14 @@ class NcGeometry(
         return self._rust.jacobian_array
 
     @property
-    def rlab_wall(self) -> Array1:
-        """Last $R_{lab}$ values that correspond to the device's wall (last closed flux surface)."""
-        return self._rust.rlab_wall
+    def rlab_last(self) -> Array1:
+        """the last $R_{lab}$ values that correspond to the device’s last closed flux surface."""
+        return self._rust.rlab_last
 
     @property
-    def zlab_wall(self) -> Array1:
-        """Last $Z_{lab}$ values that correspond to the device's wall (last closed flux surface)."""
-        return self._rust.zlab_wall
+    def zlab_last(self) -> Array1:
+        """the last $Z_{lab}$ values that correspond to the device’s last closed flux surface."""
+        return self._rust.zlab_last
 
     def __str__(self) -> str:
         return self._rust.__str__()
@@ -352,24 +352,26 @@ class ParabolicQfactor(_QfactorTrait, _FluxCommuteTrait, _FluxPlotter, _QfactorP
 
     Note
     ----
-    A ParabolicQfactor is defined with the help of the [`FluxWall`][dexter.FluxWall]
-    helper type, which changes the position where qwall is met.
+    A ParabolicQfactor is defined with the help of the
+    [`LastClosedFluxSurface`][dexter.LastClosedFluxSurface] helper type, which changes
+    the position where `qlast` is met.
 
     Parameters
     ----------
     qaxis
         The value of $q$ on the magnetic axis.
-    qwall
-        The value of $q$ on the wall.
-    flux_wall
-        Helper type to define a ParabolicQfactor with respect to one of the two fluxes’ values at the wall.
+    qlast
+        The value of $q$ at the last closed flux surface.
+    lcfs
+        Helper type to define the Last Closed Flux Surface (LCFS) with respect to one of
+        the two fluxes.
 
     Example
     -------
     ```python title="UnityQfactor creation"
-    >>> # Define q(ψ=ψwall=0.45) = qwall = 3.8
-    >>> flux_wall: dex.types.FluxWall = ("Toroidal", 0.45)
-    >>> qfactor = dex.ParabolicQfactor(qaxis=1.1, qwall=3.8, flux_wall=flux_wall)
+    >>> # Define q(ψ=ψlast=0.45) = qlast = 3.8
+    >>> lcfs: dex.types.LastClosedFluxSurface = ("Toroidal", 0.45)
+    >>> qfactor = dex.ParabolicQfactor(qaxis=1.1, qlast=3.8, lcfs=lcfs)
 
     ```
     """
@@ -380,16 +382,16 @@ class ParabolicQfactor(_QfactorTrait, _FluxCommuteTrait, _FluxPlotter, _QfactorP
     def __init__(
         self,
         qaxis: float,
-        qwall: float,
-        flux_wall: FluxWall,
+        qlast: float,
+        lcfs: LastClosedFluxSurface,
     ) -> None:
         setattr(
             self,
             "_rust",
             _PyParabolicQfactor(
                 qaxis=qaxis,
-                qwall=qwall,
-                flux_wall=flux_wall,
+                qlast=qlast,
+                lcfs=lcfs,
             ),
         )
         _FluxCommuteTrait.__init__(self)
@@ -406,19 +408,19 @@ class ParabolicQfactor(_QfactorTrait, _FluxCommuteTrait, _FluxPlotter, _QfactorP
         return self._rust.qaxis
 
     @property
-    def qwall(self) -> float:
-        """The value of $q$ on the wall."""
-        return self._rust.qwall
+    def qlast(self) -> float:
+        """The value of $q$ at the last closed flux surface."""
+        return self._rust.qlast
 
     @property
-    def psi_wall(self) -> float:
-        r"""The toroidal flux value at the wall $\psi_{wall}$ in Normalized Units."""
-        return self._rust.psi_wall
+    def psi_last(self) -> float:
+        r"""The value of the last closed toroidal flux surface $\psi_{LCFS}$ in Normalized Units."""
+        return self._rust.psi_last
 
     @property
-    def psip_wall(self) -> float:
-        r"""The poloidal flux value at the wall $\psi_{p,wall}$ in Normalized Units."""
-        return self._rust.psip_wall
+    def psip_last(self) -> float:
+        r"""The value of the last closed poloidal flux surface $\psi_{p,LCFS}$ in Normalized Units."""
+        return self._rust.psip_last
 
     def __str__(self) -> str:
         return self._rust.__str__()
@@ -492,19 +494,19 @@ class NcQfactor(_FluxCommuteTrait, _QfactorTrait, _FluxPlotter, _QfactorPlotter)
         return self._rust.qaxis
 
     @property
-    def qwall(self) -> float:
-        """The value of $q$ on the wall."""
-        return self._rust.qwall
+    def qlast(self) -> float:
+        """The value of $q$ at the last closed fluc surface."""
+        return self._rust.qlast
 
     @property
-    def psi_wall(self) -> float:
-        r"""The toroidal flux value at the wall $\psi_{wall}$ in Normalized Units."""
-        return self._rust.psi_wall
+    def psi_last(self) -> float:
+        r"""The value of the last closed toroidal flux surface $\psi_{LCFS}$ in Normalized Units."""
+        return self._rust.psi_last
 
     @property
-    def psip_wall(self) -> float:
-        r"""The poloidal flux value at the wall $\psi_{p,wall}$ in Normalized Units."""
-        return self._rust.psip_wall
+    def psip_last(self) -> float:
+        r"""The value of the last closed poloidal flux surface $\psi_{p, LCFS}$ in Normalized Units."""
+        return self._rust.psip_last
 
     @property
     def psi_state(self) -> FluxState:
@@ -630,14 +632,14 @@ class NcCurrent(_CurrentTrait, _CurrentPlotter):
         return self._rust.interp_type
 
     @property
-    def psi_wall(self) -> float:
-        r"""The toroidal flux value at the wall $\psi_{wall}$ in Normalized Units."""
-        return self._rust.psi_wall
+    def psi_last(self) -> float:
+        r"""The value of the last closed toroidal flux surface $\psi_{LCFS}$ in Normalized Units."""
+        return self._rust.psi_last
 
     @property
-    def psip_wall(self) -> float:
-        r"""The poloidal flux value at the wall $\psi_{p,wall}$ in Normalized Units."""
-        return self._rust.psip_wall
+    def psip_last(self) -> float:
+        r"""The value of the last closed poloidal flux surface $\psi_{p,LCFS}$ in Normalized Units."""
+        return self._rust.psip_last
 
     @property
     def psi_state(self) -> FluxState:
@@ -782,14 +784,14 @@ class NcBfield(_BfieldTrait):
         return self._rust.shape
 
     @property
-    def psi_wall(self) -> float:
-        r"""The toroidal flux value at the wall $\psi_{wall}$ in Normalized Units."""
-        return self._rust.psi_wall
+    def psi_last(self) -> float:
+        r"""The value of the last closed toroidal flux surface $\psi_{LCFS}$ in Normalized Units."""
+        return self._rust.psi_last
 
     @property
-    def psip_wall(self) -> float:
-        r"""The poloidal flux value at the wall $\psi_{p,wall}$ in Normalized Units."""
-        return self._rust.psip_wall
+    def psip_last(self) -> float:
+        r"""The value of the last closed poloidal flux surface $\psi_{p,LCFS}$ in Normalized Units."""
+        return self._rust.psip_last
 
     @property
     def psi_state(self) -> FluxState:
@@ -1017,14 +1019,14 @@ class NcHarmonic(_HarmonicTrait, _HarmonicPlotter):
         return self._rust.psip_phase_resonance
 
     @property
-    def psi_wall(self) -> float:
-        r"""The toroidal flux value at the wall $\psi_{wall}$ in Normalized Units."""
-        return self._rust.psi_wall
+    def psi_last(self) -> float:
+        r"""The value of the last closed toroidal flux surface $\psi_{LCFS}$ in Normalized Units."""
+        return self._rust.psi_last
 
     @property
-    def psip_wall(self) -> float:
-        r"""The poloidal flux value at the wall $\psi_{p,wall}$ in Normalized Units."""
-        return self._rust.psip_wall
+    def psip_last(self) -> float:
+        r"""The value of the last closed poloidal flux surface $\psi_{p,LCFS}$ in Normalized Units."""
+        return self._rust.psip_last
 
     @property
     def psi_state(self) -> FluxState:

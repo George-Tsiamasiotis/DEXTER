@@ -12,7 +12,7 @@ fn main() {
 
 fn analytical_equilibrium_intersect() {
     // Equilibrium setup
-    let qfactor = ParabolicQfactor::new(1.1, 3.8, FluxWall::Toroidal(0.45));
+    let qfactor = ParabolicQfactor::new(1.1, 3.8, LastClosedFluxSurface::Toroidal(0.45));
     let current = LarCurrent::new();
     let bfield = LarBfield::new();
     let perturbation = Perturbation::new(&[

@@ -3,7 +3,7 @@ import numpy as np
 from math import isfinite
 from dexter.equilibrium import _TOROIDAL_TEST_NETCDF_PATH, _POLOIDAL_TEST_NETCDF_PATH
 from dexter import Qfactor, UnityQfactor, ParabolicQfactor, NcQfactor
-from dexter.types import FluxWall
+from dexter.types import LastClosedFluxSurface
 
 
 def test_unity_qfactor():
@@ -14,27 +14,27 @@ def test_unity_qfactor():
     assert isinstance(qfactor.__repr__(), str)
 
 
-def test_parabolic_qfactor_toroidal_flux_wall():
-    flux_wall: FluxWall = ("Toroidal", 0.45)
-    qfactor = ParabolicQfactor(1.1, 3.8, flux_wall)
+def test_parabolic_qfactor_toroidal_lcfs():
+    lcfs: LastClosedFluxSurface = ("Toroidal", 0.45)
+    qfactor = ParabolicQfactor(1.1, 3.8, lcfs)
     assert qfactor.equilibrium_type == "Analytical"
     assert qfactor.qaxis == 1.1
-    assert qfactor.qwall == 3.8
-    assert qfactor.psi_wall == 0.45
-    assert isfinite(qfactor.psip_wall)
+    assert qfactor.qlast == 3.8
+    assert qfactor.psi_last == 0.45
+    assert isfinite(qfactor.psip_last)
     _test_qfactor_vectorized_evals(qfactor)
     assert isinstance(qfactor.__str__(), str)
     assert isinstance(qfactor.__repr__(), str)
 
 
-def test_parabolic_qfactor_poloidal_flux_wall():
-    flux_wall: FluxWall = ("Poloidal", 0.45)
-    qfactor = ParabolicQfactor(1.1, 3.8, flux_wall)
+def test_parabolic_qfactor_poloidal_lcfs():
+    lcfs: LastClosedFluxSurface = ("Poloidal", 0.45)
+    qfactor = ParabolicQfactor(1.1, 3.8, lcfs)
     assert qfactor.equilibrium_type == "Analytical"
     assert qfactor.qaxis == 1.1
-    assert qfactor.qwall == 3.8
-    assert isfinite(qfactor.psip_wall)
-    assert qfactor.psip_wall == 0.45
+    assert qfactor.qlast == 3.8
+    assert isfinite(qfactor.psip_last)
+    assert qfactor.psip_last == 0.45
     _test_qfactor_vectorized_evals(qfactor)
     assert isinstance(qfactor.__str__(), str)
     assert isinstance(qfactor.__repr__(), str)
@@ -47,9 +47,9 @@ def test_nc_qfactor_getters(nc_qfactor: NcQfactor):
     assert isinstance(nc_qfactor.equilibrium_type, str)
     assert isinstance(nc_qfactor.interp_type, str)
     assert isfinite(nc_qfactor.qaxis)
-    assert isfinite(nc_qfactor.qwall)
-    assert isfinite(nc_qfactor.psi_wall)
-    assert isfinite(nc_qfactor.psip_wall)
+    assert isfinite(nc_qfactor.qlast)
+    assert isfinite(nc_qfactor.psi_last)
+    assert isfinite(nc_qfactor.psip_last)
     assert nc_qfactor.psi_state == "Good"
     assert nc_qfactor.psip_state == "Good"
     assert nc_qfactor.psi_array.ndim == 1

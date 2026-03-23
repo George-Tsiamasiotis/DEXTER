@@ -63,8 +63,8 @@ fn nc_harmonic() {
     let interp_type: String = har.interp_type();
     let psi_state: NcFluxState = har.psi_state();
     let psip_state: NcFluxState = har.psip_state();
-    let psi_wall: f64 = har.psi_wall().unwrap();
-    let psip_wall: f64 = har.psip_wall().unwrap();
+    let psi_last: f64 = har.psi_last().unwrap();
+    let psip_last: f64 = har.psip_last().unwrap();
     let psi_array: Array1<f64> = har.psi_array().unwrap();
     let psip_array: Array1<f64> = har.psip_array().unwrap();
     let alpha_array: Array1<f64> = har.alpha_array();

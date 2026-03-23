@@ -10,7 +10,7 @@ from math import pi as PI
 geometry = dex.LarGeometry(4, 1.75, 0.5)
 equilibrium = dex.Equilibrium(
     geometry=geometry,
-    qfactor=dex.ParabolicQfactor(1.1, 4.2, ("Toroidal", geometry.psi_wall)),
+    qfactor=dex.ParabolicQfactor(1.1, 4.2, ("Toroidal", geometry.psi_last)),
     current=dex.LarCurrent(),
     bfield=dex.LarBfield(),
     perturbation=dex.Perturbation(
@@ -22,7 +22,7 @@ equilibrium = dex.Equilibrium(
 )
 
 particle_count = 80
-psips = np.linspace(0, 1, particle_count) * equilibrium.psip_wall
+psips = np.linspace(0, 1, particle_count) * equilibrium.psip_last
 psis = np.asarray([equilibrium.qfactor.psi_of_psip(psip) for psip in psips])
 
 initial_conditions = dex.QueueInitialConditions.boozer(

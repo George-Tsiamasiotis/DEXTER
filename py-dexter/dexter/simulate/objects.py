@@ -517,7 +517,7 @@ class Particle(_ParticlePlotter):
         -------
         ```python title="Particle integration"
         >>> equilibrium = dex.Equilibrium(
-        ...     qfactor=dex.ParabolicQfactor(qaxis=1.1, qwall=4.1, flux_wall=("Toroidal", 0.45)),
+        ...     qfactor=dex.ParabolicQfactor(qaxis=1.1, qlast=4.1, lcfs=("Toroidal", 0.45)),
         ...     current=dex.LarCurrent(),
         ...     bfield=dex.LarBfield(),
         ...     perturbation=dex.Perturbation(
@@ -621,7 +621,7 @@ class Particle(_ParticlePlotter):
         -------
         ```python title="Particle intersection integration"
         >>> equilibrium = dex.Equilibrium(
-        ...     qfactor=dex.ParabolicQfactor(qaxis=1.1, qwall=4.1, flux_wall=("Toroidal", 0.45)),
+        ...     qfactor=dex.ParabolicQfactor(qaxis=1.1, qlast=4.1, lcfs=("Toroidal", 0.45)),
         ...     current=dex.LarCurrent(),
         ...     bfield=dex.LarBfield(),
         ...     perturbation=dex.Perturbation(
@@ -1020,7 +1020,7 @@ class Queue(_QueuePlotter):
         ```python title="Queue integration"
         >>> # Equilibrium setup
         >>> equilibrium = dex.Equilibrium(
-        ...     qfactor=dex.ParabolicQfactor(qaxis=1.1, qwall=4.1, flux_wall=("Toroidal", 0.45)),
+        ...     qfactor=dex.ParabolicQfactor(qaxis=1.1, qlast=4.1, lcfs=("Toroidal", 0.45)),
         ...     current=dex.LarCurrent(),
         ...     bfield=dex.LarBfield(),
         ...     perturbation = dex.Perturbation(
@@ -1134,7 +1134,7 @@ class Queue(_QueuePlotter):
         ```python title="Queue intersection integration"
         >>> # Equilibrium setup
         >>> equilibrium = dex.Equilibrium(
-        ...     qfactor=dex.ParabolicQfactor(qaxis=1.1, qwall=4.1, flux_wall=("Toroidal", 0.45)),
+        ...     qfactor=dex.ParabolicQfactor(qaxis=1.1, qlast=4.1, lcfs=("Toroidal", 0.45)),
         ...     current=dex.LarCurrent(),
         ...     bfield=dex.LarBfield(),
         ...     perturbation = dex.Perturbation(

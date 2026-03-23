@@ -10,10 +10,8 @@ from dexter._core import _PyLarGeometry, _PyNcGeometry
 from dexter._core import _PyUnityQfactor, _PyParabolicQfactor, _PyNcQfactor
 from dexter._core import _PyLarCurrent, _PyNcCurrent
 from dexter._core import _PyCosHarmonic, _PyNcHarmonic
-from dexter.types import Array, ArrayLike
 import numpy as np
 import matplotlib.pyplot as plt
-from typing import Self
 
 from math import sqrt
 from collections.abc import Callable
@@ -26,10 +24,10 @@ SCATTER_KW = {"c": "k", "s": 4, "zorder": 2}
 XAXIS_KW = {"c": "k", "linewidth": 1.5}
 FLUX_SURFACE_KW = {"c": "b", "zorder": 2}
 JACOBIAN_KW = {"levels": None, "cmap": "plasma", "zorder": 2}
-WALL_KW = {"c": "k", "linewidth": 2, "linestyle": "-", "zorder": 2}
+LCFS_KW = {"c": "k", "linewidth": 2, "linestyle": "-", "zorder": 2}
 RESONANCE_KW = {"c": "g", "linewidth": 1.5, "linestyle": ":", "zorder": 2}
-PSI_WALL_BOUND = 0.5
-PSIP_WALL_BOUND = 0.5
+PSI_LAST_BOUND = 0.5
+PSIP_LAST_BOUND = 0.5
 
 
 class _FluxPlotter:
@@ -51,8 +49,8 @@ class _FluxPlotter:
             Whether or not to plot the data array points (numerical equilibria only). Defaults to False.
         """
 
-        psi_wall = getattr(self, "psi_wall", PSI_WALL_BOUND)
-        psis = np.linspace(0, psi_wall, points)
+        psi_last = getattr(self, "psi_last", PSI_LAST_BOUND)
+        psis = np.linspace(0, psi_last, points)
         qs = self.psip_of_psi(psis)
 
         fig = plt.figure(**FIG_KW)
@@ -86,8 +84,8 @@ class _FluxPlotter:
             Whether or not to plot the data array points (numerical equilibria only). Defaults to False.
         """
 
-        psip_wall = getattr(self, "psip_wall", PSIP_WALL_BOUND)
-        psips = np.linspace(0, psip_wall, points)
+        psip_last = getattr(self, "psip_last", PSIP_LAST_BOUND)
+        psips = np.linspace(0, psip_last, points)
         qs = self.psi_of_psip(psips)
 
         fig = plt.figure(**FIG_KW)
@@ -132,8 +130,8 @@ class _GeometryPlotter:
             Whether or not to plot the data array points (numerical equilibria only). Defaults to False.
         """
 
-        psi_wall = getattr(self, "psi_wall")
-        psis = np.linspace(0, psi_wall, points)
+        psi_last = getattr(self, "psi_last")
+        psis = np.linspace(0, psi_last, points)
         rs = self.r_of_psi(psis)
 
         fig = plt.figure(**FIG_KW)
@@ -167,8 +165,8 @@ class _GeometryPlotter:
             Whether or not to plot the data array points (numerical equilibria only). Defaults to False.
         """
 
-        psip_wall = getattr(self, "psip_wall")
-        psips = np.linspace(0, psip_wall, points)
+        psip_last = getattr(self, "psip_last")
+        psips = np.linspace(0, psip_last, points)
         rs = self.r_of_psip(psips)
 
         fig = plt.figure(**FIG_KW)
@@ -202,8 +200,8 @@ class _GeometryPlotter:
             Whether or not to plot the data array points (numerical equilibria only). Defaults to False.
         """
 
-        rwall = getattr(self, "rwall")
-        rs = np.linspace(0, rwall, points)
+        rlast = getattr(self, "rlast")
+        rs = np.linspace(0, rlast, points)
         psis = self.psi_of_r(rs)
 
         fig = plt.figure(**FIG_KW)
@@ -237,8 +235,8 @@ class _GeometryPlotter:
             Whether or not to plot the data array points (numerical equilibria only). Defaults to False.
         """
 
-        rwall = self._rust.rwall
-        rs = np.linspace(0, rwall, points)
+        rlast = self._rust.rlast
+        rs = np.linspace(0, rlast, points)
         psips = self.psip_of_r(rs)
 
         fig = plt.figure(**FIG_KW)
@@ -261,19 +259,19 @@ class _GeometryPlotter:
         ax.legend()
         plt.show()
 
-    def plot_wall(self):
-        r"""Plots the device's wall in the $R, Z$ frame."""
+    def plot_last(self):
+        r"""Plots the device's Last Closed Flux Surface (LCFS) in the $R, Z$ frame."""
 
         fig = plt.figure(**FIG_KW)
         ax = fig.add_subplot(**SUBPLOT_KW | {"aspect": "equal"})
-        ax.set_title(r"$Wall$")
+        ax.set_title(r"$LCFS$")
         ax.set_xlabel(r"$R[m]$")
         ax.set_ylabel(r"$Z[m]$")
 
-        zlab_wall = self._rust.zlab_wall
-        rlab_wall = self._rust.rlab_wall
+        zlab_last = self._rust.zlab_last
+        rlab_last = self._rust.rlab_last
 
-        ax.plot(rlab_wall, zlab_wall, **WALL_KW)
+        ax.plot(rlab_last, zlab_last, **LCFS_KW)
 
         ax.grid(True)
         plt.show()
@@ -351,7 +349,7 @@ class _NumericalGeometryPlotter:
         )
         plt.colorbar(c, ax=ax)
 
-        ax.plot(rlab_array[-1], zlab_array[-1], **WALL_KW)
+        ax.plot(rlab_array[-1], zlab_array[-1], **LCFS_KW)
 
         ax.grid(True)
         plt.show()
@@ -380,8 +378,8 @@ class _QfactorPlotter:
             Whether or not to plot the data array points (numerical equilibria only). Defaults to False.
         """
 
-        psi_wall = getattr(self._rust, "psi_wall", PSI_WALL_BOUND)
-        psis = np.linspace(0, psi_wall, points)
+        psi_last = getattr(self._rust, "psi_last", PSI_LAST_BOUND)
+        psis = np.linspace(0, psi_last, points)
         qs = self.q_of_psi(psis)
 
         fig = plt.figure(**FIG_KW)
@@ -415,8 +413,8 @@ class _QfactorPlotter:
             Whether or not to plot the data array points (numerical equilibria only). Defaults to False.
         """
 
-        psip_wall = getattr(self, "psip_wall", PSIP_WALL_BOUND)
-        psips = np.linspace(0, psip_wall, points)
+        psip_last = getattr(self, "psip_last", PSIP_LAST_BOUND)
+        psips = np.linspace(0, psip_last, points)
         qs = self.q_of_psip(psips)
 
         fig = plt.figure(**FIG_KW)
@@ -450,8 +448,8 @@ class _QfactorPlotter:
             The number of points in which to evaluate the two splines. Defaults to 1000.
         """
 
-        psi_wall = getattr(self, "psi_wall", PSI_WALL_BOUND)
-        psis = np.linspace(0, psi_wall, points)
+        psi_last = getattr(self, "psi_last", PSI_LAST_BOUND)
+        psis = np.linspace(0, psi_last, points)
         ds = self.dpsip_dpsi(psis)
         iotas = self.iota_of_psi(psis)
 
@@ -480,8 +478,8 @@ class _QfactorPlotter:
             The number of points in which to evaluate the two splines. Defaults to 1000.
         """
 
-        psip_wall = getattr(self, "psip_wall", PSIP_WALL_BOUND)
-        psips = np.linspace(0, psip_wall, points)
+        psip_last = getattr(self, "psip_last", PSIP_LAST_BOUND)
+        psips = np.linspace(0, psip_last, points)
         ds = self.dpsi_dpsip(psips)
         qs = self.q_of_psip(psips)
 
@@ -508,8 +506,8 @@ class _QfactorPlotter:
             The number of points in which to evaluate $\iota(\psi)$. Defaults to 1000.
         """
 
-        psi_wall = getattr(self, "psi_wall", PSI_WALL_BOUND)
-        psis = np.linspace(0, psi_wall, points)
+        psi_last = getattr(self, "psi_last", PSI_LAST_BOUND)
+        psis = np.linspace(0, psi_last, points)
         iotas = self.iota_of_psi(psis)
 
         fig = plt.figure(**FIG_KW)
@@ -534,8 +532,8 @@ class _QfactorPlotter:
             The number of points in which to evaluate $\iota(\psi_p)$. Defaults to 1000.
         """
 
-        psip_wall = getattr(self, "psip_wall", PSIP_WALL_BOUND)
-        psips = np.linspace(0, psip_wall, points)
+        psip_last = getattr(self, "psip_last", PSIP_LAST_BOUND)
+        psips = np.linspace(0, psip_last, points)
         iotas = self.iota_of_psip(psips)
 
         fig = plt.figure(**FIG_KW)
@@ -577,8 +575,8 @@ class _CurrentPlotter:
             Whether or not to plot the data array points (numerical equilibria only). Defaults to False.
         """
 
-        psi_wall = getattr(self, "psi_wall", PSI_WALL_BOUND)
-        psis = np.linspace(0, psi_wall, points)
+        psi_last = getattr(self, "psi_last", PSI_LAST_BOUND)
+        psis = np.linspace(0, psi_last, points)
         gs = self.g_of_psi(psis)
 
         fig = plt.figure(**FIG_KW)
@@ -612,8 +610,8 @@ class _CurrentPlotter:
             Whether or not to plot the data array points (numerical equilibria only). Defaults to False.
         """
 
-        psip_wall = getattr(self, "psip_wall", PSIP_WALL_BOUND)
-        psips = np.linspace(0, psip_wall, points)
+        psip_last = getattr(self, "psip_last", PSIP_LAST_BOUND)
+        psips = np.linspace(0, psip_last, points)
         gs = self.g_of_psip(psips)
 
         fig = plt.figure(**FIG_KW)
@@ -647,8 +645,8 @@ class _CurrentPlotter:
             Whether or not to plot the data array points (numerical equilibria only). Defaults to False.
         """
 
-        psi_wall = getattr(self, "psi_wall", PSI_WALL_BOUND)
-        psis = np.linspace(0, psi_wall, points)
+        psi_last = getattr(self, "psi_last", PSI_LAST_BOUND)
+        psis = np.linspace(0, psi_last, points)
         i = self.i_of_psi(psis)
 
         fig = plt.figure(**FIG_KW)
@@ -682,8 +680,8 @@ class _CurrentPlotter:
             Whether or not to plot the data array points (numerical equilibria only). Defaults to False.
         """
 
-        psip_wall = getattr(self, "psip_wall", PSIP_WALL_BOUND)
-        psips = np.linspace(0, psip_wall, points)
+        psip_last = getattr(self, "psip_last", PSIP_LAST_BOUND)
+        psips = np.linspace(0, psip_last, points)
         i = self.i_of_psip(psips)
 
         fig = plt.figure(**FIG_KW)
@@ -715,8 +713,8 @@ class _CurrentPlotter:
             The number of points in which to evaluate $dg(\psi)/d\psi$. Defaults to 1000.
         """
 
-        psi_wall = getattr(self, "psi_wall", PSI_WALL_BOUND)
-        psis = np.linspace(0, psi_wall, points)
+        psi_last = getattr(self, "psi_last", PSI_LAST_BOUND)
+        psis = np.linspace(0, psi_last, points)
         ds = self.dg_dpsi(psis)
 
         fig = plt.figure(**FIG_KW)
@@ -740,8 +738,8 @@ class _CurrentPlotter:
             The number of points in which to evaluate $dg(\psi_p)/d\psi_p$. Defaults to 1000.
         """
 
-        psip_wall = getattr(self, "psip_wall", PSIP_WALL_BOUND)
-        psips = np.linspace(0, psip_wall, points)
+        psip_last = getattr(self, "psip_last", PSIP_LAST_BOUND)
+        psips = np.linspace(0, psip_last, points)
         ds = self.dg_dpsip(psips)
 
         fig = plt.figure(**FIG_KW)
@@ -765,8 +763,8 @@ class _CurrentPlotter:
             The number of points in which to evaluate $dI(\psi)/d\psi$. Defaults to 1000.
         """
 
-        psi_wall = getattr(self, "psi_wall", PSI_WALL_BOUND)
-        psis = np.linspace(0, psi_wall, points)
+        psi_last = getattr(self, "psi_last", PSI_LAST_BOUND)
+        psis = np.linspace(0, psi_last, points)
         ds = self.di_dpsi(psis)
 
         fig = plt.figure(**FIG_KW)
@@ -791,8 +789,8 @@ class _CurrentPlotter:
             The number of points in which to evaluate $dI(\psi_p)/d\psi_p$. Defaults to 1000.
         """
 
-        psip_wall = getattr(self, "psip_wall", PSIP_WALL_BOUND)
-        psips = np.linspace(0, psip_wall, points)
+        psip_last = getattr(self, "psip_last", PSIP_LAST_BOUND)
+        psips = np.linspace(0, psip_last, points)
         ds = self.di_dpsip(psips)
 
         fig = plt.figure(**FIG_KW)
@@ -834,8 +832,8 @@ class _HarmonicPlotter:
             Whether or not to plot the data array points (numerical equilibria only). Defaults to False.
         """
 
-        psi_wall = getattr(self, "psi_wall", PSI_WALL_BOUND)
-        psis = np.linspace(0, psi_wall, points)
+        psi_last = getattr(self, "psi_last", PSI_LAST_BOUND)
+        psis = np.linspace(0, psi_last, points)
         alphas = self.alpha_of_psi(psis, 0, 0, 0)
 
         fig = plt.figure(**FIG_KW)
@@ -874,8 +872,8 @@ class _HarmonicPlotter:
             Whether or not to plot the data array points (numerical equilibria only). Defaults to False.
         """
 
-        psip_wall = getattr(self, "psip_wall", PSIP_WALL_BOUND)
-        psips = np.linspace(0, psip_wall, points)
+        psip_last = getattr(self, "psip_last", PSIP_LAST_BOUND)
+        psips = np.linspace(0, psip_last, points)
         alphas = self.alpha_of_psip(psips, 0, 0, 0)
 
         fig = plt.figure(**FIG_KW)
@@ -919,8 +917,8 @@ class _HarmonicPlotter:
             Defaults to True.
         """
 
-        psi_wall = getattr(self, "psi_wall", PSI_WALL_BOUND)
-        psis = np.linspace(0, psi_wall, points)
+        psi_last = getattr(self, "psi_last", PSI_LAST_BOUND)
+        psis = np.linspace(0, psi_last, points)
         phis = self.phase_of_psi(psis, 0, 0, 0)
 
         fig = plt.figure(**FIG_KW)
@@ -972,8 +970,8 @@ class _HarmonicPlotter:
             Defaults to True.
         """
 
-        psip_wall = getattr(self, "psip_wall", PSIP_WALL_BOUND)
-        psips = np.linspace(0, psip_wall, points)
+        psip_last = getattr(self, "psip_last", PSIP_LAST_BOUND)
+        psips = np.linspace(0, psip_last, points)
         phis = self.phase_of_psip(psips, 0, 0, 0)
 
         fig = plt.figure(**FIG_KW)
@@ -1018,8 +1016,8 @@ class _HarmonicPlotter:
             The number of points in which to evaluate $d\alpha(\psi)/d\psi$. Defaults to 1000.
         """
 
-        psi_wall = getattr(self, "psi_wall", PSI_WALL_BOUND)
-        psis = np.linspace(0, psi_wall, points)
+        psi_last = getattr(self, "psi_last", PSI_LAST_BOUND)
+        psis = np.linspace(0, psi_last, points)
         alphas = self.alpha_of_psi(psis, 0, 0, 0)
         dalphas = np.gradient(alphas)
 
@@ -1050,8 +1048,8 @@ class _HarmonicPlotter:
             The number of points in which to evaluate $d\alpha(\psi_p)/d\psi_p$. Defaults to 1000.
         """
 
-        psip_wall = getattr(self, "psip_wall", PSIP_WALL_BOUND)
-        psips = np.linspace(0, psip_wall, points)
+        psip_last = getattr(self, "psip_last", PSIP_LAST_BOUND)
+        psips = np.linspace(0, psip_last, points)
         alphas = self.alpha_of_psip(psips, 0, 0, 0)
         dalphas = np.gradient(alphas)
 

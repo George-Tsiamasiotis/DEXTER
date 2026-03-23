@@ -3,7 +3,7 @@
 use crate::{
     debug_assert_is_finite, debug_assert_non_negative_psi, debug_assert_non_negative_psip,
     equilibrium_type_getter_impl, fluxes_state_getter_impl, fluxes_values_array_getter_impl,
-    fluxes_wall_value_getter_impl, fortran_vec_to_carray2d_impl, interp_type_getter_impl,
+    fortran_vec_to_carray2d_impl, interp_type_getter_impl, lcfs_getter_impl,
     netcdf_path_getter_impl, netcdf_version_getter_impl, shape2d_getter_impl,
 };
 use dexter_common::vec_to_array1D_getter_impl;
@@ -438,7 +438,7 @@ impl NcBfield {
     }
 
     shape2d_getter_impl!();
-    fluxes_wall_value_getter_impl!();
+    lcfs_getter_impl!();
     fluxes_state_getter_impl!();
     fluxes_values_array_getter_impl!();
     vec_to_array1D_getter_impl!(theta_array, theta_values, theta);

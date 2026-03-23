@@ -172,7 +172,7 @@ impl Queue {
     /// # use dexter_simulate::*;
     /// # use std::path::PathBuf;
     /// #
-    /// let qfactor = ParabolicQfactor::new(1.1, 4.2, FluxWall::Toroidal(0.6));
+    /// let qfactor = ParabolicQfactor::new(1.1, 4.2, LastClosedFluxSurface::Toroidal(0.6));
     /// let current = LarCurrent::new();
     /// let bfield = LarBfield::new();
     /// let perturbation = Perturbation::new(&[

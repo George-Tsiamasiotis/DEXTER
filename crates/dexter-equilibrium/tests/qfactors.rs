@@ -6,8 +6,8 @@ use std::path::PathBuf;
 
 use approx::assert_abs_diff_eq;
 use dexter_equilibrium::{
-    EquilibriumType, FluxCommute, FluxWall, NcFluxState, NcQfactorBuilder, ParabolicQfactor,
-    Qfactor, UnityQfactor,
+    EquilibriumType, FluxCommute, LastClosedFluxSurface, NcFluxState, NcQfactorBuilder,
+    ParabolicQfactor, Qfactor, UnityQfactor,
 };
 use ndarray::Array1;
 use rsl_interpolation::Accelerator;
@@ -30,12 +30,16 @@ fn unity_qfactor() {
 
 #[test]
 fn parabolic_qfactor() {
-    let qfactor = dbg!(ParabolicQfactor::new(1.1, 3.8, FluxWall::Toroidal(0.45)));
+    let qfactor = dbg!(ParabolicQfactor::new(
+        1.1,
+        3.8,
+        LastClosedFluxSurface::Toroidal(0.45)
+    ));
 
     let qaxis: f64 = qfactor.qaxis();
-    let qwall: f64 = qfactor.qwall();
-    let psi_wall: f64 = qfactor.psi_wall();
-    let psip_wall: f64 = qfactor.psip_wall();
+    let qlast: f64 = qfactor.qlast();
+    let psi_last: f64 = qfactor.psi_last();
+    let psip_last: f64 = qfactor.psip_last();
 
     let mut acc = Accelerator::new();
     let psi = 0.01;
@@ -62,9 +66,9 @@ fn nc_qfactor() {
     let psi_state: NcFluxState = qfactor.psi_state();
     let psip_state: NcFluxState = qfactor.psip_state();
     let qaxis: f64 = qfactor.qaxis();
-    let qwall: f64 = qfactor.qwall();
-    let psi_wall: f64 = qfactor.psi_wall().unwrap();
-    let psip_wall: f64 = qfactor.psip_wall().unwrap();
+    let qlast: f64 = qfactor.qlast();
+    let psi_last: f64 = qfactor.psi_last().unwrap();
+    let psip_last: f64 = qfactor.psip_last().unwrap();
     let psi_array: Array1<f64> = qfactor.psi_array().unwrap();
     let psip_array: Array1<f64> = qfactor.psip_array().unwrap();
     let q_array: Array1<f64> = qfactor.q_array();

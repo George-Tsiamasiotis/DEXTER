@@ -19,7 +19,7 @@
 ::: dexter.Interp2DType
 ::: dexter.FluxCoordinate
 ::: dexter.FluxState
-::: dexter.FluxWall
+::: dexter.LastClosedFluxSurface
 ::: dexter.PhaseMethod
 ::: dexter.NetCDFVersion
 

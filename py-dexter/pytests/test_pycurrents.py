@@ -18,8 +18,8 @@ def test_nc_current_getters(nc_current: NcCurrent):
     assert isinstance(nc_current.netcdf_version, str)
     assert nc_current.equilibrium_type == "Numerical"
     assert isinstance(nc_current.interp_type, str)
-    assert isfinite(nc_current.psi_wall)
-    assert isfinite(nc_current.psip_wall)
+    assert isfinite(nc_current.psi_last)
+    assert isfinite(nc_current.psip_last)
     assert nc_current.psi_state == "Good"
     assert nc_current.psip_state == "Good"
     assert nc_current.psi_array.ndim == 1

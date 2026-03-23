@@ -66,7 +66,7 @@ zaxis = 0
 rgeo = 1.7
 a = 0.5  # "small radius"
 
-flux_wall_value_norm = 0.5  # can be either ψ_wall or ψp_wall
+flux_last_value_norm = 0.5  # can be either ψ_last or ψp_last
 
 ##################################
 # Coordinates, Fluxes and q-factor
@@ -82,22 +82,22 @@ n = np.asarray([1, 2])
 match args.coord:
     case "both":  # Parabolic
         qaxis = 1.1
-        qwall = 3.9
-        psi_norm = np.linspace(0, flux_wall_value_norm, FLUX_SURFACES)
-        atan_arg = psi_norm * sqrt(qwall - qaxis) / (flux_wall_value_norm * sqrt(qaxis))
-        coef = flux_wall_value_norm / sqrt(qaxis * (qwall - qaxis))
+        qlast = 3.9
+        psi_norm = np.linspace(0, flux_last_value_norm, FLUX_SURFACES)
+        atan_arg = psi_norm * sqrt(qlast - qaxis) / (flux_last_value_norm * sqrt(qaxis))
+        coef = flux_last_value_norm / sqrt(qaxis * (qlast - qaxis))
         psip_norm = coef * np.atan(atan_arg)
-        q = qaxis + (qwall - qaxis) * (psi_norm / flux_wall_value_norm) ** 2
+        q = qaxis + (qlast - qaxis) * (psi_norm / flux_last_value_norm) ** 2
     case "toroidal":  # equispaced ψ values, ψp = sin(2πψ), and q(ψ) = dψp/dψ.
-        psi_norm = np.linspace(0, flux_wall_value_norm, FLUX_SURFACES)
-        psip_norm = np.sin(2 * np.pi * psi_norm)  # no longer monotonic in [0, psi_wall]
+        psi_norm = np.linspace(0, flux_last_value_norm, FLUX_SURFACES)
+        psip_norm = np.sin(2 * np.pi * psi_norm)  # no longer monotonic in [0, psi_last]
         q = np.gradient(psip_norm, psi_norm)
         assert not np.all(np.diff(psip_norm) > 0)
     case "poloidal":  # equispaced ψp values, ψ = sin(2πψp), and q(ψ) = 1/(dψp/dψ).
-        psip_norm = np.linspace(0, flux_wall_value_norm, FLUX_SURFACES)
+        psip_norm = np.linspace(0, flux_last_value_norm, FLUX_SURFACES)
         psi_norm = 1.0 - np.sin(
             2 * np.pi * psip_norm
-        )  # no longer monotonic in [0, psi_wall]
+        )  # no longer monotonic in [0, psi_last]
         q = np.gradient(psi_norm, psip_norm)  # inverse
         assert not np.all(np.diff(psi_norm) > 0)
     case _:

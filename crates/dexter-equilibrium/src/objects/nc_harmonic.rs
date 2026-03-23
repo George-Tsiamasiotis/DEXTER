@@ -27,8 +27,8 @@ pub enum PhaseMethod {
     Average,
     /// Corresponds to `φ = const = the value of φ at the resonance m/n`.
     ///
-    /// In the case that the resonance falls outside the wall, or does not correspond to a valid
-    /// q-factor value, it defaults to [`Zero`](PhaseMethod::Zero).
+    /// In the case that the resonance falls outside the last closed flux surface, or does not
+    /// correspond to a valid q-factor value, it defaults to [`Zero`](PhaseMethod::Zero).
     Resonance,
     /// Interpolation over the phase array.
     Interpolation,
@@ -504,16 +504,16 @@ impl NcHarmonic {
         self.psip_single.phase_resonance
     }
 
-    /// Returns the toroidal flux's value at the wall `ψ_wall`.
+    /// Returns the value of the last closed toroidal flux surface `ψ_last`.
     #[must_use]
-    pub fn psi_wall(&self) -> Option<f64> {
-        self.psi_single.flux.wall_value()
+    pub fn psi_last(&self) -> Option<f64> {
+        self.psi_single.flux.last_value()
     }
 
-    /// Returns the poloidal flux's value at the wall `ψp_wall`.
+    /// Returns the value of the last closed poloidal flux surface `ψp_last`.
     #[must_use]
-    pub fn psip_wall(&self) -> Option<f64> {
-        self.psip_single.flux.wall_value()
+    pub fn psip_last(&self) -> Option<f64> {
+        self.psip_single.flux.last_value()
     }
 
     /// Returns the toroidal flux's state.

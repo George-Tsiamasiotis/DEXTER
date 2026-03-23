@@ -6,7 +6,7 @@ use dexter::dexter_equilibrium::{
     CosHarmonic, Harmonic, NcHarmonic, NcHarmonicBuilder, PhaseMethod,
 };
 use dexter::dexter_equilibrium::{Current, LarCurrent, NcCurrent, NcCurrentBuilder};
-use dexter::dexter_equilibrium::{FluxCommute, FluxWall};
+use dexter::dexter_equilibrium::{FluxCommute, LastClosedFluxSurface};
 use dexter::dexter_equilibrium::{Geometry, LarGeometry, NcGeometry, NcGeometryBuilder};
 use dexter::dexter_equilibrium::{
     NcQfactor, NcQfactorBuilder, ParabolicQfactor, Qfactor, UnityQfactor,
@@ -33,9 +33,9 @@ pub struct PyLarGeometry(pub(crate) LarGeometry);
 #[pymethods]
 impl PyLarGeometry {
     #[new]
-    #[pyo3(signature = (baxis, raxis, rwall))]
-    pub fn new(baxis: f64, raxis: f64, rwall: f64) -> Self {
-        Self(LarGeometry::new(baxis, raxis, rwall))
+    #[pyo3(signature = (baxis, raxis, rlast))]
+    pub fn new(baxis: f64, raxis: f64, rlast: f64) -> Self {
+        Self(LarGeometry::new(baxis, raxis, rlast))
     }
 }
 
@@ -46,8 +46,8 @@ py_export_getter!(PyLarGeometry, baxis, f64);
 py_export_getter!(PyLarGeometry, raxis, f64);
 py_export_getter!(PyLarGeometry, zaxis, f64);
 py_export_getter!(PyLarGeometry, rgeo, f64);
-py_export_getter!(PyLarGeometry, rwall, f64);
-py_export_getter!(PyLarGeometry, psi_wall, f64);
+py_export_getter!(PyLarGeometry, rlast, f64);
+py_export_getter!(PyLarGeometry, psi_last, f64);
 py_eval1D!(PyLarGeometry, r_of_psi);
 py_eval1D!(PyLarGeometry, r_of_psip);
 py_eval1D!(PyLarGeometry, psi_of_r);
@@ -58,8 +58,8 @@ py_eval2D!(PyLarGeometry, zlab_of_psi);
 py_eval2D!(PyLarGeometry, zlab_of_psip);
 py_eval2D!(PyLarGeometry, jacobian_of_psi);
 py_eval2D!(PyLarGeometry, jacobian_of_psip);
-py_get_numpy1D!(PyLarGeometry, rlab_wall);
-py_get_numpy1D!(PyLarGeometry, zlab_wall);
+py_get_numpy1D!(PyLarGeometry, rlab_last);
+py_get_numpy1D!(PyLarGeometry, zlab_last);
 
 // ===============================================================================================
 
@@ -93,9 +93,9 @@ py_export_getter!(PyNcGeometry, baxis, f64);
 py_export_getter!(PyNcGeometry, raxis, f64);
 py_export_getter!(PyNcGeometry, zaxis, f64);
 py_export_getter!(PyNcGeometry, rgeo, f64);
-py_export_getter!(PyNcGeometry, rwall, f64);
-py_export_getter!(PyNcGeometry, psi_wall, Option<f64>);
-py_export_getter!(PyNcGeometry, psip_wall, Option<f64>);
+py_export_getter!(PyNcGeometry, rlast, f64);
+py_export_getter!(PyNcGeometry, psi_last, Option<f64>);
+py_export_getter!(PyNcGeometry, psip_last, Option<f64>);
 py_get_enum_string!(PyNcGeometry, psi_state);
 py_get_enum_string!(PyNcGeometry, psip_state);
 py_get_numpy1D_fallible!(PyNcGeometry, psi_array);
@@ -117,8 +117,8 @@ py_eval2D!(PyNcGeometry, zlab_of_psi);
 py_eval2D!(PyNcGeometry, zlab_of_psip);
 py_eval2D!(PyNcGeometry, jacobian_of_psi);
 py_eval2D!(PyNcGeometry, jacobian_of_psip);
-py_get_numpy1D!(PyNcGeometry, rlab_wall);
-py_get_numpy1D!(PyNcGeometry, zlab_wall);
+py_get_numpy1D!(PyNcGeometry, rlab_last);
+py_get_numpy1D!(PyNcGeometry, zlab_last);
 
 // ===============================================================================================
 // ===============================================================================================
@@ -155,18 +155,22 @@ pub struct PyParabolicQfactor(pub(crate) ParabolicQfactor);
 #[pymethods]
 impl PyParabolicQfactor {
     #[new]
-    #[pyo3(signature = (qaxis, qwall, flux_wall))]
-    pub fn new<'py>(qaxis: f64, qwall: f64, flux_wall: Bound<'py, PyTuple>) -> PyResult<Self> {
-        let tuple = flux_wall.cast::<PyTuple>()?;
+    #[pyo3(signature = (qaxis, qlast, lcfs))]
+    pub fn new<'py>(qaxis: f64, qlast: f64, lcfs: Bound<'py, PyTuple>) -> PyResult<Self> {
+        let tuple = lcfs.cast::<PyTuple>()?;
         let string: String = tuple.get_item(0)?.extract::<String>()?.to_lowercase();
         let value: f64 = tuple.get_item(1)?.extract::<f64>()?;
-        let flux_wall = match string.as_str() {
-            "toroidal" => FluxWall::Toroidal(value),
-            "poloidal" => FluxWall::Poloidal(value),
-            _ => return Err(PyErr::new::<PyTypeError, _>("Invalid 'FluxWall'")),
+        let lcfs_kind = match string.as_str() {
+            "toroidal" => LastClosedFluxSurface::Toroidal(value),
+            "poloidal" => LastClosedFluxSurface::Poloidal(value),
+            _ => {
+                return Err(PyErr::new::<PyTypeError, _>(
+                    "Invalid 'LastClosedFluxSurface'",
+                ));
+            }
         };
 
-        Ok(Self(ParabolicQfactor::new(qaxis, qwall, flux_wall)))
+        Ok(Self(ParabolicQfactor::new(qaxis, qlast, lcfs_kind)))
     }
 }
 
@@ -174,9 +178,9 @@ py_debug_impl!(PyParabolicQfactor);
 py_repr_impl!(PyParabolicQfactor);
 py_get_enum_string!(PyParabolicQfactor, equilibrium_type);
 py_export_getter!(PyParabolicQfactor, qaxis, f64);
-py_export_getter!(PyParabolicQfactor, qwall, f64);
-py_export_getter!(PyParabolicQfactor, psi_wall, f64);
-py_export_getter!(PyParabolicQfactor, psip_wall, f64);
+py_export_getter!(PyParabolicQfactor, qlast, f64);
+py_export_getter!(PyParabolicQfactor, psi_last, f64);
+py_export_getter!(PyParabolicQfactor, psip_last, f64);
 py_eval1D!(PyParabolicQfactor, psip_of_psi);
 py_eval1D!(PyParabolicQfactor, psi_of_psip);
 py_eval1D!(PyParabolicQfactor, q_of_psi);
@@ -209,9 +213,9 @@ py_get_netcdf_version!(PyNcQfactor);
 py_get_enum_string!(PyNcQfactor, equilibrium_type);
 py_export_getter!(PyNcQfactor, interp_type, String);
 py_export_getter!(PyNcQfactor, qaxis, f64);
-py_export_getter!(PyNcQfactor, qwall, f64);
-py_export_getter!(PyNcQfactor, psi_wall, Option<f64>);
-py_export_getter!(PyNcQfactor, psip_wall, Option<f64>);
+py_export_getter!(PyNcQfactor, qlast, f64);
+py_export_getter!(PyNcQfactor, psi_last, Option<f64>);
+py_export_getter!(PyNcQfactor, psip_last, Option<f64>);
 py_get_enum_string!(PyNcQfactor, psi_state);
 py_get_enum_string!(PyNcQfactor, psip_state);
 py_get_numpy1D_fallible!(PyNcQfactor, psi_array);
@@ -275,8 +279,8 @@ py_get_path!(PyNcCurrent);
 py_get_netcdf_version!(PyNcCurrent);
 py_get_enum_string!(PyNcCurrent, equilibrium_type);
 py_export_getter!(PyNcCurrent, interp_type, String);
-py_export_getter!(PyNcCurrent, psi_wall, Option<f64>);
-py_export_getter!(PyNcCurrent, psip_wall, Option<f64>);
+py_export_getter!(PyNcCurrent, psi_last, Option<f64>);
+py_export_getter!(PyNcCurrent, psip_last, Option<f64>);
 py_get_enum_string!(PyNcCurrent, psi_state);
 py_get_enum_string!(PyNcCurrent, psip_state);
 py_get_numpy1D_fallible!(PyNcCurrent, psi_array);
@@ -345,8 +349,8 @@ py_get_netcdf_version!(PyNcBfield);
 py_get_enum_string!(PyNcBfield, equilibrium_type);
 py_export_getter!(PyNcBfield, interp_type, String);
 py_export_getter!(PyNcBfield, baxis, f64);
-py_export_getter!(PyNcBfield, psi_wall, Option<f64>);
-py_export_getter!(PyNcBfield, psip_wall, Option<f64>);
+py_export_getter!(PyNcBfield, psi_last, Option<f64>);
+py_export_getter!(PyNcBfield, psip_last, Option<f64>);
 py_get_enum_string!(PyNcBfield, psi_state);
 py_get_enum_string!(PyNcBfield, psip_state);
 py_get_numpy1D_fallible!(PyNcBfield, psi_array);
@@ -469,8 +473,8 @@ py_get_enum_string!(PyNcHarmonic, phase_method);
 py_export_getter!(PyNcHarmonic, phase_average, Option<f64>);
 py_export_getter!(PyNcHarmonic, psi_phase_resonance, Option<f64>);
 py_export_getter!(PyNcHarmonic, psip_phase_resonance, Option<f64>);
-py_export_getter!(PyNcHarmonic, psi_wall, Option<f64>);
-py_export_getter!(PyNcHarmonic, psip_wall, Option<f64>);
+py_export_getter!(PyNcHarmonic, psi_last, Option<f64>);
+py_export_getter!(PyNcHarmonic, psip_last, Option<f64>);
 py_get_enum_string!(PyNcHarmonic, psi_state);
 py_get_enum_string!(PyNcHarmonic, psip_state);
 py_get_numpy1D_fallible!(PyNcHarmonic, psi_array);

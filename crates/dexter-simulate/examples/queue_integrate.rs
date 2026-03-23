@@ -6,7 +6,7 @@ use ndarray::Array1;
 
 fn main() -> Result<()> {
     // Equilibrium setup
-    let qfactor = ParabolicQfactor::new(1.1, 3.9, FluxWall::Toroidal(0.45));
+    let qfactor = ParabolicQfactor::new(1.1, 3.9, LastClosedFluxSurface::Toroidal(0.45));
     let current = LarCurrent::new();
     let bfield = LarBfield::new();
     let perturbation = Perturbation::new(&[
@@ -16,7 +16,7 @@ fn main() -> Result<()> {
 
     // Initial Conditions setup
     let particle_count = 200;
-    let psis = qfactor.psi_wall() * Array1::linspace(0.1, 0.9, particle_count);
+    let psis = qfactor.psi_last() * Array1::linspace(0.1, 0.9, particle_count);
     let psis = toroidal_fluxes(&psis.to_vec());
     let initial_conditions = QueueInitialConditions::boozer(
         &vec![0.0; particle_count],

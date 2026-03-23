@@ -11,7 +11,7 @@ pub(crate) fn lar_equilibrium() -> (
     Perturbation<CosHarmonic>,
 ) {
     (
-        ParabolicQfactor::new(1.1, 3.9, FluxWall::Toroidal(0.45)),
+        ParabolicQfactor::new(1.1, 3.9, LastClosedFluxSurface::Toroidal(0.45)),
         LarCurrent::new(),
         LarBfield::new(),
         Perturbation::new(&[

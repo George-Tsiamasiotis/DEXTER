@@ -37,8 +37,8 @@ Interp1DType: TypeAlias = Literal[
 Interp2DType: TypeAlias = Literal["Bilinear", "Bicubic"]
 """Available 2D Interpolation types (case-insensitive)."""
 
-FluxWall: TypeAlias = tuple[Literal["Toroidal", "Poloidal"], float]
-"""Helper type to define a ParabolicQfactor with respect to one of the two fluxes’ values at the wall."""
+LastClosedFluxSurface: TypeAlias = tuple[Literal["Toroidal", "Poloidal"], float]
+"""Helper type to define the Last Closed Flux Surface (LCFS) with respect to one of the two fluxes."""
 
 FluxCoordinate: TypeAlias = Literal["Toroidal", "Poloidal"]
 r"""Magnetic flux coordinates $\psi$ and $\psi_p$."""
@@ -60,8 +60,8 @@ r""" Defines the calculation method of the phase $\phi$ in a Numerical Harmonic.
     - `Zero`: Corresponds to $\phi = 0$.
     - `Average`: Corresponds to $\phi = const =$ the average of all the values of the `phase_array`.
     - `Resonance`: Corresponds to $\phi = const =$ the value of $\phi$ at the resonance $m/n$. In the
-      case that the resonance falls outside the wall, or does not correspond to a valid q-factor
-      value, it defaults to `Zero`.
+      case that the resonance falls outside the last closed flux surface, or does not correspond
+      to a valid q-factor value, it defaults to `Zero`.
     - `Interpolation`: Interpolation over the `phase_array`.
     - `Custom(f64)`: Use a custom value for $\phi = const$.
 """
@@ -112,7 +112,7 @@ r"""The integration status of a Particle.
       not defined.
     - `OutOfBoundsInitialization`: InitialConditions where out of bounds.
     - `Integrated`: Reached the end of the integration successfully.
-    - `Escaped`: Escaped/Hit the wall.
+    - `Escaped`: Escaped the last closed flux surface (LCFS).
     - `Intersected`: Intersections calculation successful.
     - `IntersectedTimedOut`: Calculated some intersections correctly but also timed out.
     - `InvalidIntersections`: Calculated invalid intersections.

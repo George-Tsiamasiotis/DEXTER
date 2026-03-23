@@ -99,8 +99,8 @@ impl NcFlux {
         }
     }
 
-    /// Returns the flux's value at the wall, if it exists.
-    pub(crate) fn wall_value(&self) -> Option<f64> {
+    /// Returns the flux value at the last closed flux surface.
+    pub(crate) fn last_value(&self) -> Option<f64> {
         self.values
             .as_ref()
             .and_then(|values| values.last().copied())
@@ -113,14 +113,14 @@ impl std::fmt::Debug for NcFlux {
             Some(values) => format!("{}", values.len()),
             None => String::from("No values"),
         };
-        let wall = match self.wall_value() {
+        let last = match self.last_value() {
             Some(value) => format!("{value}"),
             None => String::from("No value"),
         };
         f.debug_struct("Flux")
             .field("state", &self.state)
             .field("len", &len)
-            .field("wall value", &wall)
+            .field("last value", &last)
             .finish()
     }
 }

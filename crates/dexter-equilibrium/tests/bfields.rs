@@ -57,8 +57,8 @@ fn nc_bfield() {
     let shape: (usize, usize) = bfield.shape();
     let psi_state: NcFluxState = bfield.psi_state();
     let psip_state: NcFluxState = bfield.psip_state();
-    let psi_wall: f64 = bfield.psi_wall().unwrap();
-    let psip_wall: f64 = bfield.psip_wall().unwrap();
+    let psi_last: f64 = bfield.psi_last().unwrap();
+    let psip_last: f64 = bfield.psip_last().unwrap();
     let psi_array: Array1<f64> = bfield.psi_array().unwrap();
     let psip_array: Array1<f64> = bfield.psip_array().unwrap();
     let theta_array: Array1<f64> = bfield.theta_array();

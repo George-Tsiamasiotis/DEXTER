@@ -183,8 +183,8 @@ class _ParticlePlotter:
         Note
         ----
 
-        This method simply plots the $\theta$ and $\psi$ time arrays in a polar projection. Itis not aware
-        of the geometry of the device so the plot limit is not the actual $\psi_{wall}$.
+        This method simply plots the $\theta$ and $\psi$ time arrays in a polar projection. It is not aware
+        of the geometry of the device so the plot limit is not the actual $\psi_{LCFS}$.
 
         Parameters
         ----------
@@ -419,9 +419,9 @@ class _QueuePlotter:
         ax.plot(*axis_point, "ko", markersize=4, label="$R_{axis}$")
         ax.plot(*geom_center, "ro", markersize=4, label="$R_{geometric}$")
 
-        rlab_wall = equilibrium.geometry.rlab_wall
-        zlab_wall = equilibrium.geometry.zlab_wall
-        ax.plot(rlab_wall, zlab_wall, color="k", linewidth=2)
+        rlab_last = equilibrium.geometry.rlab_last
+        zlab_last = equilibrium.geometry.zlab_last
+        ax.plot(rlab_last, zlab_last, color="k", linewidth=2)
         ax.legend()
 
         plt.show()

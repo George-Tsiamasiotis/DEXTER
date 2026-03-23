@@ -1,7 +1,7 @@
 //! Integration of a particle for a long time, useful for profiling.
 
 use dexter_equilibrium::{
-    CosHarmonic, FluxWall, LarBfield, LarCurrent, ParabolicQfactor, Perturbation,
+    CosHarmonic, LarBfield, LarCurrent, LastClosedFluxSurface, ParabolicQfactor, Perturbation,
 };
 use dexter_simulate::{
     InitialConditions, InitialFlux, IntegrationStatus, Particle, SolverParams, SteppingMethod,
@@ -9,7 +9,7 @@ use dexter_simulate::{
 
 fn main() {
     // Equilibrium setup
-    let qfactor = ParabolicQfactor::new(1.1, 3.9, FluxWall::Toroidal(0.45));
+    let qfactor = ParabolicQfactor::new(1.1, 3.9, LastClosedFluxSurface::Toroidal(0.45));
     let current = LarCurrent::new();
     let bfield = LarBfield::new();
     let perturbation = Perturbation::new(&[

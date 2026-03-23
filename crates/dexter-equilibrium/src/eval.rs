@@ -286,11 +286,11 @@ pub trait Geometry {
         cache: &mut Cache<f64>,
     ) -> Result<f64, EvalError>;
 
-    /// Returns the last `Rlab` values that correspond to the device's wall (last closed flux surface).
-    fn rlab_wall(&self) -> Array1<f64>;
+    /// Returns the last `Rlab` values that correspond to the device's last closed flux surface.
+    fn rlab_last(&self) -> Array1<f64>;
 
-    /// Returns the last `Zlab` values that correspond to the device's wall (last closed flux surface).
-    fn zlab_wall(&self) -> Array1<f64>;
+    /// Returns the last `Zlab` values that correspond to the device's last closed flux surface.
+    fn zlab_last(&self) -> Array1<f64>;
 }
 
 /// Conversion between the two flux coordinates `ψ` and `ψp`.

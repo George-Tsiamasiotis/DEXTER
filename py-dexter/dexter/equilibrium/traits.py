@@ -176,8 +176,8 @@ class _GeometryTrait:
         return self._jacobian_of_psip(psip, theta)[()]
 
     # Implemented as properties
-    # def rlab_wall(self) -> Array1:
-    # def zlab_wall(self) -> Array1:
+    # def rlab_last(self) -> Array1:
+    # def zlab_last(self) -> Array1:
 
 
 class _QfactorTrait:

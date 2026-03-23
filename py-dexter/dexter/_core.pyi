@@ -11,7 +11,7 @@ from dexter.types import (
     Interp1DType,
     Interp2DType,
     FluxCoordinate,
-    FluxWall,
+    LastClosedFluxSurface,
     FluxState,
     PhaseMethod,
     CoordinateSet,
@@ -31,12 +31,12 @@ class _PyLarGeometry:
     raxis: float
     zaxis: float
     rgeo: float
-    rwall: float
-    psi_wall: float
-    rlab_wall: Array1
-    zlab_wall: Array1
+    rlast: float
+    psi_last: float
+    rlab_last: Array1
+    zlab_last: Array1
 
-    def __init__(self, baxis: float, raxis: float, rwall: float) -> None: ...
+    def __init__(self, baxis: float, raxis: float, rlast: float) -> None: ...
     def r_of_psi(self, psi: float) -> float: ...
     def r_of_psip(self, psip: float) -> float: ...
     def psi_of_r(self, r: float) -> float: ...
@@ -62,10 +62,10 @@ class _PyNcGeometry:
     raxis: float
     zaxis: float
     rgeo: float
-    rwall: float
+    rlast: float
     shape: ArrayShape
-    psi_wall: float
-    psip_wall: float
+    psi_last: float
+    psip_last: float
     psi_state: FluxState
     psip_state: FluxState
     psi_array: Array1
@@ -75,8 +75,8 @@ class _PyNcGeometry:
     rlab_array: Array2
     zlab_array: Array2
     jacobian_array: Array2
-    rlab_wall: Array1
-    zlab_wall: Array1
+    rlab_last: Array1
+    zlab_last: Array1
 
     def __init__(
         self,
@@ -123,11 +123,16 @@ class _PyParabolicQfactor:
 
     equilibrium_type: EquilibriumType
     qaxis: float
-    qwall: float
-    psi_wall: float
-    psip_wall: float
+    qlast: float
+    psi_last: float
+    psip_last: float
 
-    def __init__(self, qaxis: float, qwall: float, flux_wall: FluxWall) -> None: ...
+    def __init__(
+        self,
+        qaxis: float,
+        qlast: float,
+        lcfs: LastClosedFluxSurface,
+    ) -> None: ...
     def psip_of_psi(self, psi: float) -> float: ...
     def psi_of_psip(self, psip: float) -> float: ...
     def q_of_psi(self, psi: float) -> float: ...
@@ -147,9 +152,9 @@ class _PyNcQfactor:
     equilibrium_type: EquilibriumType
     interp_type: Interp1DType
     qaxis: float
-    qwall: float
-    psi_wall: float
-    psip_wall: float
+    qlast: float
+    psi_last: float
+    psip_last: float
     psi_state: FluxState
     psip_state: FluxState
     psi_array: Array1
@@ -194,8 +199,8 @@ class _PyNcCurrent:
     netcdf_version: NetCDFVersion
     equilibrium_type: EquilibriumType
     interp_type: Interp1DType
-    psi_wall: float
-    psip_wall: float
+    psi_last: float
+    psip_last: float
     psi_state: FluxState
     psip_state: FluxState
     psi_array: Array1
@@ -241,8 +246,8 @@ class _PyNcBfield:
     interp_type: Interp1DType
     baxis: float
     shape: ArrayShape
-    psi_wall: float
-    psip_wall: float
+    psi_last: float
+    psip_last: float
     psi_state: FluxState
     psip_state: FluxState
     psi_array: Array1
@@ -308,8 +313,8 @@ class _PyNcHarmonic:
     phase_average: float
     psi_phase_resonance: float
     psip_phase_resonance: float
-    psi_wall: float
-    psip_wall: float
+    psi_last: float
+    psip_last: float
     psi_state: FluxState
     psip_state: FluxState
     psi_array: Array1

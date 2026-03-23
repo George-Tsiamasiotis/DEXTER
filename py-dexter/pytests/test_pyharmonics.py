@@ -31,8 +31,8 @@ def test_nc_harmonic_getters(nc_harmonic: NcHarmonic):
     assert isinstance(nc_harmonic.m, int)
     assert isinstance(nc_harmonic.n, int)
     assert nc_harmonic.phase_method == "Zero"
-    assert isfinite(nc_harmonic.psi_wall)
-    assert isfinite(nc_harmonic.psip_wall)
+    assert isfinite(nc_harmonic.psi_last)
+    assert isfinite(nc_harmonic.psip_last)
     assert nc_harmonic.psi_state == "Good"
     assert nc_harmonic.psip_state == "Good"
     assert nc_harmonic.psi_array.ndim == 1

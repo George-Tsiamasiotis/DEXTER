@@ -24,6 +24,16 @@ pub enum EquilibriumType {
     Analytical,
 }
 
+/// Helper struct to define the Last Closed Flux Surface (LCFS) with respect to one of the
+/// two fluxes.
+#[derive(Debug, Clone, Copy)]
+pub enum LastClosedFluxSurface {
+    /// Last closed toroidal flux surface.
+    Toroidal(f64),
+    /// Last closed poloidal flux surface.
+    Poloidal(f64),
+}
+
 /// Debug-asserts that all values of the slice are finite.
 pub(crate) fn debug_assert_all_finite_values(values: &[f64]) {
     debug_assert!(

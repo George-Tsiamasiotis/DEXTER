@@ -57,7 +57,7 @@ def numerical_equilibrium(
         qfactor=qfactor,
         current=current,
         bfield=bfield,
-        perturbation=None,  # TODO:
+        perturbation=Perturbation([]),  # TODO:
     )
 
 
@@ -107,7 +107,7 @@ class Equilibrium:
         qfactor: Qfactor,
         current: Current,
         bfield: Bfield,
-        perturbation: Optional[Perturbation] = None,
+        perturbation: Optional[Perturbation] = Perturbation([]),
         geometry: Optional[Geometry] = None,
     ):
         self._geometry = geometry
@@ -120,9 +120,12 @@ class Equilibrium:
             self._perturbation = perturbation
 
     @property
-    def geometry(self) -> Optional[Geometry]:
+    def geometry(self) -> Geometry:
         """The equilibrium 'Geometry'."""
-        return self._geometry
+        if self._geometry is None:
+            raise AttributeError("Geometry has not been defined")
+        else:
+            return self._geometry
 
     @property
     def qfactor(self) -> Qfactor:
@@ -145,14 +148,14 @@ class Equilibrium:
         return self._perturbation
 
     @property
-    def psi_wall(self) -> float:
-        r"""The toroidal flux' value at the wall, $\psi_{wall}$."""
-        return self._try_getattr("psi_wall")
+    def psi_last(self) -> float:
+        r"""The value of the last closed toroidal flux surface, $\psi_{LCFS}$."""
+        return self._try_getattr("psi_last")
 
     @property
-    def psip_wall(self) -> float:
-        r"""The poloidal flux' value at the wall, $\psi_{p,wall}$."""
-        return self._try_getattr("psip_wall")
+    def psip_last(self) -> float:
+        r"""The value of the last closed poloidal flux surface, $\psi_{p,LCFS}$."""
+        return self._try_getattr("psip_last")
 
     @property
     def baxis(self) -> float:
@@ -165,9 +168,9 @@ class Equilibrium:
         return self._try_getattr("raxis")
 
     @property
-    def rwall(self) -> float:
-        r"""The radial coordinate's value at the wall, $r_{wall}$."""
-        return self._try_getattr("rwall")
+    def rlast(self) -> float:
+        r"""The radial coordinate's value at the last closed flux surface, $r_{LCFS}$."""
+        return self._try_getattr("rlast")
 
     def _try_getattr(self, name: str) -> Any:
         """Tries to find the attribute 'name' in all mandatory fields, raising an AttributeError if no object
@@ -226,8 +229,8 @@ class Equilibrium:
 
         rlab_array = self.geometry.rlab_array
         zlab_array = self.geometry.zlab_array
-        rlab_wall = self.geometry.rlab_wall
-        zlab_wall = self.geometry.zlab_wall
+        rlab_last = self.geometry.rlab_last
+        zlab_last = self.geometry.zlab_last
         b_array = self.bfield.b_array
 
         ax.set_title(r"$Magnetic$ $field$ $strength$ $B$")
@@ -239,7 +242,7 @@ class Equilibrium:
         contour = ax.contourf(rlab_array, zlab_array, b_array, **contour_kw)
         plt.colorbar(contour, ax=ax, label=r"$B[Normalized\quad Units]$")
 
-        ax.plot(rlab_wall, zlab_wall, color="k", linewidth=2)
+        ax.plot(rlab_last, zlab_last, color="k", linewidth=2)
         ax.use_sticky_edges = False
         ax.margins(0.04, 0.04)
 
@@ -265,27 +268,27 @@ class Equilibrium:
 
         rlab_array = self.geometry.rlab_array
         zlab_array = self.geometry.zlab_array
-        rlab_wall = self.geometry.rlab_wall
-        zlab_wall = self.geometry.zlab_wall
+        rlab_last = self.geometry.rlab_last
+        zlab_last = self.geometry.zlab_last
         shape = self.geometry.shape
 
         contour_kw = {"levels": levels, "cmap": "plasma"}
 
         if self.geometry.psi_state == "Good":
             flux = "psi"
-            wall = self.geometry.psi_wall
+            lcfs = self.geometry.psi_last
             db_dflux = self.bfield.db_dpsi
             db_dtheta = self.bfield.db_of_psi_dtheta
         elif self.geometry.psip_state == "Good":
             flux = "psi_p"
-            wall = self.geometry.psip_wall
+            lcfs = self.geometry.psip_last
             db_dflux = self.bfield.db_dpsip
             db_dtheta = self.bfield.db_of_psip_dtheta
         else:
             raise Exception("unreachable")
 
         psi_grid, theta_grid = np.meshgrid(
-            np.linspace(0, wall, shape[0]),
+            np.linspace(0, lcfs, shape[0]),
             np.linspace(0, 2 * np.pi, shape[1]),
             indexing="ij",
         )
@@ -296,8 +299,8 @@ class Equilibrium:
         contour2 = ax[1].contourf(rlab_array, zlab_array, db_dtheta_array, **contour_kw)
         plt.colorbar(contour1, ax=ax[0], label=rf"$dB/d\{flux}[Normalized\quad Units]$")
         plt.colorbar(contour2, ax=ax[1], label=r"$dB/d\theta[Normalized\quad Units]$")
-        ax[0].plot(rlab_wall, zlab_wall, color="k", linewidth=2)
-        ax[1].plot(rlab_wall, zlab_wall, color="k", linewidth=2)
+        ax[0].plot(rlab_last, zlab_last, color="k", linewidth=2)
+        ax[1].plot(rlab_last, zlab_last, color="k", linewidth=2)
 
         ax[0].set_title(rf"$dB/d\{flux}$")
         ax[1].set_title(r"$dB/d\theta$")
@@ -331,8 +334,8 @@ class Equilibrium:
 
         rlab_array = self.geometry.rlab_array
         zlab_array = self.geometry.zlab_array
-        rlab_wall = self.geometry.rlab_wall
-        zlab_wall = self.geometry.zlab_wall
+        rlab_last = self.geometry.rlab_last
+        zlab_last = self.geometry.zlab_last
 
         shape = self.geometry.shape
         step = max([1, int(shape[0] / number)])
@@ -357,7 +360,7 @@ class Equilibrium:
         ax.plot(*axis_point, "ko", markersize=4, label="$R_{axis}$")
         ax.plot(*geom_center, "ro", markersize=4, label="$R_{geometric}$")
 
-        ax.plot(rlab_wall, zlab_wall, color="k", linewidth=2)
+        ax.plot(rlab_last, zlab_last, color="k", linewidth=2)
         ax.legend()
 
         plt.show()
@@ -381,8 +384,8 @@ class Equilibrium:
 
         rlab_array = self.geometry.rlab_array.T
         zlab_array = self.geometry.zlab_array.T
-        rlab_wall = self.geometry.rlab_wall
-        zlab_wall = self.geometry.zlab_wall
+        rlab_last = self.geometry.rlab_last
+        zlab_last = self.geometry.zlab_last
 
         shape = self.geometry.shape
         step = max([1, int(shape[1] / number)])
@@ -409,7 +412,7 @@ class Equilibrium:
         ax.plot(*axis_point, "ko", markersize=4, label="$R_{axis}$")
         ax.plot(*geom_center, "ro", markersize=4, label="$R_{geometric}$")
 
-        ax.plot(rlab_wall, zlab_wall, color="k", linewidth=2)
+        ax.plot(rlab_last, zlab_last, color="k", linewidth=2)
         ax.legend()
 
         plt.show()
@@ -419,8 +422,8 @@ class Equilibrium:
 
         The midplane is defined as two $\theta=const$ lines:
 
-        + $\theta = \pi$ and $\psi=[0, \psi_{wall}]$ (or $\psi_p=[0, \psi_{p,wall}]$)
-        + $\theta = 0$ and $\psi=[0, \psi_{wall}]$ (or $\psi_p=[0, \psi_{p,wall}]$)
+        + $\theta = \pi$ and $\psi=[0, \psi_{LCFS}]$ (or $\psi_p=[0, \psi_{p,LCFS}]$)
+        + $\theta = 0$ and $\psi=[0, \psi_{LCFS}]$ (or $\psi_p=[0, \psi_{p,LCFS}]$)
         """
         length = 1000
 
@@ -428,21 +431,21 @@ class Equilibrium:
             b_of_flux = self.bfield.b_of_psi
             db_dflux = self.bfield.db_dpsi
             db_dtheta = self.bfield.db_of_psi_dtheta
-            flux_wall = self.psi_wall
+            lcfs = self.psi_last
             flux_str = r"\psi"
-            flux_wall_str = r"\psi_{wall}"
+            lcfs_str = r"\psi_{LCFS}"
         else:
             b_of_flux = self.bfield.b_of_psip
             db_dflux = self.bfield.db_dpsip
             db_dtheta = self.bfield.db_of_psip_dtheta
-            flux_wall = self.psip_wall
+            lcfs = self.psip_last
             flux_str = r"\psi_p"
-            flux_wall_str = r"\psi_{p,wall}"
+            lcfs_str = r"\psi_{p,LCFS}"
 
         fluxes = np.concat(
             (
-                np.linspace(flux_wall, 0, length // 2),
-                np.linspace(0, flux_wall, length // 2),
+                np.linspace(lcfs, 0, length // 2),
+                np.linspace(0, lcfs, length // 2),
             )
         )
         thetas = np.concat(
@@ -482,7 +485,7 @@ class Equilibrium:
             label=rf"$dB/d\theta$",
         )
 
-        ax.set_xlabel(rf"${flux_str} / {flux_wall_str}$")
+        ax.set_xlabel(rf"${flux_str} / {lcfs_str}$")
         ax.set_ylabel(rf"$Amplitude$")
         ax.grid(True)
         ax.margins(0)

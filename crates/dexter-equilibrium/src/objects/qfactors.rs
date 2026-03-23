@@ -3,8 +3,7 @@
 use crate::{
     debug_assert_is_finite, debug_assert_non_negative_psi, debug_assert_non_negative_psip,
     equilibrium_type_getter_impl, fluxes_state_getter_impl, fluxes_values_array_getter_impl,
-    fluxes_wall_value_getter_impl, interp_type_getter_impl, netcdf_path_getter_impl,
-    netcdf_version_getter_impl,
+    interp_type_getter_impl, lcfs_getter_impl, netcdf_path_getter_impl, netcdf_version_getter_impl,
 };
 use dexter_common::vec_to_array1D_getter_impl;
 use ndarray::Array1;
@@ -14,7 +13,7 @@ use std::path::{Path, PathBuf};
 use super::debug_assert_all_finite_values;
 use crate::objects::nc_flux::{NcFlux, NcFluxState};
 use crate::{EqError, EvalError};
-use crate::{EquilibriumType, FluxCommute, Qfactor};
+use crate::{EquilibriumType, FluxCommute, LastClosedFluxSurface, Qfactor};
 
 // ===============================================================================================
 
@@ -89,16 +88,6 @@ impl std::fmt::Debug for UnityQfactor {
 
 // ===============================================================================================
 
-/// Helper struct to define a [`ParabolicQfactor`] with respect to one of the two fluxes' values at
-/// the wall.
-#[derive(Debug, Clone, Copy)]
-pub enum FluxWall {
-    /// Define `qwall` with respect to `ψwall`.
-    Toroidal(f64),
-    /// Define `qwall` with respect to `ψpwall`.
-    Poloidal(f64),
-}
-
 /// Analytical q-factor of parabolic q(ψ) profile.
 ///
 /// # Note
@@ -109,70 +98,70 @@ pub struct ParabolicQfactor {
     equilibrium_type: EquilibriumType,
     /// The `q` value on the magnetic axis.
     qaxis: f64,
-    /// The `q` value at the wall.
-    qwall: f64,
-    /// The value of the toroidal flux `ψ` at the wall, in Normalized units.
-    psi_wall: f64,
-    /// The value of the poloidal flux `ψp` at the wall, in Normalized units.
-    psip_wall: f64,
+    /// The `q` value at the last closed flux surface.
+    qlast: f64,
+    /// The value of the last closed toroidal flux surface `ψ_last` in Normalized units.
+    psi_last: f64,
+    /// The value of the last closed poloidal flux surface `ψp_last` in Normalized units.
+    psip_last: f64,
 }
 
 impl ParabolicQfactor {
     /// Creates a new `ParabolicQfactor`.
     ///
-    /// A `ParabolicQfactor` is defined with the help of the [`FluxWall`] helper struct, which changes
-    /// the position where `qwall` is met.
+    /// A `ParabolicQfactor` is defined with the help of the [`LastClosedFluxSurface`] helper struct,
+    /// which changes the position where `qlast` is met.
     ///
     /// # Example
     /// ```
     /// # use dexter_equilibrium::*;
-    /// // Define q(ψ=ψwall=0.45) = qwall = 3.8
-    /// let psi_wall = FluxWall::Toroidal(0.45);
-    /// let qfactor = ParabolicQfactor::new(1.1, 3.8, psi_wall);
+    /// // Define q(ψ=ψ_last=0.45) = qlast = 3.8
+    /// let psi_last = LastClosedFluxSurface::Toroidal(0.45);
+    /// let qfactor = ParabolicQfactor::new(1.1, 3.8, psi_last);
     ///
-    /// // Define q(ψp=ψpwall=0.19) = qwall = 4.2
-    /// let psip_wall = FluxWall::Poloidal(0.19);
-    /// let qfactor = ParabolicQfactor::new(1.1, 4.2, psip_wall);
+    /// // Define q(ψp=ψp_last=0.19) = qlast = 4.2
+    /// let psip_last = LastClosedFluxSurface::Poloidal(0.19);
+    /// let qfactor = ParabolicQfactor::new(1.1, 4.2, psip_last);
     /// ```
     #[must_use]
-    pub fn new(qaxis: f64, qwall: f64, flux_wall: FluxWall) -> Self {
-        // Create two phony qfactors to calculate the other wall value
-        let psi_wall: f64;
-        let psip_wall: f64;
-        match flux_wall {
-            FluxWall::Toroidal(_psi_wall) => {
+    pub fn new(qaxis: f64, qlast: f64, lcfs: LastClosedFluxSurface) -> Self {
+        // Create two phony qfactors to calculate the other last value
+        let psi_last: f64;
+        let psip_last: f64;
+        match lcfs {
+            LastClosedFluxSurface::Toroidal(_psi_last) => {
                 let phony_q = Self {
                     equilibrium_type: EquilibriumType::Analytical,
                     qaxis,
-                    qwall,
-                    psi_wall: _psi_wall,
-                    psip_wall: f64::NAN,
+                    qlast,
+                    psi_last: _psi_last,
+                    psip_last: f64::NAN,
                 };
-                psi_wall = phony_q.psi_wall;
-                psip_wall = match phony_q.psip_of_psi(_psi_wall, &mut Accelerator::new()) {
+                psi_last = phony_q.psi_last;
+                psip_last = match phony_q.psip_of_psi(_psi_last, &mut Accelerator::new()) {
                     Ok(value) => value,
                     Err(_) => unreachable!("Analytical formula, cannot fail"),
                 };
             }
-            FluxWall::Poloidal(_psip_wall) => {
+            LastClosedFluxSurface::Poloidal(_psip_last) => {
                 let phony_q = Self {
                     equilibrium_type: EquilibriumType::Analytical,
                     qaxis,
-                    qwall,
-                    psi_wall: f64::NAN,
-                    psip_wall: _psip_wall,
+                    qlast,
+                    psi_last: f64::NAN,
+                    psip_last: _psip_last,
                 };
-                psip_wall = phony_q.psip_wall;
-                psi_wall = phony_q.psi_wall_of_psip_wall();
+                psip_last = phony_q.psip_last;
+                psi_last = phony_q.psi_last_of_psip_last();
             }
         }
 
         Self {
             equilibrium_type: EquilibriumType::Analytical,
             qaxis,
-            qwall,
-            psi_wall,
-            psip_wall,
+            qlast,
+            psi_last,
+            psip_last,
         }
     }
 
@@ -184,35 +173,35 @@ impl ParabolicQfactor {
         self.qaxis
     }
 
-    /// Returns the value of `q` on the wall.
+    /// Returns the value of `q` at the last closed flux surface.
     #[must_use]
-    pub fn qwall(&self) -> f64 {
-        self.qwall
+    pub fn qlast(&self) -> f64 {
+        self.qlast
     }
 
-    /// Returns the toroidal flux's value at the wall `ψ_wall`.
+    /// Returns the value of the last closed toroidal flux surface `ψ_last`.
     #[must_use]
-    pub fn psi_wall(&self) -> f64 {
-        self.psi_wall
+    pub fn psi_last(&self) -> f64 {
+        self.psi_last
     }
 
-    /// Returns the poloidal flux's value at the wall `ψp_wall`.
+    /// Returns the value of the last closed poloidal flux surface `ψp_last`.
     #[must_use]
-    pub fn psip_wall(&self) -> f64 {
-        self.psip_wall
+    pub fn psip_last(&self) -> f64 {
+        self.psip_last
     }
 
-    /// Helper function to calculate ψwall from ψpwall when instantiating `ParabolicQfactor`. This
-    /// little maneuver is necessary since ψ(ψp) is defined through ψwall, which of course does
+    /// Helper function to calculate `ψ_last` from `ψp_last` when instantiating `ParabolicQfactor`. This
+    /// little maneuver is necessary since `ψ(ψp)` is defined through `ψ_last`, which of course does
     /// not exist yet.
     ///
-    /// This formula is derived by solving q(ψp) for ψwall and setting ψp = ψpwall.
+    /// This formula is derived by solving `q(ψp)` for `ψ_last` and setting `ψp = ψp_last`.
     ///
     /// Should not be used after instantiation.
     #[must_use]
-    fn psi_wall_of_psip_wall(&self) -> f64 {
-        let atan_arg = (self.qwall / self.qaxis - 1.0).sqrt();
-        let numerator = self.psip_wall * (self.qaxis * (self.qwall - self.qaxis)).sqrt();
+    fn psi_last_of_psip_last(&self) -> f64 {
+        let atan_arg = (self.qlast / self.qaxis - 1.0).sqrt();
+        let numerator = self.psip_last * (self.qaxis * (self.qlast - self.qaxis)).sqrt();
         let denominator = atan_arg.atan();
         numerator / denominator
     }
@@ -221,15 +210,15 @@ impl ParabolicQfactor {
 impl FluxCommute for ParabolicQfactor {
     fn psip_of_psi(&self, psi: f64, _: &mut Accelerator) -> Result<f64, EvalError> {
         debug_assert_non_negative_psi!(psi);
-        let atan_arg = psi * (self.qwall - self.qaxis).sqrt() / (self.psi_wall * self.qaxis.sqrt());
-        let coef = self.psi_wall / (self.qaxis * (self.qwall - self.qaxis)).sqrt();
+        let atan_arg = psi * (self.qlast - self.qaxis).sqrt() / (self.psi_last * self.qaxis.sqrt());
+        let coef = self.psi_last / (self.qaxis * (self.qlast - self.qaxis)).sqrt();
         Ok(debug_assert_is_finite!(coef * atan_arg.atan()))
     }
 
     fn psi_of_psip(&self, psip: f64, _: &mut Accelerator) -> Result<f64, EvalError> {
         debug_assert_non_negative_psip!(psip);
-        let tan_arg = (self.qaxis * (self.qwall - self.qaxis)).sqrt() * psip / self.psi_wall;
-        let coef = self.psi_wall * self.qaxis.sqrt() / (self.qwall - self.qaxis).sqrt();
+        let tan_arg = (self.qaxis * (self.qlast - self.qaxis)).sqrt() * psip / self.psi_last;
+        let coef = self.psi_last * self.qaxis.sqrt() / (self.qlast - self.qaxis).sqrt();
         Ok(debug_assert_is_finite!(coef * tan_arg.tan()))
     }
 }
@@ -239,13 +228,13 @@ impl Qfactor for ParabolicQfactor {
     fn q_of_psi(&self, psi: f64, _: &mut Accelerator) -> Result<f64, EvalError> {
         debug_assert_non_negative_psi!(psi);
         Ok(debug_assert_is_finite!(
-            (self.qaxis) + (self.qwall - self.qaxis) * (psi / self.psi_wall).powi(2)
+            (self.qaxis) + (self.qlast - self.qaxis) * (psi / self.psi_last).powi(2)
         ))
     }
 
     fn q_of_psip(&self, psip: f64, _: &mut Accelerator) -> Result<f64, EvalError> {
         debug_assert_non_negative_psip!(psip);
-        let tan_arg = (self.qaxis * (self.qwall - self.qaxis)).sqrt() * psip / self.psi_wall;
+        let tan_arg = (self.qaxis * (self.qlast - self.qaxis)).sqrt() * psip / self.psi_last;
         Ok(debug_assert_is_finite!(
             self.qaxis + self.qaxis * tan_arg.tan().powi(2)
         ))
@@ -253,13 +242,13 @@ impl Qfactor for ParabolicQfactor {
 
     fn dpsip_dpsi(&self, psi: f64, _: &mut Accelerator) -> Result<f64, EvalError> {
         debug_assert_non_negative_psi!(psi);
-        let denom = self.qaxis * self.psi_wall.powi(2) + (self.qwall - self.qaxis) * psi.powi(2);
-        Ok(debug_assert_is_finite!(self.psi_wall.powi(2) / denom))
+        let denom = self.qaxis * self.psi_last.powi(2) + (self.qlast - self.qaxis) * psi.powi(2);
+        Ok(debug_assert_is_finite!(self.psi_last.powi(2) / denom))
     }
 
     fn dpsi_dpsip(&self, psip: f64, _: &mut Accelerator) -> Result<f64, EvalError> {
         debug_assert_non_negative_psip!(psip);
-        let cos_arg = (self.qaxis * (self.qwall - self.qaxis)).sqrt() * psip / self.psi_wall;
+        let cos_arg = (self.qaxis * (self.qlast - self.qaxis)).sqrt() * psip / self.psi_last;
         Ok(debug_assert_is_finite!(self.qaxis / cos_arg.cos().powi(2)))
     }
 }
@@ -269,9 +258,7 @@ impl std::fmt::Debug for ParabolicQfactor {
         f.debug_struct("ParabolicQfactor: q-factor of parabolic q(ψ) profile.")
             .field("equilibrium_type", &self.equilibrium_type)
             .field("qaxis", &self.qaxis)
-            .field("qwall", &self.qwall)
-            .field("psi_wall", &self.psi_wall)
-            .field("psip_wall", &self.psip_wall)
+            .field("qlast", &self.qlast)
             .finish()
     }
 }
@@ -517,16 +504,16 @@ impl NcQfactor {
         }
     }
 
-    /// Returns the value of q on the wall.
+    /// Returns the value of q at the last closed flux surface.
     #[must_use]
-    pub fn qwall(&self) -> f64 {
+    pub fn qlast(&self) -> f64 {
         match self.q_values.last().copied() {
-            Some(qwall) => qwall,
+            Some(qlast) => qlast,
             None => unreachable!("NcQfactor cannot be created if `q_values` dont exist"),
         }
     }
 
-    fluxes_wall_value_getter_impl!();
+    lcfs_getter_impl!();
     fluxes_state_getter_impl!();
     fluxes_values_array_getter_impl!();
     vec_to_array1D_getter_impl!(q_array, q_values, q);
@@ -542,7 +529,7 @@ impl std::fmt::Debug for NcQfactor {
             .field("psi", &self.psi)
             .field("psip", &self.psip)
             .field("qaxis", &self.qaxis())
-            .field("qwall", &self.qwall())
+            .field("qlast", &self.qlast())
             .finish()
     }
 }
@@ -559,16 +546,16 @@ mod test_utils {
     }
 
     /// Make sure that dψ(ψp)/dψp and q(ψ) are close enough.
-    pub(super) fn test_dpsi_dpsip_q_closeness(qfactor: &impl Qfactor, psip_wall: f64, qwall: f64) {
+    pub(super) fn test_dpsi_dpsip_q_closeness(qfactor: &impl Qfactor, psip_last: f64, qlast: f64) {
         // Do not go to close to the edges, since the interpolation might deviate a bit
-        let psips = Array1::linspace(0.02 * psip_wall, 0.98 * psip_wall, 100);
+        let psips = Array1::linspace(0.02 * psip_last, 0.98 * psip_last, 100);
 
         let mut acc = Accelerator::new();
         for psip in psips.iter().copied() {
             assert_relative_eq!(
                 qfactor.q_of_psip(psip, &mut acc).unwrap(),
                 qfactor.dpsi_dpsip(psip, &mut acc).unwrap(),
-                epsilon = qwall * 1e-4
+                epsilon = qlast * 1e-4
             )
         }
     }
@@ -576,18 +563,18 @@ mod test_utils {
     /// Make sure that dψp(ψ)/dψ and i(ψ) are close enough.
     pub(super) fn test_dpsip_dpsi_iota_closeness(
         qfactor: &impl Qfactor,
-        psi_wall: f64,
-        qwall: f64,
+        psi_last: f64,
+        qlast: f64,
     ) {
         // Do not go to close to the edges, since the interpolation might deviate a bit
-        let psis = Array1::linspace(0.02 * psi_wall, 0.98 * psi_wall, 100);
+        let psis = Array1::linspace(0.02 * psi_last, 0.98 * psi_last, 100);
 
         let mut acc = Accelerator::new();
         for psi in psis.iter().copied() {
             assert_relative_eq!(
                 qfactor.iota_of_psi(psi, &mut acc).unwrap(),
                 qfactor.dpsip_dpsi(psi, &mut acc).unwrap(),
-                epsilon = qwall * 1e-4
+                epsilon = qlast * 1e-4
             )
         }
     }
@@ -600,18 +587,22 @@ mod test_parabolic_qfactor {
 
     #[test]
     /// Values calculated at a point where the ParabolicQfactor was defined correctly.
-    fn instantiation_with_psi_wall() {
-        let qfactor = ParabolicQfactor::new(1.1, 3.9, FluxWall::Toroidal(0.45));
-        assert_abs_diff_eq!(qfactor.psi_wall(), 0.45);
-        assert_relative_eq!(qfactor.psip_wall(), 0.25921022097041035, epsilon = 1e-12);
+    fn instantiation_with_psi_last() {
+        let qfactor = ParabolicQfactor::new(1.1, 3.9, LastClosedFluxSurface::Toroidal(0.45));
+        assert_abs_diff_eq!(qfactor.psi_last(), 0.45);
+        assert_relative_eq!(qfactor.psip_last(), 0.25921022097041035, epsilon = 1e-12);
     }
 
     #[test]
     /// Values calculated at a point where the ParabolicQfactor was defined correctly.
-    fn instantiation_with_psip_wall() {
-        let qfactor = ParabolicQfactor::new(1.1, 3.9, FluxWall::Poloidal(0.25921022097041035));
-        assert_abs_diff_eq!(qfactor.psip_wall(), 0.25921022097041035);
-        assert_relative_eq!(qfactor.psi_wall(), 0.45, epsilon = 1e-12);
+    fn instantiation_with_psip_last() {
+        let qfactor = ParabolicQfactor::new(
+            1.1,
+            3.9,
+            LastClosedFluxSurface::Poloidal(0.25921022097041035),
+        );
+        assert_abs_diff_eq!(qfactor.psip_last(), 0.25921022097041035);
+        assert_relative_eq!(qfactor.psi_last(), 0.45, epsilon = 1e-12);
     }
 }
 
@@ -636,34 +627,34 @@ mod test_derivatives_closeness {
 
     #[test]
     fn parabolic_qfactor_dpsi_dpsip_q_closeness() {
-        let qfactor = ParabolicQfactor::new(1.1, 3.9, FluxWall::Toroidal(0.45));
-        let psip_wall = qfactor.psip_wall();
-        let qwall = qfactor.qwall();
-        test_dpsi_dpsip_q_closeness(&qfactor, psip_wall, qwall);
+        let qfactor = ParabolicQfactor::new(1.1, 3.9, LastClosedFluxSurface::Toroidal(0.45));
+        let psip_last = qfactor.psip_last();
+        let qlast = qfactor.qlast();
+        test_dpsi_dpsip_q_closeness(&qfactor, psip_last, qlast);
     }
 
     #[test]
     fn parabolic_qfactor_dpsip_dpsi_iota_closeness() {
-        let qfactor = ParabolicQfactor::new(1.1, 3.9, FluxWall::Toroidal(0.45));
-        let psip_wall = qfactor.psip_wall();
-        let qwall = qfactor.qwall();
-        test_dpsip_dpsi_iota_closeness(&qfactor, psip_wall, qwall);
+        let qfactor = ParabolicQfactor::new(1.1, 3.9, LastClosedFluxSurface::Toroidal(0.45));
+        let psip_last = qfactor.psip_last();
+        let qlast = qfactor.qlast();
+        test_dpsip_dpsi_iota_closeness(&qfactor, psip_last, qlast);
     }
 
     #[test]
     fn nc_qfactor_dpsi_dpsip_q_closeness() {
         let qfactor = create_nc_qfactor(TEST_NETCDF_PATH);
-        let psip_wall = qfactor.psip_wall().unwrap();
-        let qwall = qfactor.qwall();
-        test_dpsi_dpsip_q_closeness(&qfactor, psip_wall, qwall);
+        let psip_last = qfactor.psip_last().unwrap();
+        let qlast = qfactor.qlast();
+        test_dpsi_dpsip_q_closeness(&qfactor, psip_last, qlast);
     }
 
     #[test]
     fn nc_qfactor_dpsip_dpsi_iota_closeness() {
         let qfactor = create_nc_qfactor(TEST_NETCDF_PATH);
-        let psi_wall = qfactor.psi_wall().unwrap();
-        let qwall = qfactor.qwall();
-        test_dpsip_dpsi_iota_closeness(&qfactor, psi_wall, qwall);
+        let psi_last = qfactor.psi_last().unwrap();
+        let qlast = qfactor.qlast();
+        test_dpsip_dpsi_iota_closeness(&qfactor, psi_last, qlast);
     }
 }
 

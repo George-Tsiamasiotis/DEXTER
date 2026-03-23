@@ -23,9 +23,9 @@ def test_numerical_equilibrium(
     assert isinstance(eq.qfactor, NcQfactor)
     assert isinstance(eq.current, NcCurrent)
     assert isinstance(eq.bfield, NcBfield)
-    assert isinstance(eq.psi_wall, float)
-    assert isinstance(eq.psip_wall, float)
-    assert isinstance(eq.rwall, float)
+    assert isinstance(eq.psi_last, float)
+    assert isinstance(eq.psip_last, float)
+    assert isinstance(eq.rlast, float)
     assert isinstance(eq.raxis, float)
     assert isinstance(eq.baxis, float)
 
@@ -34,9 +34,9 @@ def test_numerical_equilibrium(
     assert isinstance(eq.qfactor, NcQfactor)
     assert isinstance(eq.current, NcCurrent)
     assert isinstance(eq.bfield, NcBfield)
-    assert isinstance(eq.psi_wall, float)
-    assert isinstance(eq.psip_wall, float)
-    assert isinstance(eq.rwall, float)
+    assert isinstance(eq.psi_last, float)
+    assert isinstance(eq.psip_last, float)
+    assert isinstance(eq.rlast, float)
     assert isinstance(eq.raxis, float)
     assert isinstance(eq.baxis, float)
 
@@ -48,12 +48,12 @@ def test_minimum_equilibrium():
         bfield=LarBfield(),
     )
     with pytest.raises(AttributeError):
-        equilibrium.psi_wall
+        equilibrium.psi_last
     with pytest.raises(AttributeError):
-        equilibrium.psip_wall
-    with pytest.raises(TypeError):
+        equilibrium.psip_last
+    with pytest.raises(AttributeError):
         equilibrium.plot_b()
-    with pytest.raises(TypeError):
+    with pytest.raises(AttributeError):
         equilibrium.plot_db()
 
 
@@ -71,7 +71,7 @@ def test_full_equilibrium():
         ),
     )
     with pytest.raises(AttributeError):
-        equilibrium.psip_wall
+        equilibrium.psip_last
 
 
 def test_plots(

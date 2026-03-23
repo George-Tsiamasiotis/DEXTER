@@ -19,7 +19,7 @@ fn evaluations_benchmark(c: &mut Criterion) {
     // ===========================================================================================
 
     let unity_qfactor = UnityQfactor::new();
-    let parabolic_qfactor = ParabolicQfactor::new(1.1, 3.9, FluxWall::Toroidal(0.45));
+    let parabolic_qfactor = ParabolicQfactor::new(1.1, 3.9, LastClosedFluxSurface::Toroidal(0.45));
     let nc_qfactor = NcQfactorBuilder::new(&path, "steffen").build().unwrap();
 
     let mut group = c.benchmark_group("Qfactor q(ψ) evaluation");
