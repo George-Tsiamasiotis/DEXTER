@@ -67,7 +67,8 @@ fn evaluations_benchmark(c: &mut Criterion) {
 
     // ===========================================================================================
 
-    let cos_harmonic = CosHarmonic::new(1e-3, 1, 2, 0.0);
+    let lcfs = LastClosedFluxSurface::Toroidal(0.45);
+    let cos_harmonic = CosHarmonic::new(1e-3, lcfs, 1, 2, 0.0);
     let nc_harmonic = NcHarmonicBuilder::new(&path, "steffen", 2, 1)
         .with_phase_method(PhaseMethod::Interpolation)
         .build()

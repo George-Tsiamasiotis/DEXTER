@@ -6,12 +6,13 @@ use ndarray::Array1;
 
 fn main() -> Result<()> {
     // Equilibrium setup
-    let qfactor = ParabolicQfactor::new(1.1, 3.9, LastClosedFluxSurface::Toroidal(0.45));
+    let lcfs = LastClosedFluxSurface::Toroidal(0.45);
+    let qfactor = ParabolicQfactor::new(1.1, 3.9, lcfs);
     let current = LarCurrent::new();
     let bfield = LarBfield::new();
     let perturbation = Perturbation::new(&[
-        CosHarmonic::new(1e-3, 1, 2, 0.0),
-        CosHarmonic::new(1e-3, 1, 4, 0.0),
+        CosHarmonic::new(1e-3, lcfs, 1, 2, 0.0),
+        CosHarmonic::new(1e-3, lcfs, 1, 4, 0.0),
     ]);
 
     // Initial Conditions setup

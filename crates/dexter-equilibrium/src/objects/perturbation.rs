@@ -40,9 +40,10 @@ where
     /// # use dexter_equilibrium::*;
     /// # use std::path::PathBuf;
     /// // from analytical harmonics
+    /// let lcfs = LastClosedFluxSurface::Toroidal(0.45);
     /// let perturbation = Perturbation::new(&[
-    ///     CosHarmonic::new(1e-3, 1, 2, 0.0),
-    ///     CosHarmonic::new(1e-3, 1, 3, 0.0),
+    ///     CosHarmonic::new(1e-3, lcfs, 1, 2, 0.0),
+    ///     CosHarmonic::new(1e-3, lcfs, 1, 3, 0.0),
     /// ]);
     ///
     /// // from numerical harmonics
@@ -80,9 +81,10 @@ where
     /// ```
     /// # use dexter_equilibrium::*;
     /// # use std::path::PathBuf;
+    /// let lcfs = LastClosedFluxSurface::Toroidal(0.45);
     /// let perturbation = Perturbation::new(&[
-    ///     CosHarmonic::new(1e-3, 1, 2, 0.0),
-    ///     CosHarmonic::new(1e-3, 1, 3, 0.0),
+    ///     CosHarmonic::new(1e-3, lcfs, 1, 2, 0.0),
+    ///     CosHarmonic::new(1e-3, lcfs, 1, 3, 0.0),
     /// ]);
     /// let mut caches: Vec<CosHarmonicCache> = perturbation.generate_caches();
     /// assert_eq!(perturbation.count(), caches.len());
@@ -106,9 +108,10 @@ where
     /// # Example
     /// ```
     /// # use dexter_equilibrium::*;
+    /// let lcfs = LastClosedFluxSurface::Toroidal(0.45);
     /// let perturbation = Perturbation::new(&[
-    ///     CosHarmonic::new(1e-3, 1, 2, 0.0),
-    ///     CosHarmonic::new(1e-3, 1, 3, 0.0),
+    ///     CosHarmonic::new(1e-3, lcfs, 1, 2, 0.0),
+    ///     CosHarmonic::new(1e-3, lcfs, 1, 3, 0.0),
     /// ]);
     /// let mut caches = perturbation.generate_caches();
     /// let p_of_psi = perturbation.p_of_psi(0.01, 3.14, 3.14, 0.0, &mut caches)?;
@@ -142,9 +145,10 @@ where
     /// # Example
     /// ```
     /// # use dexter_equilibrium::*;
+    /// let lcfs = LastClosedFluxSurface::Poloidal(0.45);
     /// let perturbation = Perturbation::new(&[
-    ///     CosHarmonic::new(1e-3, 1, 2, 0.0),
-    ///     CosHarmonic::new(1e-3, 1, 3, 0.0),
+    ///     CosHarmonic::new(1e-3, lcfs, 1, 2, 0.0),
+    ///     CosHarmonic::new(1e-3, lcfs, 1, 3, 0.0),
     /// ]);
     /// let mut caches = perturbation.generate_caches();
     /// let p_of_psip = perturbation.p_of_psip(0.015, 3.14, 3.14, 0.0, &mut caches)?;
@@ -178,9 +182,10 @@ where
     /// # Example
     /// ```
     /// # use dexter_equilibrium::*;
+    /// let lcfs = LastClosedFluxSurface::Toroidal(0.45);
     /// let perturbation = Perturbation::new(&[
-    ///     CosHarmonic::new(1e-3, 1, 2, 0.0),
-    ///     CosHarmonic::new(1e-3, 1, 3, 0.0),
+    ///     CosHarmonic::new(1e-3, lcfs, 1, 2, 0.0),
+    ///     CosHarmonic::new(1e-3, lcfs, 1, 3, 0.0),
     /// ]);
     /// let mut caches = perturbation.generate_caches();
     /// let dp_dpsi = perturbation.dp_dpsi(0.01, 3.14, 3.14, 0.0, &mut caches)?;
@@ -214,9 +219,10 @@ where
     /// # Example
     /// ```
     /// # use dexter_equilibrium::*;
+    /// let lcfs = LastClosedFluxSurface::Poloidal(0.45);
     /// let perturbation = Perturbation::new(&[
-    ///     CosHarmonic::new(1e-3, 1, 2, 0.0),
-    ///     CosHarmonic::new(1e-3, 1, 3, 0.0),
+    ///     CosHarmonic::new(1e-3, lcfs, 1, 2, 0.0),
+    ///     CosHarmonic::new(1e-3, lcfs, 1, 3, 0.0),
     /// ]);
     /// let mut caches = perturbation.generate_caches();
     /// let dp_dpsip = perturbation.dp_dpsip(0.01, 3.14, 3.14, 0.0, &mut caches)?;
@@ -250,9 +256,10 @@ where
     /// # Example
     /// ```
     /// # use dexter_equilibrium::*;
+    /// let lcfs = LastClosedFluxSurface::Toroidal(0.45);
     /// let perturbation = Perturbation::new(&[
-    ///     CosHarmonic::new(1e-3, 1, 2, 0.0),
-    ///     CosHarmonic::new(1e-3, 1, 3, 0.0),
+    ///     CosHarmonic::new(1e-3, lcfs, 1, 2, 0.0),
+    ///     CosHarmonic::new(1e-3, lcfs, 1, 3, 0.0),
     /// ]);
     /// let mut caches = perturbation.generate_caches();
     /// let dp_of_psi_dtheta = perturbation.dp_of_psi_dtheta(0.01, 3.14, 3.14, 0.0, &mut caches)?;
@@ -286,9 +293,10 @@ where
     /// # Example
     /// ```
     /// # use dexter_equilibrium::*;
+    /// let lcfs = LastClosedFluxSurface::Poloidal(0.45);
     /// let perturbation = Perturbation::new(&[
-    ///     CosHarmonic::new(1e-3, 1, 2, 0.0),
-    ///     CosHarmonic::new(1e-3, 1, 3, 0.0),
+    ///     CosHarmonic::new(1e-3, lcfs, 1, 2, 0.0),
+    ///     CosHarmonic::new(1e-3, lcfs, 1, 3, 0.0),
     /// ]);
     /// let mut caches = perturbation.generate_caches();
     /// let dp_of_psip_dtheta = perturbation.dp_of_psip_dtheta(0.01, 3.14, 3.14, 0.0, &mut caches)?;
@@ -322,9 +330,10 @@ where
     /// # Example
     /// ```
     /// # use dexter_equilibrium::*;
+    /// let lcfs = LastClosedFluxSurface::Toroidal(0.45);
     /// let perturbation = Perturbation::new(&[
-    ///     CosHarmonic::new(1e-3, 1, 2, 0.0),
-    ///     CosHarmonic::new(1e-3, 1, 3, 0.0),
+    ///     CosHarmonic::new(1e-3, lcfs, 1, 2, 0.0),
+    ///     CosHarmonic::new(1e-3, lcfs, 1, 3, 0.0),
     /// ]);
     /// let mut caches = perturbation.generate_caches();
     /// let dp_of_psi_dzeta = perturbation.dp_of_psi_dzeta(0.01, 3.14, 3.14, 0.0, &mut caches)?;
@@ -358,9 +367,10 @@ where
     /// # Example
     /// ```
     /// # use dexter_equilibrium::*;
+    /// let lcfs = LastClosedFluxSurface::Poloidal(0.45);
     /// let perturbation = Perturbation::new(&[
-    ///     CosHarmonic::new(1e-3, 1, 2, 0.0),
-    ///     CosHarmonic::new(1e-3, 1, 3, 0.0),
+    ///     CosHarmonic::new(1e-3, lcfs, 1, 2, 0.0),
+    ///     CosHarmonic::new(1e-3, lcfs, 1, 3, 0.0),
     /// ]);
     /// let mut caches = perturbation.generate_caches();
     /// let dp_of_psip_dzeta = perturbation.dp_of_psip_dzeta(0.01, 3.14, 3.14, 0.0, &mut caches)?;
@@ -394,9 +404,10 @@ where
     /// # Example
     /// ```
     /// # use dexter_equilibrium::*;
+    /// let lcfs = LastClosedFluxSurface::Toroidal(0.45);
     /// let perturbation = Perturbation::new(&[
-    ///     CosHarmonic::new(1e-3, 1, 2, 0.0),
-    ///     CosHarmonic::new(1e-3, 1, 3, 0.0),
+    ///     CosHarmonic::new(1e-3, lcfs, 1, 2, 0.0),
+    ///     CosHarmonic::new(1e-3, lcfs, 1, 3, 0.0),
     /// ]);
     /// let mut caches = perturbation.generate_caches();
     /// let dp_of_psi_dt = perturbation.dp_of_psi_dt(0.01, 3.14, 3.14, 0.0, &mut caches)?;
@@ -430,9 +441,10 @@ where
     /// # Example
     /// ```
     /// # use dexter_equilibrium::*;
+    /// let lcfs = LastClosedFluxSurface::Poloidal(0.45);
     /// let perturbation = Perturbation::new(&[
-    ///     CosHarmonic::new(1e-3, 1, 2, 0.0),
-    ///     CosHarmonic::new(1e-3, 1, 3, 0.0),
+    ///     CosHarmonic::new(1e-3, lcfs, 1, 2, 0.0),
+    ///     CosHarmonic::new(1e-3, lcfs, 1, 3, 0.0),
     /// ]);
     /// let mut caches = perturbation.generate_caches();
     /// let dp_of_psip_dt = perturbation.dp_of_psip_dt(0.01, 3.14, 3.14, 0.0, &mut caches)?;
@@ -490,16 +502,17 @@ mod perturbation_evals {
     use std::path::PathBuf;
 
     use crate::extract::TEST_NETCDF_PATH;
-    use crate::{HarmonicCache, NcHarmonic, NcHarmonicBuilder};
+    use crate::*;
     use approx::assert_relative_eq;
 
     use super::*;
 
     fn create_cos_perturbation() -> Perturbation<CosHarmonic> {
+        let lcfs = LastClosedFluxSurface::Toroidal(0.45);
         Perturbation::new(&[
-            CosHarmonic::new(1.0, 2, 3, 4.0),
-            CosHarmonic::new(5.0, 6, 7, 8.0),
-            CosHarmonic::new(9.0, 1, 2, 3.0),
+            CosHarmonic::new(1.0, lcfs, 2, 3, 4.0),
+            CosHarmonic::new(5.0, lcfs, 6, 7, 8.0),
+            CosHarmonic::new(9.0, lcfs, 1, 2, 3.0),
         ])
     }
 
@@ -535,18 +548,13 @@ mod perturbation_evals {
     fn cos_perturbation_evals() {
         let per = create_cos_perturbation();
         let c = &mut per.generate_caches();
-        let (p, t) = (0.01, 0.0); // Not used
+        let (p, theta, zeta, t) = (0.1, 0.2, 0.3, 0.0); // Not used
         let eps = 1e-10;
-        assert_relative_eq!(per.p_of_psi(p, 10.0, 20.0, t, c).unwrap(), -7.5934659096, epsilon = eps);
-        assert_relative_eq!(per.p_of_psip(p, 10.0, 20.0, t, c).unwrap(), -7.5934659096, epsilon = eps);
-        assert_relative_eq!(per.dp_dpsi(p, 10.0, 20.0, t, c).unwrap(), 0.0, epsilon = eps);
-        assert_relative_eq!(per.dp_dpsip(p, 10.0, 20.0, t, c).unwrap(), 0.0, epsilon = eps);
-        assert_relative_eq!(per.dp_of_psi_dtheta(p, 10.0, 20.0, t, c).unwrap(), 14.2385265316, epsilon = eps);
-        assert_relative_eq!(per.dp_of_psip_dtheta(p, 10.0, 20.0, t, c).unwrap(), 14.2385265316, epsilon = eps);
-        assert_relative_eq!(per.dp_of_psi_dzeta(p, 10.0, 20.0, t, c).unwrap(), -23.1232478476, epsilon = eps);
-        assert_relative_eq!(per.dp_of_psip_dzeta(p, 10.0, 20.0, t, c).unwrap(), -23.1232478476, epsilon = eps);
-        assert_relative_eq!(per.dp_of_psi_dt(p, 10.0, 20.0, t, c).unwrap(), 0.0, epsilon = eps);
-        assert_relative_eq!(per.dp_of_psip_dt(p, 10.0, 20.0, t, c).unwrap(), 0.0, epsilon = eps);
+        assert_relative_eq!(per.p_of_psi(p, theta, zeta, t, c).unwrap(), -2.46342903902, epsilon = eps);
+        assert_relative_eq!(per.dp_dpsi(p, theta, zeta, t, c).unwrap(), -12.3171451951, epsilon = eps);
+        assert_relative_eq!(per.dp_of_psi_dtheta(p, theta, zeta, t, c).unwrap(), -12.1655445266, epsilon = eps);
+        assert_relative_eq!(per.dp_of_psi_dzeta(p, theta, zeta, t, c).unwrap(), 15.9054673268, epsilon = eps);
+        assert_relative_eq!(per.dp_of_psi_dt(p, theta, zeta, t, c).unwrap(), 0.0, epsilon = eps);
     }
 
     #[test]
@@ -586,7 +594,7 @@ mod perturbation_evals {
             assert_eq!(cache.misses(), 1);
         });
 
-        per.p_of_psip(p, 10.0, 20.0, t, &mut c).unwrap();
+        per.p_of_psi(p, 10.0, 20.0, t, &mut c).unwrap();
 
         c.iter().for_each(|cache| {
             assert_eq!(cache.hits(), 1);
@@ -594,9 +602,9 @@ mod perturbation_evals {
         });
 
         per.dp_of_psi_dtheta(p, 10.0, 20.0, t, &mut c).unwrap();
-        per.dp_of_psip_dtheta(p, 10.0, 20.0, t, &mut c).unwrap();
+        per.dp_of_psi_dtheta(p, 10.0, 20.0, t, &mut c).unwrap();
         per.dp_of_psi_dzeta(p, 10.0, 20.0, t, &mut c).unwrap();
-        per.dp_of_psip_dzeta(p, 10.0, 20.0, t, &mut c).unwrap();
+        per.dp_of_psi_dzeta(p, 10.0, 20.0, t, &mut c).unwrap();
 
         c.iter().for_each(|cache| {
             assert_eq!(cache.hits(), 5);

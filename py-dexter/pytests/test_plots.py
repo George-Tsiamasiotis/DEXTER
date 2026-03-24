@@ -2,6 +2,7 @@ import numpy as np
 
 from dexter.equilibrium import _TEST_NETCDF_PATH as netcdf_path
 from dexter import (
+    LastClosedFluxSurface,
     Equilibrium,
     Geometry,
     Qfactor,
@@ -23,7 +24,6 @@ from dexter import (
     Queue,
     QueueInitialConditions,
 )
-from dexter.types import LastClosedFluxSurface
 
 
 def test_nc_geometry():
@@ -40,7 +40,7 @@ def test_unity_qfactor():
 
 
 def test_parabolic_qfactor():
-    lcfs: LastClosedFluxSurface = ("Toroidal", 0.45)
+    lcfs = LastClosedFluxSurface("Toroidal", 0.45)
     qfactor = ParabolicQfactor(1.1, 3.8, lcfs)
     _test_all_qfactor_plots(qfactor)
     _test_all_flux_plots(qfactor)
@@ -62,13 +62,21 @@ def test_nc_current():
     _test_all_current_plots(current)
 
 
-def test_cos_harmonic():
-    harmonic = CosHarmonic(1e-3, 3, 2, 0)
-    _test_all_harmonic_plots(harmonic)
+def test_cos_toroidal_harmonic():
+    lcfs = LastClosedFluxSurface("Toroidal", 0.45)
+    harmonic = CosHarmonic(1e-3, lcfs, 3, 2, 0)
+    _test_all_toroidal_harmonic_plots(harmonic)
+
+
+def test_cos_poloidal_harmonic():
+    lcfs = LastClosedFluxSurface("Poloidal", 0.45)
+    harmonic = CosHarmonic(1e-3, lcfs, 3, 2, 0)
+    _test_all_poloidal_harmonic_plots(harmonic)
 
 
 def test_nc_harmonic(nc_harmonic: NcHarmonic):
-    _test_all_harmonic_plots(nc_harmonic)
+    _test_all_toroidal_harmonic_plots(nc_harmonic)
+    _test_all_poloidal_harmonic_plots(nc_harmonic)
 
 
 def test_particle_plots(nc_equilibrium: Equilibrium):
@@ -166,16 +174,19 @@ def _test_all_current_plots(current: Current):
     current.plot_di_dpsip(points=50)
 
 
-def _test_all_harmonic_plots(harmonic: Harmonic):
+def _test_all_toroidal_harmonic_plots(harmonic: Harmonic):
     harmonic.plot_alpha_of_psi(points=50, data=True)
     harmonic.plot_alpha_of_psi(points=50, data=False)
-    harmonic.plot_alpha_of_psip(points=50, data=True)
-    harmonic.plot_alpha_of_psip(points=50, data=False)
     harmonic.plot_dalpha_of_psi(points=50)
     harmonic.plot_dalpha_of_psi(points=50)
-    harmonic.plot_dalpha_of_psip(points=50)
-    harmonic.plot_dalpha_of_psip(points=50)
     harmonic.plot_phase_of_psi(points=50, data=True)
     harmonic.plot_phase_of_psi(points=50, data=False)
+
+
+def _test_all_poloidal_harmonic_plots(harmonic: Harmonic):
+    harmonic.plot_alpha_of_psip(points=50, data=True)
+    harmonic.plot_alpha_of_psip(points=50, data=False)
+    harmonic.plot_dalpha_of_psip(points=50)
+    harmonic.plot_dalpha_of_psip(points=50)
     harmonic.plot_phase_of_psip(points=50, data=True)
     harmonic.plot_phase_of_psip(points=50, data=False)

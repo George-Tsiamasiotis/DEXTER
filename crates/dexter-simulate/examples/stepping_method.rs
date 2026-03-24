@@ -5,13 +5,15 @@ use dexter_simulate::*;
 
 fn main() {
     use InitialFlux::*;
+    let lcfs = LastClosedFluxSurface::Toroidal(0.45);
+
     let qfactor = UnityQfactor::new();
     let current = LarCurrent::new();
     let bfield = LarBfield::new();
     let perturbation = Perturbation::new(&[
-        CosHarmonic::new(1e-2, 1, 1, 0.0),
-        CosHarmonic::new(1e-3, 1, 2, 0.0),
-        CosHarmonic::new(1e-3, 1, 4, 0.0),
+        CosHarmonic::new(1e-2, lcfs, 1, 1, 0.0),
+        CosHarmonic::new(1e-3, lcfs, 1, 2, 0.0),
+        CosHarmonic::new(1e-3, lcfs, 1, 4, 0.0),
     ]);
 
     let energy_params = SolverParams {

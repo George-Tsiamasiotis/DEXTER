@@ -209,10 +209,11 @@ impl Particle {
     /// let qfactor = NcQfactorBuilder::new(&path, "steffen").build()?;
     /// let current = NcCurrentBuilder::new(&path, "steffen").build()?;
     /// let bfield = NcBfieldBuilder::new(&path, "bicubic").build()?;
+    /// let lcfs = LastClosedFluxSurface::Toroidal(qfactor.psi_last().unwrap());
     /// let perturbation = Perturbation::new(&[
-    ///     CosHarmonic::new(1e-3, 1, 1, 0.0),
-    ///     CosHarmonic::new(1e-3, 1, 2, 0.0),
-    ///     CosHarmonic::new(1e-3, 1, 3, 0.0),
+    ///     CosHarmonic::new(1e-3, lcfs, 1, 1, 0.0),
+    ///     CosHarmonic::new(1e-3, lcfs, 1, 2, 0.0),
+    ///     CosHarmonic::new(1e-3, lcfs, 1, 3, 0.0),
     /// ]);
     ///
     /// let psip0 = InitialFlux::Poloidal(0.015);

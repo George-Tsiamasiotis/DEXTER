@@ -2,8 +2,13 @@ import pytest
 import numpy as np
 from math import isfinite
 from dexter.equilibrium import _TOROIDAL_TEST_NETCDF_PATH, _POLOIDAL_TEST_NETCDF_PATH
-from dexter import Qfactor, UnityQfactor, ParabolicQfactor, NcQfactor
-from dexter.types import LastClosedFluxSurface
+from dexter import (
+    Qfactor,
+    UnityQfactor,
+    ParabolicQfactor,
+    NcQfactor,
+    LastClosedFluxSurface,
+)
 
 
 def test_unity_qfactor():
@@ -15,8 +20,8 @@ def test_unity_qfactor():
 
 
 def test_parabolic_qfactor_toroidal_lcfs():
-    lcfs: LastClosedFluxSurface = ("Toroidal", 0.45)
-    qfactor = ParabolicQfactor(1.1, 3.8, lcfs)
+    LCFS = LastClosedFluxSurface("Toroidal", 0.45)
+    qfactor = ParabolicQfactor(1.1, 3.8, LCFS)
     assert qfactor.equilibrium_type == "Analytical"
     assert qfactor.qaxis == 1.1
     assert qfactor.qlast == 3.8
@@ -28,8 +33,8 @@ def test_parabolic_qfactor_toroidal_lcfs():
 
 
 def test_parabolic_qfactor_poloidal_lcfs():
-    lcfs: LastClosedFluxSurface = ("Poloidal", 0.45)
-    qfactor = ParabolicQfactor(1.1, 3.8, lcfs)
+    LCFS = LastClosedFluxSurface("Poloidal", 0.45)
+    qfactor = ParabolicQfactor(1.1, 3.8, LCFS)
     assert qfactor.equilibrium_type == "Analytical"
     assert qfactor.qaxis == 1.1
     assert qfactor.qlast == 3.8

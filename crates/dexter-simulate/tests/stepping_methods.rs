@@ -10,12 +10,13 @@ use ndarray::Axis;
 #[test]
 #[rustfmt::skip]
 fn different_stepping_methods() {
+    let lcfs = LastClosedFluxSurface::Toroidal(0.45);
     let qfactor = UnityQfactor::new();
     let current = LarCurrent::new();
     let bfield = LarBfield::new();
     let perturbation = Perturbation::new(&[
-        CosHarmonic::new(1e-3, 1, 2, 0.0),
-        CosHarmonic::new(1e-3, 1, 4, 0.0),
+        CosHarmonic::new(1e-3,lcfs, 1, 2, 0.0),
+        CosHarmonic::new(1e-3,lcfs, 1, 4, 0.0),
     ]);
 
     let energy_params =  SolverParams{

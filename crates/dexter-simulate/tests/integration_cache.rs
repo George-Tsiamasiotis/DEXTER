@@ -8,17 +8,18 @@ use dexter_simulate::*;
 #[test]
 fn integration_cache_analytical_eq_cos_harmonic() {
     use InitialFlux::*;
-    let qfactor = ParabolicQfactor::new(1.1, 3.9, LastClosedFluxSurface::Toroidal(0.45));
+    let lcfs = LastClosedFluxSurface::Toroidal(0.45);
+    let qfactor = ParabolicQfactor::new(1.1, 3.9, lcfs);
     let current = LarCurrent::new();
     let bfield = LarBfield::new();
     let perturbation = Perturbation::new(&[
-        CosHarmonic::new(1e-3, 1, 2, 0.0),
-        CosHarmonic::new(1e-3, 1, 3, 0.0),
-        CosHarmonic::new(1e-3, 1, 4, 0.0),
-        CosHarmonic::new(1e-3, 2, 1, 0.0),
-        CosHarmonic::new(1e-3, 2, 2, 0.0),
-        CosHarmonic::new(1e-3, 2, 3, 0.0),
-        CosHarmonic::new(1e-3, 2, 4, 0.0),
+        CosHarmonic::new(1e-3, lcfs, 1, 2, 0.0),
+        CosHarmonic::new(1e-3, lcfs, 1, 3, 0.0),
+        CosHarmonic::new(1e-3, lcfs, 1, 4, 0.0),
+        CosHarmonic::new(1e-3, lcfs, 2, 1, 0.0),
+        CosHarmonic::new(1e-3, lcfs, 2, 2, 0.0),
+        CosHarmonic::new(1e-3, lcfs, 2, 3, 0.0),
+        CosHarmonic::new(1e-3, lcfs, 2, 4, 0.0),
     ]);
 
     let initial = InitialConditions::boozer(0.0, Toroidal(0.2), 0.0, 0.0, 1e-4, 1e-6);
@@ -43,15 +44,15 @@ fn integration_cache_analytical_eq_cos_harmonic() {
 
     // Per harmonic:
     //     6 evaluations in rkf45
-    //          `h`, `dh_dtheta`, `dh_dzeta` -> 1 miss, 2 hits
+    //          `h`, `dh_dflux` `dh_dtheta`, `dh_dzeta` -> 1 miss, 3 hits
     //
-    // Also add 1 miss and 2 hits to account for the state created on setup.
+    // Also add 1 miss and 3 hits to account for the state created on setup.
 
     assert_eq!(stats.harmonic_cache_misses, 7 * (steps * 6 * 1 + 1));
-    assert_eq!(stats.harmonic_cache_hits, 7 * (steps * 6 * 2 + 2));
+    assert_eq!(stats.harmonic_cache_hits, 7 * (steps * 6 * 3 + 3));
     //
     // Each cos harmonic results in 2 hits and 1 miss for each evaluation
-    assert_eq!(stats.harmonic_cache_hits, 2 * stats.harmonic_cache_misses);
+    assert_eq!(stats.harmonic_cache_hits, 3 * stats.harmonic_cache_misses);
 }
 
 #[test]

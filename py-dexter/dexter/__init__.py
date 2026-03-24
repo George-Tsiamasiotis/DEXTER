@@ -4,6 +4,7 @@ import matplotlib.pyplot
 matplotlib.use("gtk3agg")
 matplotlib.pyplot.rcParams["text.usetex"] = True
 
+from dexter.equilibrium import LastClosedFluxSurface
 from dexter.equilibrium import Geometry, LarGeometry, NcGeometry
 from dexter.equilibrium import Qfactor, UnityQfactor, ParabolicQfactor, NcQfactor
 from dexter.equilibrium import Current, LarCurrent, NcCurrent
@@ -22,7 +23,6 @@ from dexter.types import (
     EquilibriumType,
     Interp1DType,
     Interp2DType,
-    LastClosedFluxSurface,
     FluxCoordinate,
     FluxState,
     PhaseMethod,

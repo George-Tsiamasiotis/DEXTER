@@ -2,7 +2,9 @@ import pytest
 import numpy as np
 from math import isfinite
 from math import pi as PI
-from dexter import Perturbation, CosHarmonic, NcHarmonic
+from dexter import Perturbation, CosHarmonic, NcHarmonic, LastClosedFluxSurface
+
+from collections.abc import Callable
 
 
 def test_invalid_perturbation(nc_harmonic: NcHarmonic):
@@ -29,41 +31,56 @@ def test_empty_perturbation():
     assert p.dp_of_psi_dt(*args) == 0
     assert p.dp_of_psip_dt(*args) == 0
 
+    _test_toroidal_perturbation_vectorized_evals(p)
+    _test_poloidal_perturbation_vectorized_evals(p)
 
-def test_cos_perturbation():
+
+def test_cos_toroidal_perturbation():
+    LCFS = LastClosedFluxSurface("Toroidal", 0.45)
     p = Perturbation(
         [
-            CosHarmonic(1e-3, 1, 2, 0.0),
-            CosHarmonic(1e-3, 1, 3, 0.0),
-            CosHarmonic(1e-3, 1, 4, 0.0),
-            CosHarmonic(1e-3, 1, 5, 0.0),
+            CosHarmonic(1e-3, LCFS, 1, 2, 0.0),
+            CosHarmonic(1e-3, LCFS, 1, 3, 0.0),
+            CosHarmonic(1e-3, LCFS, 1, 4, 0.0),
+            CosHarmonic(1e-3, LCFS, 1, 5, 0.0),
         ]
     )
     assert isinstance(p.harmonics, list)
     assert len(p) == 4
-    _test_perturbation_vectorized_evals(p)
+    _test_toroidal_perturbation_vectorized_evals(p)
 
 
 def test_nc_perturbation(nc_perturbation: Perturbation):
     assert len(nc_perturbation) == 3
     assert isinstance(nc_perturbation.harmonics, list)
-    _test_perturbation_vectorized_evals(nc_perturbation)
+    _test_toroidal_perturbation_vectorized_evals(nc_perturbation)
+    _test_poloidal_perturbation_vectorized_evals(nc_perturbation)
 
 
-def _test_perturbation_vectorized_evals(perturbation: Perturbation):
+def _test_toroidal_perturbation_vectorized_evals(perturbation: Perturbation):
     methods = [
         perturbation.p_of_psi,
-        perturbation.p_of_psip,
         perturbation.dp_dpsi,
-        perturbation.dp_dpsip,
         perturbation.dp_of_psi_dtheta,
-        perturbation.dp_of_psip_dtheta,
         perturbation.dp_of_psi_dzeta,
-        perturbation.dp_of_psip_dzeta,
         perturbation.dp_of_psi_dt,
-        perturbation.dp_of_psip_dt,
     ]
 
+    _test_perturbation_vectorized_evals(methods)
+
+
+def _test_poloidal_perturbation_vectorized_evals(perturbation: Perturbation):
+    methods = [
+        perturbation.p_of_psip,
+        perturbation.dp_dpsip,
+        perturbation.dp_of_psip_dtheta,
+        perturbation.dp_of_psip_dzeta,
+        perturbation.dp_of_psip_dt,
+    ]
+    _test_perturbation_vectorized_evals(methods)
+
+
+def _test_perturbation_vectorized_evals(methods: list[Callable]):
     # 0D evaluations
     flux = 1e-5
     theta = PI

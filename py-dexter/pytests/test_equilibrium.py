@@ -1,6 +1,7 @@
 import pytest
 from dexter import Equilibrium
 from dexter import (
+    LastClosedFluxSurface,
     NcGeometry,
     NcQfactor,
     NcCurrent,
@@ -58,6 +59,7 @@ def test_minimum_equilibrium():
 
 
 def test_full_equilibrium():
+    lcfs = LastClosedFluxSurface("Toroidal", 0.45)
     equilibrium = Equilibrium(
         geometry=LarGeometry(2, 1.75, 0.5),
         qfactor=UnityQfactor(),
@@ -65,8 +67,8 @@ def test_full_equilibrium():
         bfield=LarBfield(),
         perturbation=Perturbation(
             [
-                CosHarmonic(8e-4, 3, 1, 0),
-                CosHarmonic(8e-4, 5, 3, 0),
+                CosHarmonic(8e-4, lcfs, 3, 1, 0),
+                CosHarmonic(8e-4, lcfs, 5, 3, 0),
             ]
         ),
     )

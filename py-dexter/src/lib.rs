@@ -9,6 +9,7 @@ use pyo3::prelude::*;
 #[pymodule]
 fn _core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     // Equilibrium
+    m.add_class::<pylibrium::PyLastClosedFluxSurface>()?;
     m.add_class::<pylibrium::PyLarGeometry>()?;
     m.add_class::<pylibrium::PyNcGeometry>()?;
     m.add_class::<pylibrium::PyNcQfactor>()?;

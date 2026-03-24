@@ -14,6 +14,7 @@ import numpy as np
 from typing import TypeAlias
 from numpy.typing import ArrayLike, NDArray
 
+from dexter._core import _PyLastClosedFluxSurface
 from dexter._core import _PyLarGeometry, _PyNcGeometry
 from dexter._core import _PyUnityQfactor, _PyParabolicQfactor, _PyNcQfactor
 from dexter._core import _PyLarCurrent, _PyNcCurrent
@@ -40,7 +41,7 @@ from dexter.types import (
     ArrayShape,
     Array1,
     Array2,
-    LastClosedFluxSurface,
+    FluxCoordinate,
     NetCDFVersion,
     EquilibriumType,
     Interp1DType,
@@ -48,6 +49,46 @@ from dexter.types import (
     FluxState,
     PhaseMethod,
 )
+
+
+class LastClosedFluxSurface:
+    """Helper type to define the Last Closed Flux Surface (LCFS) with respect to one of the two fluxes.
+
+    Parameters
+    ----------
+    kind
+        The kind of initial flux.
+    value
+        The flux surfaces value.
+
+    Example
+    -------
+    ```python title="LastClosedFluxSurface creation"
+    >>> LCFS = dex.LastClosedFluxSurface(kind="Toroidal", value=0.45)
+
+    ```
+    """
+
+    _rust: _PyLastClosedFluxSurface
+
+    def __init__(self, kind: FluxCoordinate, value: float) -> None:
+        self._rust = _PyLastClosedFluxSurface(kind=kind, value=value)
+
+    @property
+    def kind(self) -> FluxCoordinate:
+        """The kind of initial flux."""
+        return self._rust.kind
+
+    @property
+    def value(self) -> float:
+        """The flux surface's value."""
+        return self._rust.value
+
+    def __str__(self) -> str:
+        return self._rust.__str__()
+
+    def __repr__(self) -> str:
+        return self.__str__()
 
 
 class LarGeometry(_GeometryTrait, _GeometryPlotter):
@@ -370,8 +411,8 @@ class ParabolicQfactor(_QfactorTrait, _FluxCommuteTrait, _FluxPlotter, _QfactorP
     -------
     ```python title="UnityQfactor creation"
     >>> # Define q(ψ=ψlast=0.45) = qlast = 3.8
-    >>> lcfs: dex.types.LastClosedFluxSurface = ("Toroidal", 0.45)
-    >>> qfactor = dex.ParabolicQfactor(qaxis=1.1, qlast=3.8, lcfs=lcfs)
+    >>> LCFS = dex.LastClosedFluxSurface(kind="Toroidal", value=0.45)
+    >>> qfactor = dex.ParabolicQfactor(qaxis=1.1, qlast=3.8, lcfs=LCFS)
 
     ```
     """
@@ -391,7 +432,7 @@ class ParabolicQfactor(_QfactorTrait, _FluxCommuteTrait, _FluxPlotter, _QfactorP
             _PyParabolicQfactor(
                 qaxis=qaxis,
                 qlast=qlast,
-                lcfs=lcfs,
+                lcfs=lcfs._rust,
             ),
         )
         _FluxCommuteTrait.__init__(self)
@@ -838,8 +879,10 @@ class CosHarmonic(_HarmonicTrait, _HarmonicPlotter):
 
     Parameters
     ----------
-    alpha
+    epsilon
         The harmonic's constant amplitude $\alpha$ in Normalized Units.
+    lcfs
+        The harmonic’s last closed flux surface.
     m
         The poloidal mode number $m$.
     n
@@ -850,7 +893,8 @@ class CosHarmonic(_HarmonicTrait, _HarmonicPlotter):
     Example
     -------
     ```python title="CosHarmonic creation"
-    >>> harmonic = dex.CosHarmonic(alpha=1e-3, m=3, n=2, phase=0)
+    >>> LCFS = LastClosedFluxSurface("Toroidal", 0.45)
+    >>> harmonic = dex.CosHarmonic(epsilon=1e-3, lcfs=LCFS, m=3, n=2, phase=0)
 
     ```
     """
@@ -860,7 +904,8 @@ class CosHarmonic(_HarmonicTrait, _HarmonicPlotter):
 
     def __init__(
         self,
-        alpha: float,
+        epsilon: float,
+        lcfs: LastClosedFluxSurface,
         m: int,
         n: int,
         phase: float,
@@ -869,7 +914,8 @@ class CosHarmonic(_HarmonicTrait, _HarmonicPlotter):
             self,
             "_rust",
             _PyCosHarmonic(
-                alpha=alpha,
+                epsilon=epsilon,
+                lcfs=lcfs._rust,
                 m=m,
                 n=n,
                 phase=phase,
@@ -883,9 +929,16 @@ class CosHarmonic(_HarmonicTrait, _HarmonicPlotter):
         return self._rust.equilibrium_type
 
     @property
-    def alpha(self) -> float:
-        r"""The harmonic's constant amplitude $\alpha$ in Normalized Units."""
-        return self._rust.alpha
+    def epsilon(self) -> float:
+        r"""The harmonic's constant $\epsilon$."""
+        return self._rust.epsilon
+
+    @property
+    def lcfs(self) -> LastClosedFluxSurface:
+        r"""The Harmonic’s last closed flux surface."""
+        lcfs = LastClosedFluxSurface.__new__(LastClosedFluxSurface)
+        lcfs._rust = self._rust.lcfs
+        return lcfs
 
     @property
     def m(self) -> int:
@@ -901,6 +954,22 @@ class CosHarmonic(_HarmonicTrait, _HarmonicPlotter):
     def phase(self) -> float:
         r"""The harmonic's constant phase $\phi$ in $[rads]$."""
         return self._rust.phase
+
+    @property
+    def psi_last(self) -> float:
+        r"""Returns the value of the last closed toroidal flux $\psi_{LCFS}$."""
+        if self._rust.psi_last is None:
+            raise AttributeError("'psi_last' is not defined")
+        else:
+            return self._rust.psi_last
+
+    @property
+    def psip_last(self) -> float:
+        r"""Returns the value of the last closed toroidal flux $\psi_{p,LCFS}$."""
+        if self._rust.psip_last is None:
+            raise AttributeError("'psip_last' is not defined")
+        else:
+            return self._rust.psip_last
 
     def __str__(self) -> str:
         return self._rust.__str__()
@@ -1083,20 +1152,22 @@ class Perturbation:
     Example
     -------
     ```python title="Create a Perturbation of specific cosine harmonics"
+    >>> LCFS = dex.LastClosedFluxSurface(kind="Toroidal", value=0.45)
     >>> perturbation = dex.Perturbation(
     ...     [
-    ...         dex.CosHarmonic(1e-3, 1, 2, 0.0),
-    ...         dex.CosHarmonic(1e-3, 1, 3, 0.0),
-    ...         dex.CosHarmonic(1e-3, 1, 4, 0.0),
-    ...         dex.CosHarmonic(1e-3, 1, 5, 0.0),
+    ...         dex.CosHarmonic(1e-3, LCFS, 1, 2, 0.0),
+    ...         dex.CosHarmonic(1e-3, LCFS, 1, 3, 0.0),
+    ...         dex.CosHarmonic(1e-3, LCFS, 1, 4, 0.0),
+    ...         dex.CosHarmonic(1e-3, LCFS, 1, 5, 0.0),
     ...     ]
     ... )
 
     ```
 
     ```python title="CosPerturbation creation with list iteration"
+    >>> LCFS = dex.LastClosedFluxSurface(kind="Toroidal", value=0.45)
     >>> perturbation = dex.Perturbation(
-    ...     [dex.CosHarmonic(1e-3, 1, n, 0.0) for n in range(1, 8)] # modes with m=1 and n=1-7
+    ...     [dex.CosHarmonic(1e-3, LCFS, 1, n, 0.0) for n in range(1, 8)] # modes with m=1 and n=1-7
     ... )
 
     ```

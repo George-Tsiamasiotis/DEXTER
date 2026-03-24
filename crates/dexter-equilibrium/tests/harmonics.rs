@@ -9,39 +9,78 @@ use std::path::PathBuf;
 
 #[test]
 #[rustfmt::skip]
-fn cos_harmonic() {
-    let har = dbg!(CosHarmonic::new(1e-3, 3, 2, PI));
+fn cos_harmonic_toroidal_lcfs() {
+    let lcfs = LastClosedFluxSurface::Toroidal(0.45);
+    let har = dbg!(CosHarmonic::new(1e-3, lcfs, 3, 2, PI));
 
     assert_eq!(har.equilibrium_type(), EquilibriumType::Analytical);
-    assert_eq!(har.alpha(), 1e-3);
+    assert_eq!(har.epsilon(), 1e-3);
     assert_eq!(har.m(), 3);
     assert_eq!(har.n(), 2);
     assert_eq!(har.phase(), PI);
 
-    let psi = 0.01;
+    let p = 0.01;
     let theta = 3.14;
     let zeta = 1.0;
     let t = 8.0;
     let mut c = har.generate_cache();
 
-    let _: f64 = har.h_of_psi(psi, theta, zeta, t, &mut c).unwrap();
-    let _: f64 = har.h_of_psip(psi, theta, zeta, t, &mut c).unwrap();
-    let _: f64 = har.dh_of_psi_dtheta(psi, theta, zeta, t, &mut c).unwrap();
-    let _: f64 = har.dh_of_psip_dtheta(psi, theta, zeta, t, &mut c).unwrap();
-    let _: f64 = har.dh_of_psi_dzeta(psi, theta, zeta, t, &mut c).unwrap();
-    let _: f64 = har.dh_of_psip_dzeta(psi, theta, zeta, t, &mut c).unwrap();
+    let _: f64 = har.alpha_of_psi(p, theta, zeta, t, &mut c).unwrap();
+    let _: f64 = har.phase_of_psi(p, theta, zeta, t, &mut c).unwrap();
+    let _: f64 = har.h_of_psi(p, theta, zeta, t, &mut c).unwrap();
+    let _: f64 = har.dh_dpsi(p, theta, zeta, t, &mut c).unwrap();
+    let _: f64 = har.dh_of_psi_dtheta(p, theta, zeta, t, &mut c).unwrap();
+    let _: f64 = har.dh_of_psi_dzeta(p, theta, zeta, t, &mut c).unwrap();
+    let _: f64 = har.dh_of_psi_dt(p, theta, zeta, t, &mut c).unwrap();
 
-    assert_eq!(har.alpha_of_psi(psi, theta, zeta, t, &mut c).unwrap(), 1e-3);
-    assert_eq!(har.alpha_of_psip(psi, theta, zeta, t, &mut c).unwrap(), 1e-3);
-    assert_eq!(har.phase_of_psi(psi, theta, zeta, t, &mut c).unwrap(), PI);
-    assert_eq!(har.phase_of_psip(psi, theta, zeta, t, &mut c).unwrap(), PI);
-    assert_eq!(har.dh_dpsi(psi, theta, zeta, t, &mut c).unwrap(), 0.0);
-    assert_eq!(har.dh_dpsip(psi, theta, zeta, t, &mut c).unwrap(), 0.0);
-    assert_eq!(har.dh_of_psi_dt(psi, theta, zeta, t, &mut c).unwrap(), 0.0);
-    assert_eq!(har.dh_of_psip_dt(psi, theta, zeta, t, &mut c).unwrap(), 0.0);
+    assert!(har.alpha_of_psip(p, theta, zeta, t, &mut c).is_err());
+    assert!(har.phase_of_psip(p, theta, zeta, t, &mut c).is_ok()); // returns a constant
+    assert!(har.h_of_psip(p, theta, zeta, t, &mut c).is_err());
+    assert!(har.dh_dpsip(p, theta, zeta, t, &mut c).is_err());
+    assert!(har.dh_of_psip_dtheta(p, theta, zeta, t, &mut c).is_err());
+    assert!(har.dh_of_psip_dzeta(p, theta, zeta, t, &mut c).is_err());
+    assert!(har.dh_of_psip_dt(p, theta, zeta, t, &mut c).is_ok()); // returns zero
 
-    assert_eq!(c.hits(), 5); // not all evaluations use the cache
     assert_eq!(c.misses(), 1);
+    assert_eq!(c.hits(), 4);
+}
+
+#[test]
+#[rustfmt::skip]
+fn cos_harmonic_poloidal_lcfs() {
+    let lcfs = LastClosedFluxSurface::Poloidal(0.45);
+    let har = dbg!(CosHarmonic::new(1e-3, lcfs, 3, 2, PI));
+
+    assert_eq!(har.equilibrium_type(), EquilibriumType::Analytical);
+    assert_eq!(har.epsilon(), 1e-3);
+    assert_eq!(har.m(), 3);
+    assert_eq!(har.n(), 2);
+    assert_eq!(har.phase(), PI);
+
+    let p = 0.01;
+    let theta = 3.14;
+    let zeta = 1.0;
+    let t = 8.0;
+    let mut c = har.generate_cache();
+
+    let _: f64 = har.alpha_of_psip(p, theta, zeta, t, &mut c).unwrap();
+    let _: f64 = har.phase_of_psip(p, theta, zeta, t, &mut c).unwrap();
+    let _: f64 = har.h_of_psip(p, theta, zeta, t, &mut c).unwrap();
+    let _: f64 = har.dh_dpsip(p, theta, zeta, t, &mut c).unwrap();
+    let _: f64 = har.dh_of_psip_dtheta(p, theta, zeta, t, &mut c).unwrap();
+    let _: f64 = har.dh_of_psip_dzeta(p, theta, zeta, t, &mut c).unwrap();
+    let _: f64 = har.dh_of_psip_dt(p, theta, zeta, t, &mut c).unwrap();
+
+    assert!(har.alpha_of_psi(p, theta, zeta, t, &mut c).is_err());
+    assert!(har.phase_of_psi(p, theta, zeta, t, &mut c).is_ok()); // returns a constant
+    assert!(har.h_of_psi(p, theta, zeta, t, &mut c).is_err());
+    assert!(har.dh_dpsi(p, theta, zeta, t, &mut c).is_err());
+    assert!(har.dh_of_psi_dtheta(p, theta, zeta, t, &mut c).is_err());
+    assert!(har.dh_of_psi_dzeta(p, theta, zeta, t, &mut c).is_err());
+    assert!(har.dh_of_psi_dt(p, theta, zeta, t, &mut c).is_ok()); // returns zero
+
+    assert_eq!(c.misses(), 1);
+    assert_eq!(c.hits(), 4);
 }
 
 #[test]

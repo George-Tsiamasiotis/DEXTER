@@ -890,7 +890,8 @@ pub trait Harmonic: Clone {
     ///
     /// ```
     /// # use dexter_equilibrium::*;
-    /// let harmonic = CosHarmonic::new(1e-3, 3, 2, 0.0);
+    /// let lcfs = LastClosedFluxSurface::Toroidal(0.45);
+    /// let harmonic = CosHarmonic::new(1e-3, lcfs, 3, 2, 0.0);
     /// let cache1 = harmonic.generate_cache();
     /// # Ok::<_, EqError>(())
     /// ```
@@ -902,9 +903,10 @@ pub trait Harmonic: Clone {
     ///
     /// ```
     /// # use dexter_equilibrium::*;
-    /// let harmonic = CosHarmonic::new(1e-3, 3, 2, 0.0);
+    /// let lcfs = LastClosedFluxSurface::Toroidal(0.45);
+    /// let harmonic = CosHarmonic::new(1e-3, lcfs, 3, 2, 0.0);
     /// let mut cache = harmonic.generate_cache();
-    /// let a = harmonic.alpha_of_psi(0.0, 0.2, 0.3, 0.0, &mut cache)?;
+    /// let a = harmonic.alpha_of_psi(0.1, 0.2, 0.3, 0.0, &mut cache)?;
     /// # Ok::<_, EqError>(())
     /// ```
     ///
@@ -926,9 +928,10 @@ pub trait Harmonic: Clone {
     ///
     /// ```
     /// # use dexter_equilibrium::*;
-    /// let harmonic = CosHarmonic::new(1e-3, 3, 2, 0.0);
+    /// let lcfs = LastClosedFluxSurface::Poloidal(0.45);
+    /// let harmonic = CosHarmonic::new(1e-3, lcfs, 3, 2, 0.0);
     /// let mut cache = harmonic.generate_cache();
-    /// let a = harmonic.alpha_of_psip(0.0, 0.2, 0.3, 0.0, &mut cache)?;
+    /// let a = harmonic.alpha_of_psip(0.1, 0.2, 0.3, 0.0, &mut cache)?;
     /// # Ok::<_, EqError>(())
     /// ```
     ///
@@ -950,9 +953,10 @@ pub trait Harmonic: Clone {
     ///
     /// ```
     /// # use dexter_equilibrium::*;
-    /// let harmonic = CosHarmonic::new(1e-3, 3, 2, 0.0);
+    /// let lcfs = LastClosedFluxSurface::Toroidal(0.45);
+    /// let harmonic = CosHarmonic::new(1e-3, lcfs, 3, 2, 0.0);
     /// let mut cache = harmonic.generate_cache();
-    /// let phase = harmonic.phase_of_psi(0.0, 0.2, 0.3, 0.0, &mut cache)?;
+    /// let phase = harmonic.phase_of_psi(0.1, 0.2, 0.3, 0.0, &mut cache)?;
     /// # Ok::<_, EqError>(())
     /// ```
     ///
@@ -974,9 +978,10 @@ pub trait Harmonic: Clone {
     ///
     /// ```
     /// # use dexter_equilibrium::*;
-    /// let harmonic = CosHarmonic::new(1e-3, 3, 2, 0.0);
+    /// let lcfs = LastClosedFluxSurface::Poloidal(0.45);
+    /// let harmonic = CosHarmonic::new(1e-3, lcfs, 3, 2, 0.0);
     /// let mut cache = harmonic.generate_cache();
-    /// let phase = harmonic.phase_of_psi(0.0, 0.2, 0.3, 0.0, &mut cache)?;
+    /// let phase = harmonic.phase_of_psi(0.1, 0.2, 0.3, 0.0, &mut cache)?;
     /// # Ok::<_, EqError>(())
     /// ```
     ///
@@ -998,9 +1003,10 @@ pub trait Harmonic: Clone {
     ///
     /// ```
     /// # use dexter_equilibrium::*;
-    /// let harmonic = CosHarmonic::new(1e-3, 3, 2, 0.0);
+    /// let lcfs = LastClosedFluxSurface::Toroidal(0.45);
+    /// let harmonic = CosHarmonic::new(1e-3, lcfs, 3, 2, 0.0);
     /// let mut cache = harmonic.generate_cache();
-    /// let h = harmonic.h_of_psi(0.0, 0.2, 0.3, 0.0, &mut cache)?;
+    /// let h = harmonic.h_of_psi(0.1, 0.2, 0.3, 0.0, &mut cache)?;
     /// # Ok::<_, EqError>(())
     /// ```
     ///
@@ -1022,9 +1028,10 @@ pub trait Harmonic: Clone {
     ///
     /// ```
     /// # use dexter_equilibrium::*;
-    /// let harmonic = CosHarmonic::new(1e-3, 3, 2, 0.0);
+    /// let lcfs = LastClosedFluxSurface::Poloidal(0.45);
+    /// let harmonic = CosHarmonic::new(1e-3, lcfs, 3, 2, 0.0);
     /// let mut cache = harmonic.generate_cache();
-    /// let h = harmonic.h_of_psip(0.0, 0.2, 0.3, 0.0, &mut cache)?;
+    /// let h = harmonic.h_of_psip(0.1, 0.2, 0.3, 0.0, &mut cache)?;
     /// # Ok::<_, EqError>(())
     /// ```
     ///
@@ -1046,9 +1053,10 @@ pub trait Harmonic: Clone {
     ///
     /// ```
     /// # use dexter_equilibrium::*;
-    /// let harmonic = CosHarmonic::new(1e-3, 3, 2, 0.0);
+    /// let lcfs = LastClosedFluxSurface::Toroidal(0.45);
+    /// let harmonic = CosHarmonic::new(1e-3, lcfs, 3, 2, 0.0);
     /// let mut cache = harmonic.generate_cache();
-    /// let dh_dpsi = harmonic.dh_dpsi(0.0, 0.2, 0.3, 0.0, &mut cache)?;
+    /// let dh_dpsi = harmonic.dh_dpsi(0.1, 0.2, 0.3, 0.0, &mut cache)?;
     /// # Ok::<_, EqError>(())
     /// ```
     ///
@@ -1070,9 +1078,10 @@ pub trait Harmonic: Clone {
     ///
     /// ```
     /// # use dexter_equilibrium::*;
-    /// let harmonic = CosHarmonic::new(1e-3, 3, 2, 0.0);
+    /// let lcfs = LastClosedFluxSurface::Poloidal(0.45);
+    /// let harmonic = CosHarmonic::new(1e-3, lcfs, 3, 2, 0.0);
     /// let mut cache = harmonic.generate_cache();
-    /// let dh_dpsip = harmonic.dh_dpsip(0.0, 0.2, 0.3, 0.0, &mut cache)?;
+    /// let dh_dpsip = harmonic.dh_dpsip(0.1, 0.2, 0.3, 0.0, &mut cache)?;
     /// # Ok::<_, EqError>(())
     /// ```
     ///
@@ -1094,9 +1103,10 @@ pub trait Harmonic: Clone {
     ///
     /// ```
     /// # use dexter_equilibrium::*;
-    /// let harmonic = CosHarmonic::new(1e-3, 3, 2, 0.0);
+    /// let lcfs = LastClosedFluxSurface::Toroidal(0.45);
+    /// let harmonic = CosHarmonic::new(1e-3, lcfs, 3, 2, 0.0);
     /// let mut cache = harmonic.generate_cache();
-    /// let dh_of_psi_dtheta = harmonic.dh_of_psi_dtheta(0.0, 0.2, 0.3, 0.0, &mut cache)?;
+    /// let dh_of_psi_dtheta = harmonic.dh_of_psi_dtheta(0.1, 0.2, 0.3, 0.0, &mut cache)?;
     /// # Ok::<_, EqError>(())
     /// ```
     ///
@@ -1118,9 +1128,10 @@ pub trait Harmonic: Clone {
     ///
     /// ```
     /// # use dexter_equilibrium::*;
-    /// let harmonic = CosHarmonic::new(1e-3, 3, 2, 0.0);
+    /// let lcfs = LastClosedFluxSurface::Poloidal(0.45);
+    /// let harmonic = CosHarmonic::new(1e-3, lcfs, 3, 2, 0.0);
     /// let mut cache = harmonic.generate_cache();
-    /// let dh_of_psip_dtheta = harmonic.dh_of_psip_dtheta(0.0, 0.2, 0.3, 0.0, &mut cache)?;
+    /// let dh_of_psip_dtheta = harmonic.dh_of_psip_dtheta(0.1, 0.2, 0.3, 0.0, &mut cache)?;
     /// # Ok::<_, EqError>(())
     /// ```
     ///
@@ -1142,9 +1153,10 @@ pub trait Harmonic: Clone {
     ///
     /// ```
     /// # use dexter_equilibrium::*;
-    /// let harmonic = CosHarmonic::new(1e-3, 3, 2, 0.0);
+    /// let lcfs = LastClosedFluxSurface::Toroidal(0.45);
+    /// let harmonic = CosHarmonic::new(1e-3, lcfs, 3, 2, 0.0);
     /// let mut cache = harmonic.generate_cache();
-    /// let dh_of_psi_dzeta = harmonic.dh_of_psi_dzeta(0.0, 0.2, 0.3, 0.0, &mut cache)?;
+    /// let dh_of_psi_dzeta = harmonic.dh_of_psi_dzeta(0.1, 0.2, 0.3, 0.0, &mut cache)?;
     /// # Ok::<_, EqError>(())
     /// ```
     ///
@@ -1166,9 +1178,10 @@ pub trait Harmonic: Clone {
     ///
     /// ```
     /// # use dexter_equilibrium::*;
-    /// let harmonic = CosHarmonic::new(1e-3, 3, 2, 0.0);
+    /// let lcfs = LastClosedFluxSurface::Poloidal(0.45);
+    /// let harmonic = CosHarmonic::new(1e-3, lcfs, 3, 2, 0.0);
     /// let mut cache = harmonic.generate_cache();
-    /// let dh_of_psip_dzeta = harmonic.dh_of_psip_dzeta(0.0, 0.2, 0.3, 0.0, &mut cache)?;
+    /// let dh_of_psip_dzeta = harmonic.dh_of_psip_dzeta(0.1, 0.2, 0.3, 0.0, &mut cache)?;
     /// # Ok::<_, EqError>(())
     /// ```
     ///
@@ -1190,9 +1203,10 @@ pub trait Harmonic: Clone {
     ///
     /// ```
     /// # use dexter_equilibrium::*;
-    /// let harmonic = CosHarmonic::new(1e-3, 3, 2, 0.0);
+    /// let lcfs = LastClosedFluxSurface::Toroidal(0.45);
+    /// let harmonic = CosHarmonic::new(1e-3, lcfs, 3, 2, 0.0);
     /// let mut cache = harmonic.generate_cache();
-    /// let dh_of_psi_dt = harmonic.dh_of_psi_dt(0.0, 0.2, 0.3, 0.0, &mut cache)?;
+    /// let dh_of_psi_dt = harmonic.dh_of_psi_dt(0.1, 0.2, 0.3, 0.0, &mut cache)?;
     /// # Ok::<_, EqError>(())
     /// ```
     ///
@@ -1214,9 +1228,10 @@ pub trait Harmonic: Clone {
     ///
     /// ```
     /// # use dexter_equilibrium::*;
-    /// let harmonic = CosHarmonic::new(1e-3, 3, 2, 0.0);
+    /// let lcfs = LastClosedFluxSurface::Poloidal(0.45);
+    /// let harmonic = CosHarmonic::new(1e-3, lcfs, 3, 2, 0.0);
     /// let mut cache = harmonic.generate_cache();
-    /// let dh_of_psip_dt = harmonic.dh_of_psip_dt(0.0, 0.2, 0.3, 0.0, &mut cache)?;
+    /// let dh_of_psip_dt = harmonic.dh_of_psip_dt(0.1, 0.2, 0.3, 0.0, &mut cache)?;
     /// # Ok::<_, EqError>(())
     /// ```
     ///

@@ -516,17 +516,21 @@ class Particle(_ParticlePlotter):
         Example
         -------
         ```python title="Particle integration"
+        >>> # Equilibrium setup
+        >>> LCFS = dex.LastClosedFluxSurface(kind="Toroidal", value=0.45)
         >>> equilibrium = dex.Equilibrium(
-        ...     qfactor=dex.ParabolicQfactor(qaxis=1.1, qlast=4.1, lcfs=("Toroidal", 0.45)),
+        ...     qfactor=dex.ParabolicQfactor(qaxis=1.1, qlast=4.1, lcfs=LCFS),
         ...     current=dex.LarCurrent(),
         ...     bfield=dex.LarBfield(),
         ...     perturbation=dex.Perturbation(
         ...         [
-        ...             dex.CosHarmonic(alpha=1e-3, m=1, n=3, phase=0),
-        ...             dex.CosHarmonic(alpha=1e-3, m=2, n=3, phase=0),
+        ...             dex.CosHarmonic(epsilon=1e-3, lcfs=LCFS, m=1, n=3, phase=0),
+        ...             dex.CosHarmonic(epsilon=1e-3, lcfs=LCFS, m=2, n=3, phase=0),
         ...         ]
         ...     )
         ... )
+        >>>
+        >>> # Initial conditions setup
         >>> initial_conditions = dex.InitialConditions.boozer(
         ...     t0=0,
         ...     flux0=dex.InitialFlux("Toroidal", 0.1),
@@ -535,6 +539,8 @@ class Particle(_ParticlePlotter):
         ...     rho0=1e-4,
         ...     mu0=7e-6,
         ... )
+        >>>
+        >>> # Particle setup and integration
         >>> particle = dex.Particle(initial_conditions)
         >>> particle.integrate(
         ...     equilibrium=equilibrium,
@@ -620,17 +626,21 @@ class Particle(_ParticlePlotter):
         Example
         -------
         ```python title="Particle intersection integration"
+        >>> # Equilibrium setup
+        >>> LCFS = dex.LastClosedFluxSurface(kind="Toroidal", value=0.45)
         >>> equilibrium = dex.Equilibrium(
-        ...     qfactor=dex.ParabolicQfactor(qaxis=1.1, qlast=4.1, lcfs=("Toroidal", 0.45)),
+        ...     qfactor=dex.ParabolicQfactor(qaxis=1.1, qlast=4.1, lcfs=LCFS),
         ...     current=dex.LarCurrent(),
         ...     bfield=dex.LarBfield(),
         ...     perturbation=dex.Perturbation(
         ...         [
-        ...             dex.CosHarmonic(alpha=1e-3, m=1, n=3, phase=0),
-        ...             dex.CosHarmonic(alpha=1e-3, m=2, n=3, phase=0),
+        ...             dex.CosHarmonic(epsilon=1e-3, lcfs=LCFS, m=1, n=3, phase=0),
+        ...             dex.CosHarmonic(epsilon=1e-3, lcfs=LCFS, m=2, n=3, phase=0),
         ...         ]
         ...     )
         ... )
+        >>>
+        >>> # Initial conditions and Intersection Parameters setup
         >>> initial_conditions = dex.InitialConditions.boozer(
         ...     t0=0,
         ...     flux0=dex.InitialFlux("Toroidal", 0.1),
@@ -645,6 +655,7 @@ class Particle(_ParticlePlotter):
         ...     turns = 5,
         ... )
         >>>
+        >>> # Particle setup and intersection
         >>> particle = dex.Particle(initial_conditions)
         >>> particle.intersect(
         ...     equilibrium=equilibrium,
@@ -1019,14 +1030,15 @@ class Queue(_QueuePlotter):
         -------
         ```python title="Queue integration"
         >>> # Equilibrium setup
+        >>> LCFS = dex.LastClosedFluxSurface(kind="Toroidal", value=0.45)
         >>> equilibrium = dex.Equilibrium(
-        ...     qfactor=dex.ParabolicQfactor(qaxis=1.1, qlast=4.1, lcfs=("Toroidal", 0.45)),
+        ...     qfactor=dex.ParabolicQfactor(qaxis=1.1, qlast=4.1, lcfs=LCFS),
         ...     current=dex.LarCurrent(),
         ...     bfield=dex.LarBfield(),
-        ...     perturbation = dex.Perturbation(
+        ...     perturbation=dex.Perturbation(
         ...         [
-        ...             dex.CosHarmonic(alpha=1e-3, m=1, n=3, phase=0),
-        ...             dex.CosHarmonic(alpha=1e-3, m=2, n=3, phase=0),
+        ...             dex.CosHarmonic(epsilon=1e-3, lcfs=LCFS, m=1, n=3, phase=0),
+        ...             dex.CosHarmonic(epsilon=1e-3, lcfs=LCFS, m=2, n=3, phase=0),
         ...         ]
         ...     )
         ... )
@@ -1133,14 +1145,15 @@ class Queue(_QueuePlotter):
         -------
         ```python title="Queue intersection integration"
         >>> # Equilibrium setup
+        >>> LCFS = dex.LastClosedFluxSurface(kind="Toroidal", value=0.45)
         >>> equilibrium = dex.Equilibrium(
-        ...     qfactor=dex.ParabolicQfactor(qaxis=1.1, qlast=4.1, lcfs=("Toroidal", 0.45)),
+        ...     qfactor=dex.ParabolicQfactor(qaxis=1.1, qlast=4.1, lcfs=LCFS),
         ...     current=dex.LarCurrent(),
         ...     bfield=dex.LarBfield(),
-        ...     perturbation = dex.Perturbation(
+        ...     perturbation=dex.Perturbation(
         ...         [
-        ...             dex.CosHarmonic(alpha=1e-3, m=1, n=3, phase=0),
-        ...             dex.CosHarmonic(alpha=1e-3, m=2, n=3, phase=0),
+        ...             dex.CosHarmonic(epsilon=1e-3, lcfs=LCFS, m=1, n=3, phase=0),
+        ...             dex.CosHarmonic(epsilon=1e-3, lcfs=LCFS, m=2, n=3, phase=0),
         ...         ]
         ...     )
         ... )

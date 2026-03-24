@@ -10,13 +10,14 @@ pub(crate) fn lar_equilibrium() -> (
     LarBfield,
     Perturbation<CosHarmonic>,
 ) {
+    let lcfs = LastClosedFluxSurface::Toroidal(0.45);
     (
         ParabolicQfactor::new(1.1, 3.9, LastClosedFluxSurface::Toroidal(0.45)),
         LarCurrent::new(),
         LarBfield::new(),
         Perturbation::new(&[
-            CosHarmonic::new(1e-3, 3, 1, 0.0),
-            CosHarmonic::new(1e-3, 3, 1, 0.0),
+            CosHarmonic::new(1e-3, lcfs, 3, 1, 0.0),
+            CosHarmonic::new(1e-3, lcfs, 3, 1, 0.0),
         ]),
     )
 }

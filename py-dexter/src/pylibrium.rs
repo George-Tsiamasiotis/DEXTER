@@ -24,6 +24,44 @@ use crate::{
     py_get_numpy2D, py_get_path, py_repr_impl,
 };
 
+#[pyclass(name = "_PyLastClosedFluxSurface", frozen)]
+pub struct PyLastClosedFluxSurface(pub(crate) LastClosedFluxSurface);
+
+#[pymethods]
+impl PyLastClosedFluxSurface {
+    #[new]
+    pub fn new(kind: &str, value: f64) -> PyResult<Self> {
+        Ok(Self(match kind.to_lowercase().as_str() {
+            "toroidal" => LastClosedFluxSurface::Toroidal(value),
+            "poloidal" => LastClosedFluxSurface::Poloidal(value),
+            _ => {
+                return Err(PyErr::new::<PyTypeError, _>(
+                    "Invalid 'LastClosedFluxSurface'",
+                ));
+            }
+        }))
+    }
+
+    #[getter]
+    pub fn get_kind(&self) -> &str {
+        match self.0 {
+            LastClosedFluxSurface::Toroidal(_) => "Toroidal",
+            LastClosedFluxSurface::Poloidal(_) => "Poloidal",
+        }
+    }
+
+    #[getter]
+    pub fn get_value(&self) -> f64 {
+        match self.0 {
+            LastClosedFluxSurface::Toroidal(value) => value,
+            LastClosedFluxSurface::Poloidal(value) => value,
+        }
+    }
+}
+
+py_debug_impl!(PyLastClosedFluxSurface);
+py_repr_impl!(PyLastClosedFluxSurface);
+
 // ===============================================================================================
 // ===============================================================================================
 
@@ -156,21 +194,8 @@ pub struct PyParabolicQfactor(pub(crate) ParabolicQfactor);
 impl PyParabolicQfactor {
     #[new]
     #[pyo3(signature = (qaxis, qlast, lcfs))]
-    pub fn new<'py>(qaxis: f64, qlast: f64, lcfs: Bound<'py, PyTuple>) -> PyResult<Self> {
-        let tuple = lcfs.cast::<PyTuple>()?;
-        let string: String = tuple.get_item(0)?.extract::<String>()?.to_lowercase();
-        let value: f64 = tuple.get_item(1)?.extract::<f64>()?;
-        let lcfs_kind = match string.as_str() {
-            "toroidal" => LastClosedFluxSurface::Toroidal(value),
-            "poloidal" => LastClosedFluxSurface::Poloidal(value),
-            _ => {
-                return Err(PyErr::new::<PyTypeError, _>(
-                    "Invalid 'LastClosedFluxSurface'",
-                ));
-            }
-        };
-
-        Ok(Self(ParabolicQfactor::new(qaxis, qlast, lcfs_kind)))
+    pub fn new<'py>(qaxis: f64, qlast: f64, lcfs: &PyLastClosedFluxSurface) -> PyResult<Self> {
+        Ok(Self(ParabolicQfactor::new(qaxis, qlast, lcfs.0)))
     }
 }
 
@@ -374,16 +399,23 @@ pub struct PyCosHarmonic(pub(crate) CosHarmonic);
 #[pymethods]
 impl PyCosHarmonic {
     #[new]
-    #[pyo3(signature = (alpha, m, n, phase))]
-    pub fn new(alpha: f64, m: i64, n: i64, phase: f64) -> Self {
-        Self(CosHarmonic::new(alpha, m, n, phase))
+    #[pyo3(signature = (epsilon, lcfs, m, n, phase))]
+    pub fn new(epsilon: f64, lcfs: &PyLastClosedFluxSurface, m: i64, n: i64, phase: f64) -> Self {
+        Self(CosHarmonic::new(epsilon, lcfs.0, m, n, phase))
+    }
+
+    #[getter]
+    pub fn get_lcfs(&self) -> PyLastClosedFluxSurface {
+        PyLastClosedFluxSurface(self.0.lcfs())
     }
 }
 
 py_debug_impl!(PyCosHarmonic);
 py_repr_impl!(PyCosHarmonic);
 py_get_enum_string!(PyCosHarmonic, equilibrium_type);
-py_export_getter!(PyCosHarmonic, alpha, f64);
+py_export_getter!(PyCosHarmonic, epsilon, f64);
+py_export_getter!(PyCosHarmonic, psi_last, Option<f64>);
+py_export_getter!(PyCosHarmonic, psip_last, Option<f64>);
 py_export_getter!(PyCosHarmonic, phase, f64);
 py_export_getter!(PyCosHarmonic, m, i64);
 py_export_getter!(PyCosHarmonic, n, i64);

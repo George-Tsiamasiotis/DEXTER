@@ -8,22 +8,23 @@ import dexter as dex
 from math import pi as PI
 
 geometry = dex.LarGeometry(4, 1.75, 0.5)
+LCFS = dex.LastClosedFluxSurface("Toroidal", geometry.psi_last)
 equilibrium = dex.Equilibrium(
     geometry=geometry,
-    qfactor=dex.ParabolicQfactor(1.1, 4.2, ("Toroidal", geometry.psi_last)),
+    qfactor=dex.ParabolicQfactor(1.1, 4.2, LCFS),
     current=dex.LarCurrent(),
     bfield=dex.LarBfield(),
     perturbation=dex.Perturbation(
         [
-            dex.CosHarmonic(8e-5, 3, 1, PI),
-            dex.CosHarmonic(8e-5, 5, 3, PI),
+            dex.CosHarmonic(8e-5, LCFS, 3, 1, PI),
+            dex.CosHarmonic(3e-4, LCFS, 5, 4, PI),
         ]
     ),
 )
 
-particle_count = 80
+particle_count = 50
 psips = np.linspace(0, 1, particle_count) * equilibrium.psip_last
-psis = np.asarray([equilibrium.qfactor.psi_of_psip(psip) for psip in psips])
+psis = equilibrium.qfactor.psi_of_psip(psips)
 
 initial_conditions = dex.QueueInitialConditions.boozer(
     t0=np.zeros(particle_count),

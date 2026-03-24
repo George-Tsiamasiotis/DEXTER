@@ -1,10 +1,10 @@
 ## General
 
-::: dexter.ArrayLike
-::: dexter.Array
 ::: dexter.Array1
 ::: dexter.Array2
 ::: dexter.ArrayShape
+::: dexter.Array
+::: dexter.ArrayLike
 
 ## Equilibrium
 
@@ -19,7 +19,6 @@
 ::: dexter.Interp2DType
 ::: dexter.FluxCoordinate
 ::: dexter.FluxState
-::: dexter.LastClosedFluxSurface
 ::: dexter.PhaseMethod
 ::: dexter.NetCDFVersion
 

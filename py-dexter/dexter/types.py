@@ -6,20 +6,20 @@ from collections.abc import Sequence
 
 # =================== Common
 
-Array: TypeAlias = np.ndarray[tuple[int, ...], np.dtype[np.float64]]
-"""ND numpy array."""
-
 Array1: TypeAlias = np.ndarray[tuple[int], np.dtype[np.float64]]
 """1D numpy array."""
 
 Array2: TypeAlias = np.ndarray[tuple[int, int], np.dtype[np.float64]]
 """2D numpy array."""
 
-ArrayLike: TypeAlias = float | Array | Sequence
-"""Objects that can be converted to arrays, i.e. float, np.ndarray, sequences, ..."""
-
 ArrayShape: TypeAlias = tuple[int, ...]
 """Shape of a numpy array."""
+
+Array: TypeAlias = np.ndarray[ArrayShape, np.dtype[np.float64]]
+"""ND numpy array."""
+
+ArrayLike: TypeAlias = float | Array | Sequence
+"""Objects that can be converted to arrays, i.e. float, np.ndarray, sequences, ..."""
 
 # =================== Equilibrium
 
@@ -36,9 +36,6 @@ Interp1DType: TypeAlias = Literal[
 
 Interp2DType: TypeAlias = Literal["Bilinear", "Bicubic"]
 """Available 2D Interpolation types (case-insensitive)."""
-
-LastClosedFluxSurface: TypeAlias = tuple[Literal["Toroidal", "Poloidal"], float]
-"""Helper type to define the Last Closed Flux Surface (LCFS) with respect to one of the two fluxes."""
 
 FluxCoordinate: TypeAlias = Literal["Toroidal", "Poloidal"]
 r"""Magnetic flux coordinates $\psi$ and $\psi_p$."""
@@ -121,8 +118,7 @@ r"""The integration status of a Particle.
 """
 
 SteppingMethod = (
-    Literal["EnergyAdaptiveStep"]
-    | Literal["ErrorAdaptiveStep"]
+    Literal["EnergyAdaptiveStep", "ErrorAdaptiveStep"]
     | tuple[Literal["FixedStep"], float]
 )
 """The stepping method of the solver.

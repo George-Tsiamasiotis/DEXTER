@@ -1,6 +1,7 @@
 import numpy as np
 
 from dexter import (
+    LastClosedFluxSurface,
     InitialConditions,
     InitialFluxArray,
     QueueInitialConditions,
@@ -116,14 +117,15 @@ def test_queue_mixed_instantiation():
 class TestQueue:
     @classmethod
     def setup_class(cls) -> None:
+        cls.lcfs = LastClosedFluxSurface("Toroidal", 0.45)
         cls.equilibrium = Equilibrium(
-            qfactor=ParabolicQfactor(1.1, 3.9, ("Toroidal", 0.45)),
+            qfactor=ParabolicQfactor(1.1, 3.9, cls.lcfs),
             current=LarCurrent(),
             bfield=LarBfield(),
             perturbation=Perturbation(
                 [
-                    CosHarmonic(1e-3, 1, 3, 0),
-                    CosHarmonic(1e-3, 2, 3, 0),
+                    CosHarmonic(1e-3, cls.lcfs, 1, 3, 0),
+                    CosHarmonic(1e-3, cls.lcfs, 2, 3, 0),
                 ]
             ),
         )

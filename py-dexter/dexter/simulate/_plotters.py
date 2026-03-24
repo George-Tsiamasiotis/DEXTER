@@ -130,7 +130,7 @@ class _ParticlePlotter:
         plt.close()
 
     def plot_db_drift(self, equilibrium: Equilibrium):
-        r"""Plots the magnetic field strength $B(\psi/\psi_p, \theta) along the particle's orbit.
+        r"""Plots the magnetic field strength $B(\psi/\psi_p, \theta)$ along the particle's orbit.
 
         Parameters
         ----------

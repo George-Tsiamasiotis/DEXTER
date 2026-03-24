@@ -2,15 +2,16 @@
 
 import dexter as dex
 
+LCFS = dex.LastClosedFluxSurface("Toroidal", 0.45)
 equilibrium = dex.Equilibrium(
-    qfactor=dex.ParabolicQfactor(1.1, 3.8, ("Toroidal", 0.45)),
+    qfactor=dex.ParabolicQfactor(1.1, 3.8, LCFS),
     current=dex.LarCurrent(),
     bfield=dex.LarBfield(),
     perturbation=dex.Perturbation(
         [
-            dex.CosHarmonic(3e-3, 3, 1, 0),
-            dex.CosHarmonic(2e-3, 7, 2, 0),
-            dex.CosHarmonic(1e-3, 15, 4, 0),
+            dex.CosHarmonic(5e-3, LCFS, 3, 1, 0),
+            dex.CosHarmonic(6e-3, LCFS, 7, 2, 0),
+            dex.CosHarmonic(7e-3, LCFS, 15, 4, 0),
         ]
     ),
 )

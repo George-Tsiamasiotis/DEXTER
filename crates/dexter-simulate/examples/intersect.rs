@@ -12,12 +12,13 @@ fn main() {
 
 fn analytical_equilibrium_intersect() {
     // Equilibrium setup
-    let qfactor = ParabolicQfactor::new(1.1, 3.8, LastClosedFluxSurface::Toroidal(0.45));
+    let lcfs = LastClosedFluxSurface::Toroidal(0.45);
+    let qfactor = ParabolicQfactor::new(1.1, 3.8, lcfs);
     let current = LarCurrent::new();
     let bfield = LarBfield::new();
     let perturbation = Perturbation::new(&[
-        CosHarmonic::new(1e-3, 2, 1, 0.0),
-        CosHarmonic::new(1e-3, 3, 1, 0.0),
+        CosHarmonic::new(1e-3, lcfs, 2, 1, 0.0),
+        CosHarmonic::new(1e-3, lcfs, 3, 1, 0.0),
     ]);
 
     // Particle setup

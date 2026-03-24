@@ -11,7 +11,6 @@ from dexter.types import (
     Interp1DType,
     Interp2DType,
     FluxCoordinate,
-    LastClosedFluxSurface,
     FluxState,
     PhaseMethod,
     CoordinateSet,
@@ -22,6 +21,16 @@ from dexter.types import (
 )
 
 # ================================================================================================
+
+class _PyLastClosedFluxSurface:
+    """PyO3 export of `py_dexter::PyLastClosedFluxSurface`."""
+
+    kind: FluxCoordinate
+    value: float
+
+    def __init__(self, kind: FluxCoordinate, value: float): ...
+    def __str__(self) -> str: ...
+    def __repr__(self) -> str: ...
 
 class _PyLarGeometry:
     """PyO3 export of `dexter_equilibrium::LarGeometry`."""
@@ -131,7 +140,7 @@ class _PyParabolicQfactor:
         self,
         qaxis: float,
         qlast: float,
-        lcfs: LastClosedFluxSurface,
+        lcfs: _PyLastClosedFluxSurface,
     ) -> None: ...
     def psip_of_psi(self, psi: float) -> float: ...
     def psi_of_psip(self, psip: float) -> float: ...
@@ -275,12 +284,22 @@ class _PyCosHarmonic:
     """PyO3 export of `dexter_equilibrium::CosHarmonic`."""
 
     equilibrium_type: EquilibriumType
-    alpha: float
+    epsilon: float
+    lcfs: _PyLastClosedFluxSurface
     phase: float
     m: int
     n: int
+    psi_last: Optional[float]
+    psip_last: Optional[float]
 
-    def __init__(self, alpha: float, m: int, n: int, phase: float) -> None: ...
+    def __init__(
+        self,
+        epsilon: float,
+        lcfs: _PyLastClosedFluxSurface,
+        m: int,
+        n: int,
+        phase: float,
+    ) -> None: ...
     # fmt: off
     def alpha_of_psi(self, psi: float, theta: float, zeta: float, t: float) -> float: ...
     def alpha_of_psip(self, psip: float, theta: float, zeta: float, t: float) -> float: ...

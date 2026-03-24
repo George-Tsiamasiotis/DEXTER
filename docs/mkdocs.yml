@@ -115,6 +115,7 @@ nav:
       - CosHarmonic: reference/equilibrium/cos_harmonic.md
       - NcHarmonic: reference/equilibrium/nc_harmonic.md
       - Perturbation: reference/equilibrium/perturbation.md
+      - Helpers: reference/equilibrium/helpers.md
     - Simulate:
       - Particle: reference/simulate/particle.md
       - Queue: reference/simulate/queue.md

@@ -87,8 +87,8 @@ class Equilibrium:
 
     ```python title="Equilibrium creation"
     >>> eq = Equilibrium(
-    ...     geometry=dex.ParabolicQfactor(1.1, 3.9, ("Toroidal", 0.45)),
-    ...     qfactor=dex.UnityQfactor(),
+    ...     geometry=dex.LarGeometry(baxis=2, raxis=1.75, rlast=0.5),
+    ...     qfactor=dex.ParabolicQfactor(1.1, 3.9, dex.LastClosedFluxSurface("Toroidal", 0.45)),
     ...     current=dex.LarCurrent(),
     ...     bfield=dex.LarBfield(),
     ... )
