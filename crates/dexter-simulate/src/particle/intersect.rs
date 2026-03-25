@@ -140,7 +140,7 @@ pub(super) fn intersect<Q, C, B, H>(
             let Ok(mod_state2) = calculate_mod_state2(objects, &mod_state1, dtau, &mut mod_caches)
             else {
                 // `start()` and `next_state()` can only fail if an evaluation is out of bounds.
-                particle.integration_status = IntegrationStatus::Escaped;
+                particle.integration_status = IntegrationStatus::ModStateEscaped;
                 break;
             };
 
@@ -152,7 +152,7 @@ pub(super) fn intersect<Q, C, B, H>(
                 &mut mod_caches,
             ) else {
                 // `start()` and `next_state()` can only fail if an evaluation is out of bounds.
-                particle.integration_status = IntegrationStatus::Escaped;
+                particle.integration_status = IntegrationStatus::ModStateEscaped;
                 break;
             };
             // NOTE: Even after landing on the intersection, we must continue the integration from
@@ -181,7 +181,9 @@ pub(super) fn intersect<Q, C, B, H>(
         harmonic_cache_misses: caches.harmonic_caches.iter().map(H::Cache::misses).sum(),
     };
 
-    if particle.integration_status == IntegrationStatus::Escaped {
+    if (particle.integration_status == IntegrationStatus::Escaped)
+        || (particle.integration_status == IntegrationStatus::ModStateEscaped)
+    {
         return;
     }
     // Further categorize successful intersection
@@ -351,6 +353,10 @@ where
 
 /// Checks when an angle has intersected with the surface at `angle`
 /// (source: seems to work).
+///
+/// # Note
+///
+/// To avoid the pole at `0`, `old_angle` and `new_angle` must NOT be modulo(2π).
 pub(crate) fn intersected(old_angle: f64, new_angle: f64, surface_angle: f64) -> bool {
     let diff1 = new_angle - surface_angle;
     let diff2 = old_angle - surface_angle;

@@ -1,4 +1,4 @@
-//! Guiding Center integration with respect to the toroidal flux coordinate.
+//! Guiding Center fixed interval integration.
 
 #![allow(non_snake_case)]
 

@@ -1,5 +1,6 @@
 //! Representation of a charged particle.
 
+mod close;
 mod evolution;
 mod initial;
 mod integrate;
@@ -105,10 +106,16 @@ pub enum IntegrationStatus {
     Integrated,
     /// Escaped the last closed flux surface (LCFS).
     Escaped,
+    /// Escaped when performing a step on the modified system.
+    ///
+    /// This indicates that something is wrong in Hénon's trick implementation.
+    ModStateEscaped,
     /// Intersections calculation successful.
     Intersected,
     /// Calculated some intersections correctly but also timed out.
     IntersectedTimedOut,
+    /// Integrated for a certain amount of `θ-ψ` periods.
+    ClosedPeriods(usize),
     /// Calculated invalid intersections.
     InvalidIntersections,
     /// Timed out after a maximum number of steps.
@@ -135,6 +142,19 @@ pub struct ParticleCacheStats {
 }
 
 // ===============================================================================================
+
+/// A particle's calculated frequencies and `qkinetic`.
+#[derive(Debug, Default, Clone)]
+pub struct Frequencies {
+    /// The particle's calculated `ωθ`.
+    pub omega_theta: Option<f64>,
+    /// The particle's calculated `ωζ`.
+    pub omega_zeta: Option<f64>,
+    /// The particle's calculated `qkinetic`.
+    pub qkinetic: Option<f64>,
+}
+
+// ===============================================================================================
 // ===============================================================================================
 
 /// Representation of a charged particle.
@@ -148,6 +168,8 @@ pub struct Particle {
     evolution: Evolution,
     /// Stats about the particle's integration.
     stats: ParticleCacheStats,
+    /// The particle's calculated `ωθ`, `ωζ` and `qkinetic`.
+    frequencies: Frequencies,
     /// The particle's initial Energy in Normalized Units. The Energy depends both on the initial
     /// conditions and the equilibrium.
     initial_energy: Option<f64>,
@@ -185,6 +207,7 @@ impl Particle {
             initial_conditions: initial_conditions.to_owned(),
             integration_status,
             evolution: Evolution::default(),
+            frequencies: Frequencies::default(),
             stats: ParticleCacheStats::default(),
             initial_energy: None,
             final_energy: None,
@@ -319,6 +342,34 @@ impl Particle {
         };
         intersect::intersect(self, &objects, intersect_params, solver_params);
     }
+
+    /// Integrates the particle, for `periods` number of `θ-ψ` periods.
+    ///
+    /// # Example
+    ///
+    /// TODO:
+    pub fn close<Q, C, B, H>(
+        &mut self,
+        qfactor: &Q,
+        current: &C,
+        bfield: &B,
+        perturbation: &Perturbation<H>,
+        periods: usize,
+        solver_params: &SolverParams,
+    ) where
+        Q: Qfactor + FluxCommute,
+        C: Current,
+        B: Bfield,
+        H: Harmonic,
+    {
+        let objects = EqObjects {
+            qfactor,
+            current,
+            bfield,
+            perturbation,
+        };
+        close::close(self, &objects, periods, solver_params);
+    }
 }
 
 // Getters
@@ -374,10 +425,15 @@ impl Particle {
     }
 
     /// Returns the particle's [`ParticleCacheStats`].
-    /// [`Accelerator`].
     #[must_use]
     pub fn cache_stats(&self) -> ParticleCacheStats {
         self.stats.clone()
+    }
+
+    /// Returns the particle's [`Frequencies`].
+    #[must_use]
+    pub fn frequencies(&self) -> Frequencies {
+        self.frequencies.clone()
     }
 
     /// Prints the particle's integration interpolation caches, [`Cache`] and
@@ -404,6 +460,7 @@ impl std::fmt::Debug for Particle {
             .field("initial conditions", &self.initial_conditions)
             .field("integration status", &self.integration_status)
             .field("evolution", &self.evolution)
+            .field("frequencies", &self.frequencies)
             .field("initial energy", &self.initial_energy.unwrap_or(f64::NAN))
             .field("final energy  ", &self.final_energy.unwrap_or(f64::NAN))
             .field("energy variance", &self.energy_var().unwrap_or(f64::NAN))
