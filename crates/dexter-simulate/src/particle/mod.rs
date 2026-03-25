@@ -144,6 +144,8 @@ pub struct ParticleCacheStats {
 // ===============================================================================================
 
 /// A particle's calculated frequencies and `qkinetic`.
+///
+/// The frequencies are calculated through the [`Particle::close`] routine.
 #[derive(Default, Clone)]
 pub struct Frequencies {
     /// The particle's calculated `ωθ`.
@@ -152,6 +154,23 @@ pub struct Frequencies {
     pub omega_zeta: Option<f64>,
     /// The particle's calculated `qkinetic`.
     pub qkinetic: Option<f64>,
+}
+
+/// The particle's orbit type, calculated through the [`Particle::close`] routine.
+#[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
+#[non_exhaustive]
+pub enum OrbitType {
+    /// `ρ>0` during the whole integration.
+    CoPassing,
+    /// `ρ<0` during the whole integration.
+    CuPassing,
+    /// `|θmax - θmin| < 2π`.
+    Trapped,
+    /// Failed to classify the particle's orbit into a valid type.
+    Unclassified,
+    /// Particle has not been integrated.
+    #[default]
+    Undefined,
 }
 
 // ===============================================================================================
@@ -168,6 +187,8 @@ pub struct Particle {
     evolution: Evolution,
     /// Stats about the particle's integration.
     stats: ParticleCacheStats,
+    /// The particle's orbit type.
+    orbit_type: OrbitType,
     /// The particle's calculated `ωθ`, `ωζ` and `qkinetic`.
     frequencies: Frequencies,
     /// The particle's initial Energy in Normalized Units. The Energy depends both on the initial
@@ -207,6 +228,7 @@ impl Particle {
             initial_conditions: initial_conditions.to_owned(),
             integration_status,
             evolution: Evolution::default(),
+            orbit_type: OrbitType::default(),
             frequencies: Frequencies::default(),
             stats: ParticleCacheStats::default(),
             initial_energy: None,
@@ -345,9 +367,37 @@ impl Particle {
 
     /// Integrates the particle, for `periods` number of `θ-ψ` periods.
     ///
+    /// When the particle approximately reaches its initial point after `periods` periods, it
+    /// halts its integration and performs one more step using [`Hénon`]'s trick, to land
+    /// itself on the initial point exactly, similar to how [`Particle::intersect`] lands exactly
+    /// on the intersection surface.
+    ///
+    /// This routine yields the particle's `ωθ`, `ωζ` and `qkinetic`, and classifies its orbit.
+    ///
+    /// [`Hénon`]: https://www.sciencedirect.com/science/article/abs/pii/0167278982900343
+    ///
     /// # Example
     ///
-    /// TODO:
+    /// ```
+    /// # use dexter_equilibrium::*;
+    /// # use dexter_simulate::*;
+    /// # use std::path::PathBuf;
+    /// #
+    /// let qfactor = UnityQfactor::new();
+    /// let current = LarCurrent::new();
+    /// let bfield = LarBfield::new();
+    /// let perturbation = Perturbation::zero();
+    ///
+    /// let psi0 = InitialFlux::Toroidal(0.02);
+    /// let initial = InitialConditions::boozer(0.0, psi0, 3.14, 0.0, 1e-4, 1e-6);
+    ///
+    /// let mut particle = Particle::new(&initial);
+    /// particle.close(&qfactor, &current, &bfield, &perturbation, 1, &SolverParams::default());
+    ///
+    /// # assert!(matches!(particle.integration_status(), IntegrationStatus::ClosedPeriods(1)));
+    /// # Ok::<_, SimulationError>(())
+    ///
+    /// ```
     pub fn close<Q, C, B, H>(
         &mut self,
         qfactor: &Q,
@@ -430,6 +480,12 @@ impl Particle {
         self.stats.clone()
     }
 
+    /// Returns the particle's [`OrbitType`].
+    #[must_use]
+    pub fn orbit_type(&self) -> OrbitType {
+        self.orbit_type
+    }
+
     /// Returns the particle's [`Frequencies`].
     #[must_use]
     pub fn frequencies(&self) -> Frequencies {
@@ -458,6 +514,11 @@ impl Particle {
     /// [`Accelerator`].
     pub fn print_cache_stats(&self) {
         println!("{:#}", self.stats);
+    }
+
+    /// Discares the time evolution arrays, keeping metadata such as duration, step count, etc.
+    pub fn discard_arrays(&mut self) {
+        self.evolution.discard_arrays();
     }
 
     export_array1D_getter_impl!(t_array, evolution, t);
@@ -496,6 +557,7 @@ impl std::fmt::Debug for Particle {
             .field("initial conditions", &self.initial_conditions)
             .field("integration status", &self.integration_status)
             .field("evolution", &self.evolution)
+            .field("orbit_type", &self.orbit_type)
             .field("frequencies", &self.frequencies)
             .field("initial energy", &self.initial_energy.unwrap_or(f64::NAN))
             .field("final energy  ", &self.final_energy.unwrap_or(f64::NAN))

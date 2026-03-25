@@ -147,6 +147,7 @@ def test_mixed_toroidal_integration_default(toroidal_nc_equilibrium: Equilibrium
         toroidal_nc_equilibrium,
         (0, 5),
     )
+    assert particle.orbit_type == "Undefined"
     assert particle.integration_status == "Integrated"
     _check_valid_integration(particle)
 
@@ -165,6 +166,7 @@ def test_mixed_poloidal_integration_default(poloidal_nc_equilibrium: Equilibrium
         poloidal_nc_equilibrium,
         (0, 3e2),
     )
+    assert particle.orbit_type == "Undefined"
     assert particle.integration_status == "Integrated"
     _check_valid_integration(particle)
 
@@ -285,6 +287,7 @@ class TestToroidalParticle:
         )
         particle = Particle(initial)
         particle.close(self.equilibrium_unperturbed, 1)
+        assert particle.orbit_type == "Trapped"
         assert "ClosedPeriods" in particle.integration_status
         assert particle.omega_theta is not None
         assert particle.omega_zeta is not None
@@ -308,9 +311,9 @@ class TestPoloidalParticle:
             ),
         )
         cls.equilibrium_unperturbed = Equilibrium(
-            qfactor=ParabolicQfactor(1.1, 3.9, LastClosedFluxSurface("Poloidal", 0.45)),
-            current=LarCurrent(),
-            bfield=LarBfield(),
+            qfactor=NcQfactor(path, "Steffen"),
+            current=NcCurrent(path, "Steffen"),
+            bfield=NcBfield(path, "Bicubic"),
             perturbation=Perturbation([]),
         )
         cls.initial = InitialConditions.boozer(
@@ -398,8 +401,8 @@ class TestPoloidalParticle:
     def test_close(self):
         initial = InitialConditions.boozer(
             t0=0,
-            flux0=InitialFlux("Toroidal", 0.02),
-            theta0=1,
+            flux0=InitialFlux("Poloidal", 0.2),
+            theta0=0,
             zeta0=0,
             rho0=1e-6,
             mu0=1e-6,
@@ -407,6 +410,7 @@ class TestPoloidalParticle:
         particle = Particle(initial)
         particle.close(self.equilibrium_unperturbed, 1)
         assert "ClosedPeriods" in particle.integration_status
+        assert particle.orbit_type == "Trapped"
         assert particle.omega_theta is not None
         assert particle.omega_zeta is not None
         assert particle.qkinetic is not None

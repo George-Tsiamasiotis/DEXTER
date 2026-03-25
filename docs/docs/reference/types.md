@@ -27,5 +27,6 @@
 ::: dexter.CoordinateSet
 ::: dexter.Intersection
 ::: dexter.IntegrationStatus
+::: dexter.OrbitType
 ::: dexter.SteppingMethod
 ::: dexter.Routine

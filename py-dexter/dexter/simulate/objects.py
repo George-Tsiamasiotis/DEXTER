@@ -30,6 +30,7 @@ from dexter.types import (
     Intersection,
     SteppingMethod,
     IntegrationStatus,
+    OrbitType,
     Routine,
 )
 
@@ -415,6 +416,11 @@ class Particle(_ParticlePlotter):
     def energy_var(self) -> Optional[float]:
         """The variance of energy throughout the integration."""
         return self._rust.energy_var
+
+    @property
+    def orbit_type(self) -> OrbitType:
+        r"""The particle's orbit type."""
+        return self._rust.orbit_type
 
     @property
     def omega_theta(self) -> Optional[float]:

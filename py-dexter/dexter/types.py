@@ -120,6 +120,22 @@ r"""The integration status of a Particle.
     - `Failed(...)`: Simulation failed for unknown reasons.
 """
 
+OrbitType: TypeAlias = Literal[
+    "CoPassing",
+    "CuPassing",
+    "Trapped",
+    "Unclassified",
+    "Undefined",
+]
+r"""A particle's orbit type, calculated through the [`dexter.Particle.close()`] routine.
+
+    - `CoPassing`: $\rho>0$ during the whole integration.
+    - `CuPassing`: $\rho<0$ during the whole integration.
+    - `Trapped`: $|\theta_{max} - \theta_{min}| < 2\pi$.
+    - `Unclassified`: Failed to classify the particle’s orbit into a valid type.
+    - `Undefined`: Particle has not been integrated.
+"""
+
 SteppingMethod = (
     Literal["EnergyAdaptiveStep", "ErrorAdaptiveStep"]
     | tuple[Literal["FixedStep"], float]

@@ -29,6 +29,7 @@ from dexter.types import (
     CoordinateSet,
     Intersection,
     IntegrationStatus,
+    OrbitType,
     SteppingMethod,
     Routine,
 )
@@ -61,6 +62,7 @@ __all__ = [
     "CoordinateSet",
     "Intersection",
     "IntegrationStatus",
+    "OrbitType",
     "SteppingMethod",
     "Routine",
     # Equilibrium

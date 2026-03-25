@@ -50,7 +50,7 @@ pub use solve::{FluxCoordinate, SolverParams, SteppingMethod};
 
 pub use particle::{
     CoordinateSet, Frequencies, InitialConditions, InitialFlux, IntegrationStatus, IntersectParams,
-    Intersection, Particle, ParticleCacheStats,
+    Intersection, OrbitType, Particle, ParticleCacheStats,
 };
 
 pub use queue::{Queue, QueueInitialConditions, Routine};

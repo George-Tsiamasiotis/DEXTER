@@ -86,7 +86,6 @@ impl Evolution {
     }
 
     /// Discards the vecs, keeping all the other fields.
-    #[expect(dead_code, reason = "to use with Queue")]
     pub(crate) fn discard_arrays(&mut self) {
         *self = Self {
             duration: self.duration,
