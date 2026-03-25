@@ -402,19 +402,34 @@ class Particle(_ParticlePlotter):
         return self._rust.steps_stored
 
     @property
-    def initial_energy(self) -> float | None:
+    def initial_energy(self) -> Optional[float]:
         """The particle's initial energy before the integration in Normalized Units."""
         return self._rust.initial_energy
 
     @property
-    def final_energy(self) -> float | None:
+    def final_energy(self) -> Optional[float]:
         """The particle's final energy after the integration in Normalized Units."""
         return self._rust.final_energy
 
     @property
-    def energy_var(self) -> float | None:
+    def energy_var(self) -> Optional[float]:
         """The variance of energy throughout the integration."""
         return self._rust.energy_var
+
+    @property
+    def omega_theta(self) -> Optional[float]:
+        r"""The particle's calculated $\omega_\theta$"""
+        return self._rust.omega_theta
+
+    @property
+    def omega_zeta(self) -> Optional[float]:
+        r"""The particle's calculated $\omega_\zeta$"""
+        return self._rust.omega_zeta
+
+    @property
+    def qkinetic(self) -> Optional[float]:
+        r"""The particle's calculated $q_{kinetic}$"""
+        return self._rust.qkinetic
 
     @property
     def t_array(self) -> Array1:
@@ -676,6 +691,104 @@ class Particle(_ParticlePlotter):
             equilibrium.bfield._rust,
             equilibrium.perturbation._rust,
             intersect_params._rust,
+            stepping_method,
+            max_steps,
+            first_step,
+            safety_factor,
+            energy_rel_tol,
+            energy_abs_tol,
+            error_rel_tol,
+            error_abs_tol,
+        )
+
+    def close(
+        self,
+        /,
+        equilibrium: Equilibrium,
+        periods: int,
+        *,
+        stepping_method: Optional[SteppingMethod] = "EnergyAdaptiveStep",
+        max_steps: Optional[int] = 1_000_000,
+        first_step: Optional[float] = 1e-1,
+        safety_factor: Optional[float] = 0.9,
+        energy_rel_tol: Optional[float] = 1e-12,
+        energy_abs_tol: Optional[float] = 1e-14,
+        error_rel_tol: Optional[float] = 1e-12,
+        error_abs_tol: Optional[float] = 1e-14,
+    ):
+        r"""Integrates the particle for a certain amount of $\theta-\psi$ periods.
+
+        Parameters
+        ----------
+        equilibrium
+            The equilibrium in which to integrate the particle.
+        periods
+            The amount of periods to integrate.
+
+        Other Parameters
+        ----------------
+        stepping_method
+            The optimal step calculation method. Defaults to "EnergyAdaptiveStep".
+        max_steps
+            The maximum amount of steps a particle can make before terminating its integration. Defaults to
+            1.000.000.
+        first_step
+            The initial time step for the RKF45 adaptive step method. The value is empirical. Defaults to
+            1e-1.
+        safety_factor
+            The safety factor of the solver. Should be less than 1.0. Defaults to 0.9.
+        energy_rel_tol
+            The relative tolerance of the energy difference in every step. Defaults to 1e-12.
+        energy_abs_tol
+            The absolute tolerance of the energy difference in every step. Defaults to 1e-14.
+        error_rel_tol
+            The relative tolerance of the local truncation error in every step. Defaults to 1e-12.
+        error_abs_tol
+            The absolute tolerance of the local truncation error in every step. Defaults to 1e-14.
+
+        Example
+        -------
+        ```python title="Particle integration"
+        >>> # Equilibrium setup
+        >>> LCFS = dex.LastClosedFluxSurface(kind="Toroidal", value=0.45)
+        >>> equilibrium = dex.Equilibrium(
+        ...     qfactor=dex.ParabolicQfactor(qaxis=1.1, qlast=4.1, lcfs=LCFS),
+        ...     current=dex.LarCurrent(),
+        ...     bfield=dex.LarBfield(),
+        ...     perturbation=dex.Perturbation([])
+        ... )
+        >>>
+        >>> # Initial conditions setup
+        >>> initial_conditions = dex.InitialConditions.boozer(
+        ...     t0=0,
+        ...     flux0=dex.InitialFlux("Toroidal", 0.1),
+        ...     theta0=3.14,
+        ...     zeta0=0,
+        ...     rho0=1e-5,
+        ...     mu0=7e-6,
+        ... )
+        >>>
+        >>> # Particle setup and integration
+        >>> particle = dex.Particle(initial_conditions)
+        >>> particle.close(
+        ...     equilibrium=equilibrium,
+        ...     periods=4,
+        ... )
+
+        ```
+        """
+        prefix = "__close"
+        q = equilibrium.qfactor._dyn
+        c = equilibrium.current._dyn
+        b = equilibrium.bfield._dyn
+        p = equilibrium.perturbation._dyn
+        method_name: Callable = getattr(self._rust, f"{prefix}_{q}_{c}_{b}_{p}")
+        method_name(
+            equilibrium.qfactor._rust,
+            equilibrium.current._rust,
+            equilibrium.bfield._rust,
+            equilibrium.perturbation._rust,
+            periods,
             stepping_method,
             max_steps,
             first_step,

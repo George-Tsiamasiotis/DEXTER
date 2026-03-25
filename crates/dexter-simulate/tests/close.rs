@@ -47,3 +47,31 @@ fn field_line_single_period_uniQ() {
     ar!(particle.frequencies().omega_zeta.unwrap(), expected_omega_zeta, epsilon=eps);
     ar!(particle.frequencies().qkinetic.unwrap(), 1.0, epsilon=eps);
 }
+
+#[test]
+#[rustfmt::skip]
+fn trapped_particle_single_period_uniQ() {
+    let qfactor = UnityQfactor::new();
+    let current = LarCurrent::new();
+    let bfield = LarBfield::new();
+    let perturbation = Perturbation::zero();
+
+    let initial = InitialConditions::boozer(0.0, InitialFlux::Toroidal(0.02), 1.0, 0.0, 1e-6, 1e-6);
+    let mut particle = Particle::new(&initial);
+    particle.close(&qfactor, &current, &bfield, &perturbation, 1, &SolverParams::default());
+    assert!(matches!(particle.integration_status(), IntegrationStatus::ClosedPeriods(1)));
+
+    let expected_dt = 17708.921170693902;
+    let expected_dzeta = 0.07681124462891854; // from manual integration
+    let expected_omega_theta = TAU / expected_dt;
+    let expected_omega_zeta = expected_dzeta / expected_dt;
+
+    let eps = 1e-6;
+    ar!(particle.t_array().last().copied().unwrap(), expected_dt, epsilon=eps);
+    ar!(particle.psi_array().first().copied().unwrap(), particle.psi_array().last().copied().unwrap(), epsilon=eps);
+    ar!(particle.theta_array().first().copied().unwrap(), particle.theta_array().last().copied().unwrap(), epsilon=eps);
+    ar!(particle.ptheta_array().first().copied().unwrap(), particle.ptheta_array().last().copied().unwrap(), epsilon=eps);
+    ar!(particle.frequencies().omega_theta.unwrap(), expected_omega_theta, epsilon=eps);
+    ar!(particle.frequencies().omega_zeta.unwrap(), expected_omega_zeta, epsilon=eps);
+    ar!(particle.frequencies().qkinetic.unwrap(), 0.012224889267733182, epsilon=eps); // derived
+}

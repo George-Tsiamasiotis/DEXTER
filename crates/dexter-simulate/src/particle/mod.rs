@@ -104,18 +104,18 @@ pub enum IntegrationStatus {
     OutOfBoundsInitialization,
     /// Reached the end of the integration successfully.
     Integrated,
+    /// Intersections calculation successful.
+    Intersected,
+    /// Integrated for a certain amount of `θ-ψ` periods.
+    ClosedPeriods(usize),
     /// Escaped the last closed flux surface (LCFS).
     Escaped,
     /// Escaped when performing a step on the modified system.
     ///
     /// This indicates that something is wrong in Hénon's trick implementation.
     ModStateEscaped,
-    /// Intersections calculation successful.
-    Intersected,
     /// Calculated some intersections correctly but also timed out.
     IntersectedTimedOut,
-    /// Integrated for a certain amount of `θ-ψ` periods.
-    ClosedPeriods(usize),
     /// Calculated invalid intersections.
     InvalidIntersections,
     /// Timed out after a maximum number of steps.
@@ -144,7 +144,7 @@ pub struct ParticleCacheStats {
 // ===============================================================================================
 
 /// A particle's calculated frequencies and `qkinetic`.
-#[derive(Debug, Default, Clone)]
+#[derive(Default, Clone)]
 pub struct Frequencies {
     /// The particle's calculated `ωθ`.
     pub omega_theta: Option<f64>,
@@ -436,6 +436,24 @@ impl Particle {
         self.frequencies.clone()
     }
 
+    /// Returns the particle's calculated `ωθ`.
+    #[must_use]
+    pub fn omega_theta(&self) -> Option<f64> {
+        self.frequencies.omega_theta
+    }
+
+    /// Returns the particle's calculated `ωζ`.
+    #[must_use]
+    pub fn omega_zeta(&self) -> Option<f64> {
+        self.frequencies.omega_zeta
+    }
+
+    /// Returns the particle's calculated `qkinetic`.
+    #[must_use]
+    pub fn qkinetic(&self) -> Option<f64> {
+        self.frequencies.qkinetic
+    }
+
     /// Prints the particle's integration interpolation caches, [`Cache`] and
     /// [`Accelerator`].
     pub fn print_cache_stats(&self) {
@@ -452,6 +470,24 @@ impl Particle {
     export_array1D_getter_impl!(ptheta_array, evolution, ptheta_array);
     export_array1D_getter_impl!(pzeta_array, evolution, pzeta_array);
     export_array1D_getter_impl!(energy_array, evolution, energy_array);
+}
+
+impl std::fmt::Debug for Frequencies {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        fn stringify(field: Option<f64>) -> String {
+            if let Some(value) = field {
+                format!("{value:.7}")
+            } else {
+                String::from("Not calculated")
+            }
+        }
+
+        f.debug_struct("Frequencies")
+            .field("omega_theta", &stringify(self.omega_theta))
+            .field("omega_zeta", &stringify(self.omega_zeta))
+            .field("qkinetic", &stringify(self.qkinetic))
+            .finish()
+    }
 }
 
 impl std::fmt::Debug for Particle {

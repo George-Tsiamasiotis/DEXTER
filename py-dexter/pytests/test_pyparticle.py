@@ -188,6 +188,12 @@ class TestToroidalParticle:
                 ]
             ),
         )
+        cls.equilibrium_unperturbed = Equilibrium(
+            qfactor=ParabolicQfactor(1.1, 3.9, cls.lcfs),
+            current=LarCurrent(),
+            bfield=LarBfield(),
+            perturbation=Perturbation([]),
+        )
         cls.initial = InitialConditions.boozer(
             t0=0,
             flux0=InitialFlux("Toroidal", 0.1),
@@ -202,20 +208,6 @@ class TestToroidalParticle:
         particle.integrate(
             self.equilibrium,
             (0, 2e3),
-        )
-        assert particle.integration_status == "Integrated"
-        _check_valid_integration(particle)
-
-    @pytest.mark.skip(reason="problem with ErrorAdaptiveStep")
-    def test_integration_error_adaptive_step(self):
-        particle = Particle(self.initial)
-        particle.integrate(
-            self.equilibrium,
-            (0, 600),
-            stepping_method="ErrorAdaptiveStep",
-            first_step=1e-5,
-            error_rel_tol=1e-18,
-            error_abs_tol=1e-20,
         )
         assert particle.integration_status == "Integrated"
         _check_valid_integration(particle)
@@ -282,6 +274,22 @@ class TestToroidalParticle:
         )
         _check_valid_intersection(particle, intersect_params)
 
+    def test_close(self):
+        initial = InitialConditions.boozer(
+            t0=0,
+            flux0=InitialFlux("Toroidal", 0.02),
+            theta0=1,
+            zeta0=0,
+            rho0=1e-6,
+            mu0=1e-6,
+        )
+        particle = Particle(initial)
+        particle.close(self.equilibrium_unperturbed, 1)
+        assert "ClosedPeriods" in particle.integration_status
+        assert particle.omega_theta is not None
+        assert particle.omega_zeta is not None
+        assert particle.qkinetic is not None
+
 
 class TestPoloidalParticle:
 
@@ -299,6 +307,12 @@ class TestPoloidalParticle:
                 ]
             ),
         )
+        cls.equilibrium_unperturbed = Equilibrium(
+            qfactor=ParabolicQfactor(1.1, 3.9, LastClosedFluxSurface("Poloidal", 0.45)),
+            current=LarCurrent(),
+            bfield=LarBfield(),
+            perturbation=Perturbation([]),
+        )
         cls.initial = InitialConditions.boozer(
             t0=0,
             flux0=InitialFlux("Poloidal", 0.01),
@@ -313,20 +327,6 @@ class TestPoloidalParticle:
         particle.integrate(
             self.equilibrium,
             (0, 80000),
-        )
-        assert particle.integration_status == "Integrated"
-        _check_valid_integration(particle)
-
-    @pytest.mark.skip(reason="problem with ErrorAdaptiveStep")
-    def test_integration_error_adaptive_step(self):
-        particle = Particle(self.initial)
-        particle.integrate(
-            self.equilibrium,
-            (0, 6000),
-            stepping_method="ErrorAdaptiveStep",
-            first_step=1e-5,
-            error_rel_tol=1e-18,
-            error_abs_tol=1e-20,
         )
         assert particle.integration_status == "Integrated"
         _check_valid_integration(particle)
@@ -394,6 +394,22 @@ class TestPoloidalParticle:
             )
         )
         _check_valid_intersection(particle, intersect_params)
+
+    def test_close(self):
+        initial = InitialConditions.boozer(
+            t0=0,
+            flux0=InitialFlux("Toroidal", 0.02),
+            theta0=1,
+            zeta0=0,
+            rho0=1e-6,
+            mu0=1e-6,
+        )
+        particle = Particle(initial)
+        particle.close(self.equilibrium_unperturbed, 1)
+        assert "ClosedPeriods" in particle.integration_status
+        assert particle.omega_theta is not None
+        assert particle.omega_zeta is not None
+        assert particle.qkinetic is not None
 
 
 def _check_valid_integration(particle: Particle):

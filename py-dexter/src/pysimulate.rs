@@ -12,9 +12,9 @@ use pyo3::types::{PyTuple, PyType};
 
 use crate::pyerror::PySimulationError;
 use crate::{
-    generic_particle_integrate_impl, generic_particle_intersect_impl, generic_queue_integrate_impl,
-    generic_queue_intersect_impl, py_debug_impl, py_export_getter, py_export_pub_field,
-    py_get_enum_string, py_get_numpy1D, py_repr_impl,
+    generic_particle_close_impl, generic_particle_integrate_impl, generic_particle_intersect_impl,
+    generic_queue_integrate_impl, generic_queue_intersect_impl, py_debug_impl, py_export_getter,
+    py_export_pub_field, py_get_enum_string, py_get_numpy1D, py_repr_impl,
 };
 use crate::{py_get_numpy1D_fallible, pylibrium::*};
 
@@ -200,6 +200,9 @@ py_export_getter!(PyParticle, steps_stored, usize);
 py_export_getter!(PyParticle, initial_energy, Option<f64>);
 py_export_getter!(PyParticle, final_energy, Option<f64>);
 py_export_getter!(PyParticle, energy_var, Option<f64>);
+py_export_getter!(PyParticle, omega_theta, Option<f64>);
+py_export_getter!(PyParticle, omega_zeta, Option<f64>);
+py_export_getter!(PyParticle, qkinetic, Option<f64>);
 py_get_numpy1D!(PyParticle, t_array);
 py_get_numpy1D!(PyParticle, psi_array);
 py_get_numpy1D!(PyParticle, psip_array);
@@ -458,6 +461,35 @@ mod py_particle_generics_impl {
     generic_particle_intersect_impl!(__intersect_ncdQ_ncdC_larB_ncdP, ncdQ, ncdC, larB, ncdP);
     generic_particle_intersect_impl!(__intersect_ncdQ_ncdC_ncdB_cosP, ncdQ, ncdC, ncdB, cosP);
     generic_particle_intersect_impl!(__intersect_ncdQ_ncdC_ncdB_ncdP, ncdQ, ncdC, ncdB, ncdP);
+
+    // ================= Close
+
+    generic_particle_close_impl!(__close_uniQ_larC_larB_cosP, uniQ, larC, larB, cosP);
+    generic_particle_close_impl!(__close_uniQ_larC_larB_ncdP, uniQ, larC, larB, ncdP);
+    generic_particle_close_impl!(__close_uniQ_larC_ncdB_cosP, uniQ, larC, ncdB, cosP);
+    generic_particle_close_impl!(__close_uniQ_larC_ncdB_ncdP, uniQ, larC, ncdB, ncdP);
+    generic_particle_close_impl!(__close_uniQ_ncdC_larB_cosP, uniQ, ncdC, larB, cosP);
+    generic_particle_close_impl!(__close_uniQ_ncdC_larB_ncdP, uniQ, ncdC, larB, ncdP);
+    generic_particle_close_impl!(__close_uniQ_ncdC_ncdB_cosP, uniQ, ncdC, ncdB, cosP);
+    generic_particle_close_impl!(__close_uniQ_ncdC_ncdB_ncdP, uniQ, ncdC, ncdB, ncdP);
+
+    generic_particle_close_impl!(__close_parQ_larC_larB_cosP, parQ, larC, larB, cosP);
+    generic_particle_close_impl!(__close_parQ_larC_larB_ncdP, parQ, larC, larB, ncdP);
+    generic_particle_close_impl!(__close_parQ_larC_ncdB_cosP, parQ, larC, ncdB, cosP);
+    generic_particle_close_impl!(__close_parQ_larC_ncdB_ncdP, parQ, larC, ncdB, ncdP);
+    generic_particle_close_impl!(__close_parQ_ncdC_larB_cosP, parQ, ncdC, larB, cosP);
+    generic_particle_close_impl!(__close_parQ_ncdC_larB_ncdP, parQ, ncdC, larB, ncdP);
+    generic_particle_close_impl!(__close_parQ_ncdC_ncdB_cosP, parQ, ncdC, ncdB, cosP);
+    generic_particle_close_impl!(__close_parQ_ncdC_ncdB_ncdP, parQ, ncdC, ncdB, ncdP);
+
+    generic_particle_close_impl!(__close_ncdQ_larC_larB_cosP, ncdQ, larC, larB, cosP);
+    generic_particle_close_impl!(__close_ncdQ_larC_larB_ncdP, ncdQ, larC, larB, ncdP);
+    generic_particle_close_impl!(__close_ncdQ_larC_ncdB_cosP, ncdQ, larC, ncdB, cosP);
+    generic_particle_close_impl!(__close_ncdQ_larC_ncdB_ncdP, ncdQ, larC, ncdB, ncdP);
+    generic_particle_close_impl!(__close_ncdQ_ncdC_larB_cosP, ncdQ, ncdC, larB, cosP);
+    generic_particle_close_impl!(__close_ncdQ_ncdC_larB_ncdP, ncdQ, ncdC, larB, ncdP);
+    generic_particle_close_impl!(__close_ncdQ_ncdC_ncdB_cosP, ncdQ, ncdC, ncdB, cosP);
+    generic_particle_close_impl!(__close_ncdQ_ncdC_ncdB_ncdP, ncdQ, ncdC, ncdB, ncdP);
 
     // ================= Integrate Queue
 

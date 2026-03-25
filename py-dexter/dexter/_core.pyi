@@ -497,9 +497,12 @@ class _PyParticle:
     integration_status: IntegrationStatus
     steps_taken: int
     steps_stored: int
-    initial_energy: float | None
-    final_energy: float | None
-    energy_var: float | None
+    initial_energy: Optional[float]
+    final_energy: Optional[float]
+    energy_var: Optional[float]
+    omega_theta: Optional[float]
+    omega_zeta: Optional[float]
+    qkinetic: Optional[float]
     t_array: Array1
     psi_array: Array1
     psip_array: Array1
@@ -538,6 +541,24 @@ class _PyParticle:
         bfield: _PyBfield,
         perturbation: _PyPerturbation,
         intersect_params: _PyIntersectParams,
+        *,
+        stepping_method: Optional[SteppingMethod],
+        max_steps: Optional[int],
+        first_step: Optional[float],
+        safety_factor: Optional[float],
+        energy_rel_tol: Optional[float],
+        energy_abs_tol: Optional[float],
+        error_rel_tol: Optional[float],
+        error_abs_tol: Optional[float],
+    ): ...
+    def close(
+        self,
+        /,
+        qfactor: _PyQfactor,
+        current: _PyCurrent,
+        bfield: _PyBfield,
+        perturbation: _PyPerturbation,
+        periods: int,
         *,
         stepping_method: Optional[SteppingMethod],
         max_steps: Optional[int],

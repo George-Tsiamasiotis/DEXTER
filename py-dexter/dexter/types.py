@@ -109,8 +109,11 @@ r"""The integration status of a Particle.
       not defined.
     - `OutOfBoundsInitialization`: InitialConditions where out of bounds.
     - `Integrated`: Reached the end of the integration successfully.
-    - `Escaped`: Escaped the last closed flux surface (LCFS).
     - `Intersected`: Intersections calculation successful.
+    - `ClosedPeriods(..)`: Integrated for a certain amount of θ-ψ periods.
+    - `Escaped`: Escaped the last closed flux surface (LCFS).
+    - `ModStateEscaped`: Escaped when performing a step on the modified system. This indicates that
+      something is wrong in Hénon’s trick implementation.
     - `IntersectedTimedOut`: Calculated some intersections correctly but also timed out.
     - `InvalidIntersections`: Calculated invalid intersections.
     - `TimedOut(...)`: Timed out after a maximum number of steps.
