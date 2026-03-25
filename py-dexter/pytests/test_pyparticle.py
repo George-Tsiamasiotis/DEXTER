@@ -286,7 +286,7 @@ class TestToroidalParticle:
             mu0=1e-6,
         )
         particle = Particle(initial)
-        particle.close(self.equilibrium_unperturbed, 1)
+        particle.close(self.equilibrium_unperturbed)
         assert particle.orbit_type == "Trapped"
         assert "ClosedPeriods" in particle.integration_status
         assert particle.omega_theta is not None
@@ -408,7 +408,7 @@ class TestPoloidalParticle:
             mu0=1e-6,
         )
         particle = Particle(initial)
-        particle.close(self.equilibrium_unperturbed, 1)
+        particle.close(self.equilibrium_unperturbed)
         assert "ClosedPeriods" in particle.integration_status
         assert particle.orbit_type == "Trapped"
         assert particle.omega_theta is not None

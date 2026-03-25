@@ -164,7 +164,10 @@ pub enum OrbitType {
     CoPassing,
     /// `ρ<0` during the whole integration.
     CuPassing,
-    /// `|θmax - θmin| < 2π`.
+    /// `|θmax - θmin| < 0.999 * 2π`. The `0.999` is needed since passing particles also have a span
+    /// of `2π` when integrated for a single period.
+    ///
+    /// This might cut off some trapped particles very close to the separatrix.
     Trapped,
     /// Failed to classify the particle's orbit into a valid type.
     Unclassified,

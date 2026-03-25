@@ -8,8 +8,8 @@ use std::time::Duration;
 
 use indicatif::{ProgressBar, ProgressStyle};
 
-use crate::Queue;
 use crate::{IntegrationStatus, IntersectParams};
+use crate::{OrbitType, Queue};
 
 /// The [`Queue::integrate`] progress bar style.
 const INTEGRATE_PBAR_STYLE: &str = concat!(
@@ -38,6 +38,20 @@ const INTERSECT_PBAR_STYLE: &str = concat!(
 
 /// The [`Queue::intersect`] progress bar chars (filled, current, to do).
 const INTERSECT_PROGRESS_CHARS: &str = "#>-";
+
+/// The [`Queue::close`] progress bar style.
+const CLOSE_PBAR_STYLE: &str = concat!(
+    "{msg}\n", // for Stats
+    "🕜 {elapsed_precise} ",
+    "{prefix} ",
+    "[{wide_bar:.cyan/blue}] ",
+    "{spinner:.bold} ",
+    "{pos:>2}/{len:2} ",
+    "({eta}) ",
+);
+
+/// The [`Queue::close`] progress bar chars (filled, current, to do).
+const CLOSE_PROGRESS_CHARS: &str = "#>-";
 
 // ===============================================================================================
 // ===============================================================================================
@@ -217,6 +231,117 @@ impl IntersectPbar {
 
     pub(crate) fn finish(&self) {
         self.pbar.println("👌 Intersection Done");
+        self.pbar.force_draw();
+        self.pbar.finish();
+    }
+}
+
+// ===============================================================================================
+// ===============================================================================================
+
+/// [`Queue::close`] progress bar helper struct.
+pub(crate) struct ClosePbar {
+    pbar: ProgressBar,
+    length: usize,
+    // Live statistics
+    out_of_bounds: Arc<AtomicUsize>,
+    closed_periods: Arc<AtomicUsize>,
+    escaped: Arc<AtomicUsize>,
+    timed_out: Arc<AtomicUsize>,
+    failed: Arc<AtomicUsize>,
+    // Orbit types
+    co_passing: Arc<AtomicUsize>,
+    cu_passing: Arc<AtomicUsize>,
+    trapped: Arc<AtomicUsize>,
+    unclassified: Arc<AtomicUsize>,
+    undefined: Arc<AtomicUsize>,
+}
+
+impl ClosePbar {
+    /// Initialize the pre-configured progress bar.
+    pub(crate) fn new(queue: &Queue) -> Self {
+        let style = ProgressStyle::with_template(CLOSE_PBAR_STYLE)
+            .unwrap_or_else(|_| ProgressStyle::default_bar())
+            .progress_chars(CLOSE_PROGRESS_CHARS);
+        let pbar = ProgressBar::new(queue.particles.len() as u64).with_style(style);
+        pbar.enable_steady_tick(Duration::from_millis(100));
+        Self {
+            pbar,
+            length: queue.particles.len(),
+            out_of_bounds: Arc::default(),
+            closed_periods: Arc::default(),
+            escaped: Arc::default(),
+            timed_out: Arc::default(),
+            failed: Arc::default(),
+            co_passing: Arc::default(),
+            cu_passing: Arc::default(),
+            trapped: Arc::default(),
+            unclassified: Arc::default(),
+            undefined: Arc::default(),
+        }
+    }
+
+    /// Prints an informative message before the ticking starts.
+    pub(crate) fn print_prelude(&self) {
+        self.pbar.println(format!(
+            "🚀 Using {} threads for {} particles",
+            rayon::current_num_threads(),
+            self.length
+        ));
+        self.pbar.println("🗿 Closing orbits");
+    }
+
+    /// Increases the wrapped pbar, as well as the live statistics.
+    pub(crate) fn inc(&self, status: &IntegrationStatus, orbit_type: &OrbitType) {
+        self.pbar.inc(1);
+        let _: usize = match *status {
+            IntegrationStatus::OutOfBoundsInitialization => self.out_of_bounds.fetch_add(1, SeqCst),
+            IntegrationStatus::ClosedPeriods(..) => self.closed_periods.fetch_add(1, SeqCst),
+            IntegrationStatus::Escaped => self.escaped.fetch_add(1, SeqCst),
+            IntegrationStatus::TimedOut(..) => self.timed_out.fetch_add(1, SeqCst),
+            IntegrationStatus::Failed(..) => self.failed.fetch_add(1, SeqCst),
+            _ => unreachable!("no other possible status"),
+        };
+        let _: usize = match *orbit_type {
+            OrbitType::CoPassing => self.co_passing.fetch_add(1, SeqCst),
+            OrbitType::CuPassing => self.cu_passing.fetch_add(1, SeqCst),
+            OrbitType::Trapped => self.trapped.fetch_add(1, SeqCst),
+            OrbitType::Unclassified => self.unclassified.fetch_add(1, SeqCst),
+            OrbitType::Undefined => self.undefined.fetch_add(1, SeqCst),
+        };
+    }
+
+    /// Updates the printed live statistics.
+    pub(crate) fn print_stats(&self) {
+        self.pbar.set_message(format!(
+            concat!(
+                "======== 📊 Stats ========\n",
+                "ℹ️ OutOfBounds     = {}\n",
+                "✅ Closed          = {}\n",
+                "   ➕ Co-passing   = {}\n",
+                "   ➖ Cu-passing   = {}\n",
+                "   🪤 Trapped      = {}\n",
+                "   ❓ Unclassified = {}\n",
+                "   ❔ Undefined    = {}\n",
+                "🏃 Escaped         = {}\n",
+                "⌛ Timed-out       = {}\n",
+                "🥀 Failed          = {}",
+            ),
+            self.out_of_bounds.load(SeqCst),
+            self.closed_periods.load(SeqCst),
+            self.co_passing.load(SeqCst),
+            self.cu_passing.load(SeqCst),
+            self.trapped.load(SeqCst),
+            self.unclassified.load(SeqCst),
+            self.undefined.load(SeqCst),
+            self.escaped.load(SeqCst),
+            self.timed_out.load(SeqCst),
+            self.failed.load(SeqCst),
+        ));
+    }
+
+    pub(crate) fn finish(&self) {
+        self.pbar.println("👌 Period closing done");
         self.pbar.force_draw();
         self.pbar.finish();
     }

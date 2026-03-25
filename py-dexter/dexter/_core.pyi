@@ -672,6 +672,24 @@ class _PyQueue:
         error_rel_tol: Optional[float],
         error_abs_tol: Optional[float],
     ): ...
+    def close(
+        self,
+        /,
+        qfactor: _PyQfactor,
+        current: _PyCurrent,
+        bfield: _PyBfield,
+        perturbation: _PyPerturbation,
+        periods: int,
+        *,
+        stepping_method: Optional[SteppingMethod],
+        max_steps: Optional[int],
+        first_step: Optional[float],
+        safety_factor: Optional[float],
+        energy_rel_tol: Optional[float],
+        energy_abs_tol: Optional[float],
+        error_rel_tol: Optional[float],
+        error_abs_tol: Optional[float],
+    ): ...
     def __getitem__(self, index: int) -> _PyParticle: ...
     def __str__(self) -> str: ...
     def __repr__(self) -> str: ...

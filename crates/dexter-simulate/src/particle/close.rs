@@ -20,6 +20,8 @@ use super::{IntegrationStatus, Intersection};
 
 /// The relative tolerance of the `ψ-ψ0` check.
 const PSI_RELATIVE_TOLERANCE: f64 = 1e-6;
+/// See [`OrbitType::Trapped`].
+const TRAPPED_CLASSIFICATION_CUTOFF: f64 = 0.999;
 
 // ===============================================================================================
 
@@ -65,6 +67,7 @@ pub(super) fn close<Q, C, B, H>(
 
     // `state1` has been evaluated on the initial point
     particle.initial_energy = Some(state1.energy());
+    let theta_dot0_sign = state1.theta_dot.signum();
     let theta0 = state1.theta;
     let psi0 = state1.psi;
 
@@ -104,7 +107,9 @@ pub(super) fn close<Q, C, B, H>(
         // Avoid stopping the particle at the start of the integration. When the `stepping_method`
         // is `EnergyAdaptiveStep`, the step size grows almost exponentially, so 10 steps should be
         // enough for `ψ` to move sufficiently far from `ψ0`.
-        if closed_period(&state1, &state2, theta0, psi0) && particle.steps_taken() > 10 {
+        if closed_period(&state1, &state2, theta0, psi0, theta_dot0_sign)
+            && particle.steps_taken() > 10
+        {
             closed_periods += 1;
         };
 
@@ -179,13 +184,22 @@ pub(super) fn close<Q, C, B, H>(
 
 /// Checks if `state1` and `state2` stand 'left and right' of the period closing point. This
 /// indicates that the particle reached its starting point.
-fn closed_period(state1: &GCState, state2: &GCState, theta0: f64, psi0: f64) -> bool {
+#[expect(clippy::float_cmp, reason = "sign check")]
+fn closed_period(
+    state1: &GCState,
+    state2: &GCState,
+    theta0: f64,
+    psi0: f64,
+    theta_dot0_sign: f64,
+) -> bool {
     // Short-circuit the `ψ` check since `intersected()` can be significantly more expensive to
     // calculate.
     //
     // It should probably take into account the `θ` direction too.
-    relative_eq!(state1.psi, psi0, epsilon = PSI_RELATIVE_TOLERANCE)
+    (relative_eq!(state1.psi, psi0, epsilon = PSI_RELATIVE_TOLERANCE)
+        || intersected(state1.psi, state2.psi, psi0))
         && intersected(state1.theta, state2.theta, theta0)
+        && state1.theta_dot.signum() == theta_dot0_sign
 }
 
 /// Classifies the particle's [`OrbitType`].
@@ -201,7 +215,7 @@ fn classify_orbit(particle: &mut Particle) {
         particle.orbit_type = OrbitType::Unclassified;
         return;
     };
-    if (theta_max - theta_min).abs() < TAU {
+    if (theta_max - theta_min).abs() < TAU * TRAPPED_CLASSIFICATION_CUTOFF {
         particle.orbit_type = OrbitType::Trapped;
         return;
     }
@@ -229,12 +243,13 @@ fn classify_orbit(particle: &mut Particle) {
 /// Also takes account the number of periods closed.
 fn calculate_frequencies(particle: &mut Particle, periods: usize) {
     let periodsf64 = periods as f64;
-    let t0 = particle.t_array().first().copied().expect("exists");
-    let tf = particle.t_array().last().copied().expect("exists");
+    // Use `NaN`for particles with invalid initial conditions or out of bounds initialization.
+    let t0 = particle.t_array().first().copied().unwrap_or(f64::NAN);
+    let tf = particle.t_array().last().copied().unwrap_or(f64::NAN);
     let theta_period = tf - t0;
 
-    let zeta0 = particle.zeta_array().first().copied().expect("exists");
-    let zetaf = particle.zeta_array().last().copied().expect("exists");
+    let zeta0 = particle.zeta_array().first().copied().unwrap_or(f64::NAN);
+    let zetaf = particle.zeta_array().last().copied().unwrap_or(f64::NAN);
     let dzeta = zetaf - zeta0;
 
     let omega_theta = TAU / theta_period / periodsf64;

@@ -7,7 +7,7 @@ mod stats;
 pub use initials::QueueInitialConditions;
 pub use initials::{poloidal_fluxes, toroidal_fluxes};
 
-use pbars::{IntegratePbar, IntersectPbar};
+use pbars::{ClosePbar, IntegratePbar, IntersectPbar};
 use stats::QueueStats;
 
 use rayon::iter::{IntoParallelRefMutIterator, ParallelIterator};
@@ -233,6 +233,77 @@ impl Queue {
             );
             pbar.inc(&particle.integration_status());
             pbar.print_stats();
+        });
+        pbar.finish();
+
+        self.routine = Routine::Intersect;
+        self.stats = QueueStats::from_completed_queue(self);
+    }
+
+    /// Integrates all the contained particles for a specific number of periods and calculates
+    /// their frequencies.
+    ///
+    /// # Example
+    /// ```
+    /// # use dexter_equilibrium::*;
+    /// # use dexter_simulate::*;
+    /// # use std::path::PathBuf;
+    /// #
+    /// let lcfs = LastClosedFluxSurface::Toroidal(0.6);
+    /// let qfactor = ParabolicQfactor::new(1.1, 4.2, lcfs);
+    /// let current = LarCurrent::new();
+    /// let bfield = LarBfield::new();
+    /// let perturbation = Perturbation::zero();
+    ///
+    /// use InitialFlux::*;
+    /// let initial_conditions = QueueInitialConditions::boozer(
+    ///     &[0.0, 0.1],
+    ///     &[Toroidal(0.15), Toroidal(0.3)],
+    ///     &[0.0, 0.1],
+    ///     &[0.0, 0.0],
+    ///     &[1e-4, 2e-4],
+    ///     &[7e-6, 7e-6],
+    /// )?;
+    /// let mut queue = Queue::new(&initial_conditions);
+    /// queue.close(
+    ///     &qfactor,
+    ///     &current,
+    ///     &bfield,
+    ///     &perturbation,
+    ///     1,
+    ///     &SolverParams::default(),
+    /// );
+    /// # Ok::<_, SimulationError>(())
+    /// ```
+    pub fn close<Q, C, B, H>(
+        &mut self,
+        qfactor: &Q,
+        current: &C,
+        bfield: &B,
+        perturbation: &Perturbation<H>,
+        periods: usize,
+        solver_params: &SolverParams,
+    ) where
+        Q: Qfactor + FluxCommute + Send + Sync,
+        C: Current + Send + Sync,
+        B: Bfield + Send + Sync,
+        H: Harmonic + Send + Sync,
+    {
+        let pbar = ClosePbar::new(self);
+        pbar.print_prelude();
+
+        self.particles.par_iter_mut().for_each(|particle| {
+            particle.close(
+                qfactor,
+                current,
+                bfield,
+                perturbation,
+                periods,
+                solver_params,
+            );
+            pbar.inc(&particle.integration_status(), &particle.orbit_type());
+            pbar.print_stats();
+            particle.discard_arrays();
         });
         pbar.finish();
 

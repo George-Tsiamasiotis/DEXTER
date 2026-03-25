@@ -131,7 +131,9 @@ r"""A particle's orbit type, calculated through the [`dexter.Particle.close()`] 
 
     - `CoPassing`: $\rho>0$ during the whole integration.
     - `CuPassing`: $\rho<0$ during the whole integration.
-    - `Trapped`: $|\theta_{max} - \theta_{min}| < 2\pi$.
+    - `Trapped`: $|\theta_{max} - \theta_{min}| < 2\pi$ The $0.999$ is needed since passing particles
+      also have a span of $2\pi$ when integrated for a single period. This might cut off some trapped
+      particles very close to the separatrix..
     - `Unclassified`: Failed to classify the particle’s orbit into a valid type.
     - `Undefined`: Particle has not been integrated.
 """

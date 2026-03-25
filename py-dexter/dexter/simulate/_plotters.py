@@ -6,9 +6,10 @@ from math import floor, log10, sqrt
 from math import pi as PI
 from warnings import warn
 from cycler import cycler
+from matplotlib.patches import Patch
 
 from dexter._core import _PyParticle, _PyQueue
-from dexter import Equilibrium, LarGeometry
+from dexter import Equilibrium, LarGeometry, OrbitType
 
 dpi = 120
 figsize = (10, 7)
@@ -24,7 +25,13 @@ CARTESIAN_POINCARE_INITIAL_KW = {
     "alpha": 0.4,
     "zorder": -2,
 }
-RZ_POINCARE_SCATTER_KW = {"s": 0.3, "marker": "o"}
+RZ_POINCARE_PLOT_KW = {
+    "marker": ".",
+    "markersize": 0.4,
+    "color": "blue",
+    "alpha": 0.4,
+    "linestyle": "",
+}
 RZ_POINCARE_INITIAL_KW = {
     "c": "k",
     "marker": "x",
@@ -32,6 +39,12 @@ RZ_POINCARE_INITIAL_KW = {
     "alpha": 0.4,
     "zorder": -2,
 }
+QKINETIC_POINCARE_FIG_KW = {"figsize": (9, 6), "layout": "constrained", "dpi": 120}
+COPASSING_COLOR = "xkcd:light purple"
+CUPASSING_COLOR = "xkcd:navy blue"
+TRAPPED_COLOR = "xkcd:blue"
+UNDEFINED_COLOR = "xkcd:coral"
+UNCLASSIFIED_COLOR = "xkcd:crimson"
 
 
 class _ParticlePlotter:
@@ -397,7 +410,7 @@ class _QueuePlotter:
                 flux = particle.psip_array
             rlab = rlab_of_flux(flux, theta)
             zlab = zlab_of_flux(flux, theta)
-            ax.scatter(rlab, zlab, **RZ_POINCARE_SCATTER_KW)
+            ax.plot(rlab, zlab, **RZ_POINCARE_PLOT_KW)
             if initial:
                 init = particle.initial_conditions
                 psi0 = init.flux0.value
@@ -427,6 +440,94 @@ class _QueuePlotter:
         plt.show()
         plt.close()
 
+    def plot_qkinetic_radial_sweep(self):
+        r"""Plots the contained particles' calculated $q_{kinetic}$ with respect to their $\psi_0/\psi_{p,0}$.
+
+        This is useful for low energy particles and magnetic field lines, where
+        $\Delta\psi \approx $\Delta\psi_p \approx 0$.
+        """
+
+        fig = plt.figure(**QKINETIC_POINCARE_FIG_KW)
+        ax = fig.add_subplot()
+
+        if self._rust.particles[0].initial_conditions.flux0.kind == "Toroidal":
+            flux_coord = r"$\psi$"
+        else:
+            flux_coord = r"$\psi_p$"
+
+        fluxes = np.asarray(
+            [p.initial_conditions.flux0.value for p in self._rust.particles]
+        )
+        qkinetics = np.asarray([p.qkinetic for p in self._rust.particles])
+        colors = np.asarray([orbit_color(p.orbit_type) for p in self._rust.particles])
+        ax.scatter(fluxes, qkinetics, c=colors, s=1)
+
+        copassing = Patch(color=COPASSING_COLOR, label="Copassing")
+        cupassing = Patch(color=CUPASSING_COLOR, label="CuPassing")
+        trapped = Patch(color=TRAPPED_COLOR, label="Trapped")
+        undefined = Patch(color=UNDEFINED_COLOR, label="Undefined")
+        unclassified = Patch(color=UNCLASSIFIED_COLOR, label="Unclassified")
+
+        ax.set_xlabel(rf"{flux_coord} $[Normalized]$")
+        ax.set_ylabel("$q_{kinetic}$")
+        ax.set_title("$q_{kinetic}-$" + flux_coord)
+        ax.legend(handles=[trapped, copassing, cupassing, undefined, unclassified])
+        ax.axhline(y=0, ls="--", lw=1.5, c="k")
+        ax.grid(True)
+
+        plt.show()
+
+    def plot_qkinetic_pzeta_sweep(self):
+        r"""Plots the contained particles' calculated $q_{kinetic}$ with respect to their $P_\zeta$."""
+
+        fig = plt.figure(**QKINETIC_POINCARE_FIG_KW)
+        ax = fig.add_subplot()
+
+        pzetas = np.asarray([p.initial_conditions.pzeta0 for p in self._rust.particles])
+        qkinetics = np.asarray([p.qkinetic for p in self._rust.particles])
+        colors = np.asarray([orbit_color(p.orbit_type) for p in self._rust.particles])
+        ax.scatter(pzetas, qkinetics, c=colors, s=1)
+
+        copassing = Patch(color=COPASSING_COLOR, label="Copassing")
+        cupassing = Patch(color=CUPASSING_COLOR, label="CuPassing")
+        trapped = Patch(color=TRAPPED_COLOR, label="Trapped")
+        undefined = Patch(color=UNDEFINED_COLOR, label="Undefined")
+        unclassified = Patch(color=UNCLASSIFIED_COLOR, label="Unclassified")
+
+        ax.set_xlabel(r"$P_\zeta\ [Normalized]$")
+        ax.set_ylabel("$q_{kinetic}$")
+        ax.set_title(r"$q_{kinetic}-P_\zeta$")
+        ax.legend(handles=[trapped, copassing, cupassing, undefined, unclassified])
+        ax.axhline(y=0, ls="--", lw=1.5, c="k")
+        ax.grid(True)
+
+        plt.show()
+
+    def plot_qkinetic_energy_sweep(self):
+
+        fig = plt.figure(**QKINETIC_POINCARE_FIG_KW)
+        ax = fig.add_subplot()
+
+        energies = np.asarray([p.initial_energy for p in self._rust.particles])
+        qkinetics = np.asarray([p.qkinetic for p in self._rust.particles])
+        colors = np.asarray([orbit_color(p.orbit_type) for p in self._rust.particles])
+        ax.scatter(energies, qkinetics, c=colors, s=1)
+
+        copassing = Patch(color=COPASSING_COLOR, label="Copassing")
+        cupassing = Patch(color=CUPASSING_COLOR, label="CuPassing")
+        trapped = Patch(color=TRAPPED_COLOR, label="Trapped")
+        undefined = Patch(color=UNDEFINED_COLOR, label="Undefined")
+        unclassified = Patch(color=UNCLASSIFIED_COLOR, label="Unclassified")
+
+        ax.set_xlabel(rf"$Energy\ [Normalized]$")
+        ax.set_ylabel("$q_{kinetic}$")
+        ax.set_title("$q_{kinetic}-Energy$")
+        ax.legend(handles=[trapped, copassing, cupassing, undefined, unclassified])
+        ax.axhline(y=0, ls="--", lw=1.5, c="k")
+        ax.grid(True)
+
+        plt.show()
+
 
 # ================================================================================================
 
@@ -436,3 +537,17 @@ def pi_mod(arr: np.ndarray):
     a = np.mod(arr, 2 * np.pi)
     a = a - 2 * np.pi * (a > np.pi)
     return a
+
+
+def orbit_color(orbit_type: OrbitType) -> str:
+    match orbit_type:
+        case "CoPassing":
+            return COPASSING_COLOR
+        case "CuPassing":
+            return CUPASSING_COLOR
+        case "Trapped":
+            return TRAPPED_COLOR
+        case "Unclassified":
+            return UNCLASSIFIED_COLOR
+        case "Undefined":
+            return UNDEFINED_COLOR
