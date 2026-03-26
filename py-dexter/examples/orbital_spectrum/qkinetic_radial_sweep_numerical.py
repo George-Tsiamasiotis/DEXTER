@@ -2,6 +2,7 @@
 
 import numpy as np
 import dexter as dex
+import matplotlib.pyplot as plt
 
 # Equilibrium setup
 equilibrium = dex.numerical_equilibrium("data.nc", "Steffen", "Bicubic")
@@ -24,4 +25,10 @@ queue = dex.Queue(initial_conditions)
 
 # Run
 queue.close(equilibrium=equilibrium)
-queue.plot_qkinetic_radial_sweep()
+queue.plot_qkinetic_radial_sweep(show=False)
+
+# Plot reversal
+ax = queue.ax
+ax.axvline(x=0.091818499, c="r", linewidth=2)
+
+plt.show()

@@ -7,6 +7,9 @@ from math import pi as PI
 from warnings import warn
 from cycler import cycler
 from matplotlib.patches import Patch
+from matplotlib.figure import Figure
+from matplotlib.axes import Axes
+from typing import Any
 
 from dexter._core import _PyParticle, _PyQueue
 from dexter import Equilibrium, LarGeometry, OrbitType
@@ -50,9 +53,18 @@ UNCLASSIFIED_COLOR = "xkcd:crimson"
 class _ParticlePlotter:
     """Provides plotting functions for the Particle Class."""
 
+    fig: Figure
+    ax: Axes
+    axes: Any  # list[Axes]
+
     _rust: _PyParticle
 
-    def plot_evolution(self, percentage: float = 100, downsample: bool = True):
+    def plot_evolution(
+        self,
+        percentage: float = 100,
+        downsample: bool = True,
+        show: bool = True,
+    ):
         """Plots the time evolution of an integrated Particle.
 
         Parameters
@@ -66,6 +78,8 @@ class _ParticlePlotter:
             performance. Downsampling is done by increasing the [::step] just
             enough so that the final number of points is more than 50.000.
             Defaults to True
+        show
+            Whether or not to call `plt.show()`. Defaults to True.
         """
 
         if self._rust.steps_stored == 0:
@@ -104,51 +118,58 @@ class _ParticlePlotter:
 
         # ===========================
 
-        fig = plt.figure(figsize=figsize, layout="constrained", dpi=dpi)
+        self.fig = plt.figure(figsize=figsize, layout="constrained", dpi=dpi)
 
-        axes: list = fig.subplots(8, 1, sharex=True)
-        for ax in axes:
+        self.axes = self.fig.subplots(8, 1, sharex=True)
+        for ax in self.axes:
             ax.yaxis.set_ticks_position("right")
             ax.yaxis.set_label_position("left")
 
-        axes[0].scatter(t, psi, **SCATTER_KW)
-        axes[1].scatter(t, psip, **SCATTER_KW)
-        axes[2].scatter(t, theta, **SCATTER_KW)
-        axes[3].scatter(t, zeta, **SCATTER_KW)
-        axes[4].scatter(t, rho, **SCATTER_KW)
-        axes[5].scatter(t, ptheta, **SCATTER_KW)
-        axes[6].scatter(t, pzeta, **SCATTER_KW)
-        axes[7].scatter(t, energy, **SCATTER_KW)
+        self.axes[0].scatter(t, psi, **SCATTER_KW)
+        self.axes[1].scatter(t, psip, **SCATTER_KW)
+        self.axes[2].scatter(t, theta, **SCATTER_KW)
+        self.axes[3].scatter(t, zeta, **SCATTER_KW)
+        self.axes[4].scatter(t, rho, **SCATTER_KW)
+        self.axes[5].scatter(t, ptheta, **SCATTER_KW)
+        self.axes[6].scatter(t, pzeta, **SCATTER_KW)
+        self.axes[7].scatter(t, energy, **SCATTER_KW)
 
-        axes[0].set_ylabel(r"$\psi$", **LABEL_KW)
-        axes[1].set_ylabel(r"$\psi_p$", **LABEL_KW)
-        axes[2].set_ylabel(r"$\theta$", **LABEL_KW)
-        axes[3].set_ylabel(r"$\zeta$", **LABEL_KW)
-        axes[4].set_ylabel(r"$\rho_{||}$", **LABEL_KW)
-        axes[5].set_ylabel(r"$P_\theta$", **LABEL_KW)
-        axes[6].set_ylabel(r"$P_\zeta$", **LABEL_KW)
-        axes[7].set_ylabel(r"$E$", **LABEL_KW)
-        axes[7].set_xlabel(r"$t[Normalized]$", **LABEL_KW)
+        self.axes[0].set_ylabel(r"$\psi$", **LABEL_KW)
+        self.axes[1].set_ylabel(r"$\psi_p$", **LABEL_KW)
+        self.axes[2].set_ylabel(r"$\theta$", **LABEL_KW)
+        self.axes[3].set_ylabel(r"$\zeta$", **LABEL_KW)
+        self.axes[4].set_ylabel(r"$\rho_{||}$", **LABEL_KW)
+        self.axes[5].set_ylabel(r"$P_\theta$", **LABEL_KW)
+        self.axes[6].set_ylabel(r"$P_\zeta$", **LABEL_KW)
+        self.axes[7].set_ylabel(r"$E$", **LABEL_KW)
+        self.axes[7].set_xlabel(r"$t[Normalized]$", **LABEL_KW)
 
         # Zoom out Pzeta plot
         if abs(np.std(pzeta)) < 1e-6:
-            ylim = np.array(axes[6].get_ylim())
-            axes[6].set_ylim(np.sort([ylim[0] / 3, ylim[1] * 3]).tolist())
+            ylim = np.array(self.axes[6].get_ylim())
+            self.axes[6].set_ylim(np.sort([ylim[0] / 3, ylim[1] * 3]).tolist())
         # Zoom out Energy plot
         if abs(np.std(energy)) < 1e-6:
-            ylim = np.array(axes[7].get_ylim())
-            axes[7].set_ylim(np.sort([ylim[0] / 2, ylim[1] * 2]).tolist())
+            ylim = np.array(self.axes[7].get_ylim())
+            self.axes[7].set_ylim(np.sort([ylim[0] / 2, ylim[1] * 2]).tolist())
 
-        plt.show()
-        plt.close()
+        if show:
+            plt.show()
+            plt.close()
 
-    def plot_db_drift(self, equilibrium: Equilibrium):
+    def plot_db_drift(
+        self,
+        equilibrium: Equilibrium,
+        show: bool = True,
+    ):
         r"""Plots the magnetic field strength $B(\psi/\psi_p, \theta)$ along the particle's orbit.
 
         Parameters
         ----------
         equilibrium
             The equilibrium in which the particle was integrated.
+        show
+            Whether or not to call `plt.show()`. Defaults to True.
         """
 
         if self._rust.steps_stored == 0:
@@ -168,29 +189,34 @@ class _ParticlePlotter:
 
         # ===========================
 
-        fig = plt.figure(figsize=figsize, layout="constrained", dpi=dpi)
-        fig.suptitle(r"$\Delta B(\psi/\psi_p, \theta)\ drift\ during\ transit$")
+        self.fig = plt.figure(figsize=figsize, layout="constrained", dpi=dpi)
+        self.fig.suptitle(r"$\Delta B(\psi/\psi_p, \theta)\ drift\ during\ transit$")
 
-        axes: list = fig.subplots(4, 1, sharex=True)
-        for ax in axes:
+        self.axes = self.fig.subplots(4, 1, sharex=True)
+        for ax in self.axes:
             ax.yaxis.set_ticks_position("right")
             ax.yaxis.set_label_position("left")
 
-        axes[0].scatter(t, b, **SCATTER_KW)
-        axes[1].scatter(t, psi, **SCATTER_KW)
-        axes[2].scatter(t, psip, **SCATTER_KW)
-        axes[3].scatter(t, theta, **SCATTER_KW)
+        self.axes[0].scatter(t, b, **SCATTER_KW)
+        self.axes[1].scatter(t, psi, **SCATTER_KW)
+        self.axes[2].scatter(t, psip, **SCATTER_KW)
+        self.axes[3].scatter(t, theta, **SCATTER_KW)
 
-        axes[0].set_ylabel(r"$B$", **LABEL_KW)
-        axes[1].set_ylabel(r"$\psi$", **LABEL_KW)
-        axes[2].set_ylabel(r"$\psi_p$", **LABEL_KW)
-        axes[3].set_ylabel(r"$\theta$", **LABEL_KW)
-        axes[3].set_xlabel(r"$t[Normalized]$", **LABEL_KW)
+        self.axes[0].set_ylabel(r"$B$", **LABEL_KW)
+        self.axes[1].set_ylabel(r"$\psi$", **LABEL_KW)
+        self.axes[2].set_ylabel(r"$\psi_p$", **LABEL_KW)
+        self.axes[3].set_ylabel(r"$\theta$", **LABEL_KW)
+        self.axes[3].set_xlabel(r"$t[Normalized]$", **LABEL_KW)
 
-        plt.show()
-        plt.close()
+        if show:
+            plt.show()
+            plt.close()
 
-    def plot_poloidal_drift(self, percentage: float = 100):
+    def plot_poloidal_drift(
+        self,
+        percentage: float = 100,
+        show: bool = True,
+    ):
         r"""Plots the $\theta-\psi$ drift of the particle.
 
         Note
@@ -203,6 +229,8 @@ class _ParticlePlotter:
         ----------
         percentage: float
             The percentage of the evolution to plot. Defaults to 100.
+        show
+            Whether or not to call `plt.show()`. Defaults to True.
         """
 
         if self._rust.steps_stored == 0:
@@ -213,21 +241,26 @@ class _ParticlePlotter:
 
         # ===========================
 
-        fig = plt.figure(figsize=figsize, layout="constrained", dpi=dpi)
-        ax = fig.add_subplot(polar=True)
+        self.fig = plt.figure(figsize=figsize, layout="constrained", dpi=dpi)
+        self.ax = self.fig.add_subplot(polar=True)
 
-        ax.scatter(self._rust.theta_array, self._rust.psi_array, **SCATTER_KW)
-        ax.set_title(r"$\theta-\psi$ drift")
+        self.ax.scatter(self._rust.theta_array, self._rust.psi_array, **SCATTER_KW)
+        self.ax.set_title(r"$\theta-\psi$ drift")
 
-        ax.set_rorigin(0)  # type: ignore
-        ax.set_rlabel_position(22.5)  # type: ignore
+        self.ax.set_rorigin(0)  # type: ignore
+        self.ax.set_rlabel_position(22.5)  # type: ignore
 
-        plt.show()
-        plt.close()
+        if show:
+            plt.show()
+            plt.close()
 
 
 class _QueuePlotter:
     """Provides plotting functions for the Queue Class."""
+
+    fig: Figure
+    ax: Axes
+    axes: Any  # list[Axes]
 
     _rust: _PyQueue
 
@@ -235,6 +268,7 @@ class _QueuePlotter:
         self,
         initial: bool = False,
         color: bool = False,
+        show: bool = True,
     ):
         r"""Plots the $\zeta=const$ poincare map on the $\theta-\psi$ cartesian plane.
 
@@ -245,6 +279,8 @@ class _QueuePlotter:
         initial
             Whether or not to plot the initial points. Note that the initial $\theta_0$ should be equal to the
             intersection angle, and the initial flux coordinate should be $\psi$. Defaults to False.
+        show
+            Whether or not to call `plt.show()`. Defaults to True.
         """
 
         try:
@@ -258,41 +294,43 @@ class _QueuePlotter:
         if initial and self._rust[0].initial_conditions.flux0.kind == "Poloidal":
             raise ValueError("Cannot plot 'ψp0' in an 'theta-psi' plot")
 
-        fig = plt.figure(**CARTESIAN_POINCARE_FIG_KW)
-        ax = fig.add_subplot()
+        self.fig = plt.figure(**CARTESIAN_POINCARE_FIG_KW)
+        self.ax = self.fig.add_subplot()
 
         if color:
-            ax.set_prop_cycle(cycler(color="brcmk"))
+            self.ax.set_prop_cycle(cycler(color="brcmk"))
         else:
-            ax.set_prop_cycle(cycler(color=["blue"]))
+            self.ax.set_prop_cycle(cycler(color=["blue"]))
 
-        ax.set_xlabel(r"$\theta\ [rads]$")
-        ax.set_ylabel(r"$\psi\ [Normalized]$")
-        ax.set_xlim(-PI, PI)
-        ax.set_xticks(
+        self.ax.set_xlabel(r"$\theta\ [rads]$")
+        self.ax.set_ylabel(r"$\psi\ [Normalized]$")
+        self.ax.set_xlim(-PI, PI)
+        self.ax.set_xticks(
             np.linspace(-np.pi, np.pi, 5),
             [r"$-\pi$", r"$-\pi/2$", r"$0$", r"$\pi/2$", r"$\pi$"],
         )
-        ax.set_title(
+        self.ax.set_title(
             rf"$\psi$ - $\theta$ cross section at $\zeta$ = {intersect_params.angle}"
         )
 
         for particle in self._rust.particles:
             theta = pi_mod(particle.theta_array)
             psi = particle.psi_array
-            ax.scatter(theta, psi, **CARTESIAN_POINCARE_SCATTER_KW)
+            self.ax.scatter(theta, psi, **CARTESIAN_POINCARE_SCATTER_KW)
             if initial:
                 init = particle.initial_conditions
                 initial_point = (init.theta0, init.flux0.value)
-                ax.plot(*initial_point, **CARTESIAN_POINCARE_INITIAL_KW)
+                self.ax.plot(*initial_point, **CARTESIAN_POINCARE_INITIAL_KW)
 
-        plt.show()
-        plt.close()
+        if show:
+            plt.show()
+            plt.close()
 
     def plot_const_theta_cartesian_poincare(
         self,
         initial: bool = False,
         color: bool = False,
+        show: bool = True,
     ):
         r"""Plots the $\theta=const$ poincare map on the $\zeta-\psi_p$ cartesian plane.
 
@@ -303,6 +341,8 @@ class _QueuePlotter:
         initial
             Whether or not to plot the initial points. Note that the initial $\zeta_0$ should be equal to the
             intersection angle, and the initial flux coordinate should be $\psi_p$. Defaults to False.
+        show
+            Whether or not to call `plt.show()`. Defaults to True.
         """
 
         try:
@@ -316,42 +356,44 @@ class _QueuePlotter:
         if initial and self._rust[0].initial_conditions.flux0.kind == "Toroidal":
             raise ValueError("Cannot plot 'ψ0' in an 'zeta-psip' plot")
 
-        fig = plt.figure(**CARTESIAN_POINCARE_FIG_KW)
-        ax = fig.add_subplot()
+        self.fig = plt.figure(**CARTESIAN_POINCARE_FIG_KW)
+        self.ax = self.fig.add_subplot()
 
         if color:
-            ax.set_prop_cycle(cycler(color="brcmk"))
+            self.ax.set_prop_cycle(cycler(color="brcmk"))
         else:
-            ax.set_prop_cycle(cycler(color=["blue"]))
+            self.ax.set_prop_cycle(cycler(color=["blue"]))
 
-        ax.set_xlabel(r"$\zeta\ [rads]$")
-        ax.set_ylabel(r"$\psi_p\ [Normalized]$")
-        ax.set_xlim(-PI, PI)
-        ax.set_xticks(
+        self.ax.set_xlabel(r"$\zeta\ [rads]$")
+        self.ax.set_ylabel(r"$\psi_p\ [Normalized]$")
+        self.ax.set_xlim(-PI, PI)
+        self.ax.set_xticks(
             np.linspace(-np.pi, np.pi, 5),
             [r"$-\pi$", r"$-\pi/2$", r"$0$", r"$\pi/2$", r"$\pi$"],
         )
-        ax.set_title(
+        self.ax.set_title(
             rf"$\psi_p$ - $\zeta$ cross section at $\theta$ = {intersect_params.angle}"
         )
 
         for particle in self._rust.particles:
             zeta = pi_mod(particle.zeta_array)
             psip = particle.psip_array
-            ax.scatter(zeta, psip, **CARTESIAN_POINCARE_SCATTER_KW)
+            self.ax.scatter(zeta, psip, **CARTESIAN_POINCARE_SCATTER_KW)
             if initial:
                 init = particle.initial_conditions
                 initial_point = (init.theta0, init.flux0.value)
-                ax.plot(*initial_point, **CARTESIAN_POINCARE_INITIAL_KW)
+                self.ax.plot(*initial_point, **CARTESIAN_POINCARE_INITIAL_KW)
 
-        plt.show()
-        plt.close()
+        if show:
+            plt.show()
+            plt.close()
 
     def plot_const_zeta_rz_poincare(
         self,
         equilibrium: Equilibrium,
         initial: bool = False,
         color: bool = False,
+        show: bool = True,
     ):
         r"""Plots the $\zeta=const$ poincare map on the $R-Z$ coordinate system.
 
@@ -362,6 +404,8 @@ class _QueuePlotter:
         initial
             Whether or not to plot the initial points. Note that the initial $\theta_0$ should be equal to the
             intersection angle, and the initial flux coordinate should be $\psi$. Defaults to False.
+        show
+            Whether or not to call `plt.show()`. Defaults to True.
         """
 
         try:
@@ -378,17 +422,17 @@ class _QueuePlotter:
         if initial and self._rust[0].initial_conditions.flux0.kind == "Poloidal":
             raise ValueError("Cannot plot 'ψp0' in an 'theta-psi' plot")
 
-        fig = plt.figure(**CARTESIAN_POINCARE_FIG_KW)
-        ax = fig.add_subplot(aspect="equal")
+        self.fig = plt.figure(**CARTESIAN_POINCARE_FIG_KW)
+        self.ax = self.fig.add_subplot(aspect="equal")
 
         if color:
-            ax.set_prop_cycle(cycler(color="brcmk"))
+            self.ax.set_prop_cycle(cycler(color="brcmk"))
         else:
-            ax.set_prop_cycle(cycler(color=["blue"]))
+            self.ax.set_prop_cycle(cycler(color=["blue"]))
 
-        ax.set_xlabel(r"$R\ [m]$")
-        ax.set_xlabel(r"$Z\ [m]$")
-        ax.set_title(
+        self.ax.set_xlabel(r"$R\ [m]$")
+        self.ax.set_xlabel(r"$Z\ [m]$")
+        self.ax.set_title(
             rf"Poincare map at $\zeta$ = {intersect_params.angle} cross section"
         )
 
@@ -410,7 +454,7 @@ class _QueuePlotter:
                 flux = particle.psip_array
             rlab = rlab_of_flux(flux, theta)
             zlab = zlab_of_flux(flux, theta)
-            ax.plot(rlab, zlab, **RZ_POINCARE_PLOT_KW)
+            self.ax.plot(rlab, zlab, **RZ_POINCARE_PLOT_KW)
             if initial:
                 init = particle.initial_conditions
                 psi0 = init.flux0.value
@@ -418,7 +462,7 @@ class _QueuePlotter:
                 rlab0 = rlab_of_flux(psi0, theta0)
                 zlab0 = zlab_of_flux(psi0, theta0)
                 initial_point = (rlab0, zlab0)
-                ax.plot(*initial_point, **RZ_POINCARE_INITIAL_KW)
+                self.ax.plot(*initial_point, **RZ_POINCARE_INITIAL_KW)
 
         # Cursor
         geom_center = (geom.rgeo, geom.zaxis)
@@ -428,27 +472,33 @@ class _QueuePlotter:
             r = sqrt((axis_point[0] - x) ** 2 + (axis_point[1] - y) ** 2)
             return f"(R, Z) = ({x:.5g}, {y:.5g}), r={r:.5g} "
 
-        setattr(ax, "format_coord", format_coord)
-        ax.plot(*axis_point, "ko", markersize=4, label="$R_{axis}$")
-        ax.plot(*geom_center, "ro", markersize=4, label="$R_{geometric}$")
+        setattr(self.ax, "format_coord", format_coord)
+        self.ax.plot(*axis_point, "ko", markersize=4, label="$R_{axis}$")
+        self.ax.plot(*geom_center, "ro", markersize=4, label="$R_{geometric}$")
 
         rlab_last = equilibrium.geometry.rlab_last
         zlab_last = equilibrium.geometry.zlab_last
-        ax.plot(rlab_last, zlab_last, color="k", linewidth=2)
-        ax.legend()
+        self.ax.plot(rlab_last, zlab_last, color="k", linewidth=2)
+        self.ax.legend()
 
-        plt.show()
-        plt.close()
+        if show:
+            plt.show()
+            plt.close()
 
-    def plot_qkinetic_radial_sweep(self):
+    def plot_qkinetic_radial_sweep(self, show: bool = True):
         r"""Plots the contained particles' calculated $q_{kinetic}$ with respect to their $\psi_0/\psi_{p,0}$.
 
         This is useful for low energy particles and magnetic field lines, where
         $\Delta\psi \approx $\Delta\psi_p \approx 0$.
+
+        Parameters
+        ----------
+        show
+            Whether or not to call `plt.show()`. Defaults to True.
         """
 
-        fig = plt.figure(**QKINETIC_POINCARE_FIG_KW)
-        ax = fig.add_subplot()
+        self.fig = plt.figure(**QKINETIC_POINCARE_FIG_KW)
+        self.ax = self.fig.add_subplot()
 
         if self._rust.particles[0].initial_conditions.flux0.kind == "Toroidal":
             flux_coord = r"$\psi$"
@@ -460,7 +510,7 @@ class _QueuePlotter:
         )
         qkinetics = np.asarray([p.qkinetic for p in self._rust.particles])
         colors = np.asarray([orbit_color(p.orbit_type) for p in self._rust.particles])
-        ax.scatter(fluxes, qkinetics, c=colors, s=1)
+        self.ax.scatter(fluxes, qkinetics, c=colors, s=1)
 
         copassing = Patch(color=COPASSING_COLOR, label="Copassing")
         cupassing = Patch(color=CUPASSING_COLOR, label="CuPassing")
@@ -468,25 +518,33 @@ class _QueuePlotter:
         undefined = Patch(color=UNDEFINED_COLOR, label="Undefined")
         unclassified = Patch(color=UNCLASSIFIED_COLOR, label="Unclassified")
 
-        ax.set_xlabel(rf"{flux_coord} $[Normalized]$")
-        ax.set_ylabel("$q_{kinetic}$")
-        ax.set_title("$q_{kinetic}-$" + flux_coord)
-        ax.legend(handles=[trapped, copassing, cupassing, undefined, unclassified])
-        ax.axhline(y=0, ls="--", lw=1.5, c="k")
-        ax.grid(True)
+        self.ax.set_xlabel(rf"{flux_coord} $[Normalized]$")
+        self.ax.set_ylabel("$q_{kinetic}$")
+        self.ax.set_title("$q_{kinetic}-$" + flux_coord)
+        self.ax.legend(handles=[trapped, copassing, cupassing, undefined, unclassified])
+        self.ax.axhline(y=0, ls="--", lw=1.5, c="k")
+        self.ax.grid(True)
 
-        plt.show()
+        if show:
+            plt.show()
+            plt.close()
 
-    def plot_qkinetic_pzeta_sweep(self):
-        r"""Plots the contained particles' calculated $q_{kinetic}$ with respect to their $P_\zeta$."""
+    def plot_qkinetic_pzeta_sweep(self, show: bool = True):
+        r"""Plots the contained particles' calculated $q_{kinetic}$ with respect to their $P_\zeta$.
 
-        fig = plt.figure(**QKINETIC_POINCARE_FIG_KW)
-        ax = fig.add_subplot()
+        Parameters
+        ----------
+        show
+            Whether or not to call `plt.show()`. Defaults to True.
+        """
+
+        self.fig = plt.figure(**QKINETIC_POINCARE_FIG_KW)
+        self.ax = self.fig.add_subplot()
 
         pzetas = np.asarray([p.initial_conditions.pzeta0 for p in self._rust.particles])
         qkinetics = np.asarray([p.qkinetic for p in self._rust.particles])
         colors = np.asarray([orbit_color(p.orbit_type) for p in self._rust.particles])
-        ax.scatter(pzetas, qkinetics, c=colors, s=1)
+        self.ax.scatter(pzetas, qkinetics, c=colors, s=1)
 
         copassing = Patch(color=COPASSING_COLOR, label="Copassing")
         cupassing = Patch(color=CUPASSING_COLOR, label="CuPassing")
@@ -494,24 +552,33 @@ class _QueuePlotter:
         undefined = Patch(color=UNDEFINED_COLOR, label="Undefined")
         unclassified = Patch(color=UNCLASSIFIED_COLOR, label="Unclassified")
 
-        ax.set_xlabel(r"$P_\zeta\ [Normalized]$")
-        ax.set_ylabel("$q_{kinetic}$")
-        ax.set_title(r"$q_{kinetic}-P_\zeta$")
-        ax.legend(handles=[trapped, copassing, cupassing, undefined, unclassified])
-        ax.axhline(y=0, ls="--", lw=1.5, c="k")
-        ax.grid(True)
+        self.ax.set_xlabel(r"$P_\zeta\ [Normalized]$")
+        self.ax.set_ylabel("$q_{kinetic}$")
+        self.ax.set_title(r"$q_{kinetic}-P_\zeta$")
+        self.ax.legend(handles=[trapped, copassing, cupassing, undefined, unclassified])
+        self.ax.axhline(y=0, ls="--", lw=1.5, c="k")
+        self.ax.grid(True)
 
-        plt.show()
+        if show:
+            plt.show()
+            plt.close()
 
-    def plot_qkinetic_energy_sweep(self):
+    def plot_qkinetic_energy_sweep(self, show: bool = True):
+        """TODO:
 
-        fig = plt.figure(**QKINETIC_POINCARE_FIG_KW)
-        ax = fig.add_subplot()
+        Parameters
+        ----------
+        show
+            Whether or not to call `plt.show()`. Defaults to True.
+        """
+
+        self.fig = plt.figure(**QKINETIC_POINCARE_FIG_KW)
+        self.ax = self.fig.add_subplot()
 
         energies = np.asarray([p.initial_energy for p in self._rust.particles])
         qkinetics = np.asarray([p.qkinetic for p in self._rust.particles])
         colors = np.asarray([orbit_color(p.orbit_type) for p in self._rust.particles])
-        ax.scatter(energies, qkinetics, c=colors, s=1)
+        self.ax.scatter(energies, qkinetics, c=colors, s=1)
 
         copassing = Patch(color=COPASSING_COLOR, label="Copassing")
         cupassing = Patch(color=CUPASSING_COLOR, label="CuPassing")
@@ -519,14 +586,16 @@ class _QueuePlotter:
         undefined = Patch(color=UNDEFINED_COLOR, label="Undefined")
         unclassified = Patch(color=UNCLASSIFIED_COLOR, label="Unclassified")
 
-        ax.set_xlabel(rf"$Energy\ [Normalized]$")
-        ax.set_ylabel("$q_{kinetic}$")
-        ax.set_title("$q_{kinetic}-Energy$")
-        ax.legend(handles=[trapped, copassing, cupassing, undefined, unclassified])
-        ax.axhline(y=0, ls="--", lw=1.5, c="k")
-        ax.grid(True)
+        self.ax.set_xlabel(rf"$Energy\ [Normalized]$")
+        self.ax.set_ylabel("$q_{kinetic}$")
+        self.ax.set_title("$q_{kinetic}-Energy$")
+        self.ax.legend(handles=[trapped, copassing, cupassing, undefined, unclassified])
+        self.ax.axhline(y=0, ls="--", lw=1.5, c="k")
+        self.ax.grid(True)
 
-        plt.show()
+        if show:
+            plt.show()
+            plt.close()
 
 
 # ================================================================================================

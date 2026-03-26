@@ -105,8 +105,7 @@ impl IntegratePbar {
             IntegrationStatus::Integrated => self.integrated.fetch_add(1, SeqCst),
             IntegrationStatus::Escaped => self.escaped.fetch_add(1, SeqCst),
             IntegrationStatus::TimedOut(..) => self.timed_out.fetch_add(1, SeqCst),
-            IntegrationStatus::Failed(..) => self.failed.fetch_add(1, SeqCst),
-            _ => unreachable!("no other possible status"),
+            _ => self.failed.fetch_add(1, SeqCst),
         };
     }
 
@@ -201,8 +200,7 @@ impl IntersectPbar {
             IntegrationStatus::Escaped => self.escaped.fetch_add(1, SeqCst),
             IntegrationStatus::TimedOut(..) => self.timed_out.fetch_add(1, SeqCst),
             IntegrationStatus::InvalidIntersections => self.invalid_intersections.fetch_add(1, SeqCst),
-            IntegrationStatus::Failed(..) => self.failed.fetch_add(1, SeqCst),
-            _ => unreachable!("no other possible status"),
+            _ => self.failed.fetch_add(1, SeqCst),
         };
     }
 
@@ -299,8 +297,7 @@ impl ClosePbar {
             IntegrationStatus::ClosedPeriods(..) => self.closed_periods.fetch_add(1, SeqCst),
             IntegrationStatus::Escaped => self.escaped.fetch_add(1, SeqCst),
             IntegrationStatus::TimedOut(..) => self.timed_out.fetch_add(1, SeqCst),
-            IntegrationStatus::Failed(..) => self.failed.fetch_add(1, SeqCst),
-            _ => unreachable!("no other possible status"),
+            _ => self.failed.fetch_add(1, SeqCst),
         };
         let _: usize = match *orbit_type {
             OrbitType::CoPassing => self.co_passing.fetch_add(1, SeqCst),
