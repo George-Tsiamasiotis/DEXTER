@@ -184,6 +184,8 @@ py_eval1D!(PyUnityQfactor, dpsi_dpsip);
 py_eval1D!(PyUnityQfactor, dpsip_dpsi);
 py_eval1D!(PyUnityQfactor, iota_of_psi);
 py_eval1D!(PyUnityQfactor, iota_of_psip);
+py_eval1D!(PyUnityQfactor, psi_of_q);
+py_eval1D!(PyUnityQfactor, psip_of_q);
 
 // ===============================================================================================
 
@@ -214,6 +216,8 @@ py_eval1D!(PyParabolicQfactor, dpsi_dpsip);
 py_eval1D!(PyParabolicQfactor, dpsip_dpsi);
 py_eval1D!(PyParabolicQfactor, iota_of_psi);
 py_eval1D!(PyParabolicQfactor, iota_of_psip);
+py_eval1D!(PyParabolicQfactor, psi_of_q);
+py_eval1D!(PyParabolicQfactor, psip_of_q);
 
 // ===============================================================================================
 
@@ -254,6 +258,8 @@ py_eval1D!(PyNcQfactor, dpsi_dpsip);
 py_eval1D!(PyNcQfactor, dpsip_dpsi);
 py_eval1D!(PyNcQfactor, iota_of_psi);
 py_eval1D!(PyNcQfactor, iota_of_psip);
+py_eval1D!(PyNcQfactor, psi_of_q);
+py_eval1D!(PyNcQfactor, psip_of_q);
 
 // ===============================================================================================
 // ===============================================================================================

@@ -483,6 +483,50 @@ pub trait Qfactor {
     fn iota_of_psip(&self, psip: f64, acc: &mut Accelerator) -> Result<f64, EvalError> {
         Ok(self.q_of_psip(psip, acc)?.recip())
     }
+
+    /// Calculates `ψ(q)`.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use dexter_equilibrium::*;
+    /// # use std::path::PathBuf;
+    /// # use rsl_interpolation::Accelerator;
+    /// #
+    /// # let path = PathBuf::from("./netcdf.nc");
+    /// # let qfactor = NcQfactorBuilder::new(&path, "steffen").build()?;
+    /// #
+    /// let mut acc = Accelerator::new();
+    /// let psi_of_q = qfactor.psi_of_q(1.2, &mut acc)?;
+    /// # Ok::<_, EqError>(())
+    /// ```
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
+    fn psi_of_q(&self, q: f64, acc: &mut Accelerator) -> Result<f64, EvalError>;
+
+    /// Calculates `ψp(q)`.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use dexter_equilibrium::*;
+    /// # use std::path::PathBuf;
+    /// # use rsl_interpolation::Accelerator;
+    /// #
+    /// # let path = PathBuf::from("./netcdf.nc");
+    /// # let qfactor = NcQfactorBuilder::new(&path, "steffen").build()?;
+    /// #
+    /// let mut acc = Accelerator::new();
+    /// let psip_of_q = qfactor.psip_of_q(1.2, &mut acc)?;
+    /// # Ok::<_, EqError>(())
+    /// ```
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
+    fn psip_of_q(&self, q: f64, acc: &mut Accelerator) -> Result<f64, EvalError>;
 }
 
 /// Plasma current related quantities computation.

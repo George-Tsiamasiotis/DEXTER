@@ -1,5 +1,6 @@
 allowed-idents-below-min-chars = [
     "r", # radial coordinate
     "t", # time
-    "m", "n" # mode numbers
+    "m", "n", # mode numbers
+    "q", # qfactor
 ]

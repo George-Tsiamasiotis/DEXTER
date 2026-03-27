@@ -28,6 +28,7 @@ def test_parabolic_qfactor_toroidal_lcfs():
     assert qfactor.psi_last == 0.45
     assert isfinite(qfactor.psip_last)
     _test_qfactor_vectorized_evals(qfactor)
+    _test_inverse_qfactor_vectorized_evals(qfactor)
     assert isinstance(qfactor.__str__(), str)
     assert isinstance(qfactor.__repr__(), str)
 
@@ -41,6 +42,7 @@ def test_parabolic_qfactor_poloidal_lcfs():
     assert isfinite(qfactor.psip_last)
     assert qfactor.psip_last == 0.45
     _test_qfactor_vectorized_evals(qfactor)
+    _test_inverse_qfactor_vectorized_evals(qfactor)
     assert isinstance(qfactor.__str__(), str)
     assert isinstance(qfactor.__repr__(), str)
 
@@ -66,6 +68,7 @@ def test_nc_qfactor_getters(nc_qfactor: NcQfactor):
 
 def test_nc_qfactor_eval(nc_qfactor: NcQfactor):
     _test_qfactor_vectorized_evals(nc_qfactor)
+    _test_inverse_qfactor_vectorized_evals(nc_qfactor)
 
 
 def test_toroidal_nc_qfactor():
@@ -130,6 +133,32 @@ def _test_qfactor_vectorized_evals(qfactor: Qfactor):
 
     # 4D Evaluations
     grid = np.random.random([2] * 4) * 1e-5
+    assert grid.ndim == 4
+    for method in methods:
+        assert method(grid).ndim == 4
+        assert isinstance(method(grid), np.ndarray)
+
+
+def _test_inverse_qfactor_vectorized_evals(qfactor: Qfactor):
+    methods = [
+        qfactor.psi_of_q,
+        qfactor.psip_of_q,
+    ]
+
+    # 0D evaluations
+    q = 1.1
+    for method in methods:
+        assert isfinite(method(q))
+        assert isinstance(method(q), float)
+
+    # 1D Evaluations
+    fluxes = np.linspace(1.1, 1.4, 5)
+    for method in methods:
+        assert method(fluxes).ndim == 1
+        assert isinstance(method(fluxes), np.ndarray)
+
+    # 4D Evaluations
+    grid = 1.1 + np.random.random([2] * 4)
     assert grid.ndim == 4
     for method in methods:
         assert method(grid).ndim == 4

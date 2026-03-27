@@ -362,7 +362,6 @@ class Particle(_ParticlePlotter):
     ```
     """
 
-    _initial_conditions: InitialConditions
     _rust: _PyParticle
 
     def __init__(self, initial_conditions: InitialConditions) -> None:
@@ -383,7 +382,9 @@ class Particle(_ParticlePlotter):
     @property
     def initial_conditions(self) -> InitialConditions:
         """The initial conditions set."""
-        return self._initial_conditions
+        return InitialConditions._from_rust_pyinitial_conditions(
+            self._rust.initial_conditions
+        )
 
     @property
     def integration_status(self) -> IntegrationStatus:

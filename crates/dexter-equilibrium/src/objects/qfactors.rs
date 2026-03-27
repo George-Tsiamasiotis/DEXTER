@@ -78,6 +78,14 @@ impl Qfactor for UnityQfactor {
         debug_assert_non_negative_psip!(psip);
         Ok(1.0)
     }
+
+    fn psi_of_q(&self, _: f64, _: &mut Accelerator) -> Result<f64, EvalError> {
+        Err(EvalError::UndefinedEvaluation("ψ(q)".into()))
+    }
+
+    fn psip_of_q(&self, _: f64, _: &mut Accelerator) -> Result<f64, EvalError> {
+        Err(EvalError::UndefinedEvaluation("ψp(q)".into()))
+    }
 }
 
 impl std::fmt::Debug for UnityQfactor {
@@ -251,6 +259,21 @@ impl Qfactor for ParabolicQfactor {
         let cos_arg = (self.qaxis * (self.qlast - self.qaxis)).sqrt() * psip / self.psi_last;
         Ok(debug_assert_is_finite!(self.qaxis / cos_arg.cos().powi(2)))
     }
+
+    fn psi_of_q(&self, q: f64, _: &mut Accelerator) -> Result<f64, EvalError> {
+        let frac = (q - self.qaxis) / (self.qlast - self.qaxis);
+        let psi = self.psi_last * frac.sqrt();
+        debug_assert_non_negative_psi!(psi);
+        Ok(psi)
+    }
+
+    fn psip_of_q(&self, q: f64, _: &mut Accelerator) -> Result<f64, EvalError> {
+        let tan_arg = (q / self.qaxis - 1.0).sqrt();
+        let coef = self.psi_last / (self.qaxis * (self.qlast - self.qaxis)).sqrt();
+        let psip = coef * tan_arg.atan();
+        debug_assert_non_negative_psip!(psip);
+        Ok(psip)
+    }
 }
 
 impl std::fmt::Debug for ParabolicQfactor {
@@ -346,6 +369,11 @@ pub struct NcQfactor {
     q_of_psi_interp: Option<DynInterpolation<f64>>,
     /// `q(ψp)` interpolator.
     q_of_psip_interp: Option<DynInterpolation<f64>>,
+
+    /// `ψp(q)` interpolator.
+    psi_of_q_interp: Option<DynInterpolation<f64>>,
+    /// `ψp(q)` interpolator.
+    psip_of_q_interp: Option<DynInterpolation<f64>>,
 }
 
 /// Creation.
@@ -390,6 +418,20 @@ impl NcQfactor {
             _ => None,
         };
 
+        // If flux values exist, we must also check if q is monotonic
+        let psi_of_q_interp = match psi.state() {
+            NcFluxState::None => None,
+            _ => make_interp_type(&builder.interp_type)?
+                .build(&q_values, psi.uvalues())
+                .ok(),
+        };
+        let psip_of_q_interp = match psip.state() {
+            NcFluxState::None => None,
+            _ => make_interp_type(&builder.interp_type)?
+                .build(&q_values, psip.uvalues())
+                .ok(),
+        };
+
         Ok(Self {
             equilibrium_type: EquilibriumType::Numerical,
             netcdf_version,
@@ -402,6 +444,8 @@ impl NcQfactor {
             q_values,
             q_of_psi_interp,
             q_of_psip_interp,
+            psi_of_q_interp,
+            psip_of_q_interp,
         })
     }
 }
@@ -484,6 +528,30 @@ impl Qfactor for NcQfactor {
                 acc
             )?)),
             None => Err(EvalError::UndefinedEvaluation("dψ(ψp)/dψp".into())),
+        }
+    }
+
+    fn psi_of_q(&self, q: f64, acc: &mut Accelerator) -> Result<f64, EvalError> {
+        match self.psi_of_q_interp.as_ref() {
+            Some(interp) => Ok(debug_assert_is_finite!(interp.eval(
+                &self.q_values,
+                self.psi.uvalues(),
+                q,
+                acc
+            )?)),
+            None => Err(EvalError::UndefinedEvaluation("ψ(q)".into())),
+        }
+    }
+
+    fn psip_of_q(&self, q: f64, acc: &mut Accelerator) -> Result<f64, EvalError> {
+        match self.psip_of_q_interp.as_ref() {
+            Some(interp) => Ok(debug_assert_is_finite!(interp.eval(
+                &self.q_values,
+                self.psip.uvalues(),
+                q,
+                acc
+            )?)),
+            None => Err(EvalError::UndefinedEvaluation("ψp(q)".into())),
         }
     }
 }
@@ -603,6 +671,22 @@ mod test_parabolic_qfactor {
         );
         assert_abs_diff_eq!(qfactor.psip_last(), 0.25921022097041035);
         assert_relative_eq!(qfactor.psi_last(), 0.45, epsilon = 1e-12);
+    }
+
+    #[test]
+    fn inverse_q() {
+        let qfactor = ParabolicQfactor::new(1.1, 3.9, LastClosedFluxSurface::Toroidal(0.45));
+        let acc = &mut Accelerator::new();
+
+        let psi = 0.1;
+        let q_of_psi = qfactor.q_of_psi(psi, acc).unwrap();
+        let psi_inverse = qfactor.psi_of_q(q_of_psi, acc).unwrap();
+        assert_relative_eq!(psi, psi_inverse, epsilon = 1e-12);
+
+        let psip = 0.1;
+        let q_of_psip = qfactor.q_of_psip(psip, acc).unwrap();
+        let psip_inverse = qfactor.psip_of_q(q_of_psip, acc).unwrap();
+        assert_relative_eq!(psip, psip_inverse, epsilon = 1e-12);
     }
 }
 

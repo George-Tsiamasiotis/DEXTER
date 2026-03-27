@@ -204,14 +204,13 @@ class Equilibrium:
         self._perturbation = perturbation
 
     def __str__(self) -> str:
-        return (
-            "Equilibrium:\n"
-            + str(self.geometry)
-            + str(self.qfactor)
-            + str(self.current)
-            + str(self.bfield)
-            + str(self.perturbation)
-        )
+        string = "Equilibrium:\n"
+        string += str(getattr(self, "geometry", "")) + "\n"
+        string += str(getattr(self, "qfactor", "")) + "\n"
+        string += str(getattr(self, "current", "")) + "\n"
+        string += str(getattr(self, "bfield", "")) + "\n"
+        string += str(getattr(self, "perturbation", "")) + "\n"
+        return string
 
     def __repr__(self) -> str:
         return self.__str__()

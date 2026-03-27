@@ -193,6 +193,8 @@ class _QfactorTrait:
         self._iota_of_psip = np.vectorize(self._rust.iota_of_psip)
         self._dpsip_dpsi = np.vectorize(self._rust.dpsip_dpsi)
         self._dpsi_dpsip = np.vectorize(self._rust.dpsi_dpsip)
+        self._psi_of_q = np.vectorize(self._rust.psi_of_q)
+        self._psip_of_q = np.vectorize(self._rust.psip_of_q)
 
     def q_of_psi(self, psi: ArrayLike) -> NDArray:
         r"""The $q(\psi)$ value.
@@ -257,6 +259,26 @@ class _QfactorTrait:
             The poloidal flux $\psi_p$ in Normalized Units.
         """
         return self._iota_of_psip(psip)[()]
+
+    def psi_of_q(self, q: ArrayLike) -> NDArray:
+        r"""The toroidal flux $\psi$ in Normalized Units.
+
+        Parameters
+        ----------
+        q
+            The q-factor value $q$.
+        """
+        return self._psi_of_q(q)[()]
+
+    def psip_of_q(self, q: ArrayLike) -> NDArray:
+        r"""The poloidal flux $\psi_p$ in Normalized Units.
+
+        Parameters
+        ----------
+        q
+            The q-factor value $q$.
+        """
+        return self._psip_of_q(q)[()]
 
 
 class _CurrentTrait:
