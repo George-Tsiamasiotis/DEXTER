@@ -640,6 +640,13 @@ class _PyQueue:
     particle_count: int
     particles: list[_PyParticle]
     routine: Routine
+    energy_array: Array1
+    omega_theta_array: Array1
+    omega_zeta_array: Array1
+    qkinetic_array: Array1
+    steps_taken_array: Array1
+    steps_stored_array: Array1
+    _durations_as_nanos: Array1
 
     def __init__(self, initial_conditions: _PyQueueInitialConditions) -> None: ...
     def integrate(

@@ -1108,6 +1108,65 @@ class Queue(_QueuePlotter):
         """The routine run by the Queue."""
         return self._rust.routine
 
+    @property
+    def energy_array(self) -> Array1:
+        """The particles' calculated energies.
+
+        Particles are visited in order of instantiation.
+        """
+        return self._rust.energy_array
+
+    @property
+    def steps_taken_array(self) -> Array1:
+        """The number of steps each particle has taken.
+
+        Particles are visited in order of instantiation.
+        """
+        return self._rust.steps_taken_array
+
+    @property
+    def steps_stored_array(self) -> Array1:
+        """The number of steps each particle has stored.
+
+        Particles are visited in order of instantiation.
+        """
+        return self._rust.steps_stored_array
+
+    @property
+    def omega_theta_array(self) -> Array1:
+        r"""The particles' calculated $\omega_theta$.
+
+        Particles are visited in order of instantiation.
+        """
+        return self._rust.omega_theta_array
+
+    @property
+    def omega_zeta_array(self) -> Array1:
+        r"""The particles' calculated $\omega_zeta$.
+
+        Particles are visited in order of instantiation.
+        """
+        return self._rust.omega_zeta_array
+
+    @property
+    def qkinetic_array(self) -> Array1:
+        r"""The particles' calculated $q_{kinetic}$.
+
+        Particles are visited in order of instantiation.
+        """
+        return self._rust.qkinetic_array
+
+    @property
+    def durations(self) -> np.ndarray[tuple[int], np.dtype[np.timedelta64]]:
+        r"""The particles' calculated $q_{kinetic}$.
+
+        Particles are visited in order of instantiation.
+        """
+        nanos = [
+            np.timedelta64(nanos, "ns") for nanos in self._rust._durations_as_nanos
+        ]
+        return np.asarray(nanos)
+
     def integrate(
         self,
         /,

@@ -1,6 +1,7 @@
 //! Test `Queue::integrate` routine.
 
 #![allow(non_snake_case)]
+#![allow(unused_variables)]
 
 use dexter_equilibrium::*;
 use dexter_simulate::*;
@@ -20,7 +21,7 @@ fn queue_close_parQ_larC_larB_cosP() -> Result<()> {
 
     // Initial Conditions setup
     let particle_count = 10;
-    let psis = qfactor.psi_last() * Array1::linspace(0.0, 1.0, particle_count);
+    let psis = qfactor.psi_last() * Array1::linspace(0.001, 1.0, particle_count);
     let psis = toroidal_fluxes(&psis.to_vec());
     let initial_conditions = QueueInitialConditions::boozer(
         &vec![0.0; particle_count],
@@ -52,16 +53,31 @@ fn queue_close_parQ_larC_larB_cosP() -> Result<()> {
         &SolverParams::default(),
     );
 
-    // All but the first at `ψ=0` should be closed.
-    assert!(queue[0].integration_status() == IntegrationStatus::OutOfBoundsInitialization);
     assert_eq!(
         queue
             .iter()
             .filter(|particle| particle.integration_status() == IntegrationStatus::ClosedPeriods(1))
             .count(),
-        particle_count - 1
+        particle_count
     );
 
     println!("{queue:#?}");
+
+    let steps_taken = queue.steps_taken_array();
+    let steps_stored = queue.steps_stored_array();
+    let energy_array = queue.energy_array();
+    let qkinetic_array = queue.qkinetic_array();
+    let omega_theta_array = queue.omega_theta_array();
+    let omega_zeta_array = queue.omega_zeta_array();
+    let durations = queue.durations();
+
+    assert!(steps_taken.iter().all(|steps| *steps > 0));
+    assert!(steps_stored.iter().all(|steps| *steps == 0)); // close() discards arrays
+    assert!(energy_array.iter().all(|energy| energy.is_finite()));
+    assert!(qkinetic_array.iter().all(|qkinetic| qkinetic.is_finite()));
+    assert!(omega_theta_array.iter().all(|omega| omega.is_finite()));
+    assert!(omega_zeta_array.iter().all(|omega| omega.is_finite()));
+    assert!(durations.iter().all(|duration| !duration.is_zero()));
+
     Ok(())
 }

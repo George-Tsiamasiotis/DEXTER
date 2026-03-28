@@ -264,6 +264,77 @@ class _QueuePlotter:
 
     _rust: _PyQueue
 
+    def plot_energies(self, show=True):
+        """Plots a stem plot of all the particles' energies.
+
+        Particles are visited in order of instantiation.
+
+        Useful to visualize the energy spans of the particles under study.
+
+        Parameters
+        ----------
+        show
+            Whether or not to call `plt.show()`. Defaults to True.
+        """
+
+        self.fig = plt.figure(figsize=(9, 7), layout="constrained", dpi=120)
+        self.ax = self.fig.add_subplot()
+
+        self.ax.stem(self._rust.energy_array, linefmt="k--", markerfmt="blue")
+        self.ax.set_title(r"$Particle\ Energies$")
+        self.ax.set_xlabel(r"$Particle\ \#$")
+        self.ax.set_ylabel(r"$Energy\ [Normalized]$")
+        self.ax.set_ybound(lower=0)
+
+        if show:
+            plt.show()
+
+    def plot_steps_taken(self, show=True):
+        """Plots a stem plot of all the number of steps each particle has taken.
+
+        Particles are visited in order of instantiation.
+
+        Parameters
+        ----------
+        show
+            Whether or not to call `plt.show()`. Defaults to True.
+        """
+
+        self.fig = plt.figure(figsize=(9, 7), layout="constrained", dpi=120)
+        self.ax = self.fig.add_subplot()
+
+        self.ax.stem(self._rust.steps_taken_array, linefmt="k--", markerfmt="blue")
+        self.ax.set_title(r"$Particle\ steps\ taken$")
+        self.ax.set_xlabel(r"$Particle\ \#$")
+        self.ax.set_ylabel(r"$Steps\ taken$")
+        self.ax.set_ybound(lower=0)
+
+        if show:
+            plt.show()
+
+    def plot_steps_stored(self, show=True):
+        """Plots a stem plot of all the number of steps each particle has stored.
+
+        Particles are visited in order of instantiation.
+
+        Parameters
+        ----------
+        show
+            Whether or not to call `plt.show()`. Defaults to True.
+        """
+
+        self.fig = plt.figure(figsize=(9, 7), layout="constrained", dpi=120)
+        self.ax = self.fig.add_subplot()
+
+        self.ax.stem(self._rust.steps_stored_array, linefmt="k--", markerfmt="blue")
+        self.ax.set_title(r"$Particle\ steps\ stored$")
+        self.ax.set_xlabel(r"$Particle\ \#$")
+        self.ax.set_ylabel(r"$Steps\ stored$")
+        self.ax.set_ybound(lower=0)
+
+        if show:
+            plt.show()
+
     def plot_const_zeta_cartesian_poincare(
         self,
         initial: bool = False,
@@ -508,9 +579,8 @@ class _QueuePlotter:
         fluxes = np.asarray(
             [p.initial_conditions.flux0.value for p in self._rust.particles]
         )
-        qkinetics = np.asarray([p.qkinetic for p in self._rust.particles])
         colors = np.asarray([orbit_color(p.orbit_type) for p in self._rust.particles])
-        self.ax.scatter(fluxes, qkinetics, c=colors, s=1)
+        self.ax.scatter(fluxes, self._rust.qkinetic_array, c=colors, s=1)
 
         copassing = Patch(color=COPASSING_COLOR, label="Copassing")
         cupassing = Patch(color=CUPASSING_COLOR, label="CuPassing")
@@ -542,9 +612,8 @@ class _QueuePlotter:
         self.ax = self.fig.add_subplot()
 
         pzetas = np.asarray([p.initial_conditions.pzeta0 for p in self._rust.particles])
-        qkinetics = np.asarray([p.qkinetic for p in self._rust.particles])
         colors = np.asarray([orbit_color(p.orbit_type) for p in self._rust.particles])
-        self.ax.scatter(pzetas, qkinetics, c=colors, s=1)
+        self.ax.scatter(pzetas, self._rust.qkinetic_array, c=colors, s=1)
 
         copassing = Patch(color=COPASSING_COLOR, label="Copassing")
         cupassing = Patch(color=CUPASSING_COLOR, label="CuPassing")
@@ -576,9 +645,8 @@ class _QueuePlotter:
         self.ax = self.fig.add_subplot()
 
         energies = np.asarray([p.initial_energy for p in self._rust.particles])
-        qkinetics = np.asarray([p.qkinetic for p in self._rust.particles])
         colors = np.asarray([orbit_color(p.orbit_type) for p in self._rust.particles])
-        self.ax.scatter(energies, qkinetics, c=colors, s=1)
+        self.ax.scatter(energies, self._rust.qkinetic_array, c=colors, s=1)
 
         copassing = Patch(color=COPASSING_COLOR, label="Copassing")
         cupassing = Patch(color=CUPASSING_COLOR, label="CuPassing")

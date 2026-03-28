@@ -94,9 +94,11 @@ IntegrationStatus: TypeAlias = Literal[
     "OutOfBoundsInitialization",
     "Integrated",
     "Intersected",
+    "ClosedPeriods(..)",
+    "Escaped",
+    "ModStateEscaped",
     "IntersectedTimedOut",
     "InvalidIntersections",
-    "Escaped",
     "TimedOut(...)",
     "Failed(...)",
 ]

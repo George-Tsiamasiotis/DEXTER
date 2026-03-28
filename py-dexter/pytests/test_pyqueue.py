@@ -129,6 +129,11 @@ class TestQueue:
                 ]
             ),
         )
+        cls.unperturbed_equilibrium = Equilibrium(
+            qfactor=ParabolicQfactor(1.1, 3.9, cls.lcfs),
+            current=LarCurrent(),
+            bfield=LarBfield(),
+        )
         particle_count = 10
         psi0s = InitialFluxArray("Toroidal", np.linspace(0.01, 0.4, particle_count))
         cls.initial_conditions = QueueInitialConditions.boozer(
@@ -149,6 +154,8 @@ class TestQueue:
         for particle in queue.particles:
             assert particle.steps_taken > 10
             assert particle.integration_status == "Integrated"
+        assert np.all(np.isfinite(queue.energy_array))
+        assert np.all(np.isfinite(queue.durations))
 
     def test_queue_intersection(self):
         queue = Queue(self.initial_conditions)
@@ -161,3 +168,16 @@ class TestQueue:
             assert isinstance(particle, Particle)
             assert particle.steps_taken > 10
             assert particle.integration_status == "Intersected"
+
+    def test_queue_close(self):
+        queue = Queue(self.initial_conditions)
+        queue.close(self.unperturbed_equilibrium)
+        for particle in queue.particles:
+            assert isinstance(particle, Particle)
+            assert particle.steps_taken > 10
+            assert particle.integration_status == "ClosedPeriods(1)"
+        assert np.all(np.isfinite(queue.omega_theta_array))
+        assert np.all(np.isfinite(queue.omega_zeta_array))
+        assert np.all(np.isfinite(queue.qkinetic_array))
+        assert queue.steps_taken_array.ndim == 1
+        assert queue.steps_stored_array.ndim == 1

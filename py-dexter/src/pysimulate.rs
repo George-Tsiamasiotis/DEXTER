@@ -346,22 +346,43 @@ impl PyQueue {
     }
 
     #[getter]
-    pub fn initial_conditions(&self) -> PyQueueInitialConditions {
+    pub fn get_initial_conditions(&self) -> PyQueueInitialConditions {
         PyQueueInitialConditions(self.0.initial_conditions())
     }
 
     #[getter]
-    pub fn particle_count(&self) -> usize {
+    pub fn get_particle_count(&self) -> usize {
         self.0.particle_count()
     }
 
     #[getter]
     /// Creates a python list with the contained particles
-    pub fn particles(&self) -> Vec<PyParticle> {
+    pub fn get_particles(&self) -> Vec<PyParticle> {
         self.0
             .iter()
             .map(|particle| PyParticle(particle.clone()))
             .collect()
+    }
+
+    #[getter]
+    pub fn get_steps_taken_array<'py>(&self, py: Python<'py>) -> Bound<'py, PyArray1<usize>> {
+        self.0.steps_taken_array().into_pyarray(py)
+    }
+
+    #[getter]
+    pub fn get_steps_stored_array<'py>(&self, py: Python<'py>) -> Bound<'py, PyArray1<usize>> {
+        self.0.steps_stored_array().into_pyarray(py)
+    }
+
+    #[getter("_durations_as_nanos")]
+    pub fn get_durations<'py>(&self, py: Python<'py>) -> Bound<'py, PyArray1<usize>> {
+        Array1::from_iter(
+            self.0
+                .durations()
+                .iter()
+                .map(|duration| duration.as_nanos() as usize),
+        )
+        .into_pyarray(py)
     }
 
     pub fn __getitem__(&self, index: usize) -> PyParticle {
@@ -372,6 +393,10 @@ impl PyQueue {
 py_debug_impl!(PyQueue);
 py_repr_impl!(PyQueue);
 py_get_enum_string!(PyQueue, routine);
+py_get_numpy1D!(PyQueue, energy_array);
+py_get_numpy1D!(PyQueue, omega_theta_array);
+py_get_numpy1D!(PyQueue, omega_zeta_array);
+py_get_numpy1D!(PyQueue, qkinetic_array);
 
 // ===============================================================================================
 // ===============================================================================================

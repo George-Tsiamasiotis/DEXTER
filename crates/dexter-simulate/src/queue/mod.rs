@@ -7,12 +7,14 @@ mod stats;
 pub use initials::QueueInitialConditions;
 pub use initials::{poloidal_fluxes, toroidal_fluxes};
 
+use ndarray::Array1;
 use pbars::{ClosePbar, IntegratePbar, IntersectPbar};
 use stats::QueueStats;
 
 use rayon::iter::{IntoParallelRefMutIterator, ParallelIterator};
 use std::ops::Index;
 use std::slice::Iter;
+use std::time::Duration;
 
 use dexter_equilibrium::{Bfield, Current, FluxCommute, Harmonic, Perturbation, Qfactor};
 
@@ -343,6 +345,90 @@ impl Queue {
     #[must_use]
     pub fn particles(&self) -> Vec<Particle> {
         self.particles.clone()
+    }
+
+    /// Returns an [`Array1`] with all the particles' calculated **initial** energies.
+    ///
+    /// Particles are visited in order of instantiation.
+    ///
+    /// For particles whose energies have not been calculated, the corresponding element is
+    /// replaced with NaN.
+    #[must_use]
+    pub fn energy_array(&self) -> Array1<f64> {
+        Array1::from_iter(
+            self.particles
+                .iter()
+                .map(|particle| particle.initial_energy().unwrap_or(f64::NAN)),
+        )
+    }
+
+    /// Returns an [`Array1`] with the number of steps each particle has taken.
+    ///
+    /// Particles are visited in order of instantiation.
+    #[must_use]
+    pub fn steps_taken_array(&self) -> Array1<usize> {
+        Array1::from_iter(self.particles.iter().map(Particle::steps_taken))
+    }
+
+    /// Returns an [`Array1`] with the number of steps each particle has stored.
+    ///
+    /// Particles are visited in order of instantiation.
+    #[must_use]
+    pub fn steps_stored_array(&self) -> Array1<usize> {
+        Array1::from_iter(self.particles.iter().map(Particle::steps_stored))
+    }
+
+    /// Returns an [`Array1`] with all the particles' calculated `ωθ`.
+    ///
+    /// Particles are visited in order of instantiation.
+    ///
+    /// For particles where the [`Particle::close()`] failed, the corresponding element is
+    /// replaced with `NaN`.
+    #[must_use]
+    pub fn omega_theta_array(&self) -> Array1<f64> {
+        Array1::from_iter(
+            self.particles
+                .iter()
+                .map(|particle| particle.omega_theta().unwrap_or(f64::NAN)),
+        )
+    }
+
+    /// Returns an [`Array1`] with all the particles' calculated `ωζ`.
+    ///
+    /// Particles are visited in order of instantiation.
+    ///
+    /// For particles where the [`Particle::close()`] failed, the corresponding element is
+    /// replaced with `NaN`.
+    #[must_use]
+    pub fn omega_zeta_array(&self) -> Array1<f64> {
+        Array1::from_iter(
+            self.particles
+                .iter()
+                .map(|particle| particle.omega_zeta().unwrap_or(f64::NAN)),
+        )
+    }
+
+    /// Returns an [`Array1`] with all the particles' calculated `qkinetic`.
+    ///
+    /// Particles are visited in order of instantiation.
+    ///
+    /// For particles where the [`Particle::close()`] failed, the corresponding element is
+    /// replaced with `NaN`.
+    #[must_use]
+    pub fn qkinetic_array(&self) -> Array1<f64> {
+        Array1::from_iter(
+            self.particles
+                .iter()
+                .map(|particle| particle.qkinetic().unwrap_or(f64::NAN)),
+        )
+    }
+
+    /// Returns an [`Array1`] with all the particles' routine durations.
+    ///
+    /// Particles are visited in order of instantiation.
+    #[must_use]
+    pub fn durations(&self) -> Array1<Duration> {
+        Array1::from_iter(self.particles.iter().map(Particle::duration))
     }
 }
 
