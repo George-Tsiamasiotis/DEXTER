@@ -475,6 +475,13 @@ class NcQfactor(_FluxCommuteTrait, _QfactorTrait, _FluxPlotter, _QfactorPlotter)
 
     Related quantities are computed by interpolating over the data arrays.
 
+    !!! note
+
+        If either `psi_norm` or `psip_norm` is missing from the netCDF file, it is calculated
+        from the other by integrating $q(\psi_p)$ or $\iota(\psi)$ respectively. In the case
+        that the calculated values are monotonic, the other flux can be used as a flux
+        coordinate as well.
+
     Parameters
     ----------
     path

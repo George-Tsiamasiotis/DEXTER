@@ -17,14 +17,18 @@ DEXTER reads equilibrium data from a [netCDF] file. The variables must follow th
 
 ## Coordinates
 
+!!! note
+
+    If either `psi_norm` or `psip_norm` is missing from the netCDF file, it is calculated from the other by integrating $q(\psi_p)$ or $\iota(\psi)$ respectively. In the case that the calculated values are monotonic, the other flux can be used as a flux coordinate as well.
+
 * `psip_norm`: The poloidal flux coordinate $\psi_p$ divided by $2\pi$, in Normalized Units (consistent with the eqdisk files).
+* `psi_norm`: The toroidal flux coordinate $\psi$ divided by $2\pi$, in Normalized Units (consistent with the eqdisk files).
 * `theta`: The Boozer theta coordinate $\theta_B$ in $[rads]$.
 * `m`: The poloidal mode number $m$ (*index* coordinate).
 * `n`: The toroidal mode number $n$ (*index* coordinate).
 
 Not used in any calculations:
 
-* `psi_norm`: The toroidal flux coordinate $\psi$ divided by $2\pi$, in Normalized Units (consistent with the eqdisk files).
 * `r_norm`: The radial distance coordinate $r$ in Normalized Units.
 
 ## Variables

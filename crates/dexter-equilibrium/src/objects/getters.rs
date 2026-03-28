@@ -197,11 +197,11 @@ macro_rules! shape2d_getter_impl {
         pub fn shape(&self) -> (usize, usize) {
             // One of the 2 is guaranteed to be non-zero.
             let psi_len = match self.psi.state() {
-                NcFluxState::None => 0,
+                NcFluxState::NoValues => 0,
                 _ => self.psi.uvalues().len(),
             };
             let psip_len = match self.psip.state() {
-                NcFluxState::None => 0,
+                NcFluxState::NoValues => 0,
                 _ => self.psip.uvalues().len(),
             };
             // If they both exist, they are guaranteed to have the same length.

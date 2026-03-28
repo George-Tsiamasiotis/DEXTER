@@ -1,6 +1,6 @@
 //! Definition of the `NcFlux` object.
 
-use ndarray::{ArrayRef1, Axis};
+use ndarray::{Array1, ArrayRef1, Axis};
 
 use crate::extract;
 use crate::extract::netcdf_fields::{NC_PSI_NORM, NC_PSIP_NORM};
@@ -15,7 +15,7 @@ pub enum NcFluxState {
     /// Bad coordinate: values exist but are not monotonic. Can only be used as y-data.
     Bad,
     /// Does not exist or is empty (fallback to when an extraction error occurs).
-    None,
+    NoValues,
 }
 
 impl NcFluxState {
@@ -58,6 +58,14 @@ impl NcFlux {
         Self::build(file, NC_PSIP_NORM)
     }
 
+    /// Creates the Flux Coordinate from raw values.
+    pub(crate) fn from_raw_values(values: &[f64]) -> Self {
+        Self {
+            values: Some(values.to_vec()),
+            state: NcFluxState::from_array(&Array1::from(values.to_vec())),
+        }
+    }
+
     /// Extracts the values and sets the state.
     ///
     /// It is not guaranteed that both fluxes (good or bad) exist in a dataset, so we dont want to
@@ -70,7 +78,7 @@ impl NcFlux {
             },
             Err(_) => Self {
                 values: None,
-                state: NcFluxState::None,
+                state: NcFluxState::NoValues,
             },
         }
     }
@@ -136,7 +144,7 @@ mod test {
     fn create_empty_flux() -> NcFlux {
         NcFlux {
             values: None,
-            state: NcFluxState::None,
+            state: NcFluxState::NoValues,
         }
     }
 
@@ -160,7 +168,7 @@ mod test {
         let path = PathBuf::from(TEST_NETCDF_PATH);
         let file = open(&path).unwrap();
         let noflux = NcFlux::build(&file, "NOT_A_FIELD");
-        assert_eq!(noflux.state, NcFluxState::None);
+        assert_eq!(noflux.state, NcFluxState::NoValues);
         assert!(noflux.values.is_none());
     }
 }

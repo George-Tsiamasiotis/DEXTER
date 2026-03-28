@@ -342,6 +342,10 @@ impl NcQfactorBuilder {
 /// Related quantities are computed by interpolating over the data arrays.
 ///
 /// Should be created with an [`NcQfactorBuilder`].
+///
+/// If either `psi_norm` or `psip_norm` is missing from the netCDF file, it is calculated from the
+/// other by integrating `q(ψp)` or `ι(ψ)` respectively. In the case that the calculated values are
+/// monotonic, the other flux can be used as a flux coordinate as well.
 pub struct NcQfactor {
     /// Path to the netCDF file.
     path: PathBuf,
@@ -388,22 +392,59 @@ impl NcQfactor {
         let file = extract::open(&path)?;
         let netcdf_version = extract::version(&file)?;
 
-        let psi = NcFlux::toroidal(&file);
-        let psip = NcFlux::poloidal(&file);
+        let mut psi = NcFlux::toroidal(&file);
+        let mut psip = NcFlux::poloidal(&file);
         let q_values = extract::array_1d(&file, NC_Q)?.to_vec();
 
         debug_assert_all_finite_values(&q_values);
 
-        // TODO: Integrate q/ι in case one of the fluxes is missing.
+        // If no `ψ` values found, integrate `q(ψp)` and create them. We create a temporary
+        // `q_of_psip_interp` since we cannot correctly define it yet.
+        if psi.state() == NcFluxState::NoValues {
+            let acc = &mut Accelerator::new();
+            let psip_values = psip.values().expect("At least one of the fluxes exists");
+            let q_of_psip_interp =
+                make_interp_type(&builder.interp_type)?.build(psip_values, &q_values)?;
+            let psi_values: Vec<f64> = psip_values
+                .iter()
+                .map(|psip_value| {
+                    q_of_psip_interp
+                        .eval_integ(psip_values, &q_values, 0.0, *psip_value, acc)
+                        .expect("Cannot fail by definition of the interpolator")
+                })
+                .collect();
+            psi = NcFlux::from_raw_values(&psi_values);
+        }
+
+        // If no `ψp` values found, integrate `ι(ψ)` and create them. For this we must create a
+        // temporary `i_of_psi` interpolator.
+        if psip.state() == NcFluxState::NoValues {
+            let acc = &mut Accelerator::new();
+            let psi_values = psi.values().expect("At least one of the fluxes exists");
+            let i_values: Vec<f64> = q_values.iter().map(|q| q.recip()).collect();
+            let i_of_psi_interp =
+                make_interp_type(&builder.interp_type)?.build(psi_values, &i_values)?;
+            let psip_values: Vec<f64> = psi_values
+                .iter()
+                .map(|psi_value| {
+                    i_of_psi_interp
+                        .eval_integ(psi_values, &i_values, 0.0, *psi_value, acc)
+                        .expect("Cannot fail by definition of the interpolator")
+                })
+                .collect();
+            psip = NcFlux::from_raw_values(&psip_values);
+        }
 
         // Create interpolators, if possible
         use NcFluxState::Good;
-        let psip_of_psi_interp = if (psi.state() == Good) & (psip.state() != NcFluxState::None) {
+        let psip_of_psi_interp = if (psi.state() == Good) & (psip.state() != NcFluxState::NoValues)
+        {
             Some(make_interp_type(&builder.interp_type)?.build(psi.uvalues(), psip.uvalues())?)
         } else {
             None
         };
-        let psi_of_psip_interp = if (psip.state() == Good) & (psi.state() != NcFluxState::None) {
+        let psi_of_psip_interp = if (psip.state() == Good) & (psi.state() != NcFluxState::NoValues)
+        {
             Some(make_interp_type(&builder.interp_type)?.build(psip.uvalues(), psi.uvalues())?)
         } else {
             None
@@ -420,13 +461,13 @@ impl NcQfactor {
 
         // If flux values exist, we must also check if q is monotonic
         let psi_of_q_interp = match psi.state() {
-            NcFluxState::None => None,
+            NcFluxState::NoValues => None,
             _ => make_interp_type(&builder.interp_type)?
                 .build(&q_values, psi.uvalues())
                 .ok(),
         };
         let psip_of_q_interp = match psip.state() {
-            NcFluxState::None => None,
+            NcFluxState::NoValues => None,
             _ => make_interp_type(&builder.interp_type)?
                 .build(&q_values, psip.uvalues())
                 .ok(),

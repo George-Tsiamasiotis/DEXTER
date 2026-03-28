@@ -135,20 +135,31 @@ impl InitialConditions {
         H: Harmonic,
     {
         let acc = &mut Accelerator::new();
-        // Calculate `rho0`
         match self.coordinate_set {
+            // Calculate `pzeta0`
+            CoordinateSet::BoozerToroidal => {
+                let psi0 = self.flux0.value();
+                let g_of_psi0 = objects.current.g_of_psi(psi0, acc)?;
+                let psip0 = objects.qfactor.psip_of_psi(psi0, acc)?;
+                self.pzeta0 = Some(self.rho0.expect("boozer to mixed") * g_of_psi0 - psip0)
+            }
+            CoordinateSet::BoozerPoloidal => {
+                let psip0 = self.flux0.value();
+                let g_of_psip0 = objects.current.g_of_psip(psip0, acc)?;
+                self.pzeta0 = Some(self.rho0.expect("boozer to mixed") * g_of_psip0 - psip0)
+            }
+            // Calculate `rho0`
             CoordinateSet::MixedToroidal => {
                 let psi0 = self.flux0.value();
                 let g_of_psi0 = objects.current.g_of_psi(psi0, acc)?;
                 let psip0 = objects.qfactor.psip_of_psi(psi0, acc)?;
-                self.rho0 = Some((self.pzeta0.expect("mixed") + psip0) / g_of_psi0);
+                self.rho0 = Some((self.pzeta0.expect("mixed to boozer") + psip0) / g_of_psi0);
             }
             CoordinateSet::MixedPoloidal => {
                 let psip0 = self.flux0.value();
                 let g_of_psip0 = objects.current.g_of_psip(psip0, acc)?;
-                self.rho0 = Some((self.pzeta0.expect("mixed") + psip0) / g_of_psip0);
+                self.rho0 = Some((self.pzeta0.expect("mixed to boozer") + psip0) / g_of_psip0);
             }
-            _ => (), // Boozer is ready for integration
         };
         self.assert_integration_ready();
         Ok(())
@@ -224,7 +235,8 @@ impl InitialConditions {
 
 #[cfg(test)]
 mod test {
-    use dexter_equilibrium::extract::POLOIDAL_TEST_NETCDF_PATH;
+    use approx::assert_relative_eq;
+    use dexter_equilibrium::extract::{POLOIDAL_TEST_NETCDF_PATH, TEST_NETCDF_PATH};
     use dexter_equilibrium::*;
     use std::{f64::consts::PI, path::PathBuf};
 
@@ -243,10 +255,14 @@ mod test {
         let mut i1 = InitialConditions::boozer(0.0, Toroidal(0.02), PI, PI, 1e-4, 1e-6);
         i1.finalize(&objects).unwrap();
         assert_eq!(i1.coordinate_set, CoordinateSet::BoozerToroidal);
+        assert!(i1.rho0.is_some());
+        assert!(i1.pzeta0.is_some());
 
         let mut i2 = InitialConditions::boozer(0.0, Poloidal(0.02), PI, PI, 1e-4, 1e-6);
         i2.finalize(&objects).unwrap();
         assert_eq!(i2.coordinate_set, CoordinateSet::BoozerPoloidal);
+        assert!(i2.rho0.is_some());
+        assert!(i2.pzeta0.is_some());
 
         let mut initial = InitialConditions::boozer(0.0, Toroidal(0.02), PI, PI, 1e-4, 1e-6);
         initial.finalize(&objects).unwrap();
@@ -270,6 +286,8 @@ mod test {
         let mut initial = InitialConditions::mixed(0.0, Toroidal(0.01), PI, PI, -0.027, 1e-6);
         initial.finalize(&objects).unwrap();
         assert_eq!(initial.coordinate_set, CoordinateSet::MixedToroidal);
+        assert!(initial.rho0.is_some());
+        assert!(initial.pzeta0.is_some());
 
         let mut particle = Particle::new(&initial);
         particle.integrate(
@@ -306,6 +324,8 @@ mod test {
 
         let mut initial = InitialConditions::mixed(0.0, Poloidal(0.01), PI, PI, -0.027, 1e-6);
         initial.finalize(&objects).unwrap();
+        assert!(initial.rho0.is_some());
+        assert!(initial.pzeta0.is_some());
 
         let mut particle = Particle::new(&initial);
         particle.integrate(
@@ -322,5 +342,34 @@ mod test {
         let _ = InitialConditions::mixed(0.0, Toroidal(0.01), PI, PI, -0.027, 1e-6)
             .finalize(&objects)
             .unwrap_err();
+    }
+
+    #[test]
+    fn boozer_mixed_equivalence() {
+        let path = PathBuf::from(TEST_NETCDF_PATH);
+        let qfactor = &NcQfactorBuilder::new(&path, "steffen").build().unwrap();
+        let current = &NcCurrentBuilder::new(&path, "steffen").build().unwrap();
+        let bfield = &NcBfieldBuilder::new(&path, "bicubic").build().unwrap();
+        let perturbation = &Perturbation::zero();
+
+        let objects = EqObjects {
+            qfactor,
+            current,
+            bfield,
+            perturbation,
+        };
+
+        let mut boozer = InitialConditions::boozer(0.0, Toroidal(0.01), PI, PI, 1e-4, 1e-6);
+        boozer.finalize(&objects).unwrap();
+        assert_relative_eq!(
+            boozer.pzeta0.unwrap(),
+            -0.00898781038097592,
+            epsilon = 1e-12
+        );
+
+        let mut mixed =
+            InitialConditions::mixed(0.0, Toroidal(0.01), PI, PI, boozer.pzeta0.unwrap(), 1e-6);
+        mixed.finalize(&objects).unwrap();
+        assert_relative_eq!(mixed.rho0.unwrap(), boozer.rho0.unwrap(), epsilon = 1e-12);
     }
 }

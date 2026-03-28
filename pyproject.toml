@@ -1,6 +1,6 @@
 [project]
 name = "dexter"
-version = "0.1.7-pre.2"
+version = "0.1.7-pre.3"
 description = "Calculations and simulations in analytical and reconstructed equilibria of toroidal fusion devices."
 readme = "README.md"
 authors = [
@@ -66,7 +66,7 @@ addopts = """
 """
 
 [project.scripts]
-bfield_plot = "scripts:bfield_plot"
-flux_surface_plot = "scripts:flux_surface_plot "
-boozer_theta_plot = "scripts:boozer_theta_plot "
-midplane_plot = "scripts:midplane_plot "
+dexter-bfield-plot = "scripts:bfield_plot"
+dexter-flux-surface-plot = "scripts:flux_surface_plot "
+dexter-boozer-theta-plot = "scripts:boozer_theta_plot "
+dexter-midplane-plot = "scripts:midplane_plot "

@@ -415,12 +415,14 @@ impl NcGeometry {
 
         // Create interpolators, if possible
         use NcFluxState::Good;
-        let psip_of_psi_interp = if (psi.state() == Good) & (psip.state() != NcFluxState::None) {
+        let psip_of_psi_interp = if (psi.state() == Good) & (psip.state() != NcFluxState::NoValues)
+        {
             Some(make_interp_type(&builder.interp1d_type)?.build(psi.uvalues(), psip.uvalues())?)
         } else {
             None
         };
-        let psi_of_psip_interp = if (psip.state() == Good) & (psi.state() != NcFluxState::None) {
+        let psi_of_psip_interp = if (psip.state() == Good) & (psi.state() != NcFluxState::NoValues)
+        {
             Some(make_interp_type(&builder.interp1d_type)?.build(psip.uvalues(), psi.uvalues())?)
         } else {
             None
@@ -440,13 +442,13 @@ impl NcGeometry {
         // Neither the fluxes or `r` is guaranteed to exist.
         // If `r` exists, then it is guaranteed it's in increasing order.
         let psi_of_r_interp = match psi.state() {
-            NcFluxState::None => None,
+            NcFluxState::NoValues => None,
             _ => make_interp_type(&builder.interp1d_type)?
                 .build(&r_values, psi.uvalues())
                 .ok(),
         };
         let psip_of_r_interp = match psip.state() {
-            NcFluxState::None => None,
+            NcFluxState::NoValues => None,
             _ => make_interp_type(&builder.interp1d_type)?
                 .build(&r_values, psip.uvalues())
                 .ok(),
