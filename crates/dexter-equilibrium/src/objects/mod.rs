@@ -34,6 +34,16 @@ pub enum LastClosedFluxSurface {
     Poloidal(f64),
 }
 
+impl LastClosedFluxSurface {
+    /// Returns the LCFS value, regardless of its kind.
+    #[must_use]
+    pub fn value(&self) -> f64 {
+        match *self {
+            Self::Toroidal(value) | Self::Poloidal(value) => value,
+        }
+    }
+}
+
 /// Debug-asserts that all values of the slice are finite.
 pub(crate) fn debug_assert_all_finite_values(values: &[f64]) {
     debug_assert!(

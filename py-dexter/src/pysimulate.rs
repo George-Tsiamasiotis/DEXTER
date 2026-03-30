@@ -1,23 +1,43 @@
 //! `dexter-simulate` newtypes, constructors and method exports.
 
 use dexter::dexter_simulate::{
-    FluxCoordinate, InitialConditions, InitialFlux, IntersectParams, Intersection, Particle, Queue,
-    QueueInitialConditions, SolverParams, SteppingMethod, poloidal_fluxes, toroidal_fluxes,
+    COMs, FluxCoordinate, InitialConditions, InitialFlux, IntersectParams, Intersection, Particle,
+    Queue, QueueInitialConditions, SolverParams, SteppingMethod, poloidal_fluxes, toroidal_fluxes,
 };
 use ndarray::Array1;
-use numpy::{IntoPyArray, PyArray1};
-use pyo3::exceptions::PyTypeError;
+use numpy::{IntoPyArray, PyArray1, PyArray2};
+use pyo3::exceptions::{PyTypeError, PyValueError};
 use pyo3::prelude::*;
 use pyo3::types::{PyTuple, PyType};
 
 use crate::pyerror::PySimulationError;
 use crate::{
-    generic_particle_close_impl, generic_particle_integrate_impl, generic_particle_intersect_impl,
-    generic_queue_close_impl, generic_queue_integrate_impl, generic_queue_intersect_impl,
-    py_debug_impl, py_export_getter, py_export_pub_field, py_get_enum_string, py_get_numpy1D,
-    py_repr_impl,
+    generic_energy_of_psi_grid_impl, generic_energy_of_psip_grid_impl, generic_particle_close_impl,
+    generic_particle_integrate_impl, generic_particle_intersect_impl, generic_queue_close_impl,
+    generic_queue_integrate_impl, generic_queue_intersect_impl, py_debug_impl, py_export_getter,
+    py_export_pub_field, py_get_enum_string, py_get_numpy1D, py_repr_impl,
 };
 use crate::{py_get_numpy1D_fallible, pylibrium::*};
+
+// ===============================================================================================
+
+#[pyclass(name = "_PyCOMs", frozen)]
+pub struct PyCOMs(pub(crate) COMs);
+
+#[pymethods]
+impl PyCOMs {
+    #[new]
+    #[pyo3(signature = (/, energy, pzeta, mu))]
+    pub fn new(energy: Option<f64>, pzeta: Option<f64>, mu: Option<f64>) -> Self {
+        Self(COMs { energy, pzeta, mu })
+    }
+}
+
+py_debug_impl!(PyCOMs);
+py_repr_impl!(PyCOMs);
+py_export_pub_field!(PyCOMs, energy, Option<f64>);
+py_export_pub_field!(PyCOMs, pzeta, Option<f64>);
+py_export_pub_field!(PyCOMs, mu, Option<f64>);
 
 // ===============================================================================================
 
@@ -604,4 +624,44 @@ mod py_particle_generics_impl {
     generic_queue_close_impl!(__close_ncdQ_ncdC_larB_ncdP, ncdQ, ncdC, larB, ncdP);
     generic_queue_close_impl!(__close_ncdQ_ncdC_ncdB_cosP, ncdQ, ncdC, ncdB, cosP);
     generic_queue_close_impl!(__close_ncdQ_ncdC_ncdB_ncdP, ncdQ, ncdC, ncdB, ncdP);
+}
+
+/// See [`py_particle_generics_impl`].
+#[allow(non_camel_case_types)]
+mod py_coms_generics_impl {
+    use super::*;
+
+    type uniQ = PyUnityQfactor;
+    type parQ = PyParabolicQfactor;
+    type ncdQ = PyNcQfactor;
+
+    type larC = PyLarCurrent;
+    type ncdC = PyNcCurrent;
+
+    type larB = PyLarBfield;
+    type ncdB = PyNcBfield;
+
+    // ================= `energy_of_psi_grid`
+
+    generic_energy_of_psi_grid_impl!(__energy_of_psi_grid_uniQ_larC_larB, uniQ, larC, larB);
+    generic_energy_of_psi_grid_impl!(__energy_of_psi_grid_uniQ_larC_ncdB, uniQ, larC, ncdB);
+    generic_energy_of_psi_grid_impl!(__energy_of_psi_grid_uniQ_ncdC_larB, uniQ, ncdC, larB);
+    generic_energy_of_psi_grid_impl!(__energy_of_psi_grid_uniQ_ncdC_ncdB, uniQ, ncdC, ncdB);
+
+    generic_energy_of_psi_grid_impl!(__energy_of_psi_grid_parQ_larC_larB, parQ, larC, larB);
+    generic_energy_of_psi_grid_impl!(__energy_of_psi_grid_parQ_larC_ncdB, parQ, larC, ncdB);
+    generic_energy_of_psi_grid_impl!(__energy_of_psi_grid_parQ_ncdC_larB, parQ, ncdC, larB);
+    generic_energy_of_psi_grid_impl!(__energy_of_psi_grid_parQ_ncdC_ncdB, parQ, ncdC, ncdB);
+
+    generic_energy_of_psi_grid_impl!(__energy_of_psi_grid_ncdQ_larC_larB, ncdQ, larC, larB);
+    generic_energy_of_psi_grid_impl!(__energy_of_psi_grid_ncdQ_larC_ncdB, ncdQ, larC, ncdB);
+    generic_energy_of_psi_grid_impl!(__energy_of_psi_grid_ncdQ_ncdC_larB, ncdQ, ncdC, larB);
+    generic_energy_of_psi_grid_impl!(__energy_of_psi_grid_ncdQ_ncdC_ncdB, ncdQ, ncdC, ncdB);
+
+    // ================= `energy_of_psip_grid`
+
+    generic_energy_of_psip_grid_impl!(__energy_of_psip_grid_larC_larB, larC, larB);
+    generic_energy_of_psip_grid_impl!(__energy_of_psip_grid_larC_ncdB, larC, ncdB);
+    generic_energy_of_psip_grid_impl!(__energy_of_psip_grid_ncdC_larB, ncdC, larB);
+    generic_energy_of_psip_grid_impl!(__energy_of_psip_grid_ncdC_ncdB, ncdC, ncdB);
 }

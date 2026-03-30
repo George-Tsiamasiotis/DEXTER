@@ -305,3 +305,70 @@ macro_rules! generic_queue_close_impl {
         }
     };
 }
+
+/// ==============================================================================================
+/// ==============================================================================================
+
+/// Manually monomorphizes COMs' `energy_of_psi_grid()` method for the specific equilibrium objects.
+#[macro_export]
+macro_rules! generic_energy_of_psi_grid_impl {
+    ($fun_name:ident, $Q:ty, $C:ty, $B:ty) => {
+        #[pymethods]
+        impl PyCOMs {
+            #[allow(non_snake_case)]
+            #[expect(clippy::too_many_arguments, reason = "python kwargs")]
+            pub fn $fun_name<'py>(
+                &self,
+                py: Python<'py>,
+                qfactor: &$Q,
+                current: &$C,
+                bfield: &$B,
+                psi_values: Vec<f64>,
+                theta_values: Vec<f64>,
+            ) -> PyResult<Bound<'py, PyArray2<f64>>> {
+                Ok(self
+                    .0
+                    .energy_of_psi_grid(
+                        &qfactor.0,
+                        &current.0,
+                        &bfield.0,
+                        &Array1::from_vec(theta_values),
+                        &Array1::from_vec(psi_values),
+                    )
+                    .or_else(|err| Err(PyErr::new::<PyValueError, _>(err.to_string())))?
+                    .into_pyarray(py))
+            }
+        }
+    };
+}
+
+/// Manually monomorphizes COMs' `energy_of_psip_grid()` method for the specific equilibrium objects.
+#[macro_export]
+macro_rules! generic_energy_of_psip_grid_impl {
+    ($fun_name:ident, $C:ty, $B:ty) => {
+        #[pymethods]
+        impl PyCOMs {
+            #[allow(non_snake_case)]
+            #[expect(clippy::too_many_arguments, reason = "python kwargs")]
+            pub fn $fun_name<'py>(
+                &self,
+                py: Python<'py>,
+                current: &$C,
+                bfield: &$B,
+                psip_values: Vec<f64>,
+                theta_values: Vec<f64>,
+            ) -> PyResult<Bound<'py, PyArray2<f64>>> {
+                Ok(self
+                    .0
+                    .energy_of_psip_grid(
+                        &current.0,
+                        &bfield.0,
+                        &Array1::from_vec(theta_values),
+                        &Array1::from_vec(psip_values),
+                    )
+                    .or_else(|err| Err(PyErr::new::<PyValueError, _>(err.to_string())))?
+                    .into_pyarray(py))
+            }
+        }
+    };
+}

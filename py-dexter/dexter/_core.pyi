@@ -426,6 +426,39 @@ class _PyNcPerturbation:
 # ================================================================================================
 # ================================================================================================
 
+class _PyCOMs:
+    """PyO3 export of `dexter_simulate::COMs`."""
+
+    energy: Optional[float]
+    pzeta: Optional[float]
+    mu: Optional[float]
+
+    def __init__(
+        self,
+        energy: Optional[float] = None,
+        pzeta: Optional[float] = None,
+        mu: Optional[float] = None,
+    ) -> None: ...
+    def energy_of_psi_grid(
+        self,
+        qfactor: _PyQfactor,
+        current: _PyCurrent,
+        bfield: _PyBfield,
+        psi_array: Array1,
+        theta_array: Array1,
+    ) -> Array2: ...
+    def energy_of_psip_grid(
+        self,
+        current: _PyCurrent,
+        bfield: _PyBfield,
+        psip_array: Array1,
+        theta_array: Array1,
+    ) -> Array2: ...
+    def __str__(self) -> str: ...
+    def __repr__(self) -> str: ...
+
+# ================================================================================================
+
 class _PyInitialFlux:
     """PyO3 export of `dexter_simulate::InitialFlux`."""
 

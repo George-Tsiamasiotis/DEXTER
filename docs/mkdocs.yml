@@ -117,5 +117,6 @@ nav:
       - Perturbation: reference/equilibrium/perturbation.md
       - Helpers: reference/equilibrium/helpers.md
     - Simulate:
+      - COMs: reference/simulate/coms.md
       - Particle: reference/simulate/particle.md
       - Queue: reference/simulate/queue.md

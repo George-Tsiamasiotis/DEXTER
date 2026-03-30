@@ -24,6 +24,7 @@ fn _core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<pylibrium::PyCosPerturbation>()?;
     m.add_class::<pylibrium::PyNcPerturbation>()?;
     // Simulation
+    m.add_class::<pysimulate::PyCOMs>()?;
     m.add_class::<pysimulate::PyInitialFlux>()?;
     m.add_class::<pysimulate::PyInitialConditions>()?;
     m.add_class::<pysimulate::PyIntersectParams>()?;

@@ -18,4 +18,8 @@ pub enum SimulationError {
     /// Queue initial conditions arrays must be of the same size.
     #[error("Queue initial conditions arrays must be of the same size")]
     QueueInitialConditionsMismatch,
+
+    /// Missing required field in [`COMs`](crate::COMs).
+    #[error("Missing '{0}' field")]
+    MissingCOM(Box<str>),
 }

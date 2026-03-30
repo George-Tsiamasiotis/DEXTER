@@ -33,6 +33,15 @@
 //! The integration is done with the RKF4(5) method. The step size can be adaptive by minimizing
 //! the energy difference from step to step or minimizing the local truncation error (classic
 //! RKF4(5)), or simple set to be constant.
+//!
+//! ### Constants of motion
+//!
+//! Calculations involving the Constants of Motion.
+//!
+//! + [`COMs`]: A container struct for the constants of motion in an unperturbed equilibrium.
+//!   + [`COMs::energy_of_psi_grid`]: Calculation of the Energy in a 2D `θ-ψ` grid
+//!   + [`COMs::energy_of_psip_grid`]: Calculation of the Energy in a 2D `θ-ψp` grid
+//!
 
 mod error;
 mod particle;
@@ -55,3 +64,5 @@ pub use particle::{
 
 pub use queue::{Queue, QueueInitialConditions, Routine};
 pub use queue::{poloidal_fluxes, toroidal_fluxes};
+
+pub use state::COMs;

@@ -11,6 +11,7 @@ import numpy as np
 from typing import Callable, Optional
 
 from dexter._core import (
+    _PyCOMs,
     _PyInitialFlux,
     _PyInitialConditions,
     _PyIntersectParams,
@@ -25,6 +26,7 @@ from ._plotters import _ParticlePlotter, _QueuePlotter
 
 from dexter.types import (
     Array1,
+    Array2,
     FluxCoordinate,
     CoordinateSet,
     Intersection,
@@ -36,6 +38,165 @@ from dexter.types import (
 
 # ================================================================================================
 # ================================================================================================
+
+
+class COMs:
+    r"""The Constants of motion in an unperturbed equilibrium.
+
+    Parameters
+    ----------
+    energy
+        The Energy in Normalized Units.
+    pzeta
+        The canonical momentum $P_\zeta$ in Normalized Units.
+    mu
+        The magnetic moment $\mu$ in Normalized Units
+
+    Example
+    -------
+    ```python title="COMs creation"
+    >>> coms = dex.COMs(
+    ...     pzeta=-0.025,
+    ...     mu=1e-4,
+    ... )
+
+    ```
+    """
+
+    _rust: _PyCOMs
+
+    def __init__(
+        self,
+        energy: Optional[float] = None,
+        pzeta: Optional[float] = None,
+        mu: Optional[float] = None,
+    ) -> None:
+        self._rust = _PyCOMs(energy=energy, pzeta=pzeta, mu=mu)
+
+    def energy_of_psi_grid(
+        self,
+        equilibrium: Equilibrium,
+        psi_array: Array1,
+        theta_array: Array1,
+    ) -> Array2:
+        r"""Calculates the Energy on a 2D meshgrid of the $\psi$ and $\theta$ arrays, in Normalized Units.
+
+        !!! note
+
+            Both $P_\zeta$ and $\mu$ fields must be defined.
+
+        Example
+        -------
+        ```python title="COMs creation"
+        >>> # Equilibrium setup
+        >>> LCFS = dex.LastClosedFluxSurface(kind="Toroidal", value=0.45)
+        >>> equilibrium = dex.Equilibrium(
+        ...     qfactor=dex.ParabolicQfactor(qaxis=1.1, qlast=4.1, lcfs=LCFS),
+        ...     current=dex.LarCurrent(),
+        ...     bfield=dex.LarBfield(),
+        ... )
+        >>>
+        >>> # Constants of Motion definition
+        >>> coms = dex.COMs(
+        ...     pzeta=-0.025,
+        ...     mu=1e-4,
+        ... )
+        >>> theta_array = np.linspace(-np.pi, np.pi, 100)
+        >>> psi_array = np.linspace(0, LCFS.value, 100)
+        >>>
+        >>> energy_grid = coms.energy_of_psi_grid(equilibrium, psi_array, theta_array)
+
+        ```
+        """
+
+        prefix = "__energy_of_psi_grid"
+        q = equilibrium.qfactor._dyn
+        c = equilibrium.current._dyn
+        b = equilibrium.bfield._dyn
+        method_name: Callable = getattr(self._rust, f"{prefix}_{q}_{c}_{b}")
+        return method_name(
+            equilibrium.qfactor._rust,
+            equilibrium.current._rust,
+            equilibrium.bfield._rust,
+            theta_array,
+            psi_array,
+        )
+
+    def energy_of_psip_grid(
+        self,
+        equilibrium: Equilibrium,
+        theta_array: Array1,
+        psip_array: Array1,
+    ) -> Array2:
+        r"""Calculates the Energy on a 2D meshgrid of the $\psi_p$ and $\theta$ arrays, in Normalized Units.
+
+        !!! note
+
+            Both $P_\zeta$ and $\mu$ fields must be defined.
+
+        !!! note
+
+            The [`Qfactor`][dexter.Qfactor] object is not used in the calculation.
+
+        Example
+        -------
+        ```python title="COMs creation"
+        >>> # Equilibrium setup
+        >>> equilibrium = dex.numerical_equilibrium("./data.nc", "Steffen", "Bicubic")
+        >>>
+        >>> # Constants of Motion definition
+        >>> coms = dex.COMs(
+        ...     pzeta=-0.025,
+        ...     mu=1e-4,
+        ... )
+        >>> theta_array = np.linspace(-np.pi, np.pi, 100)
+        >>> psip_array = np.linspace(0, equilibrium.psip_last, 100)
+        >>>
+        >>> energy_grid = coms.energy_of_psip_grid(equilibrium, psip_array, theta_array)
+
+        ```
+        """
+
+        prefix = "__energy_of_psip_grid"
+        c = equilibrium.current._dyn
+        b = equilibrium.bfield._dyn
+        method_name: Callable = getattr(self._rust, f"{prefix}_{c}_{b}")
+        return method_name(
+            equilibrium.current._rust,
+            equilibrium.bfield._rust,
+            psip_array,
+            theta_array,
+        )
+
+    @property
+    def energy(self) -> float:
+        """The Energy in Normalized Units."""
+        if self._rust.energy is None:
+            raise AttributeError("'energy' has not been defined")
+        else:
+            return self._rust.energy
+
+    @property
+    def pzeta(self) -> float:
+        r"""The canonical momentum $P_\zeta$ in Normalized Units."""
+        if self._rust.pzeta is None:
+            raise AttributeError("'pzeta' has not been defined")
+        else:
+            return self._rust.pzeta
+
+    @property
+    def mu(self) -> float:
+        r"""The canonical momentum $\mu$ in Normalized Units."""
+        if self._rust.mu is None:
+            raise AttributeError("'mu' has not been defined")
+        else:
+            return self._rust.mu
+
+    def __str__(self) -> str:
+        return self._rust.__str__()
+
+    def __repr__(self) -> str:
+        return self.__str__()
 
 
 class InitialFlux:

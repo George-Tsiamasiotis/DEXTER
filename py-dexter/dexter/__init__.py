@@ -35,6 +35,7 @@ from dexter.types import (
 )
 
 from dexter.simulate import (
+    COMs,
     InitialFlux,
     InitialConditions,
     IntersectParams,
@@ -42,6 +43,7 @@ from dexter.simulate import (
     InitialFluxArray,
     QueueInitialConditions,
     Queue,
+    energy_contour,
 )
 
 __all__ = [
@@ -87,6 +89,7 @@ __all__ = [
     "Equilibrium",
     "numerical_equilibrium",
     # Simulate
+    "COMs",
     "InitialFlux",
     "InitialConditions",
     "IntersectParams",
@@ -94,4 +97,5 @@ __all__ = [
     "InitialFluxArray",
     "QueueInitialConditions",
     "Queue",
+    "energy_contour",
 ]

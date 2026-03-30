@@ -13,6 +13,7 @@ from typing import Any
 
 from dexter._core import _PyParticle, _PyQueue
 from dexter import Equilibrium, LarGeometry, OrbitType
+from dexter.types import Array1
 
 dpi = 120
 figsize = (10, 7)
@@ -30,9 +31,9 @@ CARTESIAN_POINCARE_INITIAL_KW = {
 }
 RZ_POINCARE_PLOT_KW = {
     "marker": ".",
-    "markersize": 0.4,
+    "markersize": 0.8,
     "color": "blue",
-    "alpha": 0.4,
+    "alpha": 0.6,
     "linestyle": "",
 }
 RZ_POINCARE_INITIAL_KW = {
@@ -669,9 +670,9 @@ class _QueuePlotter:
 # ================================================================================================
 
 
-def pi_mod(arr: np.ndarray):
+def pi_mod(arr: Array1) -> Array1:
     """Mods an angle time series in the interval [-π, π]."""
-    a = np.mod(arr, 2 * np.pi)
+    a: Array1 = np.mod(arr, 2 * np.pi)
     a = a - 2 * np.pi * (a > np.pi)
     return a
 

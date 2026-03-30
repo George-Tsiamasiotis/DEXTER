@@ -52,10 +52,7 @@ impl PyLastClosedFluxSurface {
 
     #[getter]
     pub fn get_value(&self) -> f64 {
-        match self.0 {
-            LastClosedFluxSurface::Toroidal(value) => value,
-            LastClosedFluxSurface::Poloidal(value) => value,
-        }
+        self.0.value()
     }
 }
 
