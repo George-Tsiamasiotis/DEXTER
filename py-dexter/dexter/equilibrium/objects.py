@@ -765,12 +765,30 @@ class NcBfield(_BfieldTrait):
 
     Related quantities are computed by interpolating over the data arrays.
 
+    !!! note "$\theta$ padding"
+
+        At the grid edges, the interpolator’s higher derivatives are not well defined. By
+        left-right padding the $B$ array with extra $\theta=const$ columns, we force the
+        interpolator to take $\theta$’s periodicity into account and therefore calculate
+        the correct derivative values.
+
+        Note that in contrast to the one-dimensional cubic spline, in a bicubic interpolation
+        3 columns are not enough to ensure periodicity, since the spline coefficients depend
+        on the values of the whole array.
+
+        According to this stack overflow thread, the effect of the $i$-th column at the
+        $j$-th column of the spline goes as $r^{|i-j|}$, where $r=\sqrt{3}-2 \approx -0.26$.
+        Therefore, with a padding of 10, the effect at the $\theta=0$ boundary would be of
+        the order of $1^{-6}$.
+
     Parameters
     ----------
     path
         The path to the NetCDF file.
     interp_type
         The type of 2D Interpolation.
+    padding
+        The left-right $\theta$ (per-side) padding width. Defaults to 15.
 
     Example
     -------
@@ -787,6 +805,8 @@ class NcBfield(_BfieldTrait):
         self,
         path: str,
         interp_type: Interp2DType,
+        *,
+        padding: int = 15,
     ) -> None:
         setattr(
             self,
@@ -794,6 +814,7 @@ class NcBfield(_BfieldTrait):
             _PyNcBfield(
                 path=path,
                 interp_type=interp_type,
+                padding=padding,
             ),
         )
         _BfieldTrait.__init__(self)
@@ -824,12 +845,25 @@ class NcBfield(_BfieldTrait):
         return self._rust.baxis
 
     @property
+    def padding(self) -> int:
+        r"""The left-right $\theta$ (per side) padding width."""
+        return self._rust.padding
+
+    @property
     def shape(self) -> ArrayShape:
         r"""The shape of the 2 dimensional data arrays, as in $(len(\psi/\psi_p), len(\theta))$.
 
         If both coordinates are “good”, they are guaranteed to be of the same length.
         """
         return self._rust.shape
+
+    @property
+    def shape_padded(self) -> ArrayShape:
+        r"""The shape of the 2 dimensional **padded** data arrays, as in $(len(\psi/\psi_p), len(\theta))$.
+
+        If both coordinates are “good”, they are guaranteed to be of the same length.
+        """
+        return self._rust.shape_padded
 
     @property
     def psi_last(self) -> float:
@@ -870,6 +904,16 @@ class NcBfield(_BfieldTrait):
     def b_array(self) -> Array2:
         r"""The NetCDF $g$ data."""
         return self._rust.b_array
+
+    @property
+    def theta_array_padded(self) -> Array1:
+        r"""The padded $\theta$ data."""
+        return self._rust.theta_array_padded
+
+    @property
+    def b_array_padded(self) -> Array2:
+        r"""The padded $B$ data."""
+        return self._rust.b_array_padded
 
     def __str__(self) -> str:
         return self._rust.__str__()

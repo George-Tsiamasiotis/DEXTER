@@ -1,20 +1,21 @@
 //! Representation of an equilibrium's magnetic field.
 
 use crate::{
-    debug_assert_is_finite, debug_assert_non_negative_psi, debug_assert_non_negative_psip,
-    equilibrium_type_getter_impl, fluxes_state_getter_impl, fluxes_values_array_getter_impl,
-    fortran_vec_to_carray2d_impl, interp_type_getter_impl, lcfs_getter_impl,
+    debug_assert_is_2pi_modulo, debug_assert_is_finite, debug_assert_non_negative_psi,
+    debug_assert_non_negative_psip, equilibrium_type_getter_impl, fluxes_state_getter_impl,
+    fluxes_values_array_getter_impl, interp_type_getter_impl, lcfs_getter_impl,
     netcdf_path_getter_impl, netcdf_version_getter_impl, shape2d_getter_impl,
 };
-use dexter_common::vec_to_array1D_getter_impl;
-use ndarray::{Array1, Array2, Order::ColumnMajor};
+use ndarray::{Array1, Array2, Axis, Order::ColumnMajor};
+use ndarray::{concatenate, s};
 use rsl_interpolation::{Accelerator, Cache, DynInterpolation2d, Interp2dType, make_interp2d_type};
+use std::f64::consts::TAU;
 use std::path::{Path, PathBuf};
 
 use super::debug_assert_all_finite_values;
 use crate::objects::nc_flux::{NcFlux, NcFluxState};
 use crate::{Bfield, EquilibriumType};
-use crate::{EqError, EvalError};
+use crate::{EqError, EvalError, NcError};
 
 // ===============================================================================================
 
@@ -132,8 +133,6 @@ impl std::fmt::Debug for LarBfield {
 // ===============================================================================================
 
 /// Used to create a [`NcBfield`].
-///
-/// Exists for future configuration flexibility.
 #[non_exhaustive]
 #[derive(Debug)]
 pub struct NcBfieldBuilder {
@@ -141,6 +140,8 @@ pub struct NcBfieldBuilder {
     path: PathBuf,
     /// 2D [`DynInterpolation2d`], in case-insensitive string format.
     interp_type: String,
+    /// The number of columns to pad the `B` array.
+    padding: usize,
 }
 
 impl NcBfieldBuilder {
@@ -159,7 +160,43 @@ impl NcBfieldBuilder {
         Self {
             path: path.to_path_buf(),
             interp_type: interp_type.into(),
+            padding: 15,
         }
+    }
+
+    /// Sets the left-right `θ` padding width.
+    ///
+    /// At the grid edges, the interpolator's higher derivatives are not well defined. By
+    /// left-right padding the `B` array with extra `θ=const` columns, we force the interpolator
+    /// to take `θ`'s periodicity into account and therefore calculate the correct derivative
+    /// values.
+    ///
+    /// Note that in contrast to the one-dimensional cubic spline, in a bicubic interpolation 3
+    /// columns are not enough to ensure periodicity, since the spline coefficients depend on the
+    /// values of the whole array.
+    ///
+    /// According to [`this`] stack overflow thread, the effect of the `i`-th column at the `j`-th
+    /// column of the spline goes as `r^|i-j|`, where `r=sqrt(3)-2 = -0.26`. Therefore, with a
+    /// padding of 10, the effect at the `θ=0` boundary would be of the order of 1e-6.
+    ///
+    /// # Default
+    ///
+    /// The default padding value is 15 columns, where the relative error is about `1e-9`.
+    ///
+    /// # Example
+    /// ```
+    /// # use std::path::PathBuf;
+    /// # use dexter_equilibrium::*;
+    /// let path = PathBuf::from("./netcdf.nc");
+    /// let builder = NcBfieldBuilder::new(&path, "bicubic").with_padding(5).build()?;
+    /// # Ok::<_, EqError>(())
+    /// ```
+    ///
+    /// [`this`]: https://stackoverflow.com/a/25106574/32596387
+    #[must_use]
+    pub fn with_padding(mut self, padding: usize) -> Self {
+        self.padding = padding;
+        self
     }
 
     /// Creates a new [`NcBfield`] with the Builder's configuration.
@@ -202,16 +239,22 @@ pub struct NcBfield {
 
     /// Magnetic field strength on the axis `B0` in [T].
     baxis: f64,
+    /// The number of columns to pad the `B` array.
+    padding: usize,
 
-    /// The boozer toroidal angle `θ` in [rads].
+    /// The boozer toroidal angle `θ` in [rads], as extracted from the netCDF file.
     theta_values: Vec<f64>,
+    /// The boozer toroidal angle `θ` in [rads], with the added padding.
+    theta_values_padded: Vec<f64>,
     /// The toroidal flux coordinate.
     psi: NcFlux,
     /// The poloidal flux coordinate.
     psip: NcFlux,
 
-    /// The `B` values, flattened in F order.
-    b_values_fortran_flat: Vec<f64>,
+    /// The `B` array as extracted from the netCDF file.
+    b_array: Array2<f64>,
+    /// The `B` values, flattened in F order, with the added padding.
+    b_values_fortran_flat_padded: Vec<f64>,
     /// `B(ψ, θ)` interpolator.
     b_of_psi_interp: Option<DynInterpolation2d<f64>>,
     /// `B(ψp, θ)` interpolator.
@@ -230,34 +273,36 @@ impl NcBfield {
         let file = extract::open(&path)?;
         let netcdf_version = extract::version(&file)?;
 
-        let theta_values = extract::array_1d(&file, NC_THETA)?.to_vec();
         let psi = NcFlux::toroidal(&file);
         let psip = NcFlux::poloidal(&file);
 
+        let theta_array = extract::array_1d(&file, NC_THETA)?;
+        let b_array = extract::array_2d(&file, NC_B_NORM)?;
         let baxis: f64 = extract::scalar(&file, NC_BAXIS)?;
-        let b_values_fortran_flat = extract::array_2d(&file, NC_B_NORM)?
-            .flatten_with_order(ColumnMajor)
-            .to_vec();
+
+        let theta_values_padded = Self::pad_theta_array(&theta_array, builder.padding)?.to_vec();
+        let b_array_padded = Self::pad_b_array(&b_array, builder.padding)?;
+        let b_values_fortran_flat_padded = b_array_padded.flatten_with_order(ColumnMajor).to_vec();
 
         debug_assert!(baxis.is_finite(), "NaN 'baxis' field encountered");
-        debug_assert_all_finite_values(&theta_values);
-        debug_assert_all_finite_values(&b_values_fortran_flat);
+        debug_assert_all_finite_values(&theta_values_padded);
+        debug_assert_all_finite_values(&b_values_fortran_flat_padded);
 
         // Create interpolators, if possible
         use NcFluxState::Good;
         let b_of_psi_interp = match psi.state() {
             Good => Some(make_interp2d_type(&builder.interp_type)?.build(
                 psi.uvalues(),
-                &theta_values,
-                &b_values_fortran_flat,
+                &theta_values_padded,
+                &b_values_fortran_flat_padded,
             )?),
             _ => None,
         };
         let b_of_psip_interp = match psip.state() {
             Good => Some(make_interp2d_type(&builder.interp_type)?.build(
                 psip.uvalues(),
-                &theta_values,
-                &b_values_fortran_flat,
+                &theta_values_padded,
+                &b_values_fortran_flat_padded,
             )?),
             _ => None,
         };
@@ -267,14 +312,56 @@ impl NcBfield {
             netcdf_version,
             path,
             interp_type: builder.interp_type,
-            theta_values,
+            theta_values: theta_array.to_vec(),
+            theta_values_padded,
             psi,
             psip,
             baxis,
-            b_values_fortran_flat,
+            padding: builder.padding,
+            b_array,
+            b_values_fortran_flat_padded,
             b_of_psi_interp,
             b_of_psip_interp,
         })
+    }
+
+    /// Returns the left-right padded `θ` array.
+    fn pad_theta_array(theta_array: &Array1<f64>, padding: usize) -> Result<Array1<f64>, NcError> {
+        if padding > theta_array.len() {
+            return Err(NcError::PaddingError(
+                "'padding' cannot be bigger that the number of 'θ' values.".into(),
+            ));
+        }
+
+        let left_values = theta_array.slice(s![1..=padding]).to_owned();
+        let right_values = theta_array
+            .slice(s![(-1 - padding as isize)..=-2])
+            .to_owned();
+        let left_pad = right_values - TAU;
+        let right_pad = left_values + TAU;
+
+        concatenate(
+            Axis(0),
+            &[left_pad.view(), theta_array.view(), right_pad.view()],
+        )
+        .or(Err(NcError::PaddingError("Concatenation error.".into())))
+    }
+
+    /// Returns the left-right padded `B` array.
+    fn pad_b_array(b_array: &Array2<f64>, padding: usize) -> Result<Array2<f64>, NcError> {
+        if padding > b_array.ncols() {
+            return Err(NcError::PaddingError(
+                "'padding' cannot be bigger that the number of 'θ' values.".into(),
+            ));
+        }
+        let right_padding = b_array.slice(s![.., 1..=padding]);
+        let left_padding = b_array.slice(s![.., (-1 - padding as isize)..=-2]);
+
+        concatenate(
+            Axis(1),
+            &[left_padding.view(), b_array.view(), right_padding.view()],
+        )
+        .or(Err(NcError::PaddingError("Concatenation error.".into())))
     }
 }
 
@@ -288,11 +375,12 @@ impl Bfield for NcBfield {
         cache: &mut Cache<f64>,
     ) -> Result<f64, EvalError> {
         debug_assert_non_negative_psi!(psi);
+        debug_assert_is_2pi_modulo!(theta);
         match self.b_of_psi_interp.as_ref() {
             Some(interp) => Ok(debug_assert_is_finite!(interp.eval(
                 self.psi.uvalues(),
-                &self.theta_values,
-                &self.b_values_fortran_flat,
+                &self.theta_values_padded,
+                &self.b_values_fortran_flat_padded,
                 psi,
                 theta,
                 psi_acc,
@@ -312,11 +400,12 @@ impl Bfield for NcBfield {
         cache: &mut Cache<f64>,
     ) -> Result<f64, EvalError> {
         debug_assert_non_negative_psip!(psip);
+        debug_assert_is_2pi_modulo!(theta);
         match self.b_of_psip_interp.as_ref() {
             Some(interp) => Ok(debug_assert_is_finite!(interp.eval(
                 self.psip.uvalues(),
-                &self.theta_values,
-                &self.b_values_fortran_flat,
+                &self.theta_values_padded,
+                &self.b_values_fortran_flat_padded,
                 psip,
                 theta,
                 psip_acc,
@@ -336,11 +425,12 @@ impl Bfield for NcBfield {
         cache: &mut Cache<f64>,
     ) -> Result<f64, EvalError> {
         debug_assert_non_negative_psi!(psi);
+        debug_assert_is_2pi_modulo!(theta);
         match self.b_of_psi_interp.as_ref() {
             Some(interp) => Ok(debug_assert_is_finite!(interp.eval_deriv_x(
                 self.psi.uvalues(),
-                &self.theta_values,
-                &self.b_values_fortran_flat,
+                &self.theta_values_padded,
+                &self.b_values_fortran_flat_padded,
                 psi,
                 theta,
                 psi_acc,
@@ -360,11 +450,12 @@ impl Bfield for NcBfield {
         cache: &mut Cache<f64>,
     ) -> Result<f64, EvalError> {
         debug_assert_non_negative_psip!(psip);
+        debug_assert_is_2pi_modulo!(theta);
         match self.b_of_psip_interp.as_ref() {
             Some(interp) => Ok(debug_assert_is_finite!(interp.eval_deriv_x(
                 self.psip.uvalues(),
-                &self.theta_values,
-                &self.b_values_fortran_flat,
+                &self.theta_values_padded,
+                &self.b_values_fortran_flat_padded,
                 psip,
                 theta,
                 psip_acc,
@@ -384,11 +475,12 @@ impl Bfield for NcBfield {
         cache: &mut Cache<f64>,
     ) -> Result<f64, EvalError> {
         debug_assert_non_negative_psi!(psi);
+        debug_assert_is_2pi_modulo!(theta);
         match self.b_of_psi_interp.as_ref() {
             Some(interp) => Ok(debug_assert_is_finite!(interp.eval_deriv_y(
                 self.psi.uvalues(),
-                &self.theta_values,
-                &self.b_values_fortran_flat,
+                &self.theta_values_padded,
+                &self.b_values_fortran_flat_padded,
                 psi,
                 theta,
                 psi_acc,
@@ -408,11 +500,12 @@ impl Bfield for NcBfield {
         cache: &mut Cache<f64>,
     ) -> Result<f64, EvalError> {
         debug_assert_non_negative_psip!(psip);
+        debug_assert_is_2pi_modulo!(theta);
         match self.b_of_psip_interp.as_ref() {
             Some(interp) => Ok(debug_assert_is_finite!(interp.eval_deriv_y(
                 self.psip.uvalues(),
-                &self.theta_values,
-                &self.b_values_fortran_flat,
+                &self.theta_values_padded,
+                &self.b_values_fortran_flat_padded,
                 psip,
                 theta,
                 psip_acc,
@@ -437,12 +530,57 @@ impl NcBfield {
         self.baxis
     }
 
+    /// Returns the number of `θ` padding columns (per side).
+    #[must_use]
+    pub fn padding(&self) -> usize {
+        self.padding
+    }
+
+    /// Returns the `θ` array, as extracted from the netCDF file.
+    #[must_use]
+    pub fn theta_array(&self) -> Array1<f64> {
+        Array1::from(self.theta_values.clone())
+    }
+
+    /// Returns the padded `θ` array.
+    #[must_use]
+    pub fn theta_array_padded(&self) -> Array1<f64> {
+        Array1::from(self.theta_values_padded.clone())
+    }
+
+    /// Returns the `B` array, as extracted from the netCDF file.
+    #[must_use]
+    pub fn b_array(&self) -> Array2<f64> {
+        self.b_array.clone()
+    }
+
+    /// Returns the padded `B` array.
+    #[must_use]
+    pub fn b_array_padded(&self) -> Array2<f64> {
+        // Array is in Fortran order, so we must reverse the shape
+        let shape = (
+            self.b_array.ncols() + 2 * self.padding,
+            self.b_array.nrows(),
+        );
+        #[expect(clippy::missing_panics_doc, reason = "infallible")]
+        Array2::from_shape_vec(shape, self.b_values_fortran_flat_padded.clone())
+            .expect("Shape is correct by definition")
+            .reversed_axes()
+    }
+
+    /// Returns the the (ψ/ψp, θ) shape of the *padded* 2D arrays, depending on the state of each flux
+    /// coordinate. If both coordinates are "good", they are guaranteed to be of the same length.
+    #[must_use]
+    pub fn shape_padded(&self) -> (usize, usize) {
+        let mut actual_shape = self.shape();
+        actual_shape.1 += 2 * self.padding;
+        actual_shape
+    }
+
     shape2d_getter_impl!();
     lcfs_getter_impl!();
     fluxes_state_getter_impl!();
     fluxes_values_array_getter_impl!();
-    vec_to_array1D_getter_impl!(theta_array, theta_values, theta);
-    fortran_vec_to_carray2d_impl!(b_array, b_values_fortran_flat, B);
 }
 
 impl std::fmt::Debug for NcBfield {
@@ -454,6 +592,7 @@ impl std::fmt::Debug for NcBfield {
             .field("interpolation type", &self.interp_type())
             .field("baxis [T]", &self.baxis)
             .field("shape (ψ/ψp, θ)", &self.shape())
+            .field("padding", &self.padding)
             .field("psi", &self.psi)
             .field("psip", &self.psip)
             .finish()
@@ -596,5 +735,72 @@ mod lar_values {
         assert_relative_eq!(b.b_of_psi(psi, theta, a1, a2, c).unwrap(), -2.0802770595333673, epsilon=epsilon);
         assert_relative_eq!(b.db_dpsi(psi, theta, a1, a2, c).unwrap(), -0.10267590198444558, epsilon=epsilon);
         assert_relative_eq!(b.db_of_psi_dtheta(psi, theta, a1, a2, c).unwrap(), 4.529005766888851, epsilon=epsilon);
+    }
+}
+
+#[cfg(test)]
+mod padding {
+    use ndarray::array;
+
+    use super::*;
+
+    #[test]
+    #[rustfmt::skip]
+    fn theta_padding() {
+        let theta_values = Array1::from(vec![0.0, 2.0, 4.0, TAU]);
+        let pad0 = NcBfield::pad_theta_array(&theta_values, 0).unwrap().to_vec();
+        let pad1 = NcBfield::pad_theta_array(&theta_values, 1).unwrap().to_vec();
+        let pad2 = NcBfield::pad_theta_array(&theta_values, 2).unwrap().to_vec();
+        let pad3 = NcBfield::pad_theta_array(&theta_values, 3).unwrap().to_vec();
+
+        assert_eq!(pad0, theta_values.to_vec());
+        assert_eq!(pad1, vec![
+                4.0-TAU,
+                0.0, 2.0, 4.0, TAU,
+                2.0+TAU
+            ]
+        );
+        assert_eq!(pad2, vec![
+                2.0-TAU, 4.0-TAU,
+                0.0, 2.0, 4.0, TAU,
+                2.0+TAU, 4.0+TAU
+            ]
+        );
+        assert_eq!(pad3, vec![
+                -TAU, 2.0-TAU, 4.0-TAU,
+                0.0, 2.0, 4.0, TAU,
+                2.0+TAU, 4.0+TAU, TAU+TAU
+            ]
+        );
+    }
+
+    #[test]
+    fn b_padding() {
+        let b_array = array![
+            [1.0, 4.0, 7.0, 1.0],
+            [2.0, 5.0, 8.0, 2.0],
+            [3.0, 6.0, 9.0, 3.0]
+        ];
+        let pad0 = NcBfield::pad_b_array(&b_array, 0).unwrap();
+        let pad1 = NcBfield::pad_b_array(&b_array, 1).unwrap();
+        let pad2 = NcBfield::pad_b_array(&b_array, 2).unwrap();
+
+        assert_eq!(pad0, b_array);
+        assert_eq!(
+            pad1,
+            array![
+                [7.0, 1.0, 4.0, 7.0, 1.0, 4.0],
+                [8.0, 2.0, 5.0, 8.0, 2.0, 5.0],
+                [9.0, 3.0, 6.0, 9.0, 3.0, 6.0]
+            ]
+        );
+        assert_eq!(
+            pad2,
+            array![
+                [4.0, 7.0, 1.0, 4.0, 7.0, 1.0, 4.0, 7.0],
+                [5.0, 8.0, 2.0, 5.0, 8.0, 2.0, 5.0, 8.0],
+                [6.0, 9.0, 3.0, 6.0, 9.0, 3.0, 6.0, 9.0]
+            ]
+        );
     }
 }

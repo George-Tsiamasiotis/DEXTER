@@ -89,4 +89,8 @@ pub enum NcError {
         /// The mode number.
         mode: i64,
     },
+
+    /// θ-padding error.
+    #[error("Padding error: {0}")]
+    PaddingError(Box<str>),
 }

@@ -99,7 +99,7 @@ impl COMs {
             let g = current.g_of_psi(psi, &mut psi_acc)?;
             let rho = (pzeta + psip) / g;
             for j in 0..mod_theta_array.len() {
-                let theta = mod_theta_array[j].rem_euclid(TAU);
+                let theta = mod_theta_array[j];
                 let b = bfield.b_of_psi(psi, theta, &mut psi_acc, &mut theta_acc, &mut cache)?;
                 grid[[i, j]] = (rho * b).powi(2) / 2.0 + mu * b
             }
@@ -184,9 +184,9 @@ impl COMs {
             let g = current.g_of_psip(psip, &mut psip_acc)?;
             let rho = (pzeta + psip) / g;
             for j in 0..mod_theta_array.len() {
-                let theta = mod_theta_array[j].rem_euclid(TAU);
+                let theta = mod_theta_array[j];
                 let b = bfield.b_of_psip(psip, theta, &mut psip_acc, &mut theta_acc, &mut cache)?;
-                grid[[i, j]] = rho.powi(2) * b.powi(2) / 2.0 + mu * b
+                grid[[i, j]] = (rho * b).powi(2) / 2.0 + mu * b
             }
         }
 

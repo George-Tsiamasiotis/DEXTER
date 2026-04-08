@@ -11,7 +11,7 @@ macro_rules! fortran_vec_to_carray2d_impl {
         #[doc = "` values as a 2D array." ]
         #[must_use]
         pub fn $meth_name(&self) -> Array2<f64> {
-            // Array is in Fortran order., so we must reverse the shape
+            // Array is in Fortran order, so we must reverse the shape
             let actual_shape = self.shape();
             let shape = (actual_shape.1, actual_shape.0);
             Array2::from_shape_vec(shape, self.$($field).+.clone())

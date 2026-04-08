@@ -3,4 +3,5 @@ allowed-idents-below-min-chars = [
     "t", # time
     "m", "n", # mode numbers
     "q", # qfactor
+    "s", # `ndarray::s!` macro
 ]

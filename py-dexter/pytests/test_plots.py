@@ -23,6 +23,7 @@ from dexter import (
     IntersectParams,
     Queue,
     QueueInitialConditions,
+    COMs,
 )
 
 
@@ -118,7 +119,15 @@ def test_queue_plots(nc_equilibrium: Equilibrium):
     intersect_params = IntersectParams("ConstZeta", 0.0, 5)
     queue.intersect(nc_equilibrium, intersect_params)
     queue.plot_const_zeta_cartesian_poincare(initial=True)
-    queue.plot_const_zeta_rz_poincare(equilibrium=nc_equilibrium)
+    queue.plot_const_zeta_rz_poincare(equilibrium=nc_equilibrium, initial=True)
+    queue.plot_energies()
+    queue.plot_steps_taken()
+    queue.plot_steps_stored()
+
+    queue.close(nc_equilibrium, periods=1)
+    queue.plot_qkinetic_energy_sweep()
+    queue.plot_qkinetic_pzeta_sweep()
+    queue.plot_qkinetic_radial_sweep()
 
 
 # ================================================================================================

@@ -250,12 +250,12 @@ impl GCState {
             self.g = current.g_of_psi(self.psi, &mut caches.psi_acc)?;
             self.i = current.i_of_psi(self.psi, &mut caches.psi_acc)?;
             self.dg_dflux = current.dg_dpsi(self.psi, &mut caches.psi_acc)?;
-            self.di_dflux = current.dg_dpsi(self.psi, &mut caches.psi_acc)?;
+            self.di_dflux = current.di_dpsi(self.psi, &mut caches.psi_acc)?;
         } else {
             self.g = current.g_of_psip(self.psip, &mut caches.psip_acc)?;
             self.i = current.i_of_psip(self.psip, &mut caches.psip_acc)?;
             self.dg_dflux = current.dg_dpsip(self.psip, &mut caches.psip_acc)?;
-            self.di_dflux = current.dg_dpsip(self.psip, &mut caches.psip_acc)?;
+            self.di_dflux = current.di_dpsip(self.psip, &mut caches.psip_acc)?;
         }
         Ok(())
     }

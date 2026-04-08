@@ -43,10 +43,10 @@ fn lar_bfield() {
 
 #[test]
 #[rustfmt::skip]
-fn nc_bfield() {
+fn nc_bfield_no_pad() {
     let path = PathBuf::from(dexter_equilibrium::extract::TEST_NETCDF_PATH);
     let interp_type = "bicubic";
-    let builder = NcBfieldBuilder::new(&path, interp_type);
+    let builder = NcBfieldBuilder::new(&path, interp_type).with_padding(0);
     let bfield = dbg!(builder.build().unwrap());
 
     let equilibrium_type: EquilibriumType = bfield.equilibrium_type();
@@ -62,7 +62,12 @@ fn nc_bfield() {
     let psi_array: Array1<f64> = bfield.psi_array().unwrap();
     let psip_array: Array1<f64> = bfield.psip_array().unwrap();
     let theta_array: Array1<f64> = bfield.theta_array();
+    let theta_array_padded: Array1<f64> = bfield.theta_array_padded();
     let b_array: Array2<f64> = bfield.b_array();
+    let b_array_padded: Array2<f64> = bfield.b_array_padded();
+
+    assert_eq!(theta_array, theta_array_padded);
+    assert_eq!(b_array, b_array_padded);
 
     let psi_acc = &mut Accelerator::new();
     let psip_acc = &mut Accelerator::new();
@@ -79,4 +84,25 @@ fn nc_bfield() {
     let _: f64 = bfield.db_dpsip(psip, theta, psip_acc, theta_acc, cache).unwrap();
     let _: f64 = bfield.db_of_psi_dtheta(psi, theta, psi_acc, theta_acc, cache).unwrap();
     let _: f64 = bfield.db_of_psip_dtheta(psip, theta, psip_acc, theta_acc, cache).unwrap();
+}
+
+#[test]
+fn nc_bfield_pad() {
+    let path = PathBuf::from(dexter_equilibrium::extract::TEST_NETCDF_PATH);
+    let interp_type = "bicubic";
+    let no_pad_builder = NcBfieldBuilder::new(&path, interp_type).with_padding(0);
+    let pad_builder = NcBfieldBuilder::new(&path, interp_type).with_padding(10);
+    let no_pad_bfield = dbg!(no_pad_builder.build().unwrap());
+    let pad_bfield = dbg!(pad_builder.build().unwrap());
+
+    assert_eq!(no_pad_bfield.padding(), 0);
+    assert_eq!(pad_bfield.padding(), 10);
+
+    let netcdf_shape = no_pad_bfield.shape();
+
+    assert_eq!(netcdf_shape.0, pad_bfield.shape().0);
+    assert_eq!(
+        netcdf_shape.1,
+        pad_bfield.shape_padded().1 - 2 * pad_bfield.padding()
+    );
 }

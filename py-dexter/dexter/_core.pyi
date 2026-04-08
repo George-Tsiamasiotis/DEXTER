@@ -261,7 +261,9 @@ class _PyNcBfield:
     equilibrium_type: EquilibriumType
     interp_type: Interp1DType
     baxis: float
+    padding: int
     shape: ArrayShape
+    shape_padded: ArrayShape
     psi_last: float
     psip_last: float
     psi_state: FluxState
@@ -270,11 +272,15 @@ class _PyNcBfield:
     psip_array: Array1
     theta_array: Array1
     b_array: Array2
+    theta_array_padded: Array1
+    b_array_padded: Array2
 
     def __init__(
         self,
         path: str,
         interp_type: Interp2DType,
+        *,
+        padding: int = 15,
     ) -> None: ...
     def b_of_psi(self, psi: float, theta: float) -> float: ...
     def b_of_psip(self, psip: float, theta: float) -> float: ...

@@ -335,7 +335,7 @@ version = "0.1.2"
 
 [[package]]
 name = "dexter-equilibrium"
-version = "0.1.6-pre.3"
+version = "0.1.6-pre.4"
 dependencies = [
  "approx",
  "criterion",
@@ -349,7 +349,7 @@ dependencies = [
 
 [[package]]
 name = "dexter-simulate"
-version = "0.1.5-pre.3"
+version = "0.1.5-pre.4"
 dependencies = [
  "approx",
  "dexter-common",
@@ -1172,7 +1172,7 @@ dependencies = [
 
 [[package]]
 name = "py-dexter"
-version = "0.1.7-pre.5"
+version = "0.1.7-pre.6"
 dependencies = [
  "dexter",
  "ndarray",

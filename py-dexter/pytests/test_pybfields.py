@@ -3,6 +3,7 @@ import numpy as np
 from math import isfinite
 from math import pi as PI
 from dexter.equilibrium import _TOROIDAL_TEST_NETCDF_PATH, _POLOIDAL_TEST_NETCDF_PATH
+from dexter.equilibrium import _TEST_NETCDF_PATH as netcdf_path
 from dexter import LarBfield, NcBfield
 
 
@@ -40,6 +41,20 @@ def test_nc_bfield_getters(nc_bfield: NcBfield):
     assert nc_bfield.b_array.ndim == 2
     assert isinstance(nc_bfield.__str__(), str)
     assert isinstance(nc_bfield.__repr__(), str)
+
+
+def test_nc_bfield_padding():
+    padding = 10
+    no_pad = NcBfield(netcdf_path, "Bicubic", padding=0)
+    pad = NcBfield(netcdf_path, "Bicubic", padding=padding)
+
+    assert no_pad.padding == 0
+    assert pad.padding == 10
+
+    flux_num, theta_num = no_pad.shape
+    assert np.all(pad.b_array == no_pad.b_array)
+    assert pad.shape_padded == (flux_num, theta_num + 2 * padding)
+    assert pad.b_array_padded.shape == (flux_num, theta_num + 2 * padding)
 
 
 def test_nc_bfield_eval(nc_bfield: NcBfield):

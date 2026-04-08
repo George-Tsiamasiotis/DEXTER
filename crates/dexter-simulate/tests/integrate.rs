@@ -195,7 +195,7 @@ fn gc_toroidal_poloidal_equivalence() {
     assert!(matches!(tor_particle.integration_status(), IntegrationStatus::Initialized));
     assert!(matches!(pol_particle.integration_status(), IntegrationStatus::Initialized));
 
-    let teval = (0.0, 4e5);
+    let teval = (0.0, 4.14e5);
     tor_particle.integrate(&qfactor, &current, &bfield, &perturbation, teval, &solver_params);
     pol_particle.integrate(&qfactor, &current, &bfield, &perturbation, teval, &solver_params);
     dbg!(&tor_particle);
@@ -204,8 +204,9 @@ fn gc_toroidal_poloidal_equivalence() {
     assert!(matches!(tor_particle.integration_status(), IntegrationStatus::Integrated));
     assert!(matches!(pol_particle.integration_status(), IntegrationStatus::Integrated));
 
-    // Make sure we dont integrate the same particle twice
-    assert_ne!(tor_particle.steps_stored(), pol_particle.steps_stored());
+    // Make sure we dont integrate the same particle twice. The energy should have a small
+    // arithmetic error due to the ψ-ψp interpolation.
+    assert_ne!(tor_particle.initial_energy(), pol_particle.initial_energy());
 
     assert!(tor_particle.steps_stored() > 10_000);
     assert!(pol_particle.steps_stored() > 10_000);
@@ -289,7 +290,7 @@ fn gc_mixed_boozer_equivalence() {
     assert!(matches!(boozer_particle.integration_status(), IntegrationStatus::Initialized));
     assert!(matches!(mixed_particle.integration_status(), IntegrationStatus::PartlyInitialized));
 
-    let teval = (0.0, 2.41e5);
+    let teval = (0.0, 2.4e5);
     boozer_particle.integrate(&qfactor, &current, &bfield, &perturbation, teval, &solver_params);
     mixed_particle.integrate(&qfactor, &current, &bfield, &perturbation, teval, &solver_params);
     dbg!(&boozer_particle);
@@ -298,8 +299,9 @@ fn gc_mixed_boozer_equivalence() {
     assert!(matches!(boozer_particle.integration_status(), IntegrationStatus::Integrated));
     assert!(matches!(mixed_particle.integration_status(), IntegrationStatus::Integrated));
 
-    // Make sure we dont integrate the same particle twice
-    assert_ne!(boozer_particle.steps_stored(), mixed_particle.steps_stored());
+    // Make sure we dont integrate the same particle twice. The energy should have a small
+    // arithmetic error due to the ψ-ψp interpolation.
+    assert_ne!(boozer_particle.initial_energy(), mixed_particle.initial_energy());
 
     assert!(boozer_particle.steps_stored() > 10_000);
     assert!(mixed_particle.steps_stored() > 10_000);

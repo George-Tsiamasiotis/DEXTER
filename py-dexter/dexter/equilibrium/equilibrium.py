@@ -27,8 +27,10 @@ def numerical_equilibrium(
     path: str,
     interp1d_type: Interp1DType,
     interp2d_type: Interp2DType,
+    *,
+    padding: int = 15,
 ) -> Equilibrium:
-    """Constructs a numerical equilibrium from a netCDF file.
+    r"""Constructs a numerical equilibrium from a netCDF file.
 
     Perturbations are not constructed, but can be added manually in the `Equilibrium` object.
 
@@ -40,6 +42,8 @@ def numerical_equilibrium(
         The 1D interpolation type.
     interp2d_type
         The 2D interpolation type.
+    padding
+        The left-right $\theta$ (per-side) padding width of the $B$ array. Defaults to 15.
 
     Returns
     -------
@@ -53,7 +57,7 @@ def numerical_equilibrium(
     geometry = NcGeometry(path, interp1d_type, interp2d_type)
     qfactor = NcQfactor(path, interp1d_type)
     current = NcCurrent(path, interp1d_type)
-    bfield = NcBfield(path, interp2d_type)
+    bfield = NcBfield(path, interp2d_type, padding=padding)
     return Equilibrium(
         geometry=geometry,
         qfactor=qfactor,

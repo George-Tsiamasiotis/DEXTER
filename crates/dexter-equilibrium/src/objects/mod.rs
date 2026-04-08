@@ -79,6 +79,17 @@ macro_rules! debug_assert_non_negative_psip {
     };
 }
 
+/// Debug-asserts that `theta` is 2π-modulo.
+///
+/// This is needed since the B array padding extends the interpolation domain.
+#[doc(hidden)]
+#[macro_export]
+macro_rules! debug_assert_is_2pi_modulo {
+    ($theta: expr) => {
+        debug_assert!((0.0..=TAU).contains(&$theta), "Encountered non-2π-modulo θ")
+    };
+}
+
 /// Debug-asserts that the wrapped expression `is_finite()` and returns it.
 ///
 /// Use `std::debug_assert` and `std::dbg` syntax.
