@@ -8,7 +8,7 @@ from .objects import (
     QueueInitialConditions,
     Queue,
 )
-from .energy_contour import energy_contour
+from .energy_contour import plot_energy_contour
 
 __all__ = [
     "COMs",
@@ -19,5 +19,5 @@ __all__ = [
     "InitialFluxArray",
     "QueueInitialConditions",
     "Queue",
-    "energy_contour",
+    "plot_energy_contour",
 ]

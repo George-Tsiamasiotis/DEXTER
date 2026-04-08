@@ -1,19 +1,17 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.figure import Figure
-from matplotlib.axes import Axes
 
-from dexter.types import Array1, Array2
+from dexter.types import Array1, Array2, Canvas
 
 
-def energy_contour(
+def plot_energy_contour(
     flux_array: Array1,
     theta_array: Array1,
     energy_array: Array2,
     levels: int = 30,
     show: bool = True,
-) -> tuple[Figure, Axes]:
-    r"""Creates a contour plot of the energy, calculated on a $(\psi/\psi_p, \theta$ grid.
+) -> Canvas:
+    r"""Creates a contour plot of the energy, calculated on a $(\psi/\psi_p, \theta)$ grid.
 
     Parameters
     ----------
@@ -30,6 +28,11 @@ def energy_contour(
         The number of energy levels on the contour. Defaults to 30.
     show
         Whether or not to call `plt.show()`. Defaults to True.
+
+    Returns
+    -------
+    Canvas
+        The produced `Figure` and `Ax`.
     """
     fig = plt.figure(figsize=(10, 8), layout="constrained", dpi=120)
     ax = fig.subplots(1)
@@ -52,5 +55,6 @@ def energy_contour(
 
     if show:
         plt.show()
+        plt.close()
 
     return (fig, ax)

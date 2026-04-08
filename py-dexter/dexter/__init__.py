@@ -19,6 +19,8 @@ from dexter.types import (
     Array1,
     Array2,
     ArrayShape,
+    Canvas,
+    MultiCanvas,
     NetCDFVersion,
     EquilibriumType,
     Interp1DType,
@@ -43,7 +45,7 @@ from dexter.simulate import (
     InitialFluxArray,
     QueueInitialConditions,
     Queue,
-    energy_contour,
+    plot_energy_contour,
 )
 
 __all__ = [
@@ -97,5 +99,5 @@ __all__ = [
     "InitialFluxArray",
     "QueueInitialConditions",
     "Queue",
-    "energy_contour",
+    "plot_energy_contour",
 ]

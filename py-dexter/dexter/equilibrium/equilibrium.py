@@ -2,13 +2,11 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.figure import Figure
-from matplotlib.axes import Axes
 
 from math import sqrt
 from typing import Optional, Any
 
-from dexter.types import Interp1DType, Interp2DType
+from dexter.types import Interp1DType, Interp2DType, Canvas, MultiCanvas
 from .objects import (
     LarBfield,
     NcGeometry,
@@ -107,10 +105,6 @@ class Equilibrium:
     _bfield: Bfield
     _perturbation: Perturbation
     _geometry: Optional[Geometry]
-
-    fig: Figure
-    ax: Axes
-    axes: Any  # list[Axes]
 
     def __init__(
         self,
@@ -219,7 +213,7 @@ class Equilibrium:
     def __repr__(self) -> str:
         return self.__str__()
 
-    def plot_b(self, levels: int = 20, show: bool = True):
+    def plot_b(self, levels: int = 20, show: bool = True) -> Canvas:
         """Plots a contour plot of the magnetic field strength for a numerical equilibrium.
 
         Parameters
@@ -228,10 +222,15 @@ class Equilibrium:
             The number of contour levels. Defaults to 20.
         show
             Whether or not to call `plt.show()`. Defaults to True.
+
+        Returns
+        -------
+        Canvas
+            The produced `Figure` and `Ax`.
         """
 
-        self.fig = plt.figure(layout="constrained", dpi=120)
-        self.ax = self.fig.add_subplot(aspect="equal")
+        fig = plt.figure(layout="constrained", dpi=120)
+        ax = fig.add_subplot(aspect="equal")
 
         if (not isinstance(self.geometry, NcGeometry)) or (
             not isinstance(self.bfield, NcBfield)
@@ -244,23 +243,26 @@ class Equilibrium:
         zlab_last = self.geometry.zlab_last
         b_array = self.bfield.b_array
 
-        self.ax.set_title(r"$Magnetic$ $field$ $strength$ $B$")
-        self.ax.set_xlabel(r"$R[m]$")
-        self.ax.set_ylabel(r"$Z[m]$")
+        ax.set_title(r"$Magnetic$ $field$ $strength$ $B$")
+        ax.set_xlabel(r"$R[m]$")
+        ax.set_ylabel(r"$Z[m]$")
 
         contour_kw = {"levels": levels, "cmap": "plasma"}
 
-        contour = self.ax.contourf(rlab_array, zlab_array, b_array, **contour_kw)
-        plt.colorbar(contour, ax=self.ax, label=r"$B[Normalized\quad Units]$")
+        contour = ax.contourf(rlab_array, zlab_array, b_array, **contour_kw)
+        plt.colorbar(contour, ax=ax, label=r"$B[Normalized\quad Units]$")
 
-        self.ax.plot(rlab_last, zlab_last, color="k", linewidth=2)
-        self.ax.use_sticky_edges = False
-        self.ax.margins(0.04, 0.04)
+        ax.plot(rlab_last, zlab_last, color="k", linewidth=2)
+        ax.use_sticky_edges = False
+        ax.margins(0.04, 0.04)
 
         if show:
             plt.show()
+            plt.close()
 
-    def plot_db(self, levels: int = 20, show: bool = True):
+        return (fig, ax)
+
+    def plot_db(self, levels: int = 20, show: bool = True) -> MultiCanvas:
         """Plots contour plots of the magnetic field's derivatives for a numerical equilibrium.
 
         Parameters
@@ -269,6 +271,11 @@ class Equilibrium:
             The number of contour levels. Defaults to 20.
         show
             Whether or not to call `plt.show()`. Defaults to True.
+
+        Returns
+        -------
+        MultiCanvas
+            The produced `Figure` and `Axes`.
         """
 
         if (not isinstance(self.geometry, NcGeometry)) or (
@@ -276,9 +283,9 @@ class Equilibrium:
         ):
             raise TypeError("'geometry' and 'bfield' must be netCDF objects")
 
-        self.fig = plt.figure(layout="constrained")
+        fig = plt.figure(layout="constrained")
         subplot_kw = {"aspect": "equal"}
-        self.axes = self.fig.subplots(1, 2, subplot_kw=subplot_kw)
+        axes = fig.subplots(1, 2, subplot_kw=subplot_kw)
 
         rlab_array = self.geometry.rlab_array
         zlab_array = self.geometry.zlab_array
@@ -309,36 +316,37 @@ class Equilibrium:
         db_dflux_array = db_dflux(psi_grid, theta_grid)
         db_dtheta_array = db_dtheta(psi_grid, theta_grid)
 
-        contour1 = self.axes[0].contourf(
+        contour1 = axes[0].contourf(
             rlab_array, zlab_array, db_dflux_array, **contour_kw
         )
-        contour2 = self.axes[1].contourf(
+        contour2 = axes[1].contourf(
             rlab_array, zlab_array, db_dtheta_array, **contour_kw
         )
         plt.colorbar(
-            contour1, ax=self.axes[0], label=rf"$dB/d\{flux}[Normalized\quad Units]$"
+            contour1, ax=axes[0], label=rf"$dB/d\{flux}[Normalized\quad Units]$"
         )
-        plt.colorbar(
-            contour2, ax=self.axes[1], label=r"$dB/d\theta[Normalized\quad Units]$"
-        )
-        self.axes[0].plot(rlab_last, zlab_last, color="k", linewidth=2)
-        self.axes[1].plot(rlab_last, zlab_last, color="k", linewidth=2)
+        plt.colorbar(contour2, ax=axes[1], label=r"$dB/d\theta[Normalized\quad Units]$")
+        axes[0].plot(rlab_last, zlab_last, color="k", linewidth=2)
+        axes[1].plot(rlab_last, zlab_last, color="k", linewidth=2)
 
-        self.axes[0].set_title(rf"$dB/d\{flux}$")
-        self.axes[1].set_title(r"$dB/d\theta$")
-        self.axes[0].set_xlabel(r"$R[m]$")
-        self.axes[1].set_xlabel(r"$R[m]$")
-        self.axes[0].set_ylabel(r"$Z[m]$")
-        self.axes[1].set_ylabel(r"$Z[m]$")
-        self.axes[0].use_sticky_edges = False
-        self.axes[1].use_sticky_edges = False
-        self.axes[0].margins(0.04, 0.04)
-        self.axes[1].margins(0.04, 0.04)
+        axes[0].set_title(rf"$dB/d\{flux}$")
+        axes[1].set_title(r"$dB/d\theta$")
+        axes[0].set_xlabel(r"$R[m]$")
+        axes[1].set_xlabel(r"$R[m]$")
+        axes[0].set_ylabel(r"$Z[m]$")
+        axes[1].set_ylabel(r"$Z[m]$")
+        axes[0].use_sticky_edges = False
+        axes[1].use_sticky_edges = False
+        axes[0].margins(0.04, 0.04)
+        axes[1].margins(0.04, 0.04)
 
         if show:
             plt.show()
+            plt.close()
 
-    def plot_flux_surfaces(self, number: int = 20, show: bool = True):
+        return (fig, axes)
+
+    def plot_flux_surfaces(self, number: int = 20, show: bool = True) -> Canvas:
         """Plots the flux surfaces of a numerical equilibrium.
 
         Parameters
@@ -347,10 +355,15 @@ class Equilibrium:
             The number of flux surfaces to (try to) plot. Defaults to 20.",
         show
             Whether or not to call `plt.show()`. Defaults to True.
+
+        Returns
+        -------
+        Canvas
+            The produced `Figure` and `Ax`.
         """
 
-        self.fig = plt.figure(figsize=(8, 7), layout="constrained", dpi=120)
-        self.ax = self.fig.add_subplot(aspect="equal")
+        fig = plt.figure(figsize=(8, 7), layout="constrained", dpi=120)
+        ax = fig.add_subplot(aspect="equal")
 
         if (not isinstance(self.geometry, NcGeometry)) or (
             not isinstance(self.bfield, NcBfield)
@@ -366,7 +379,7 @@ class Equilibrium:
         step = max([1, int(shape[0] / number)])
         print(f"Displaying {int(shape[0]/step)} surfaces.")
         for i in range(0, shape[0], step):
-            self.ax.plot(rlab_array[i], zlab_array[i], color="blue", zorder=-1)
+            ax.plot(rlab_array[i], zlab_array[i], color="blue", zorder=-1)
 
         # Cursor
         geom_center = (self.geometry.rgeo, self.geometry.zaxis)
@@ -376,22 +389,25 @@ class Equilibrium:
             r = sqrt((axis_point[0] - x) ** 2 + (axis_point[1] - y) ** 2)
             return f"(R, Z) = ({x:.5g}, {y:.5g}), r={r:.5g} "
 
-        setattr(self.ax, "format_coord", format_coord)
+        setattr(ax, "format_coord", format_coord)
 
-        self.ax.set_title(r"$Poloidal\ flux\ surfaces$")
-        self.ax.set_xlabel(r"$R[m]$")
-        self.ax.set_ylabel(r"$Z[m]$")
+        ax.set_title(r"$Poloidal\ flux\ surfaces$")
+        ax.set_xlabel(r"$R[m]$")
+        ax.set_ylabel(r"$Z[m]$")
 
-        self.ax.plot(*axis_point, "ko", markersize=4, label="$R_{axis}$")
-        self.ax.plot(*geom_center, "ro", markersize=4, label="$R_{geometric}$")
+        ax.plot(*axis_point, "ko", markersize=4, label="$R_{axis}$")
+        ax.plot(*geom_center, "ro", markersize=4, label="$R_{geometric}$")
 
-        self.ax.plot(rlab_last, zlab_last, color="k", linewidth=2)
-        self.ax.legend()
+        ax.plot(rlab_last, zlab_last, color="k", linewidth=2)
+        ax.legend()
 
         if show:
             plt.show()
+            plt.close()
 
-    def plot_boozer_theta(self, number: int = 80, show: bool = True):
+        return (fig, ax)
+
+    def plot_boozer_theta(self, number: int = 80, show: bool = True) -> Canvas:
         r"""Plots the $\theta_B = const$ lines on a numerical equilibrium.
 
         Parameters
@@ -400,10 +416,15 @@ class Equilibrium:
             The number of lines to (try to) plot. Defaults to 80.",
         show
             Whether or not to call `plt.show()`. Defaults to True.
+
+        Returns
+        -------
+        Canvas
+            The produced `Figure` and `Ax`.
         """
 
-        self.fig = plt.figure(figsize=(8, 7), layout="constrained", dpi=120)
-        self.ax = self.fig.add_subplot(aspect="equal")
+        fig = plt.figure(figsize=(8, 7), layout="constrained", dpi=120)
+        ax = fig.add_subplot(aspect="equal")
 
         if (not isinstance(self.geometry, NcGeometry)) or (
             not isinstance(self.bfield, NcBfield)
@@ -421,7 +442,7 @@ class Equilibrium:
         for i in range(
             0, shape[1] - step, step
         ):  # last one lands too close to the first one
-            self.ax.plot(rlab_array[i], zlab_array[i], color="blue", zorder=-1)
+            ax.plot(rlab_array[i], zlab_array[i], color="blue", zorder=-1)
 
         # Cursor
         geom_center = (self.geometry.rgeo, self.geometry.zaxis)
@@ -431,22 +452,25 @@ class Equilibrium:
             r = sqrt((axis_point[0] - x) ** 2 + (axis_point[1] - y) ** 2)
             return f"(R, Z) = ({x:.5g}, {y:.5g}), r={r:.5g} "
 
-        setattr(self.ax, "format_coord", format_coord)
+        setattr(ax, "format_coord", format_coord)
 
-        self.ax.set_title(r"$Boozer\ theta\ '\theta_B=const'\ lines$")
-        self.ax.set_xlabel(r"$R[m]$")
-        self.ax.set_ylabel(r"$Z[m]$")
+        ax.set_title(r"$Boozer\ theta\ '\theta_B=const'\ lines$")
+        ax.set_xlabel(r"$R[m]$")
+        ax.set_ylabel(r"$Z[m]$")
 
-        self.ax.plot(*axis_point, "ko", markersize=4, label="$R_{axis}$")
-        self.ax.plot(*geom_center, "ro", markersize=4, label="$R_{geometric}$")
+        ax.plot(*axis_point, "ko", markersize=4, label="$R_{axis}$")
+        ax.plot(*geom_center, "ro", markersize=4, label="$R_{geometric}$")
 
-        self.ax.plot(rlab_last, zlab_last, color="k", linewidth=2)
-        self.ax.legend()
+        ax.plot(rlab_last, zlab_last, color="k", linewidth=2)
+        ax.legend()
 
         if show:
             plt.show()
+            plt.close()
 
-    def plot_midplane(self, show: bool = True):
+        return (fig, ax)
+
+    def plot_midplane(self, show: bool = True) -> Canvas:
         r"""Plots $B$, $dB/d(\psi/\psi_p)$ and $dB/d\theta$ on the midplane.
 
         The midplane is defined as two $\theta=const$ lines:
@@ -458,6 +482,11 @@ class Equilibrium:
         ----------
         show
             Whether or not to call `plt.show()`. Defaults to True.
+
+        Returns
+        -------
+        Canvas
+            The produced `Figure` and `Ax`.
         """
         length = 1000
 
@@ -489,29 +518,29 @@ class Equilibrium:
             ),
         )
 
-        self.fig = plt.figure(figsize=(8, 7), layout="constrained", dpi=120)
-        self.fig.suptitle(r"$Magnetic\ field\ quantities\ on\ midplane$")
-        self.ax = self.fig.add_subplot()
+        fig = plt.figure(figsize=(8, 7), layout="constrained", dpi=120)
+        fig.suptitle(r"$Magnetic\ field\ quantities\ on\ midplane$")
+        ax = fig.add_subplot()
 
         bs_of_flux = b_of_flux(fluxes, thetas)
         dbs_dflux = db_dflux(fluxes, thetas)
         dbs_dtheta = db_dtheta(fluxes, thetas)
         xs = np.linspace(-1, 1, length)
-        self.ax.plot(
+        ax.plot(
             xs,
             bs_of_flux,
             linewidth=2,
             color="b",
             label=rf"$B$",
         )
-        self.ax.plot(
+        ax.plot(
             xs,
             dbs_dflux,
             linewidth=2,
             color="r",
             label=rf"$dB/d{flux_str}$",
         )
-        self.ax.plot(
+        ax.plot(
             xs,
             dbs_dtheta,
             linewidth=2,
@@ -519,11 +548,14 @@ class Equilibrium:
             label=rf"$dB/d\theta$",
         )
 
-        self.ax.set_xlabel(rf"${flux_str} / {lcfs_str}$")
-        self.ax.set_ylabel(rf"$Amplitude$")
-        self.ax.grid(True)
-        self.ax.margins(0)
-        self.ax.legend()
+        ax.set_xlabel(rf"${flux_str} / {lcfs_str}$")
+        ax.set_ylabel(rf"$Amplitude$")
+        ax.grid(True)
+        ax.margins(0)
+        ax.legend()
 
         if show:
             plt.show()
+            plt.close()
+
+        return (fig, ax)

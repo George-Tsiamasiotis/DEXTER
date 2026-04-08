@@ -21,4 +21,4 @@ theta_array = np.linspace(-PI, PI, 200)
 
 energy_array = coms.energy_of_psi_grid(equilibrium, psi_array, theta_array)
 
-dex.energy_contour(psi_array, theta_array, energy_array, levels=40)
+dex.plot_energy_contour(psi_array, theta_array, energy_array, levels=40)

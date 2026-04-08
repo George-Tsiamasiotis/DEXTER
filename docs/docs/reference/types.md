@@ -5,6 +5,8 @@
 ::: dexter.ArrayShape
 ::: dexter.Array
 ::: dexter.ArrayLike
+::: dexter.Canvas
+::: dexter.MultiCanvas
 
 ## Equilibrium
 
