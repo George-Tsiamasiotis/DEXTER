@@ -7,6 +7,7 @@
 ::: dexter.ArrayLike
 ::: dexter.Canvas
 ::: dexter.MultiCanvas
+::: dexter.Locator
 
 ## Equilibrium
 

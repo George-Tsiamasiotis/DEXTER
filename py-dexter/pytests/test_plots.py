@@ -24,6 +24,8 @@ from dexter import (
     Queue,
     QueueInitialConditions,
     COMs,
+    plot_energy_contour,
+    plot_particle_poloidal_drift,
 )
 
 
@@ -98,8 +100,8 @@ def test_particle_plots(nc_equilibrium: Equilibrium):
     particle.plot_evolution()
     particle.plot_evolution(percentage=2)
     particle.plot_evolution(downsample=False)
-    particle.plot_poloidal_drift(percentage=2)
     particle.plot_db_drift(nc_equilibrium)
+    plot_particle_poloidal_drift(particle, nc_equilibrium, density=20)
 
 
 def test_queue_plots(nc_equilibrium: Equilibrium):
@@ -127,7 +129,21 @@ def test_queue_plots(nc_equilibrium: Equilibrium):
     queue.close(nc_equilibrium, periods=1)
     queue.plot_qkinetic_energy_sweep()
     queue.plot_qkinetic_pzeta_sweep()
-    queue.plot_qkinetic_radial_sweep()
+    queue.plot_qkinetic_pzeta_sweep(psip_last=nc_equilibrium.psip_last)
+    queue.plot_qkinetic_radial_sweep(flux_last=nc_equilibrium.psi_last)
+
+
+def coms_plots(nc_equilibrium: Equilibrium):
+    coms = COMs(pzeta=-0.02, mu=1e-5)
+    psi_array = np.linspace(0, 0.001, 20)
+    psip_array = np.linspace(0, 0.001, 20)
+    theta_array = np.linspace(0, 2 * np.pi, 20)
+    energy_of_psi_grid = coms.energy_of_psi_grid(nc_equilibrium, psi_array, theta_array)
+    energy_of_psip_grid = coms.energy_of_psip_grid(
+        nc_equilibrium, psip_array, theta_array
+    )
+    plot_energy_contour(psi_array, theta_array, energy_of_psi_grid)
+    plot_energy_contour(psip_array, theta_array, energy_of_psip_grid)
 
 
 # ================================================================================================

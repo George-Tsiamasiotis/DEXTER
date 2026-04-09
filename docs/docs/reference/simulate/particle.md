@@ -1,6 +1,7 @@
 # Particle
 
-[`Particle`][dexter.Particle] class and helper objects for defining one.
+- [`Particle`][dexter.Particle] class and helper objects for defining one.
+- [Plotting](#plots) functions.
 
 ::: dexter.InitialFlux
 
@@ -9,3 +10,7 @@
 ::: dexter.IntersectParams
 
 ::: dexter.Particle
+
+## Plots
+
+::: dexter.plot_particle_poloidal_drift

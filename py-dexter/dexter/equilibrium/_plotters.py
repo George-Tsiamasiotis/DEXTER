@@ -391,6 +391,18 @@ class _GeometryPlotter:
 
         ax.plot(rlab_last, zlab_last, **LCFS_KW)
 
+        geom_center = (self._rust.rgeo, self._rust.zaxis)
+        axis = (self._rust.raxis, self._rust.zaxis)
+
+        ax.plot(*geom_center, "ko", markersize=4, label="$R_{axis}$")
+        ax.plot(*axis, "ro", markersize=4, label="$R_{geo}$")
+
+        def format_coord(x, y):
+            r = sqrt((axis[0] - x) ** 2 + (axis[1] - y) ** 2)
+            return f"(R, Z) = ({x:.5g}, {y:.5g}), r={r:.5g}[m]"
+
+        setattr(ax, "format_coord", format_coord)
+
         ax.grid(True)
 
         if show:

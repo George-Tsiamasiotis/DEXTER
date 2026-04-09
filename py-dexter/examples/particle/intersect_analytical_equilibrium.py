@@ -1,9 +1,11 @@
 """Calculation of ζ=0 intersections of a particle in an analytical equilibrium."""
 
 import dexter as dex
+from math import sqrt
 
 LCFS = dex.LastClosedFluxSurface("Toroidal", 0.45)
 equilibrium = dex.Equilibrium(
+    geometry=dex.LarGeometry(baxis=2, raxis=1.75, rlast=sqrt(2 * LCFS.value)),
     qfactor=dex.ParabolicQfactor(1.1, 3.8, LCFS),
     current=dex.LarCurrent(),
     bfield=dex.LarBfield(),
@@ -36,4 +38,5 @@ particle.intersect(
 )
 print(particle)
 
-particle.plot_poloidal_drift()
+particle.plot_evolution()
+dex.plot_particle_poloidal_drift(particle, equilibrium, levels=100)

@@ -25,9 +25,9 @@ queue = dex.Queue(initial_conditions)
 
 # Run
 queue.close(equilibrium=equilibrium)
-_, ax = queue.plot_qkinetic_radial_sweep(show=False)
+_, ax = queue.plot_qkinetic_radial_sweep(flux_last=equilibrium.psip_last, show=False)
 
 # Plot reversal
-ax.axvline(x=0.091818499, c="r", linewidth=2)
+ax.axvline(x=0.091818499 / equilibrium.psip_last, c="r", linewidth=2)
 
 plt.show()

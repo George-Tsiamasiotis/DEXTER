@@ -9,7 +9,7 @@ from cycler import cycler
 from matplotlib.patches import Patch
 from matplotlib.figure import Figure
 from matplotlib.axes import Axes
-from typing import Any
+from typing import Any, assert_never
 
 from dexter._core import _PyParticle, _PyQueue
 from dexter import Equilibrium, LarGeometry, OrbitType
@@ -46,7 +46,7 @@ RZ_POINCARE_INITIAL_KW = {
 QKINETIC_POINCARE_FIG_KW = {"figsize": (9, 6), "layout": "constrained", "dpi": 120}
 COPASSING_COLOR = "xkcd:light purple"
 CUPASSING_COLOR = "xkcd:navy blue"
-TRAPPED_COLOR = "xkcd:blue"
+TRAPPED_STAGNATED_COLOR = "xkcd:blue"
 UNDEFINED_COLOR = "xkcd:coral"
 UNCLASSIFIED_COLOR = "xkcd:crimson"
 
@@ -222,55 +222,6 @@ class _ParticlePlotter:
             plt.close()
 
         return (fig, axes)
-
-    def plot_poloidal_drift(
-        self,
-        percentage: float = 100,
-        show: bool = True,
-    ) -> Canvas:
-        r"""Plots the $\theta-\psi$ drift of the particle.
-
-        Note
-        ----
-
-        This method simply plots the $\theta$ and $\psi$ time arrays in a polar projection. It is not aware
-        of the geometry of the device so the plot limit is not the actual $\psi_{LCFS}$.
-
-        Parameters
-        ----------
-        percentage: float
-            The percentage of the evolution to plot. Defaults to 100.
-        show
-            Whether or not to call `plt.show()`. Defaults to True.
-
-        Returns
-        -------
-        Canvas
-            The produced `Figure` and `Ax`.
-        """
-
-        if self._rust.steps_stored == 0:
-            raise Exception("Particle hasn't been integrated")
-
-        if percentage < 0 or percentage > 100:
-            raise ValueError("Percentage must be between 0 and 100.")
-
-        # ===========================
-
-        fig = plt.figure(figsize=figsize, layout="constrained", dpi=dpi)
-        ax = fig.add_subplot(polar=True)
-
-        ax.scatter(self._rust.theta_array, self._rust.psi_array, **SCATTER_KW)
-        ax.set_title(r"$\theta-\psi$ drift")
-
-        ax.set_rorigin(0)  # type: ignore
-        ax.set_rlabel_position(22.5)  # type: ignore
-
-        if show:
-            plt.show()
-            plt.close()
-
-        return (fig, ax)
 
 
 class _QueuePlotter:
@@ -619,7 +570,11 @@ class _QueuePlotter:
 
         return (fig, ax)
 
-    def plot_qkinetic_radial_sweep(self, show: bool = True) -> Canvas:
+    def plot_qkinetic_radial_sweep(
+        self,
+        flux_last: float | None = None,
+        show: bool = True,
+    ) -> Canvas:
         r"""Plots the contained particles' calculated $q_{kinetic}$ with respect to their $\psi_0/\psi_{p,0}$.
 
         This is useful for low energy particles and magnetic field lines, where
@@ -627,6 +582,9 @@ class _QueuePlotter:
 
         Parameters
         ----------
+        flux_last
+            The value of the magnetic flux $/psi/\psi_p$ at the Last Closed Flux Surface. If passed, the
+            magnetic flux values are displayed with respect to it.
         show
             Whether or not to call `plt.show()`. Defaults to True.
 
@@ -641,25 +599,33 @@ class _QueuePlotter:
 
         if self._rust.particles[0].initial_conditions.flux0.kind == "Toroidal":
             flux_coord = r"$\psi$"
+            flux_coord_last = r"$\psi_{last}$"
         else:
             flux_coord = r"$\psi_p$"
+            flux_coord_last = r"$\psi_{p,last}$"
 
         fluxes = np.asarray(
             [p.initial_conditions.flux0.value for p in self._rust.particles]
         )
+        fluxes[fluxes == None] = np.nan
         colors = np.asarray([orbit_color(p.orbit_type) for p in self._rust.particles])
-        ax.scatter(fluxes, self._rust.qkinetic_array, c=colors, s=1)
+
+        if flux_last is None:
+            ax.scatter(fluxes, self._rust.qkinetic_array, c=colors, s=1)
+            ax.set_xlabel(rf"${flux_coord}\ [Normalized]$")
+        else:
+            ax.scatter(fluxes / flux_last, self._rust.qkinetic_array, c=colors, s=1)
+            ax.set_xlabel(rf"{flux_coord}$/${flux_coord_last}")
 
         copassing = Patch(color=COPASSING_COLOR, label="Copassing")
         cupassing = Patch(color=CUPASSING_COLOR, label="CuPassing")
-        trapped = Patch(color=TRAPPED_COLOR, label="Trapped")
+        tr_st = Patch(color=TRAPPED_STAGNATED_COLOR, label="Trapped/Stagnated")
         undefined = Patch(color=UNDEFINED_COLOR, label="Undefined")
         unclassified = Patch(color=UNCLASSIFIED_COLOR, label="Unclassified")
 
-        ax.set_xlabel(rf"{flux_coord} $[Normalized]$")
         ax.set_ylabel("$q_{kinetic}$")
         ax.set_title("$q_{kinetic}-$" + flux_coord)
-        ax.legend(handles=[trapped, copassing, cupassing, undefined, unclassified])
+        ax.legend(handles=[tr_st, copassing, cupassing, undefined, unclassified])
         ax.axhline(y=0, ls="--", lw=1.5, c="k")
         ax.grid(True)
 
@@ -669,11 +635,18 @@ class _QueuePlotter:
 
         return (fig, ax)
 
-    def plot_qkinetic_pzeta_sweep(self, show: bool = True) -> Canvas:
+    def plot_qkinetic_pzeta_sweep(
+        self,
+        psip_last: float | None = None,
+        show: bool = True,
+    ) -> Canvas:
         r"""Plots the contained particles' calculated $q_{kinetic}$ with respect to their $P_\zeta$.
 
         Parameters
         ----------
+        psip_last
+            The value of the poloidal flux $\psi_p$ at the Last Closed Flux Surface. If passed, the
+            $P_\zeta$ values are displayed with respect to $\psi_{p,last}$
         show
             Whether or not to call `plt.show()`. Defaults to True.
 
@@ -687,19 +660,24 @@ class _QueuePlotter:
         ax = fig.add_subplot()
 
         pzetas = np.asarray([p.initial_conditions.pzeta0 for p in self._rust.particles])
+        pzetas[pzetas == None] = np.nan
         colors = np.asarray([orbit_color(p.orbit_type) for p in self._rust.particles])
-        ax.scatter(pzetas, self._rust.qkinetic_array, c=colors, s=1)
+        if psip_last is None:
+            ax.scatter(pzetas, self._rust.qkinetic_array, c=colors, s=1)
+            ax.set_xlabel(r"$P_\zeta\ [Normalized]$")
+        else:
+            ax.scatter(pzetas / psip_last, self._rust.qkinetic_array, c=colors, s=1)
+            ax.set_xlabel(r"$P_\zeta/\psi_{p,last}$")
 
         copassing = Patch(color=COPASSING_COLOR, label="Copassing")
         cupassing = Patch(color=CUPASSING_COLOR, label="CuPassing")
-        trapped = Patch(color=TRAPPED_COLOR, label="Trapped")
+        tr_st = Patch(color=TRAPPED_STAGNATED_COLOR, label="Trapped/Stagnated")
         undefined = Patch(color=UNDEFINED_COLOR, label="Undefined")
         unclassified = Patch(color=UNCLASSIFIED_COLOR, label="Unclassified")
 
-        ax.set_xlabel(r"$P_\zeta\ [Normalized]$")
         ax.set_ylabel("$q_{kinetic}$")
         ax.set_title(r"$q_{kinetic}-P_\zeta$")
-        ax.legend(handles=[trapped, copassing, cupassing, undefined, unclassified])
+        ax.legend(handles=[tr_st, copassing, cupassing, undefined, unclassified])
         ax.axhline(y=0, ls="--", lw=1.5, c="k")
         ax.grid(True)
 
@@ -727,19 +705,20 @@ class _QueuePlotter:
         ax = fig.add_subplot()
 
         energies = np.asarray([p.initial_energy for p in self._rust.particles])
+        energies[energies == None] = np.nan
         colors = np.asarray([orbit_color(p.orbit_type) for p in self._rust.particles])
         ax.scatter(energies, self._rust.qkinetic_array, c=colors, s=1)
 
         copassing = Patch(color=COPASSING_COLOR, label="Copassing")
         cupassing = Patch(color=CUPASSING_COLOR, label="CuPassing")
-        trapped = Patch(color=TRAPPED_COLOR, label="Trapped")
+        tr_st = Patch(color=TRAPPED_STAGNATED_COLOR, label="Trapped/Stagnated")
         undefined = Patch(color=UNDEFINED_COLOR, label="Undefined")
         unclassified = Patch(color=UNCLASSIFIED_COLOR, label="Unclassified")
 
         ax.set_xlabel(rf"$Energy\ [Normalized]$")
         ax.set_ylabel("$q_{kinetic}$")
         ax.set_title("$q_{kinetic}-Energy$")
-        ax.legend(handles=[trapped, copassing, cupassing, undefined, unclassified])
+        ax.legend(handles=[tr_st, copassing, cupassing, undefined, unclassified])
         ax.axhline(y=0, ls="--", lw=1.5, c="k")
         ax.grid(True)
 
@@ -766,9 +745,11 @@ def orbit_color(orbit_type: OrbitType) -> str:
             return COPASSING_COLOR
         case "CuPassing":
             return CUPASSING_COLOR
-        case "Trapped":
-            return TRAPPED_COLOR
+        case "TrappedStagnated":
+            return TRAPPED_STAGNATED_COLOR
         case "Unclassified":
             return UNCLASSIFIED_COLOR
         case "Undefined":
             return UNDEFINED_COLOR
+        case _:
+            assert_never(orbit_type)

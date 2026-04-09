@@ -7,7 +7,7 @@ import dexter as dex
 equilibrium = dex.numerical_equilibrium("data.nc", "Steffen", "Bicubic")
 
 # Initial Conditions setup
-num = 4000
+num = 1000
 psips = dex.InitialFluxArray("Poloidal", np.full(num, 0.2 * equilibrium.psip_last))
 
 initial_conditions = dex.QueueInitialConditions.mixed(
@@ -15,12 +15,7 @@ initial_conditions = dex.QueueInitialConditions.mixed(
     flux0=psips,
     theta0=np.zeros(num),
     zeta0=np.zeros(num),
-    pzeta0=np.concat(
-        (
-            np.linspace(-0.03, -0.008, 2000),
-            np.linspace(-0.005, 0.005, 2000),
-        )
-    ),
+    pzeta0=np.linspace(-0.7, 0.5, num) * equilibrium.psip_last,
     mu0=np.full(num, 2e-4),
 )
 
@@ -30,7 +25,7 @@ queue = dex.Queue(initial_conditions)
 # Run
 queue.close(
     equilibrium=equilibrium,
-    max_steps=1_000_000,
+    max_steps=100_000,
     energy_rel_tol=1e-11,
 )
-queue.plot_qkinetic_pzeta_sweep()
+queue.plot_qkinetic_pzeta_sweep(psip_last=equilibrium.psip_last)

@@ -167,8 +167,11 @@ pub enum OrbitType {
     /// `|θmax - θmin| < 0.999 * 2π`. The `0.999` is needed since passing particles also have a span
     /// of `2π` when integrated for a single period.
     ///
-    /// This might cut off some trapped particles very close to the separatrix.
-    Trapped,
+    /// This might cut off some particles very close to the separatrix.
+    ///
+    /// At this moment, there is no good method of determining whether a particle is trapped or
+    /// stagnated.
+    TrappedStagnated,
     /// Failed to classify the particle's orbit into a valid type.
     Unclassified,
     /// Particle has not been integrated.

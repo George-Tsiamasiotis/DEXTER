@@ -35,4 +35,3 @@ particle.integrate(
 print(particle)
 
 particle.plot_evolution()
-particle.plot_poloidal_drift()

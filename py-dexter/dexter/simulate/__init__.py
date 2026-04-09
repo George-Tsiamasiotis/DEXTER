@@ -8,7 +8,7 @@ from .objects import (
     QueueInitialConditions,
     Queue,
 )
-from .energy_contour import plot_energy_contour
+from .energy_contour import plot_energy_contour, plot_particle_poloidal_drift
 
 __all__ = [
     "COMs",
@@ -20,4 +20,5 @@ __all__ = [
     "QueueInitialConditions",
     "Queue",
     "plot_energy_contour",
+    "plot_particle_poloidal_drift",
 ]

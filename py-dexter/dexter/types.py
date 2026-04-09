@@ -23,11 +23,22 @@ Array: TypeAlias = np.ndarray[ArrayShape, np.dtype[np.float64]]
 ArrayLike: TypeAlias = float | Array | Sequence
 """Objects that can be converted to arrays, i.e. float, np.ndarray, sequences, ..."""
 
+# =================== Plots
+
 Canvas: TypeAlias = tuple[Figure, Axes]
 """A tuple of a `figure` and an `ax`, returned by plotting methods."""
 
 MultiCanvas: TypeAlias = tuple[Figure, tuple[Axes, ...]]
 """A tuple of a `figure` and multiple `axes`, returned by plotting methods."""
+
+Locator: TypeAlias = Literal["Log", "MaxN"]
+"""Tick locator for contour plots.
+
+  - `Log`: Uses `matplotlib.ticker.LogLocator`.
+  - `MaxN`: Uses `matplotlib.ticker.MaxNLocator`.
+
+When the contour levels span is large, a LogLocator helps in better displaying the levels.
+"""
 
 # =================== Equilibrium
 
@@ -133,7 +144,7 @@ r"""The integration status of a Particle.
 OrbitType: TypeAlias = Literal[
     "CoPassing",
     "CuPassing",
-    "Trapped",
+    "TrappedStagnated",
     "Unclassified",
     "Undefined",
 ]
@@ -141,9 +152,10 @@ r"""A particle's orbit type, calculated through the [`dexter.Particle.close()`] 
 
     - `CoPassing`: $\rho>0$ during the whole integration.
     - `CuPassing`: $\rho<0$ during the whole integration.
-    - `Trapped`: $|\theta_{max} - \theta_{min}| < 2\pi$ The $0.999$ is needed since passing particles
-      also have a span of $2\pi$ when integrated for a single period. This might cut off some trapped
-      particles very close to the separatrix..
+    - `TrappedStagnated`: $|\theta_{max} - \theta_{min}| < 2\pi$ The $0.999$ is needed since passing particles
+      also have a span of $2\pi$ when integrated for a single period. This might cut off some particles very
+      close to the separatrix. At this moment, there is no good method of determining whether a particle is
+      trapped or stagnated.
     - `Unclassified`: Failed to classify the particle’s orbit into a valid type.
     - `Undefined`: Particle has not been integrated.
 """

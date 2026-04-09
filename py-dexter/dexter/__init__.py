@@ -21,6 +21,7 @@ from dexter.types import (
     ArrayShape,
     Canvas,
     MultiCanvas,
+    Locator,
     NetCDFVersion,
     EquilibriumType,
     Interp1DType,
@@ -46,6 +47,7 @@ from dexter.simulate import (
     QueueInitialConditions,
     Queue,
     plot_energy_contour,
+    plot_particle_poloidal_drift,
 )
 
 __all__ = [
@@ -55,6 +57,9 @@ __all__ = [
     "Array1",
     "Array2",
     "ArrayShape",
+    "Canvas",
+    "MultiCanvas",
+    "Locator",
     "NetCDFVersion",
     "EquilibriumType",
     "Interp1DType",
@@ -100,4 +105,5 @@ __all__ = [
     "QueueInitialConditions",
     "Queue",
     "plot_energy_contour",
+    "plot_particle_poloidal_drift",
 ]

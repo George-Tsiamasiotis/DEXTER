@@ -61,7 +61,7 @@ fn trapped_particle_single_period_uniQ() {
     let mut particle = Particle::new(&initial);
     particle.close(&qfactor, &current, &bfield, &perturbation, 1, &SolverParams::default());
     assert!(matches!(particle.integration_status(), IntegrationStatus::ClosedPeriods(1)));
-    assert!(particle.orbit_type() == OrbitType::Trapped);
+    assert!(particle.orbit_type() == OrbitType::TrappedStagnated);
 
     let expected_dt = 17708.921170693902;
     let expected_dzeta = 0.07681124462891854; // from manual integration

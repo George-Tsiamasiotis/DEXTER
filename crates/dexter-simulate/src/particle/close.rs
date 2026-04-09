@@ -20,8 +20,8 @@ use super::{IntegrationStatus, Intersection};
 
 /// The relative tolerance of the `ψ-ψ0` check.
 const PSI_RELATIVE_TOLERANCE: f64 = 1e-6;
-/// See [`OrbitType::Trapped`].
-const TRAPPED_CLASSIFICATION_CUTOFF: f64 = 0.999;
+/// See [`OrbitType::TrappedStagnated`].
+const TRAPPED_STAGNATED_CLASSIFICATION_CUTOFF: f64 = 0.999;
 
 // ===============================================================================================
 
@@ -215,8 +215,8 @@ fn classify_orbit(particle: &mut Particle) {
         particle.orbit_type = OrbitType::Unclassified;
         return;
     };
-    if (theta_max - theta_min).abs() < TAU * TRAPPED_CLASSIFICATION_CUTOFF {
-        particle.orbit_type = OrbitType::Trapped;
+    if (theta_max - theta_min).abs() < TAU * TRAPPED_STAGNATED_CLASSIFICATION_CUTOFF {
+        particle.orbit_type = OrbitType::TrappedStagnated;
         return;
     }
 

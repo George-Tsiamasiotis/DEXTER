@@ -445,21 +445,6 @@ class _PyCOMs:
         pzeta: Optional[float] = None,
         mu: Optional[float] = None,
     ) -> None: ...
-    def energy_of_psi_grid(
-        self,
-        qfactor: _PyQfactor,
-        current: _PyCurrent,
-        bfield: _PyBfield,
-        psi_array: Array1,
-        theta_array: Array1,
-    ) -> Array2: ...
-    def energy_of_psip_grid(
-        self,
-        current: _PyCurrent,
-        bfield: _PyBfield,
-        psip_array: Array1,
-        theta_array: Array1,
-    ) -> Array2: ...
     def __str__(self) -> str: ...
     def __repr__(self) -> str: ...
 

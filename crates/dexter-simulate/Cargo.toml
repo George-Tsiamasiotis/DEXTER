@@ -1,6 +1,6 @@
 [package]
 name = "dexter-simulate"
-version = "0.1.5-pre.4"
+version = "0.1.5-pre.5"
 authors.workspace = true
 edition.workspace = true
 license.workspace = true

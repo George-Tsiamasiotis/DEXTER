@@ -33,4 +33,4 @@ queue.close(
     equilibrium=equilibrium,
     max_steps=100_000,
 )
-queue.plot_qkinetic_radial_sweep()
+queue.plot_qkinetic_radial_sweep(flux_last=LCFS.value)

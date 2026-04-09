@@ -287,7 +287,7 @@ class TestToroidalParticle:
         )
         particle = Particle(initial)
         particle.close(self.equilibrium_unperturbed)
-        assert particle.orbit_type == "Trapped"
+        assert particle.orbit_type == "TrappedStagnated"
         assert "ClosedPeriods" in particle.integration_status
         assert particle.omega_theta is not None
         assert particle.omega_zeta is not None
@@ -410,7 +410,7 @@ class TestPoloidalParticle:
         particle = Particle(initial)
         particle.close(self.equilibrium_unperturbed)
         assert "ClosedPeriods" in particle.integration_status
-        assert particle.orbit_type == "Trapped"
+        assert particle.orbit_type == "TrappedStagnated"
         assert particle.omega_theta is not None
         assert particle.omega_zeta is not None
         assert particle.qkinetic is not None

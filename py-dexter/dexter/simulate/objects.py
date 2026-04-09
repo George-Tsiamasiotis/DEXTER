@@ -406,12 +406,18 @@ class InitialConditions:
     @property
     def rho0(self) -> Optional[float]:
         r"""The initial parallel radius $\rho_{||}$, in Normalized Units."""
-        return self._rust.rho0
+        if self._rust.rho0 is None:
+            raise AttributeError("'rho0' has not been defined")
+        else:
+            return self._rust.rho0
 
     @property
     def pzeta0(self) -> Optional[float]:
         r"""The initial canonical momentum $P_\zeta$, in Normalized Units."""
-        return self._rust.pzeta0
+        if self._rust.pzeta0 is None:
+            raise AttributeError("'pzeta0' has not been defined")
+        else:
+            return self._rust.pzeta0
 
     @property
     def coordinate_set(self) -> CoordinateSet:
@@ -1011,6 +1017,10 @@ class InitialFluxArray:
     def values(self) -> Array1:
         """The flux values."""
         return self._rust.values
+
+    def __mul__(self, scalar) -> InitialFluxArray:
+        """Multiplies inner values by `scalar`."""
+        return InitialFluxArray(self.kind, self.values * scalar)
 
     def __str__(self) -> str:
         return f"kind: {self.kind}\nvalues: {self.values}"
