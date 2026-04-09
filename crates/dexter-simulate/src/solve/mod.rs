@@ -17,6 +17,12 @@ pub enum SteppingMethod {
     FixedStep(f64),
 }
 
+impl std::fmt::Display for SteppingMethod {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{self:?}")
+    }
+}
+
 /// Defines the parameters of the integration.
 ///
 /// See [`SolverParams::default`] for the default values.
@@ -42,15 +48,17 @@ pub struct SolverParams {
 
 impl Default for SolverParams {
     fn default() -> Self {
+        #[expect(clippy::wildcard_imports, reason = "small scope")]
+        use crate::constants::*;
         Self {
-            method: SteppingMethod::EnergyAdaptiveStep,
-            max_steps: 1_000_000,
-            first_step: 1e-1,
-            safety_factor: 0.9,
-            energy_rel_tol: 1e-12,
-            energy_abs_tol: 1e-14,
-            error_rel_tol: 1e-12,
-            error_abs_tol: 1e-14,
+            method: DEFAULT_STEPPING_METHOD,
+            max_steps: DEFAULT_MAX_STEPS,
+            first_step: DEFAULT_FIRST_STEP,
+            safety_factor: DEFAULT_SAFETY_FACTOR,
+            energy_rel_tol: DEFAULT_ENERGY_REL_TOL,
+            energy_abs_tol: DEFAULT_ENERGY_ABS_TOL,
+            error_rel_tol: DEFAULT_ERROR_REL_TOL,
+            error_abs_tol: DEFAULT_ERROR_ABS_TOL,
         }
     }
 }

@@ -1,6 +1,6 @@
 [project]
 name = "dexter"
-version = "0.1.7-pre.9"
+version = "0.1.7-pre.10"
 description = "Calculations and simulations in analytical and reconstructed equilibria of toroidal fusion devices."
 readme = "README.md"
 authors = [
@@ -54,6 +54,7 @@ testpaths = [
     "./py-dexter/pytests",
     "./py-dexter/dexter/equilibrium/*",
     "./py-dexter/dexter/simulate/*",
+    "./py-dexter/dexter/common.py",
     "./docs/docs/",
 ] # Run from workspace root
 addopts = """

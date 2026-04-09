@@ -104,3 +104,11 @@ pub use objects::harmonics::{CosHarmonic, CosHarmonicCache};
 pub use objects::nc_harmonic::{NcHarmonic, NcHarmonicBuilder, NcHarmonicCache, PhaseMethod};
 
 pub use objects::perturbation::Perturbation;
+
+// ============== Configuration constants
+
+/// Crate configuration constants.
+pub mod constants {
+    /// The default `B` array `θ` padding width.
+    pub const DEFAULT_THETA_PADDING_WIDTH: usize = 15;
+}

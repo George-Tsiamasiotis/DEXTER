@@ -5,6 +5,8 @@ use dexter_simulate::*;
 use ndarray::Array1;
 
 fn main() -> Result<()> {
+    set_num_threads(12);
+
     // Equilibrium setup
     let lcfs = LastClosedFluxSurface::Toroidal(0.45);
     let qfactor = ParabolicQfactor::new(1.1, 3.9, lcfs);

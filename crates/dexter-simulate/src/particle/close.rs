@@ -7,6 +7,7 @@ use approx::relative_eq;
 use dexter_equilibrium::{Bfield, Current, FluxCommute, Harmonic, HarmonicCache, Qfactor};
 use ndarray_stats::QuantileExt;
 
+use crate::constants::{PSI_RELATIVE_TOLERANCE, TRAPPED_STAGNATED_CLASSIFICATION_CUTOFF};
 use crate::particle::intersect::{
     calculate_intersection_state, calculate_mod_state1, calculate_mod_state2, calculate_mod_step,
     intersected,
@@ -17,11 +18,6 @@ use crate::state::GCState;
 use crate::{Frequencies, IntersectParams, OrbitType};
 
 use super::{IntegrationStatus, Intersection};
-
-/// The relative tolerance of the `ψ-ψ0` check.
-const PSI_RELATIVE_TOLERANCE: f64 = 1e-6;
-/// See [`OrbitType::TrappedStagnated`].
-const TRAPPED_STAGNATED_CLASSIFICATION_CUTOFF: f64 = 0.999;
 
 // ===============================================================================================
 

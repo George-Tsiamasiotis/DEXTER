@@ -13,6 +13,7 @@ use std::f64::consts::TAU;
 use std::path::{Path, PathBuf};
 
 use super::debug_assert_all_finite_values;
+use crate::constants::DEFAULT_THETA_PADDING_WIDTH;
 use crate::objects::nc_flux::{NcFlux, NcFluxState};
 use crate::{Bfield, EquilibriumType};
 use crate::{EqError, EvalError, NcError};
@@ -160,7 +161,7 @@ impl NcBfieldBuilder {
         Self {
             path: path.to_path_buf(),
             interp_type: interp_type.into(),
-            padding: 15,
+            padding: DEFAULT_THETA_PADDING_WIDTH,
         }
     }
 

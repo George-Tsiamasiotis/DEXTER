@@ -99,8 +99,10 @@ nav:
   - Home: index.md
   - NetCDF: netcdf.md
   - Scripts: scripts.md
+  - Parallelism: parallelism.md
   - API Reference:
     - Types: reference/types.md
+    - Configuration: reference/configuration.md
     - Equilibrium:
       - Equilibrium: reference/equilibrium/equilibrium.md
       - LarGeometry: reference/equilibrium/lar_geometry.md
