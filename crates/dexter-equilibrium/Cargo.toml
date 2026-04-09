@@ -19,7 +19,7 @@ ndarray.workspace = true
 thiserror.workspace = true
 rsl-interpolation.workspace = true
 netcdf = { version = "0.12.0", features = ["ndarray"] }
-semver = "1.0.27"
+semver = "1.0.28"
 
 [dev-dependencies]
 criterion.workspace=true

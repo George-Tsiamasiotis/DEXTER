@@ -5,12 +5,13 @@
 mod common;
 
 use crate::common::check_integrated_particle_arrays;
-use approx::{assert_abs_diff_eq, assert_relative_eq};
+use approx::{RelativeEq, assert_abs_diff_eq, assert_relative_eq};
 use dexter_equilibrium::{
     extract::{POLOIDAL_TEST_NETCDF_PATH, TEST_NETCDF_PATH, TOROIDAL_TEST_NETCDF_PATH},
     *,
 };
 use dexter_simulate::*;
+use ndarray::Array1;
 use rsl_interpolation::{Accelerator, Cache};
 use std::{f64::consts::TAU, path::PathBuf};
 
@@ -354,4 +355,43 @@ fn gc_mixed_boozer_equivalence() {
         mixed_particle.pzeta_array().last().copied().unwrap(),
         epsilon = 1e-5
     );
+}
+
+#[test]
+#[rustfmt::skip]
+fn gc_const_pzeta_toroidal_integration_uniQ_larC_larB_cosP() {
+    use InitialFlux::*;
+    let qfactor = UnityQfactor::new();
+    let current = LarCurrent::new();
+    let bfield = LarBfield::new();
+    let perturbation = Perturbation::zero();
+
+    let solver_params = SolverParams::default();
+    let initial = InitialConditions::mixed(0.0, Toroidal(0.03), 0.0, 0.0, -0.03, 1e-6);
+
+    let mut particle = Particle::new(&initial);
+    assert!(matches!(particle.integration_status(), IntegrationStatus::PartlyInitialized));
+
+    let teval = (0.0, 6e5);
+    particle.integrate(&qfactor, &current, &bfield, &perturbation, teval, &solver_params);
+    let pzeta_array = particle.pzeta_array();
+    dbg!(&particle);
+
+    assert!(matches!(particle.integration_status(), IntegrationStatus::Integrated));
+    assert_eq!(particle.steps_stored(), particle.steps_taken());
+    assert!(particle.t_array().last().copied().unwrap() >= teval.1);
+    assert!(particle.steps_stored() > 1000);
+    assert!(particle.steps_stored() < 10000);
+    assert!(particle.energy_var().unwrap() < 1e-20);
+    assert_relative_eq!(particle.initial_energy().unwrap(), particle.final_energy().unwrap(), epsilon = 1e-10);
+    assert!(
+        pzeta_array.relative_eq(
+            &Array1::from_elem(particle.steps_stored(), initial.pzeta0().unwrap()),
+            1e-13,
+            1e-15
+        )
+    );
+    assert!(pzeta_array.std(1.0) <= 1e-15);
+
+    check_integrated_particle_arrays(&particle);
 }
