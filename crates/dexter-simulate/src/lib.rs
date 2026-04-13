@@ -46,6 +46,7 @@
 //!   + [`COMs::energy_of_psip_grid`]: Calculation of the Energy in a 2D `θ-ψp` grid
 //!
 
+mod coms;
 mod error;
 mod particle;
 mod queue;
@@ -70,7 +71,7 @@ pub use particle::{
 pub use queue::{Queue, QueueInitialConditions, Routine};
 pub use queue::{poloidal_fluxes, toroidal_fluxes};
 
-pub use state::COMs;
+pub use coms::COMs;
 
 // ============== Configuration constants
 

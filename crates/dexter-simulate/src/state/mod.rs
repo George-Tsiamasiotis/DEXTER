@@ -4,8 +4,6 @@
 //! information for integrating the system, i.e dynamical coordinates, field values, time
 //! derivatives etc.
 
-mod energy;
 mod guiding_center;
 
-pub use energy::COMs;
 pub(crate) use guiding_center::GCState;
