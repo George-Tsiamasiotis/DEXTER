@@ -13,18 +13,6 @@ from dexter.equilibrium import Harmonic, CosHarmonic, NcHarmonic
 from dexter.equilibrium import Perturbation
 from dexter.equilibrium import Equilibrium, numerical_equilibrium
 
-from dexter._core import (
-    DEFAULT_THETA_PADDING_WIDTH,
-    DEFAULT_STEPPING_METHOD,
-    DEFAULT_FIRST_STEP,
-    DEFAULT_MAX_STEPS,
-    DEFAULT_SAFETY_FACTOR,
-    DEFAULT_ENERGY_REL_TOL,
-    DEFAULT_ENERGY_ABS_TOL,
-    DEFAULT_ERROR_REL_TOL,
-    DEFAULT_ERROR_ABS_TOL,
-)
-
 from dexter.types import (
     ArrayLike,
     Array,
@@ -65,16 +53,6 @@ from dexter.simulate import (
 from dexter.common import get_max_threads, set_num_threads
 
 __all__ = [
-    # Configuration Constants
-    "DEFAULT_THETA_PADDING_WIDTH",
-    "DEFAULT_STEPPING_METHOD",
-    "DEFAULT_MAX_STEPS",
-    "DEFAULT_FIRST_STEP",
-    "DEFAULT_SAFETY_FACTOR",
-    "DEFAULT_ENERGY_REL_TOL",
-    "DEFAULT_ENERGY_ABS_TOL",
-    "DEFAULT_ERROR_REL_TOL",
-    "DEFAULT_ERROR_ABS_TOL",
     # Free functions
     "get_max_threads",
     "set_num_threads",

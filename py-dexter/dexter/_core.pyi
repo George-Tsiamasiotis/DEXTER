@@ -1,12 +1,4 @@
-"""This file mirrors all the definitions made in the `py-dexter` Rust API.
-
-Note
-----
-
-The constants' values here are defined from the Rust library. However, for the documentation's
-shake, we do not use them anywhere. If a value changes, then every occurrence in the Python API
-should change accordingly.
-"""
+"""This file mirrors all the definitions made in the `py-dexter` Rust API."""
 
 from typing import Optional, TypeAlias
 
@@ -28,35 +20,6 @@ from dexter.types import (
     SteppingMethod,
     Routine,
 )
-
-# ================================================================================================
-
-DEFAULT_THETA_PADDING_WIDTH: int = 15
-r"""The default $B$ array $\theta$ padding width."""
-
-DEFAULT_STEPPING_METHOD: SteppingMethod = "EnergyAdaptiveStep"
-"""The default optimal step calculation method."""
-
-DEFAULT_MAX_STEPS: int = 1_000_000
-"""The default maximum amount of steps a particle can make before terminating its integration."""
-
-DEFAULT_FIRST_STEP: float = 1e-1
-"""The default initial time step for the RKF45 adaptive step method. The value is empirical."""
-
-DEFAULT_SAFETY_FACTOR: float = 0.9
-"""The default safety factor of the solver. Should be less than 1.0."""
-
-DEFAULT_ENERGY_REL_TOL: float = 1e-12
-"""The default relative tolerance of the energy difference in every step."""
-
-DEFAULT_ENERGY_ABS_TOL: float = 1e-14
-"""The default absolute tolerance of the energy difference in every step."""
-
-DEFAULT_ERROR_REL_TOL: float = 1e-12
-"""The default relative tolerance of the local truncation error in every step."""
-
-DEFAULT_ERROR_ABS_TOL: float = 1e-14
-"""The default absolute tolerance of the local truncation error in every step."""
 
 # ================================================================================================
 

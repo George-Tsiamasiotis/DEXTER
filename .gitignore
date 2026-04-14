@@ -1,11 +1,8 @@
-/data
 /target
-*.npz
 *.nc
 *.so
 
 # Docs
-docs/book_build
 docs/site
 
 # Appears in doctests
@@ -14,20 +11,12 @@ crates/dexter-equilibrium/netcdf.nc
 # Python
 .venv/
 *.py[cod]
-.python-version
-.Python
 uv.lock
-
-# Cache
 __pycache__/
-.cache/
 
-# Unit test / coverage reports
+# Unit test coverage reports
 htmlcov/
 .coverage
 
 # ignore python scripts and symlinks at the project root
 /*.py
-
-
-benchmarking/

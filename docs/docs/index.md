@@ -1,4 +1,7 @@
-# DEXTER - Dynamics of Experimental Toroidal Equilibrium Reconstructions
+# DEXTER
+
+___Dynamics of Experimental Toroidal Equilibrium Reconstructions___
+
 
 A code for performing calculations and simulations of particles and magnetic field lines, with reconstructed equilibria from experimental data.
 
