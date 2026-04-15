@@ -27,6 +27,13 @@ pub enum EvalError {
     #[error("Interpolation domain error: {0}")]
     DomainError(#[from] rsl_interpolation::DomainError),
 
+    /// Analytical evaluation method received an out-of-bounds input.
+    ///
+    /// The bounds check is enforced by the definition of the equilibrium object's
+    /// [`LastClosedFluxSurface`](crate::LastClosedFluxSurface), rather than the formula itself.
+    #[error("Analytical calculation domain error")]
+    AnalyticalDomainError,
+
     /// Called undefined evaluation method.
     #[error("Call to undefined evaluation method '{0}'")]
     UndefinedEvaluation(Box<str>),

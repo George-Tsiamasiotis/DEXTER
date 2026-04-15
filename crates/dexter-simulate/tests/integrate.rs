@@ -20,7 +20,7 @@ use std::{f64::consts::TAU, path::PathBuf};
 fn gc_toroidal_integration_uniQ_larC_larB_cosP() {
     use InitialFlux::*;
     let lcfs = LastClosedFluxSurface::Toroidal(0.45);
-    let qfactor = UnityQfactor::new();
+    let qfactor = UnityQfactor::new(lcfs);
     let current = LarCurrent::new();
     let bfield = LarBfield::new();
     let perturbation = Perturbation::new(&[
@@ -123,7 +123,8 @@ fn gc_poloidal_integration_ncdQ_ncdC_ncdB_ncdP() {
 #[rustfmt::skip]
 fn gc_toroidal_integration_gcmotion_check_uniQ_larC_larB_cosP() {
     use InitialFlux::*;
-    let qfactor = UnityQfactor::new();
+    let lcfs = LastClosedFluxSurface::Toroidal(0.45);
+    let qfactor = UnityQfactor::new(lcfs);
     let current = LarCurrent::new();
     let bfield = LarBfield::new();
     let perturbation = Perturbation::zero();
@@ -228,12 +229,12 @@ fn gc_toroidal_poloidal_equivalence() {
     assert_abs_diff_eq!(
         tor_particle.psi_array().last().copied().unwrap(),
         pol_particle.psi_array().last().copied().unwrap(),
-        epsilon = 1e-3*qfactor.psi_last().unwrap()
+        epsilon = 1e-3*qfactor.psi_last()
     );
     assert_abs_diff_eq!(
         tor_particle.psip_array().last().copied().unwrap(),
         pol_particle.psip_array().last().copied().unwrap(),
-        epsilon = 1e-3*qfactor.psip_last().unwrap()
+        epsilon = 1e-3*qfactor.psip_last()
     );
     assert_abs_diff_eq!(
         tor_particle.rho_array().last().copied().unwrap(),
@@ -323,12 +324,12 @@ fn gc_mixed_boozer_equivalence() {
     assert_abs_diff_eq!(
         boozer_particle.psi_array().last().copied().unwrap(),
         mixed_particle.psi_array().last().copied().unwrap(),
-        epsilon = 1e-3*qfactor.psi_last().unwrap()
+        epsilon = 1e-3*qfactor.psi_last()
     );
     assert_abs_diff_eq!(
         boozer_particle.psip_array().last().copied().unwrap(),
         mixed_particle.psip_array().last().copied().unwrap(),
-        epsilon = 1e-3*qfactor.psip_last().unwrap()
+        epsilon = 1e-3*qfactor.psip_last()
     );
     assert_abs_diff_eq!(
         boozer_particle.rho_array().last().copied().unwrap(),
@@ -361,7 +362,8 @@ fn gc_mixed_boozer_equivalence() {
 #[rustfmt::skip]
 fn gc_const_pzeta_toroidal_integration_uniQ_larC_larB_cosP() {
     use InitialFlux::*;
-    let qfactor = UnityQfactor::new();
+    let lcfs = LastClosedFluxSurface::Toroidal(0.45);
+    let qfactor = UnityQfactor::new(lcfs);
     let current = LarCurrent::new();
     let bfield = LarBfield::new();
     let perturbation = Perturbation::zero();

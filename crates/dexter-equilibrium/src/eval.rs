@@ -342,6 +342,18 @@ pub trait FluxCommute {
 
 /// q-factor related quantities computation.
 pub trait Qfactor {
+    /// Returns the value of the last closed toroidal flux `ψ_last`.
+    fn psi_last(&self) -> f64;
+
+    /// Returns the value of the last closed poloidal flux `ψp_last`.
+    fn psip_last(&self) -> f64;
+
+    /// Returns the qfactor's value at the last closed flux surface.
+    fn qlast(&self) -> f64;
+
+    /// Returns the qfactor's value at the magnetic axis.
+    fn qaxis(&self) -> f64;
+
     /// Calculates `q(ψ)`.
     ///
     /// # Example

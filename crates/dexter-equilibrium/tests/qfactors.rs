@@ -14,7 +14,7 @@ use rsl_interpolation::Accelerator;
 
 #[test]
 fn unity_qfactor() {
-    let qfactor = dbg!(UnityQfactor::new());
+    let qfactor = dbg!(UnityQfactor::new(LastClosedFluxSurface::Toroidal(0.45)));
 
     let mut acc = Accelerator::new();
     let p = 0.01;
@@ -29,6 +29,9 @@ fn unity_qfactor() {
 
     assert!(qfactor.psi_of_q(1.0, &mut acc).is_err());
     assert!(qfactor.psip_of_q(1.0, &mut acc).is_err());
+
+    assert_eq!(qfactor.psi_last(), 0.45);
+    assert_eq!(qfactor.psip_last(), 0.45);
 }
 
 #[test]
@@ -72,8 +75,8 @@ fn nc_qfactor() {
     let psip_state: NcFluxState = qfactor.psip_state();
     let qaxis: f64 = qfactor.qaxis();
     let qlast: f64 = qfactor.qlast();
-    let psi_last: f64 = qfactor.psi_last().unwrap();
-    let psip_last: f64 = qfactor.psip_last().unwrap();
+    let psi_last: f64 = qfactor.psi_last();
+    let psip_last: f64 = qfactor.psip_last();
     let psi_array: Array1<f64> = qfactor.psi_array().unwrap();
     let psip_array: Array1<f64> = qfactor.psip_array().unwrap();
     let q_array: Array1<f64> = qfactor.q_array();

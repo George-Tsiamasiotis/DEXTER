@@ -1,6 +1,6 @@
 [project]
 name = "dexter"
-version = "0.1.7-pre.10"
+version = "0.1.7-pre.11"
 description = "Calculations and simulations in analytical and reconstructed equilibria of toroidal fusion devices."
 readme = "README.md"
 authors = [
@@ -48,7 +48,6 @@ docs = [
 ]
 
 [tool.pytest.ini_options]
-filterwarnings = ['ignore:.*Figure.*'] # matplotlib
 testpaths = [
     "./py-dexter/pytests",
     "./py-dexter/dexter/equilibrium/*",
@@ -64,6 +63,10 @@ addopts = """
     --doctest-modules
      --cov=dexter --cov-report term --cov-report html
 """
+filterwarnings = [
+    "ignore:.*Figure.*", # matplotlib non-interactive
+    "ignore:.*unix_signal_add_full.*" # matplotlib-pygobject deprecation warning
+]
 
 [project.scripts]
 dexter-bfield-plot = "scripts:bfield_plot"

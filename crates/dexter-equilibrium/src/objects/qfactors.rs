@@ -3,7 +3,7 @@
 use crate::{
     debug_assert_is_finite, debug_assert_non_negative_psi, debug_assert_non_negative_psip,
     equilibrium_type_getter_impl, fluxes_state_getter_impl, fluxes_values_array_getter_impl,
-    interp_type_getter_impl, lcfs_getter_impl, netcdf_path_getter_impl, netcdf_version_getter_impl,
+    interp_type_getter_impl, netcdf_path_getter_impl, netcdf_version_getter_impl,
 };
 use dexter_common::vec_to_array1D_getter_impl;
 use ndarray::Array1;
@@ -18,14 +18,14 @@ use crate::{EquilibriumType, FluxCommute, LastClosedFluxSurface, Qfactor};
 // ===============================================================================================
 
 /// Analytical q-factor profile of q = 1 and ψ=ψp.
-///
-/// # Note
-///
-/// No ψ/ψp bounds checks are performed in evaluations.
 #[non_exhaustive]
 pub struct UnityQfactor {
     /// The object's equilibrium type.
     equilibrium_type: EquilibriumType,
+    /// The value of the last closed toroidal flux surface `ψ_last` in Normalized units.
+    psi_last: f64,
+    /// The value of the last closed poloidal flux surface `ψp_last` in Normalized units.
+    psip_last: f64,
 }
 
 impl UnityQfactor {
@@ -34,12 +34,16 @@ impl UnityQfactor {
     /// # Example
     /// ```
     /// # use dexter_equilibrium::*;
-    /// let qfactor = UnityQfactor::new();
+    /// // Define ψ=ψ_last=0.45
+    /// let lcfs = LastClosedFluxSurface::Toroidal(0.45);
+    /// let qfactor = UnityQfactor::new(lcfs);
     /// ```
     #[must_use]
-    pub fn new() -> Self {
+    pub fn new(lcfs: LastClosedFluxSurface) -> Self {
         Self {
             equilibrium_type: EquilibriumType::Analytical,
+            psi_last: lcfs.value(),
+            psip_last: lcfs.value(),
         }
     }
 
@@ -49,33 +53,67 @@ impl UnityQfactor {
 impl FluxCommute for UnityQfactor {
     fn psip_of_psi(&self, psi: f64, _: &mut Accelerator) -> Result<f64, EvalError> {
         debug_assert_non_negative_psi!(psi);
+        if psi > self.psi_last {
+            return Err(EvalError::AnalyticalDomainError);
+        };
         Ok(psi)
     }
 
     fn psi_of_psip(&self, psip: f64, _: &mut Accelerator) -> Result<f64, EvalError> {
         debug_assert_non_negative_psip!(psip);
+        if psip > self.psip_last {
+            return Err(EvalError::AnalyticalDomainError);
+        };
         Ok(psip)
     }
 }
 
 impl Qfactor for UnityQfactor {
+    fn psi_last(&self) -> f64 {
+        self.psi_last
+    }
+
+    fn psip_last(&self) -> f64 {
+        self.psip_last
+    }
+
+    fn qlast(&self) -> f64 {
+        1.0
+    }
+
+    fn qaxis(&self) -> f64 {
+        1.0
+    }
+
     fn q_of_psi(&self, psi: f64, _: &mut Accelerator) -> Result<f64, EvalError> {
         debug_assert_non_negative_psi!(psi);
+        if psi > self.psi_last {
+            return Err(EvalError::AnalyticalDomainError);
+        };
         Ok(1.0)
     }
 
     fn q_of_psip(&self, psip: f64, _: &mut Accelerator) -> Result<f64, EvalError> {
         debug_assert_non_negative_psip!(psip);
+        if psip > self.psip_last {
+            return Err(EvalError::AnalyticalDomainError);
+        };
         Ok(1.0)
     }
 
     fn dpsip_dpsi(&self, psi: f64, _: &mut Accelerator) -> Result<f64, EvalError> {
         debug_assert_non_negative_psi!(psi);
+        if psi > self.psi_last {
+            return Err(EvalError::AnalyticalDomainError);
+        };
         Ok(1.0)
     }
 
     fn dpsi_dpsip(&self, psip: f64, _: &mut Accelerator) -> Result<f64, EvalError> {
         debug_assert_non_negative_psip!(psip);
+        if psip > self.psip_last {
+            return Err(EvalError::AnalyticalDomainError);
+        };
         Ok(1.0)
     }
 
@@ -90,17 +128,15 @@ impl Qfactor for UnityQfactor {
 
 impl std::fmt::Debug for UnityQfactor {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("q-factor of q = 1 and ψ=ψp").finish()
+        f.debug_struct("q-factor of q = 1 and ψ=ψp")
+            .field("ψ/ψp_last", &self.psi_last)
+            .finish()
     }
 }
 
 // ===============================================================================================
 
 /// Analytical q-factor of parabolic q(ψ) profile.
-///
-/// # Note
-///
-/// No ψ/ψp bounds checks are performed in evaluations.
 pub struct ParabolicQfactor {
     /// The object's equilibrium type.
     equilibrium_type: EquilibriumType,
@@ -124,8 +160,8 @@ impl ParabolicQfactor {
     /// ```
     /// # use dexter_equilibrium::*;
     /// // Define q(ψ=ψ_last=0.45) = qlast = 3.8
-    /// let psi_last = LastClosedFluxSurface::Toroidal(0.45);
-    /// let qfactor = ParabolicQfactor::new(1.1, 3.8, psi_last);
+    /// let lcfs = LastClosedFluxSurface::Toroidal(0.45);
+    /// let qfactor = ParabolicQfactor::new(1.1, 3.8, lcfs);
     ///
     /// // Define q(ψp=ψp_last=0.19) = qlast = 4.2
     /// let psip_last = LastClosedFluxSurface::Poloidal(0.19);
@@ -175,18 +211,6 @@ impl ParabolicQfactor {
 
     equilibrium_type_getter_impl!();
 
-    /// Returns the value of `q` on the magnetic axis.
-    #[must_use]
-    pub fn qaxis(&self) -> f64 {
-        self.qaxis
-    }
-
-    /// Returns the value of `q` at the last closed flux surface.
-    #[must_use]
-    pub fn qlast(&self) -> f64 {
-        self.qlast
-    }
-
     /// Returns the value of the last closed toroidal flux surface `ψ_last`.
     #[must_use]
     pub fn psi_last(&self) -> f64 {
@@ -218,6 +242,9 @@ impl ParabolicQfactor {
 impl FluxCommute for ParabolicQfactor {
     fn psip_of_psi(&self, psi: f64, _: &mut Accelerator) -> Result<f64, EvalError> {
         debug_assert_non_negative_psi!(psi);
+        if psi > self.psi_last {
+            return Err(EvalError::AnalyticalDomainError);
+        };
         let atan_arg = psi * (self.qlast - self.qaxis).sqrt() / (self.psi_last * self.qaxis.sqrt());
         let coef = self.psi_last / (self.qaxis * (self.qlast - self.qaxis)).sqrt();
         Ok(debug_assert_is_finite!(coef * atan_arg.atan()))
@@ -225,6 +252,9 @@ impl FluxCommute for ParabolicQfactor {
 
     fn psi_of_psip(&self, psip: f64, _: &mut Accelerator) -> Result<f64, EvalError> {
         debug_assert_non_negative_psip!(psip);
+        if psip > self.psip_last {
+            return Err(EvalError::AnalyticalDomainError);
+        };
         let tan_arg = (self.qaxis * (self.qlast - self.qaxis)).sqrt() * psip / self.psi_last;
         let coef = self.psi_last * self.qaxis.sqrt() / (self.qlast - self.qaxis).sqrt();
         Ok(debug_assert_is_finite!(coef * tan_arg.tan()))
@@ -233,8 +263,27 @@ impl FluxCommute for ParabolicQfactor {
 
 // TODO: Cache reoccurring values when sure the formulas are correct.
 impl Qfactor for ParabolicQfactor {
+    fn psi_last(&self) -> f64 {
+        self.psi_last
+    }
+
+    fn psip_last(&self) -> f64 {
+        self.psip_last
+    }
+
+    fn qaxis(&self) -> f64 {
+        self.qaxis
+    }
+
+    fn qlast(&self) -> f64 {
+        self.qlast
+    }
+
     fn q_of_psi(&self, psi: f64, _: &mut Accelerator) -> Result<f64, EvalError> {
         debug_assert_non_negative_psi!(psi);
+        if psi > self.psi_last {
+            return Err(EvalError::AnalyticalDomainError);
+        };
         Ok(debug_assert_is_finite!(
             (self.qaxis) + (self.qlast - self.qaxis) * (psi / self.psi_last).powi(2)
         ))
@@ -242,6 +291,9 @@ impl Qfactor for ParabolicQfactor {
 
     fn q_of_psip(&self, psip: f64, _: &mut Accelerator) -> Result<f64, EvalError> {
         debug_assert_non_negative_psip!(psip);
+        if psip > self.psip_last {
+            return Err(EvalError::AnalyticalDomainError);
+        };
         let tan_arg = (self.qaxis * (self.qlast - self.qaxis)).sqrt() * psip / self.psi_last;
         Ok(debug_assert_is_finite!(
             self.qaxis + self.qaxis * tan_arg.tan().powi(2)
@@ -250,17 +302,26 @@ impl Qfactor for ParabolicQfactor {
 
     fn dpsip_dpsi(&self, psi: f64, _: &mut Accelerator) -> Result<f64, EvalError> {
         debug_assert_non_negative_psi!(psi);
+        if psi > self.psi_last {
+            return Err(EvalError::AnalyticalDomainError);
+        };
         let denom = self.qaxis * self.psi_last.powi(2) + (self.qlast - self.qaxis) * psi.powi(2);
         Ok(debug_assert_is_finite!(self.psi_last.powi(2) / denom))
     }
 
     fn dpsi_dpsip(&self, psip: f64, _: &mut Accelerator) -> Result<f64, EvalError> {
         debug_assert_non_negative_psip!(psip);
+        if psip > self.psip_last {
+            return Err(EvalError::AnalyticalDomainError);
+        };
         let cos_arg = (self.qaxis * (self.qlast - self.qaxis)).sqrt() * psip / self.psi_last;
         Ok(debug_assert_is_finite!(self.qaxis / cos_arg.cos().powi(2)))
     }
 
     fn psi_of_q(&self, q: f64, _: &mut Accelerator) -> Result<f64, EvalError> {
+        if q > self.qlast {
+            return Err(EvalError::AnalyticalDomainError);
+        };
         let frac = (q - self.qaxis) / (self.qlast - self.qaxis);
         let psi = self.psi_last * frac.sqrt();
         debug_assert_non_negative_psi!(psi);
@@ -268,6 +329,9 @@ impl Qfactor for ParabolicQfactor {
     }
 
     fn psip_of_q(&self, q: f64, _: &mut Accelerator) -> Result<f64, EvalError> {
+        if q > self.qlast {
+            return Err(EvalError::AnalyticalDomainError);
+        };
         let tan_arg = (q / self.qaxis - 1.0).sqrt();
         let coef = self.psi_last / (self.qaxis * (self.qlast - self.qaxis)).sqrt();
         let psip = coef * tan_arg.atan();
@@ -280,6 +344,8 @@ impl std::fmt::Debug for ParabolicQfactor {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("ParabolicQfactor: q-factor of parabolic q(ψ) profile.")
             .field("equilibrium_type", &self.equilibrium_type)
+            .field("ψ_last", &self.psi_last)
+            .field("ψp_last", &self.psip_last)
             .field("qaxis", &self.qaxis)
             .field("qlast", &self.qlast)
             .finish()
@@ -400,6 +466,9 @@ impl NcQfactor {
 
         // If no `ψ` values found, integrate `q(ψp)` and create them. We create a temporary
         // `q_of_psip_interp` since we cannot correctly define it yet.
+        //
+        // This operation cannot fail. If one of the fluxes is missing, then the other one is
+        // guaranteed to be `Good` and therefore the interpolation and integration can be defined.
         if psi.state() == NcFluxState::NoValues {
             let acc = &mut Accelerator::new();
             let psip_values = psip.values().expect("At least one of the fluxes exists");
@@ -418,6 +487,9 @@ impl NcQfactor {
 
         // If no `ψp` values found, integrate `ι(ψ)` and create them. For this we must create a
         // temporary `i_of_psi` interpolator.
+        //
+        // This operation cannot fail. If one of the fluxes is missing, then the other one is
+        // guaranteed to be `Good` and therefore the interpolation and integration can be defined.
         if psip.state() == NcFluxState::NoValues {
             let acc = &mut Accelerator::new();
             let psi_values = psi.values().expect("At least one of the fluxes exists");
@@ -520,6 +592,32 @@ impl FluxCommute for NcQfactor {
 }
 
 impl Qfactor for NcQfactor {
+    fn psi_last(&self) -> f64 {
+        self.psi
+            .last_value()
+            .expect("'psi' values have been calculated at this point")
+    }
+
+    fn psip_last(&self) -> f64 {
+        self.psip
+            .last_value()
+            .expect("'psip' values have been calculated at this point")
+    }
+
+    fn qlast(&self) -> f64 {
+        self.q_array()
+            .last()
+            .copied()
+            .expect("'q' array is non-empty")
+    }
+
+    fn qaxis(&self) -> f64 {
+        self.q_array()
+            .first()
+            .copied()
+            .expect("'q' array is non-empty")
+    }
+
     fn q_of_psi(&self, psi: f64, acc: &mut Accelerator) -> Result<f64, EvalError> {
         debug_assert_non_negative_psi!(psi);
         match self.q_of_psi_interp.as_ref() {
@@ -622,7 +720,6 @@ impl NcQfactor {
         }
     }
 
-    lcfs_getter_impl!();
     fluxes_state_getter_impl!();
     fluxes_values_array_getter_impl!();
     vec_to_array1D_getter_impl!(q_array, q_values, q);
@@ -655,35 +752,31 @@ mod test_utils {
     }
 
     /// Make sure that dψ(ψp)/dψp and q(ψ) are close enough.
-    pub(super) fn test_dpsi_dpsip_q_closeness(qfactor: &impl Qfactor, psip_last: f64, qlast: f64) {
+    pub(super) fn test_dpsi_dpsip_q_closeness(qfactor: &impl Qfactor) {
         // Do not go to close to the edges, since the interpolation might deviate a bit
-        let psips = Array1::linspace(0.02 * psip_last, 0.98 * psip_last, 100);
+        let psips = Array1::linspace(0.02 * qfactor.psip_last(), 0.98 * qfactor.psip_last(), 100);
 
         let mut acc = Accelerator::new();
         for psip in psips.iter().copied() {
             assert_relative_eq!(
                 qfactor.q_of_psip(psip, &mut acc).unwrap(),
                 qfactor.dpsi_dpsip(psip, &mut acc).unwrap(),
-                epsilon = qlast * 1e-4
+                epsilon = qfactor.qlast() * 1e-4
             )
         }
     }
 
     /// Make sure that dψp(ψ)/dψ and i(ψ) are close enough.
-    pub(super) fn test_dpsip_dpsi_iota_closeness(
-        qfactor: &impl Qfactor,
-        psi_last: f64,
-        qlast: f64,
-    ) {
+    pub(super) fn test_dpsip_dpsi_iota_closeness(qfactor: &impl Qfactor) {
         // Do not go to close to the edges, since the interpolation might deviate a bit
-        let psis = Array1::linspace(0.02 * psi_last, 0.98 * psi_last, 100);
+        let psis = Array1::linspace(0.02 * qfactor.psi_last(), 0.98 * qfactor.psi_last(), 100);
 
         let mut acc = Accelerator::new();
         for psi in psis.iter().copied() {
             assert_relative_eq!(
                 qfactor.iota_of_psi(psi, &mut acc).unwrap(),
                 qfactor.dpsip_dpsi(psi, &mut acc).unwrap(),
-                epsilon = qlast * 1e-4
+                epsilon = qfactor.qlast() * 1e-4
             )
         }
     }
@@ -740,46 +833,38 @@ mod test_derivatives_closeness {
 
     #[test]
     fn unity_qfactor_dpsi_dpsip_q_closeness() {
-        let qfactor = UnityQfactor::new();
-        test_dpsi_dpsip_q_closeness(&qfactor, 0.45, 3.9);
+        let qfactor = UnityQfactor::new(LastClosedFluxSurface::Poloidal(0.45));
+        test_dpsi_dpsip_q_closeness(&qfactor);
     }
 
     #[test]
     fn unity_qfactor_dpsip_dpsi_iota_closeness() {
-        let qfactor = UnityQfactor::new();
-        test_dpsip_dpsi_iota_closeness(&qfactor, 0.45, 3.9);
+        let qfactor = UnityQfactor::new(LastClosedFluxSurface::Toroidal(0.45));
+        test_dpsip_dpsi_iota_closeness(&qfactor);
     }
 
     #[test]
     fn parabolic_qfactor_dpsi_dpsip_q_closeness() {
         let qfactor = ParabolicQfactor::new(1.1, 3.9, LastClosedFluxSurface::Toroidal(0.45));
-        let psip_last = qfactor.psip_last();
-        let qlast = qfactor.qlast();
-        test_dpsi_dpsip_q_closeness(&qfactor, psip_last, qlast);
+        test_dpsi_dpsip_q_closeness(&qfactor);
     }
 
     #[test]
     fn parabolic_qfactor_dpsip_dpsi_iota_closeness() {
         let qfactor = ParabolicQfactor::new(1.1, 3.9, LastClosedFluxSurface::Toroidal(0.45));
-        let psip_last = qfactor.psip_last();
-        let qlast = qfactor.qlast();
-        test_dpsip_dpsi_iota_closeness(&qfactor, psip_last, qlast);
+        test_dpsip_dpsi_iota_closeness(&qfactor);
     }
 
     #[test]
     fn nc_qfactor_dpsi_dpsip_q_closeness() {
         let qfactor = create_nc_qfactor(TEST_NETCDF_PATH);
-        let psip_last = qfactor.psip_last().unwrap();
-        let qlast = qfactor.qlast();
-        test_dpsi_dpsip_q_closeness(&qfactor, psip_last, qlast);
+        test_dpsi_dpsip_q_closeness(&qfactor);
     }
 
     #[test]
     fn nc_qfactor_dpsip_dpsi_iota_closeness() {
         let qfactor = create_nc_qfactor(TEST_NETCDF_PATH);
-        let psi_last = qfactor.psi_last().unwrap();
-        let qlast = qfactor.qlast();
-        test_dpsip_dpsi_iota_closeness(&qfactor, psi_last, qlast);
+        test_dpsip_dpsi_iota_closeness(&qfactor);
     }
 }
 

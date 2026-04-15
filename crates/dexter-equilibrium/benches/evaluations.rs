@@ -10,6 +10,7 @@ use rsl_interpolation::{Accelerator, Cache};
 use std::path::PathBuf;
 
 fn evaluations_benchmark(c: &mut Criterion) {
+    let lcfs = LastClosedFluxSurface::Toroidal(0.45);
     let path = PathBuf::from(TEST_NETCDF_PATH);
     let mut psi_acc = Accelerator::new();
     let mut theta_acc = Accelerator::new();
@@ -18,7 +19,7 @@ fn evaluations_benchmark(c: &mut Criterion) {
 
     // ===========================================================================================
 
-    let unity_qfactor = UnityQfactor::new();
+    let unity_qfactor = UnityQfactor::new(lcfs);
     let parabolic_qfactor = ParabolicQfactor::new(1.1, 3.9, LastClosedFluxSurface::Toroidal(0.45));
     let nc_qfactor = NcQfactorBuilder::new(&path, "steffen").build().unwrap();
 
@@ -67,7 +68,6 @@ fn evaluations_benchmark(c: &mut Criterion) {
 
     // ===========================================================================================
 
-    let lcfs = LastClosedFluxSurface::Toroidal(0.45);
     let cos_harmonic = CosHarmonic::new(1e-3, lcfs, 1, 2, 0.0);
     let nc_harmonic = NcHarmonicBuilder::new(&path, "steffen", 2, 1)
         .with_phase_method(PhaseMethod::Interpolation)

@@ -105,6 +105,8 @@ def plot_particle_poloidal_drift(
         The produced `Figure` and `Ax`.
     """
     fig, ax = equilibrium.geometry.plot_last(show=False)
+    if flux_span[1] != 1.0:
+        ax.clear()
 
     thetas = np.mod(particle.theta_array, 2 * PI)
 

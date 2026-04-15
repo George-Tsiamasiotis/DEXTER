@@ -154,12 +154,12 @@ class Equilibrium:
     @property
     def psi_last(self) -> float:
         r"""The value of the last closed toroidal flux surface, $\psi_{LCFS}$."""
-        return self._try_getattr("psi_last")
+        return self.qfactor.psi_last
 
     @property
     def psip_last(self) -> float:
         r"""The value of the last closed poloidal flux surface, $\psi_{p,LCFS}$."""
-        return self._try_getattr("psip_last")
+        return self.qfactor.psip_last
 
     @property
     def baxis(self) -> float:

@@ -44,7 +44,8 @@ macro_rules! fluxes_values_array_getter_impl {
     };
 }
 
-/// Generates getters for the last closed flux surfaces.
+/// Generates getters for the last closed flux surfaces, for `Nc` types that do not
+/// implement `Qfactor`.
 #[doc(hidden)]
 #[macro_export]
 macro_rules! lcfs_getter_impl {

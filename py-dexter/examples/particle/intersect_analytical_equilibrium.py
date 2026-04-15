@@ -4,8 +4,10 @@ import dexter as dex
 from math import sqrt
 
 LCFS = dex.LastClosedFluxSurface("Toroidal", 0.45)
+raxis = 1.75
+rlast = sqrt(2 * LCFS.value) * raxis  # `rlast` must be in [m]
 equilibrium = dex.Equilibrium(
-    geometry=dex.LarGeometry(baxis=2, raxis=1.75, rlast=sqrt(2 * LCFS.value)),
+    geometry=dex.LarGeometry(baxis=2, raxis=raxis, rlast=rlast),
     qfactor=dex.ParabolicQfactor(1.1, 3.8, LCFS),
     current=dex.LarCurrent(),
     bfield=dex.LarBfield(),
@@ -18,13 +20,13 @@ equilibrium = dex.Equilibrium(
     ),
 )
 
-initial_conditions = dex.InitialConditions.boozer(
+initial_conditions = dex.InitialConditions.mixed(
     t0=0,
-    flux0=dex.InitialFlux("Toroidal", 0.03),
+    flux0=dex.InitialFlux("Toroidal", 0.077),
     theta0=1.0,
     zeta0=0.0,
-    rho0=8e-3,
-    mu0=1e-6,
+    pzeta0=-0.054,
+    mu0=3e-4,
 )
 
 particle = dex.Particle(initial_conditions)
@@ -39,4 +41,8 @@ particle.intersect(
 print(particle)
 
 particle.plot_evolution()
-dex.plot_particle_poloidal_drift(particle, equilibrium, levels=100)
+dex.plot_particle_poloidal_drift(
+    particle,
+    equilibrium,
+    flux_span=(0, 0.3),
+)

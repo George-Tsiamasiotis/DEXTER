@@ -260,7 +260,7 @@ impl Particle {
     /// let qfactor = NcQfactorBuilder::new(&path, "steffen").build()?;
     /// let current = NcCurrentBuilder::new(&path, "steffen").build()?;
     /// let bfield = NcBfieldBuilder::new(&path, "bicubic").build()?;
-    /// let lcfs = LastClosedFluxSurface::Toroidal(qfactor.psi_last().unwrap());
+    /// let lcfs = LastClosedFluxSurface::Toroidal(qfactor.psi_last());
     /// let perturbation = Perturbation::new(&[
     ///     CosHarmonic::new(1e-3, lcfs, 1, 1, 0.0),
     ///     CosHarmonic::new(1e-3, lcfs, 1, 2, 0.0),
@@ -324,7 +324,7 @@ impl Particle {
     /// # use dexter_simulate::*;
     /// # use std::path::PathBuf;
     /// #
-    /// let qfactor = UnityQfactor::new();
+    /// let qfactor = UnityQfactor::new(LastClosedFluxSurface::Toroidal(0.1));
     /// let current = LarCurrent::new();
     /// let bfield = LarBfield::new();
     /// let perturbation = Perturbation::zero();
@@ -389,7 +389,7 @@ impl Particle {
     /// # use dexter_simulate::*;
     /// # use std::path::PathBuf;
     /// #
-    /// let qfactor = UnityQfactor::new();
+    /// let qfactor = UnityQfactor::new(LastClosedFluxSurface::Toroidal(0.1));
     /// let current = LarCurrent::new();
     /// let bfield = LarBfield::new();
     /// let perturbation = Perturbation::zero();

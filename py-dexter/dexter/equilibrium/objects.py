@@ -358,10 +358,16 @@ class NcGeometry(
 class UnityQfactor(_QfactorTrait, _FluxCommuteTrait, _FluxPlotter, _QfactorPlotter):
     r"""Analytical q-factor profile of $q=1$ and $\psi=\psi_p$.
 
+    Parameters
+    ----------
+    lcfs
+        Helper type to define the Last Closed Flux Surface (LCFS).
+
     Example
     -------
     ```python title="UnityQfactor creation"
-    >>> qfactor = dex.UnityQfactor()
+    >>> lcfs = LastClosedFluxSurface("Toroidal", 0.45)
+    >>> qfactor = dex.UnityQfactor(lcfs)
 
     ```
     """
@@ -369,8 +375,8 @@ class UnityQfactor(_QfactorTrait, _FluxCommuteTrait, _FluxPlotter, _QfactorPlott
     _dyn: str = "uniQ"
     _rust: _PyUnityQfactor  # type: ignore[assignment]
 
-    def __init__(self) -> None:
-        setattr(self, "_rust", _PyUnityQfactor())
+    def __init__(self, lcfs: LastClosedFluxSurface) -> None:
+        setattr(self, "_rust", _PyUnityQfactor(lcfs=lcfs._rust))
         _FluxCommuteTrait.__init__(self)
         _QfactorTrait.__init__(self)
 
@@ -378,6 +384,26 @@ class UnityQfactor(_QfactorTrait, _FluxCommuteTrait, _FluxPlotter, _QfactorPlott
     def equilibrium_type(self) -> EquilibriumType:
         """The object's equilibrium's type."""
         return self._rust.equilibrium_type
+
+    @property
+    def psi_last(self) -> float:
+        r"""The value of the last closed toroidal flux surface $\psi_{LCFS}$ in Normalized Units."""
+        return self._rust.psi_last
+
+    @property
+    def psip_last(self) -> float:
+        r"""The value of the last closed poloidal flux surface $\psi_{p,LCFS}$ in Normalized Units."""
+        return self._rust.psip_last
+
+    @property
+    def qlast(self) -> float:
+        """The value of $q$ at the last closed flux surface."""
+        return self._rust.qlast
+
+    @property
+    def qaxis(self) -> float:
+        """The value of $q$ on the magnetic axis."""
+        return self._rust.qaxis
 
     def __str__(self) -> str:
         return self._rust.__str__()
@@ -388,8 +414,6 @@ class UnityQfactor(_QfactorTrait, _FluxCommuteTrait, _FluxPlotter, _QfactorPlott
 
 class ParabolicQfactor(_QfactorTrait, _FluxCommuteTrait, _FluxPlotter, _QfactorPlotter):
     r"""Analytical q-factor of parabolic q(ψ) profile.
-
-    Described by the following formulas:
 
     Note
     ----
@@ -444,16 +468,6 @@ class ParabolicQfactor(_QfactorTrait, _FluxCommuteTrait, _FluxPlotter, _QfactorP
         return self._rust.equilibrium_type
 
     @property
-    def qaxis(self) -> float:
-        """The value of $q$ on the magnetic axis."""
-        return self._rust.qaxis
-
-    @property
-    def qlast(self) -> float:
-        """The value of $q$ at the last closed flux surface."""
-        return self._rust.qlast
-
-    @property
     def psi_last(self) -> float:
         r"""The value of the last closed toroidal flux surface $\psi_{LCFS}$ in Normalized Units."""
         return self._rust.psi_last
@@ -462,6 +476,16 @@ class ParabolicQfactor(_QfactorTrait, _FluxCommuteTrait, _FluxPlotter, _QfactorP
     def psip_last(self) -> float:
         r"""The value of the last closed poloidal flux surface $\psi_{p,LCFS}$ in Normalized Units."""
         return self._rust.psip_last
+
+    @property
+    def qlast(self) -> float:
+        """The value of $q$ at the last closed flux surface."""
+        return self._rust.qlast
+
+    @property
+    def qaxis(self) -> float:
+        """The value of $q$ on the magnetic axis."""
+        return self._rust.qaxis
 
     def __str__(self) -> str:
         return self._rust.__str__()
@@ -537,24 +561,24 @@ class NcQfactor(_FluxCommuteTrait, _QfactorTrait, _FluxPlotter, _QfactorPlotter)
         return self._rust.interp_type
 
     @property
-    def qaxis(self) -> float:
-        """The value of $q$ on the magnetic axis."""
-        return self._rust.qaxis
-
-    @property
-    def qlast(self) -> float:
-        """The value of $q$ at the last closed fluc surface."""
-        return self._rust.qlast
-
-    @property
     def psi_last(self) -> float:
         r"""The value of the last closed toroidal flux surface $\psi_{LCFS}$ in Normalized Units."""
         return self._rust.psi_last
 
     @property
     def psip_last(self) -> float:
-        r"""The value of the last closed poloidal flux surface $\psi_{p, LCFS}$ in Normalized Units."""
+        r"""The value of the last closed poloidal flux surface $\psi_{p,LCFS}$ in Normalized Units."""
         return self._rust.psip_last
+
+    @property
+    def qlast(self) -> float:
+        """The value of $q$ at the last closed flux surface."""
+        return self._rust.qlast
+
+    @property
+    def qaxis(self) -> float:
+        """The value of $q$ on the magnetic axis."""
+        return self._rust.qaxis
 
     @property
     def psi_state(self) -> FluxState:

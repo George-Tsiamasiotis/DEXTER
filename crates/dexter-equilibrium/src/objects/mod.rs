@@ -26,7 +26,7 @@ pub enum EquilibriumType {
 
 /// Helper struct to define the Last Closed Flux Surface (LCFS) with respect to one of the
 /// two fluxes.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum LastClosedFluxSurface {
     /// Last closed toroidal flux surface.
     Toroidal(f64),

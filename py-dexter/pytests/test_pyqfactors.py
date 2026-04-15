@@ -12,8 +12,13 @@ from dexter import (
 
 
 def test_unity_qfactor():
-    qfactor = UnityQfactor()
+    LCFS = LastClosedFluxSurface("Toroidal", 0.45)
+    qfactor = UnityQfactor(LCFS)
     assert qfactor.equilibrium_type == "Analytical"
+    assert qfactor.psi_last == 0.45
+    assert qfactor.psip_last == 0.45
+    assert qfactor.qlast == 1.0
+    assert qfactor.qaxis == 1.0
     _test_qfactor_vectorized_evals(qfactor)
     assert isinstance(qfactor.__str__(), str)
     assert isinstance(qfactor.__repr__(), str)

@@ -20,7 +20,7 @@ use std::f64::consts::TAU;
 #[test]
 #[rustfmt::skip]
 fn field_line_single_period_uniQ() {
-    let qfactor = UnityQfactor::new();
+    let qfactor = UnityQfactor::new(LastClosedFluxSurface::Toroidal(0.5));
     let current = LarCurrent::new();
     let bfield = LarBfield::new();
     let perturbation = Perturbation::zero();
@@ -52,7 +52,7 @@ fn field_line_single_period_uniQ() {
 #[test]
 #[rustfmt::skip]
 fn trapped_particle_single_period_uniQ() {
-    let qfactor = UnityQfactor::new();
+    let qfactor = UnityQfactor::new(LastClosedFluxSurface::Toroidal(0.1));
     let current = LarCurrent::new();
     let bfield = LarBfield::new();
     let perturbation = Perturbation::zero();

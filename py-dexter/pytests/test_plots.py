@@ -37,7 +37,8 @@ def test_nc_geometry():
 
 
 def test_unity_qfactor():
-    qfactor = UnityQfactor()
+    lcfs = LastClosedFluxSurface("Toroidal", 0.45)
+    qfactor = UnityQfactor(lcfs)
     _test_all_qfactor_plots(qfactor)
     _test_all_flux_plots(qfactor)
 

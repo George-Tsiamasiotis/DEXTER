@@ -6,18 +6,8 @@ use std::f64::consts::TAU;
 
 use dexter_equilibrium::{Bfield, Current, FluxCommute, Qfactor};
 
+use crate::COMs;
 use crate::{Result, SimulationError};
-
-/// The constants of motion in an unperturbed equilibrium.
-#[derive(Debug)]
-pub struct COMs {
-    /// The Energy in Normalized Units.
-    pub energy: Option<f64>,
-    /// The canonical momentum `Pζ` in Normalized Units.
-    pub pzeta: Option<f64>,
-    /// The magnetic moment `μ` in Normalized Units.
-    pub mu: Option<f64>,
-}
 
 impl COMs {
     /// Calculation the Energy on a 2D meshgrid of the `ψ` and `θ` arrays, in Normalized Units.
@@ -203,7 +193,7 @@ mod test {
 
     #[test]
     fn gcmotion_check() {
-        let qfactor = UnityQfactor::new();
+        let qfactor = UnityQfactor::new(LastClosedFluxSurface::Toroidal(0.1));
         let current = LarCurrent::new();
         let bfield = LarBfield::new();
 

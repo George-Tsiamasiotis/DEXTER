@@ -164,15 +164,19 @@ pub struct PyUnityQfactor(pub(crate) UnityQfactor);
 #[pymethods]
 impl PyUnityQfactor {
     #[new]
-    #[pyo3(signature = ())]
-    pub fn new() -> Self {
-        Self(UnityQfactor::new())
+    #[pyo3(signature = (lcfs))]
+    pub fn new(lcfs: &PyLastClosedFluxSurface) -> Self {
+        Self(UnityQfactor::new(lcfs.0))
     }
 }
 
 py_debug_impl!(PyUnityQfactor);
 py_repr_impl!(PyUnityQfactor);
 py_get_enum_string!(PyUnityQfactor, equilibrium_type);
+py_export_getter!(PyUnityQfactor, psi_last, f64);
+py_export_getter!(PyUnityQfactor, psip_last, f64);
+py_export_getter!(PyUnityQfactor, qlast, f64);
+py_export_getter!(PyUnityQfactor, qaxis, f64);
 py_eval1D!(PyUnityQfactor, psip_of_psi);
 py_eval1D!(PyUnityQfactor, psi_of_psip);
 py_eval1D!(PyUnityQfactor, q_of_psi);
@@ -201,10 +205,10 @@ impl PyParabolicQfactor {
 py_debug_impl!(PyParabolicQfactor);
 py_repr_impl!(PyParabolicQfactor);
 py_get_enum_string!(PyParabolicQfactor, equilibrium_type);
-py_export_getter!(PyParabolicQfactor, qaxis, f64);
-py_export_getter!(PyParabolicQfactor, qlast, f64);
 py_export_getter!(PyParabolicQfactor, psi_last, f64);
 py_export_getter!(PyParabolicQfactor, psip_last, f64);
+py_export_getter!(PyParabolicQfactor, qlast, f64);
+py_export_getter!(PyParabolicQfactor, qaxis, f64);
 py_eval1D!(PyParabolicQfactor, psip_of_psi);
 py_eval1D!(PyParabolicQfactor, psi_of_psip);
 py_eval1D!(PyParabolicQfactor, q_of_psi);
@@ -237,11 +241,11 @@ py_repr_impl!(PyNcQfactor);
 py_get_path!(PyNcQfactor);
 py_get_netcdf_version!(PyNcQfactor);
 py_get_enum_string!(PyNcQfactor, equilibrium_type);
-py_export_getter!(PyNcQfactor, interp_type, String);
-py_export_getter!(PyNcQfactor, qaxis, f64);
+py_export_getter!(PyNcQfactor, psi_last, f64);
+py_export_getter!(PyNcQfactor, psip_last, f64);
 py_export_getter!(PyNcQfactor, qlast, f64);
-py_export_getter!(PyNcQfactor, psi_last, Option<f64>);
-py_export_getter!(PyNcQfactor, psip_last, Option<f64>);
+py_export_getter!(PyNcQfactor, qaxis, f64);
+py_export_getter!(PyNcQfactor, interp_type, String);
 py_get_enum_string!(PyNcQfactor, psi_state);
 py_get_enum_string!(PyNcQfactor, psip_state);
 py_get_numpy1D_fallible!(PyNcQfactor, psi_array);

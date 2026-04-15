@@ -16,7 +16,8 @@ use std::path::PathBuf;
 #[rustfmt::skip]
 fn gc_toroidal_intersect_uniQ_larC_larB_noP() {
     use InitialFlux::*;
-    let qfactor = UnityQfactor::new();
+    let lcfs = LastClosedFluxSurface::Toroidal(0.45);
+    let qfactor = UnityQfactor::new(lcfs);
     let current = LarCurrent::new();
     let bfield = LarBfield::new();
     let perturbation = Perturbation::zero();

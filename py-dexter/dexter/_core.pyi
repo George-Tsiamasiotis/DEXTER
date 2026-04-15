@@ -123,8 +123,12 @@ class _PyUnityQfactor:
     """PyO3 export of `dexter_equilibrium::UnityQfactor`."""
 
     equilibrium_type: EquilibriumType
+    psi_last: float
+    psip_last: float
+    qlast: float
+    qaxis: float
 
-    def __init__(self): ...
+    def __init__(self, lcfs: _PyLastClosedFluxSurface): ...
     def psip_of_psi(self, psi: float) -> float: ...
     def psi_of_psip(self, psip: float) -> float: ...
     def q_of_psi(self, psi: float) -> float: ...
@@ -142,10 +146,10 @@ class _PyParabolicQfactor:
     """PyO3 export of `dexter_equilibrium::ParabolicQfactor`."""
 
     equilibrium_type: EquilibriumType
-    qaxis: float
-    qlast: float
     psi_last: float
     psip_last: float
+    qlast: float
+    qaxis: float
 
     def __init__(
         self,

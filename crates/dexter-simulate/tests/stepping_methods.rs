@@ -11,7 +11,7 @@ use ndarray::Axis;
 #[rustfmt::skip]
 fn different_stepping_methods() {
     let lcfs = LastClosedFluxSurface::Toroidal(0.45);
-    let qfactor = UnityQfactor::new();
+    let qfactor = UnityQfactor::new(lcfs);
     let current = LarCurrent::new();
     let bfield = LarBfield::new();
     let perturbation = Perturbation::new(&[

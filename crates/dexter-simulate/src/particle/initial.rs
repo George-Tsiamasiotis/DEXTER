@@ -247,7 +247,7 @@ mod test {
     #[test]
     fn boozer_initial_conditions() {
         let objects = EqObjects {
-            qfactor: &UnityQfactor::new(),
+            qfactor: &UnityQfactor::new(LastClosedFluxSurface::Toroidal(0.1)),
             current: &LarCurrent::new(),
             bfield: &LarBfield::new(),
             perturbation: &Perturbation::zero(),
@@ -278,7 +278,7 @@ mod test {
     #[test]
     fn mixed_toroidal_initial_conditions() {
         let objects = EqObjects {
-            qfactor: &UnityQfactor::new(),
+            qfactor: &UnityQfactor::new(LastClosedFluxSurface::Toroidal(0.1)),
             current: &LarCurrent::new(),
             bfield: &LarBfield::new(),
             perturbation: &Perturbation::zero(),
