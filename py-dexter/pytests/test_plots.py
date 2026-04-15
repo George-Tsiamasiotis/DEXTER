@@ -134,7 +134,7 @@ def test_queue_plots(nc_equilibrium: Equilibrium):
     queue.plot_qkinetic_radial_sweep(flux_last=nc_equilibrium.psi_last)
 
 
-def coms_plots(nc_equilibrium: Equilibrium):
+def test_coms_plots(nc_equilibrium: Equilibrium):
     coms = COMs(pzeta=-0.02, mu=1e-5)
     psi_array = np.linspace(0, 0.001, 20)
     psip_array = np.linspace(0, 0.001, 20)
@@ -145,6 +145,7 @@ def coms_plots(nc_equilibrium: Equilibrium):
     )
     plot_energy_contour(psi_array, theta_array, energy_of_psi_grid)
     plot_energy_contour(psip_array, theta_array, energy_of_psip_grid)
+    coms.plot_parabolas(nc_equilibrium, density=40)
 
 
 # ================================================================================================

@@ -48,6 +48,8 @@ from dexter.simulate import (
     Queue,
     plot_energy_contour,
     plot_particle_poloidal_drift,
+    Parabola,
+    EnergyPzetaPlane,
 )
 
 from dexter.common import get_max_threads, set_num_threads
@@ -111,4 +113,6 @@ __all__ = [
     "Queue",
     "plot_energy_contour",
     "plot_particle_poloidal_drift",
+    "Parabola",
+    "EnergyPzetaPlane",
 ]

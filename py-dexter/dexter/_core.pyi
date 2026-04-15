@@ -444,6 +444,37 @@ class _PyNcPerturbation:
 # ================================================================================================
 # ================================================================================================
 
+class _PyParabola:
+    """PyO3 export of `parabola::Parabola`.
+
+    Only methods that are needed are exported.
+    """
+
+    a: float
+    b: float
+    c: float
+
+    def __init__(self) -> None: ...
+    def eval(self, x: float) -> float: ...
+    def eval_array1(self, arr: Array1) -> Array1: ...
+    def __str__(self) -> str: ...
+    def __repr__(self) -> str: ...
+
+# ================================================================================================
+
+class _PyEnergyPzetaPlane:
+    """PyO3 export of `dexter_simulate::EnergyPzetaPlane`."""
+
+    axis_parabola: _PyParabola
+    left_wall_parabola: _PyParabola
+    right_wall_parabola: _PyParabola
+    mu: float
+
+    def __str__(self) -> str: ...
+    def __repr__(self) -> str: ...
+
+# ================================================================================================
+
 class _PyCOMs:
     """PyO3 export of `dexter_simulate::COMs`."""
 

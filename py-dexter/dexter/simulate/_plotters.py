@@ -1,5 +1,6 @@
 """Plotter Parent classes that provide simple plotting methods"""
 
+from collections.abc import Callable
 import numpy as np
 import matplotlib.pyplot as plt
 from math import floor, log10, sqrt
@@ -11,7 +12,7 @@ from matplotlib.figure import Figure
 from matplotlib.axes import Axes
 from typing import Any, assert_never
 
-from dexter._core import _PyParticle, _PyQueue
+from dexter._core import _PyParticle, _PyQueue, _PyCOMs, _PyEnergyPzetaPlane
 from dexter import Equilibrium, LarGeometry, OrbitType
 from dexter.types import Array1, Canvas, MultiCanvas
 
@@ -49,6 +50,11 @@ CUPASSING_COLOR = "xkcd:navy blue"
 TRAPPED_STAGNATED_COLOR = "xkcd:blue"
 UNDEFINED_COLOR = "xkcd:coral"
 UNCLASSIFIED_COLOR = "xkcd:crimson"
+PARABOLAS_FIG_KW = {"figsize": (9, 6), "layout": "constrained", "dpi": 120}
+PARABOLAS_PLOT_KW = {"linewidth": 2}
+MAGNETIC_AXIS_COLOR = "xkcd:cobalt blue"
+LEFT_WALL_COLOR = "xkcd:coral"
+RIGHT_WALL_COLOR = "xkcd:forrest green"
 
 
 class _ParticlePlotter:
@@ -721,6 +727,100 @@ class _QueuePlotter:
         ax.legend(handles=[tr_st, copassing, cupassing, undefined, unclassified])
         ax.axhline(y=0, ls="--", lw=1.5, c="k")
         ax.grid(True)
+
+        if show:
+            plt.show()
+            plt.close()
+
+        return (fig, ax)
+
+
+class _COMsPlotter:
+    """Provides plotting functions for the COMs Class."""
+
+    _rust: _PyCOMs
+    build_energy_pzeta_plane: Callable  # need the monomorphized version
+
+    def plot_parabolas(
+        self,
+        equilibrium: Equilibrium,
+        xlim: tuple[float, float] = (-1.6, 0.5),
+        ymax: float = 3,
+        density: int = 1000,
+        show: bool = True,
+    ):
+        r"""Plots the orbit classification parabolas on the $(E, P_\zeta, \mu=const)$ space.
+
+        Parameters
+        ----------
+        equilibrium
+            The equilibrium in which the particle was integrated.
+        xlim
+            The xaxis limits, normalized to $\psi_{p,wall}$. Defaults to (-1.6, 0.5).
+        ymax
+            The yaxis upper limit. If not provided, the axes are autoscaled by the
+            parabolas. Note that by definition, the minimum of the magnetic axis parabola is
+            always the point $(0, 1)$. Defaults to 3.
+        density
+            The number of points to evaluate each parabola on. Defaults to 1000.
+        show
+            Whether or not to call `plt.show()`. Defaults to True.
+
+        Returns
+        -------
+        Canvas
+            The produced `Figure` and `Ax`.
+        """
+        if self._rust.mu is None:
+            raise AttributeError("'mu' must be defined.")
+        else:
+            mu = self._rust.mu
+
+        fig = plt.figure(**PARABOLAS_FIG_KW)
+        ax = fig.add_subplot()
+        fig.suptitle(
+            rf"Orbit classification parabolas on the $(E, P_\zeta, \mu={mu})$ space."
+        )
+
+        psip_last = equilibrium.psip_last
+        xaxis_span = np.linspace(xlim[0], xlim[1], density)
+        pzeta_span = xaxis_span * psip_last
+        energy_norm = mu
+
+        plane: _PyEnergyPzetaPlane = self.build_energy_pzeta_plane(equilibrium)
+
+        axis = plane.axis_parabola.eval_array1(pzeta_span) / energy_norm
+        left_wall = plane.left_wall_parabola.eval_array1(pzeta_span) / energy_norm
+        right_wall = plane.right_wall_parabola.eval_array1(pzeta_span) / energy_norm
+
+        ax.plot(
+            xaxis_span,
+            axis,
+            color=MAGNETIC_AXIS_COLOR,
+            label=r"$Magnetic\ Axis$",
+            **PARABOLAS_PLOT_KW,  # type: ignore
+        )
+        ax.plot(
+            xaxis_span,
+            left_wall,
+            color=LEFT_WALL_COLOR,
+            label=r"$Left\ Wall$",
+            **PARABOLAS_PLOT_KW,  # type: ignore
+        )
+        ax.plot(
+            xaxis_span,
+            right_wall,
+            color=RIGHT_WALL_COLOR,
+            label=r"$Right\ Wall$",
+            **PARABOLAS_PLOT_KW,  # type: ignore
+        )
+
+        ax.margins(0)
+        ax.set_ylim(0, ymax)
+        ax.set_xlabel(r"$P_\zeta/\psi_{p,wall}$")
+        ax.set_ylabel(r"$E/\mu$")
+        ax.grid(True)
+        ax.legend()
 
         if show:
             plt.show()

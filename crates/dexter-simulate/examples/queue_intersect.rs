@@ -4,7 +4,7 @@ use dexter_equilibrium::*;
 use dexter_simulate::*;
 use ndarray::Array1;
 
-fn main() -> Result<()> {
+fn main() -> Result<(), SimulationError> {
     set_num_threads(12);
 
     // Equilibrium setup

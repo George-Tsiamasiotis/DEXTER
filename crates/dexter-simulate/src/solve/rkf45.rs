@@ -4,10 +4,9 @@
 
 use dexter_equilibrium::{Bfield, Current, FluxCommute, Harmonic, Qfactor};
 
-use crate::Result;
 use crate::particle::{EqObjects, IntegrationCaches};
 use crate::state::GCState;
-use crate::{SolverParams, SteppingMethod};
+use crate::{SimulationError, SolverParams, SteppingMethod};
 
 #[expect(clippy::wildcard_imports, reason = "rkf45 constants")]
 use self::tableau::*;
@@ -99,7 +98,7 @@ impl Stepper {
         dt: f64,
         objects: &EqObjects<Q, C, B, H>,
         caches: &mut IntegrationCaches<H::Cache>,
-    ) -> Result<()>
+    ) -> Result<(), SimulationError>
     where
         Q: Qfactor + FluxCommute,
         C: Current,
@@ -126,7 +125,7 @@ impl Stepper {
         dt: f64,
         objects: &EqObjects<Q, C, B, H>,
         caches: &mut IntegrationCaches<H::Cache>,
-    ) -> Result<()>
+    ) -> Result<(), SimulationError>
     where
         Q: Qfactor + FluxCommute,
         C: Current,
@@ -160,7 +159,7 @@ impl Stepper {
         dt: f64,
         objects: &EqObjects<Q, C, B, H>,
         caches: &mut IntegrationCaches<H::Cache>,
-    ) -> Result<()>
+    ) -> Result<(), SimulationError>
     where
         Q: Qfactor + FluxCommute,
         C: Current,
@@ -194,7 +193,7 @@ impl Stepper {
         dt: f64,
         objects: &EqObjects<Q, C, B, H>,
         caches: &mut IntegrationCaches<H::Cache>,
-    ) -> Result<()>
+    ) -> Result<(), SimulationError>
     where
         Q: Qfactor + FluxCommute,
         C: Current,
@@ -228,7 +227,7 @@ impl Stepper {
         dt: f64,
         objects: &EqObjects<Q, C, B, H>,
         caches: &mut IntegrationCaches<H::Cache>,
-    ) -> Result<()>
+    ) -> Result<(), SimulationError>
     where
         Q: Qfactor + FluxCommute,
         C: Current,
@@ -262,7 +261,7 @@ impl Stepper {
         dt: f64,
         objects: &EqObjects<Q, C, B, H>,
         caches: &mut IntegrationCaches<H::Cache>,
-    ) -> Result<()>
+    ) -> Result<(), SimulationError>
     where
         Q: Qfactor + FluxCommute,
         C: Current,
@@ -380,7 +379,7 @@ impl Stepper {
         dt: f64,
         objects: &EqObjects<Q, C, B, H>,
         caches: &mut IntegrationCaches<H::Cache>,
-    ) -> Result<GCState>
+    ) -> Result<GCState, SimulationError>
     where
         Q: Qfactor + FluxCommute,
         C: Current,

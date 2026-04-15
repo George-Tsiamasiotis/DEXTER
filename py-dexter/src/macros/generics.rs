@@ -306,8 +306,8 @@ macro_rules! generic_queue_close_impl {
     };
 }
 
-/// ==============================================================================================
-/// ==============================================================================================
+// ==============================================================================================
+// ==============================================================================================
 
 /// Manually monomorphizes COMs' `energy_of_psi_grid()` method for the specific equilibrium objects.
 #[macro_export]
@@ -368,6 +368,32 @@ macro_rules! generic_energy_of_psip_grid_impl {
                     )
                     .or_else(|err| Err(PyErr::new::<PyValueError, _>(err.to_string())))?
                     .into_pyarray(py))
+            }
+        }
+    };
+}
+
+// ===============================================================================================
+
+/// Manually monomorphizes `COMs` `build_energy_pzeta_plane()` method for the specific
+/// equilibrium objects.
+#[macro_export]
+macro_rules! generic_build_energy_pzeta_impl {
+    ($fun_name:ident, $Q:ty, $C:ty, $B:ty) => {
+        #[pymethods]
+        impl PyCOMs {
+            #[allow(non_snake_case)]
+            pub fn $fun_name(
+                &self,
+                qfactor: &$Q,
+                current: &$C,
+                bfield: &$B,
+            ) -> PyResult<PyEnergyPzetaPlane> {
+                let plane = self
+                    .0
+                    .build_energy_pzeta_plane(&qfactor.0, &current.0, &bfield.0)
+                    .or_else(|err| Err(PyErr::new::<PyValueError, _>(err.to_string())))?;
+                Ok(PyEnergyPzetaPlane(plane))
             }
         }
     };

@@ -39,6 +39,8 @@ fn _core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<pyperturbation::PyCosPerturbation>()?;
     m.add_class::<pyperturbation::PyNcPerturbation>()?;
     // Simulation
+    m.add_class::<pycoms::PyParabola>()?;
+    m.add_class::<pycoms::PyEnergyPzetaPlane>()?;
     m.add_class::<pycoms::PyCOMs>()?;
     m.add_class::<pyparticle::PyInitialFlux>()?;
     m.add_class::<pyparticle::PyInitialConditions>()?;

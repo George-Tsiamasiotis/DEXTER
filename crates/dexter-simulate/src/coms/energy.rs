@@ -1,187 +1,118 @@
 //! Calculation of the Energy in a 2D grid.
 
+#![expect(clippy::min_ident_chars, reason = "Hamiltonian terms")]
+
 use ndarray::{Array1, Array2};
 use rsl_interpolation::{Accelerator, Cache};
 use std::f64::consts::TAU;
 
 use dexter_equilibrium::{Bfield, Current, FluxCommute, Qfactor};
 
+use crate::COMError;
 use crate::COMs;
-use crate::{Result, SimulationError};
 
-impl COMs {
-    /// Calculation the Energy on a 2D meshgrid of the `ψ` and `θ` arrays, in Normalized Units.
-    ///
-    /// Both `pzeta` and `mu` fields must be defined.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// # use dexter_equilibrium::*;
-    /// # use dexter_simulate::*;
-    /// # use std::path::PathBuf;
-    /// # use ndarray::{Array1, Array2};
-    /// # use std::f64::consts::PI;
-    /// #
-    /// let lcfs = LastClosedFluxSurface::Toroidal(0.1);
-    /// let qfactor = ParabolicQfactor::new(1.1, 3.9, lcfs);
-    /// let current = LarCurrent::new();
-    /// let bfield = LarBfield::new();
-    ///
-    /// let coms = COMs {
-    ///     energy: None,
-    ///     pzeta: Some(-0.025),
-    ///     mu: Some(1e5),
-    /// };
-    ///
-    /// let psi_array = Array1::linspace(0.0, lcfs.value(), 100);
-    /// let theta_array = Array1::linspace(-PI, PI, 100);
-    ///
-    /// let grid: Array2<f64> = coms.energy_of_psi_grid(
-    ///     &qfactor,
-    ///     &current,
-    ///     &bfield,
-    ///     &psi_array,
-    ///     &theta_array,
-    /// )?;
-    /// # Ok::<_, SimulationError>(())
-    ///
-    /// ```
-    ///
-    /// # Errors
-    ///
-    /// Returns an [`SimulationError`] if `pzeta` or `mu` are not defined, or if any of the
-    /// `psi_array` values is out of bounds.
-    #[expect(clippy::min_ident_chars, reason = "Hamiltonian terms")]
-    pub fn energy_of_psi_grid<Q, C, B>(
-        &self,
-        qfactor: &Q,
-        current: &C,
-        bfield: &B,
-        psi_array: &Array1<f64>,
-        theta_array: &Array1<f64>,
-    ) -> Result<Array2<f64>>
-    where
-        Q: Qfactor + FluxCommute,
-        C: Current,
-        B: Bfield,
-    {
-        let pzeta = self
-            .pzeta
-            .ok_or_else(|| SimulationError::MissingCOM("pzeta".into()))?;
-        let mu = self
-            .mu
-            .ok_or_else(|| SimulationError::MissingCOM("mu".into()))?;
+/// Calculation the Energy on a 2D meshgrid of the `ψ` and `θ` arrays, in Normalized Units.
+///
+/// Both `pzeta` and `mu` fields must be defined.
+///
+/// # Errors
+///
+/// Returns a [`COMError`] if `pzeta` or `mu` are not defined, or if any of the
+/// `psi_array` values is out of bounds.
+pub(crate) fn energy_of_psi_grid<Q, C, B>(
+    coms: &COMs,
+    qfactor: &Q,
+    current: &C,
+    bfield: &B,
+    psi_array: &Array1<f64>,
+    theta_array: &Array1<f64>,
+) -> Result<Array2<f64>, COMError>
+where
+    Q: Qfactor + FluxCommute,
+    C: Current,
+    B: Bfield,
+{
+    let Some(pzeta) = coms.pzeta else {
+        return Err(COMError::UndefinedPzeta);
+    };
+    let Some(mu) = coms.mu else {
+        return Err(COMError::UndefinedMu);
+    };
 
-        let mut grid = Array2::from_elem((psi_array.len(), theta_array.len()), f64::NAN);
+    let mut grid = Array2::from_elem((psi_array.len(), theta_array.len()), f64::NAN);
 
-        let mut psi_acc = Accelerator::new();
-        let mut theta_acc = Accelerator::new();
-        let mut cache = Cache::new();
+    let mut psi_acc = Accelerator::new();
+    let mut theta_acc = Accelerator::new();
+    let mut cache = Cache::new();
 
-        let mod_theta_array = theta_array.mapv(|theta| theta.rem_euclid(TAU));
+    let mod_theta_array = theta_array.mapv(|theta| theta.rem_euclid(TAU));
 
-        // Iterate though `psi_array` first to avoid unnecessarily recalculating `rho`.
-        // Use `<>_of_psi` evaluation methods to avoid error propagation through double interpolations.
-        for i in 0..psi_array.len() {
-            let psi = psi_array[i];
-            let psip = qfactor.psip_of_psi(psi, &mut psi_acc)?;
-            let g = current.g_of_psi(psi, &mut psi_acc)?;
-            let rho = (pzeta + psip) / g;
-            for j in 0..mod_theta_array.len() {
-                let theta = mod_theta_array[j];
-                let b = bfield.b_of_psi(psi, theta, &mut psi_acc, &mut theta_acc, &mut cache)?;
-                grid[[i, j]] = (rho * b).powi(2) / 2.0 + mu * b
-            }
+    // Iterate though `psi_array` first to avoid unnecessarily recalculating `rho`.
+    // Use `<>_of_psi` evaluation methods to avoid error propagation through double interpolations.
+    for i in 0..psi_array.len() {
+        let psi = psi_array[i];
+        let psip = qfactor.psip_of_psi(psi, &mut psi_acc)?;
+        let g = current.g_of_psi(psi, &mut psi_acc)?;
+        let rho = (pzeta + psip) / g;
+        for j in 0..mod_theta_array.len() {
+            let theta = mod_theta_array[j];
+            let b = bfield.b_of_psi(psi, theta, &mut psi_acc, &mut theta_acc, &mut cache)?;
+            grid[[i, j]] = (rho * b).powi(2) / 2.0 + mu * b
         }
-
-        Ok(grid)
     }
 
-    /// Calculates the Energy on a 2D meshgrid of the `ψp` and `θ` arrays, in Normalized Units.
-    ///
-    /// Both `pzeta` and `mu` fields must be defined.
-    ///
-    /// Note that the [`Qfactor`] object is not needed here.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// # use dexter_equilibrium::*;
-    /// # use dexter_simulate::*;
-    /// # use std::path::PathBuf;
-    /// # use ndarray::{Array1, Array2};
-    /// # use std::f64::consts::PI;
-    /// #
-    /// let path = PathBuf::from("./netcdf.nc");
-    /// let geometry = NcGeometryBuilder::new(&path, "steffen", "bicubic").build()?;
-    /// let current = NcCurrentBuilder::new(&path, "steffen").build()?;
-    /// let bfield = NcBfieldBuilder::new(&path, "bicubic").build()?;
-    ///
-    /// let coms = COMs {
-    ///     energy: None,
-    ///     pzeta: Some(-0.025),
-    ///     mu: Some(1e5),
-    /// };
-    ///
-    /// let psip_array = Array1::linspace(0.0, geometry.psip_last().unwrap(), 100);
-    /// let theta_array = Array1::linspace(-PI, PI, 100);
-    ///
-    /// let grid: Array2<f64> = coms.energy_of_psip_grid(
-    ///     &current,
-    ///     &bfield,
-    ///     &psip_array,
-    ///     &theta_array,
-    /// )?;
-    /// # Ok::<_, SimulationError>(())
-    ///
-    /// ```
-    ///
-    /// # Errors
-    ///
-    /// Returns an [`SimulationError`] if `pzeta` or `mu` are not defined, or if any of the
-    /// `psi_array` values is out of bounds.
-    #[expect(clippy::min_ident_chars, reason = "Hamiltonian terms")]
-    pub fn energy_of_psip_grid<C, B>(
-        &self,
-        current: &C,
-        bfield: &B,
-        psip_array: &Array1<f64>,
-        theta_array: &Array1<f64>,
-    ) -> Result<Array2<f64>>
-    where
-        C: Current,
-        B: Bfield,
-    {
-        let pzeta = self
-            .pzeta
-            .ok_or_else(|| SimulationError::MissingCOM("pzeta".into()))?;
-        let mu = self
-            .mu
-            .ok_or_else(|| SimulationError::MissingCOM("mu".into()))?;
+    Ok(grid)
+}
 
-        let mut grid = Array2::from_elem((psip_array.len(), theta_array.len()), f64::NAN);
+/// Calculates the Energy on a 2D meshgrid of the `ψp` and `θ` arrays, in Normalized Units.
+///
+/// Both `pzeta` and `mu` fields must be defined.
+///
+/// Note that the [`Qfactor`] object is not needed here.
+///
+/// # Errors
+///
+/// Returns a [`COMError`] if `pzeta` or `mu` are not defined, or if any of the
+/// `psi_array` values is out of bounds.
+pub(crate) fn energy_of_psip_grid<C, B>(
+    coms: &COMs,
+    current: &C,
+    bfield: &B,
+    psip_array: &Array1<f64>,
+    theta_array: &Array1<f64>,
+) -> Result<Array2<f64>, COMError>
+where
+    C: Current,
+    B: Bfield,
+{
+    let Some(pzeta) = coms.pzeta else {
+        return Err(COMError::UndefinedPzeta);
+    };
+    let Some(mu) = coms.mu else {
+        return Err(COMError::UndefinedMu);
+    };
 
-        let mut psip_acc = Accelerator::new();
-        let mut theta_acc = Accelerator::new();
-        let mut cache = Cache::new();
+    let mut grid = Array2::from_elem((psip_array.len(), theta_array.len()), f64::NAN);
 
-        let mod_theta_array = theta_array.mapv(|theta| theta.rem_euclid(TAU));
+    let mut psip_acc = Accelerator::new();
+    let mut theta_acc = Accelerator::new();
+    let mut cache = Cache::new();
 
-        // Iterate though `psi_array` first to avoid unnecessarily recalculating `rho`.
-        for i in 0..psip_array.len() {
-            let psip = psip_array[i];
-            let g = current.g_of_psip(psip, &mut psip_acc)?;
-            let rho = (pzeta + psip) / g;
-            for j in 0..mod_theta_array.len() {
-                let theta = mod_theta_array[j];
-                let b = bfield.b_of_psip(psip, theta, &mut psip_acc, &mut theta_acc, &mut cache)?;
-                grid[[i, j]] = (rho * b).powi(2) / 2.0 + mu * b
-            }
+    let mod_theta_array = theta_array.mapv(|theta| theta.rem_euclid(TAU));
+
+    // Iterate though `psi_array` first to avoid unnecessarily recalculating `rho`.
+    for i in 0..psip_array.len() {
+        let psip = psip_array[i];
+        let g = current.g_of_psip(psip, &mut psip_acc)?;
+        let rho = (pzeta + psip) / g;
+        for j in 0..mod_theta_array.len() {
+            let theta = mod_theta_array[j];
+            let b = bfield.b_of_psip(psip, theta, &mut psip_acc, &mut theta_acc, &mut cache)?;
+            grid[[i, j]] = (rho * b).powi(2) / 2.0 + mu * b
         }
-
-        Ok(grid)
     }
+
+    Ok(grid)
 }
 
 #[cfg(test)]

@@ -4,7 +4,7 @@ use dexter_equilibrium::*;
 use dexter_simulate::*;
 use ndarray::Array1;
 
-fn main() -> Result<()> {
+fn main() -> Result<(), SimulationError> {
     // Equilibrium setup
     let lcfs = LastClosedFluxSurface::Toroidal(0.45);
     let qfactor = ParabolicQfactor::new(1.1, 3.9, lcfs);

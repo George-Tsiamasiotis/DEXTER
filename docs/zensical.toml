@@ -13,7 +13,7 @@ extra_javascript = [
 
 [project.theme]
 variant = "modern"
-font.code = "Roboto Mono"
+font.code = "Jetbrains Mono"
 features = [
     "navigation.path",
     "navigation.top",

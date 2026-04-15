@@ -349,7 +349,7 @@ dependencies = [
 
 [[package]]
 name = "dexter-simulate"
-version = "0.1.5-pre.7"
+version = "0.1.5-pre.8"
 dependencies = [
  "approx",
  "dexter-common",
@@ -357,6 +357,7 @@ dependencies = [
  "indicatif",
  "ndarray",
  "ndarray-stats",
+ "parabola",
  "rayon",
  "rsl-interpolation",
  "thiserror",
@@ -1098,6 +1099,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "parabola"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "79ecaeac6ec349bfe70aae828ce8c920663e92e4ef4eb03bfa45191306e16862"
+
+[[package]]
 name = "parking_lot"
 version = "0.12.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1220,11 +1227,12 @@ dependencies = [
 
 [[package]]
 name = "py-dexter"
-version = "0.1.7-pre.12"
+version = "0.1.7-pre.13"
 dependencies = [
  "dexter",
  "ndarray",
  "numpy",
+ "parabola",
  "pyo3",
  "rsl-interpolation",
 ]

@@ -1,6 +1,6 @@
 //! Custom Error types.
 
-/// Top level Error type.
+/// Simulation Error type.
 #[derive(thiserror::Error, Debug)]
 pub enum SimulationError {
     /// From [`dexter_equilibrium::EvalError`].
@@ -18,8 +18,28 @@ pub enum SimulationError {
     /// Queue initial conditions arrays must be of the same size.
     #[error("Queue initial conditions arrays must be of the same size")]
     QueueInitialConditionsMismatch,
+}
 
-    /// Missing required field in [`COMs`](crate::COMs).
-    #[error("Missing '{0}' field")]
-    MissingCOM(Box<str>),
+/// Constants of Motion calculations Error type.
+#[derive(thiserror::Error, Debug)]
+pub enum COMError {
+    /// From [`dexter_equilibrium::EvalError`].
+    #[error("{0}")]
+    EvalError(#[from] dexter_equilibrium::EvalError),
+
+    /// From [`dexter_equilibrium::EqError`].
+    #[error("{0}")]
+    EqError(#[from] dexter_equilibrium::EqError),
+
+    /// [`COMs`](crate::COMs) missing 'mu' field.
+    #[error("'COMs' missing 'mu' field")]
+    UndefinedMu,
+
+    /// [`COMs`](crate::COMs) missing 'pzeta' field.
+    #[error("'COMs' missing 'pzeta' field")]
+    UndefinedPzeta,
+
+    /// [`COMs`](crate::COMs) missing 'energy' field.
+    #[error("'COMs' missing 'energy' field")]
+    UndefinedEnergy,
 }

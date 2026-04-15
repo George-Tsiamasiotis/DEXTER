@@ -8,7 +8,7 @@ use dexter_simulate::*;
 use ndarray::Array1;
 
 #[test]
-fn queue_close_parQ_larC_larB_cosP() -> Result<()> {
+fn queue_close_parQ_larC_larB_cosP() -> Result<(), SimulationError> {
     // Equilibrium setup
     let lcfs = LastClosedFluxSurface::Toroidal(0.45);
     let qfactor = ParabolicQfactor::new(1.1, 1.9, LastClosedFluxSurface::Toroidal(0.45));

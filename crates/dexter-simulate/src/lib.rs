@@ -22,6 +22,10 @@
 //! + [`Queue::intersect`]: Integrates the contained particles, calculating their intersections with a
 //!   constant `θ` or `ζ` surface. Otherwise known as a `Poincare map`.
 //!
+//! ### COMs space
+//!
+//! TODO:
+//!
 //! ### Parallelism
 //!
 //! Using the [`rayon`] crate, particle routines can run in parallel. The number of threads to be
@@ -57,9 +61,7 @@ mod state;
 
 pub use dexter_common::{get_max_threads, set_num_threads};
 
-pub use error::SimulationError;
-/// Result type used throughout the crate.
-pub type Result<T> = std::result::Result<T, SimulationError>;
+pub use error::{COMError, SimulationError};
 
 pub use solve::{FluxCoordinate, SolverParams, SteppingMethod};
 
@@ -71,7 +73,7 @@ pub use particle::{
 pub use queue::{Queue, QueueInitialConditions, Routine};
 pub use queue::{poloidal_fluxes, toroidal_fluxes};
 
-pub use coms::COMs;
+pub use coms::{COMs, EnergyPzetaPlane};
 
 // ============== Configuration constants
 

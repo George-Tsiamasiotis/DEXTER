@@ -11,6 +11,8 @@ import numpy as np
 from typing import Callable, Optional
 
 from dexter._core import (
+    _PyParabola,
+    _PyEnergyPzetaPlane,
     _PyCOMs,
     _PyInitialFlux,
     _PyInitialConditions,
@@ -22,7 +24,7 @@ from dexter._core import (
 )
 
 from ..equilibrium import Equilibrium
-from ._plotters import _ParticlePlotter, _QueuePlotter
+from ._plotters import _ParticlePlotter, _QueuePlotter, _COMsPlotter
 
 from dexter.types import (
     Array1,
@@ -40,7 +42,106 @@ from dexter.types import (
 # ================================================================================================
 
 
-class COMs:
+class Parabola:
+    r"""Representation of a parabola of the form $\alpha x^2 + \beta x + \gamma$.
+
+    This type is not to be constructed directly, but through
+    [`EnergyPzetaPlane`][dexter.EnergyPzetaPlane].
+    """
+
+    _rust: _PyParabola
+
+    def __init__(self) -> None:
+        raise RuntimeError("This type cannot be constructed directly")
+
+    def eval(self, x: float) -> float:
+        """Evaluates the parabola.
+
+        Parameters
+        ----------
+        x
+            The point to evaluate the parabola.
+        """
+        return self._rust.eval(x)
+
+    def eval_array1(self, arr: Array1) -> Array1:
+        """Evaluates the parabola.
+
+        Parameters
+        ----------
+        arr
+            The array on which to evaluate the parabola.
+        """
+        return self._rust.eval_array1(arr)
+
+    @property
+    def a(self) -> float:
+        r"""The parabolas $a$ coefficient."""
+        return self._rust.a
+
+    @property
+    def b(self) -> float:
+        """The parabolas $b$ coefficient."""
+        return self._rust.b
+
+    @property
+    def c(self) -> float:
+        """The parabolas $c$ coefficient."""
+        return self._rust.c
+
+    def __str__(self) -> str:
+        return self._rust.__str__()
+
+    def __repr__(self) -> str:
+        return self.__str__()
+
+
+# ================================================================================================
+
+
+class EnergyPzetaPlane:
+    r"""Representation of the COM space $(E, P_\zeta, \mu=const)$.
+
+    This type is not to be constructed directly, but through [`COMs`][dexter.COMs].
+    """
+
+    _rust: _PyEnergyPzetaPlane
+
+    def __init__(self) -> None:
+        raise RuntimeError("This type cannot be constructed directly")
+
+    @property
+    def axis_parabola(self) -> Parabola:
+        """The parabola representing the magnetic axis."""
+        parabola = Parabola.__new__(Parabola)
+        parabola._rust = self._rust.axis_parabola
+        return parabola
+
+    @property
+    def left_wall_parabola(self) -> Parabola:
+        """The parabola representing the left wall."""
+        parabola = Parabola.__new__(Parabola)
+        parabola._rust = self._rust.left_wall_parabola
+        return parabola
+
+    @property
+    def right_wall_parabola(self) -> Parabola:
+        """The parabola representing the right wall."""
+        parabola = Parabola.__new__(Parabola)
+        parabola._rust = self._rust.right_wall_parabola
+        return parabola
+
+    def __str__(self) -> str:
+        return self._rust.__str__()
+
+    def __repr__(self) -> str:
+        return self.__str__()
+
+
+# ================================================================================================
+
+
+class COMs(_COMsPlotter):
     r"""The Constants of motion in an unperturbed equilibrium.
 
     Parameters
@@ -167,6 +268,45 @@ class COMs:
             psip_array,
             theta_array,
         )
+
+    def build_energy_pzeta_plane(
+        self,
+        equilibrium: Equilibrium,
+    ) -> EnergyPzetaPlane:
+        r"""Constructs an [`EnergyPzetaPlane`][dexter.EnergyPzetaPlane].
+
+        !!! note
+
+            The $\mu$ field must be defined.
+
+        Example
+        -------
+        ```python title="EnergyPzetaPlane creation"
+        >>> # Equilibrium setup
+        >>> equilibrium = dex.numerical_equilibrium("./data.nc", "Steffen", "Bicubic")
+        >>>
+        >>> # Constants of Motion definition
+        >>> coms = dex.COMs(mu=1e-4)
+        >>>
+        >>> # Construction
+        >>> energy_pzeta_plane = coms.build_energy_pzeta_plane(equilibrium)
+
+        ```
+        """
+
+        prefix = "__build_energy_pzeta"
+        q = equilibrium.qfactor._dyn
+        c = equilibrium.current._dyn
+        b = equilibrium.bfield._dyn
+        method_name: Callable = getattr(self._rust, f"{prefix}_{q}_{c}_{b}")
+        _rust = method_name(
+            equilibrium.qfactor._rust,
+            equilibrium.current._rust,
+            equilibrium.bfield._rust,
+        )
+        plane = EnergyPzetaPlane.__new__(EnergyPzetaPlane)
+        plane._rust = _rust
+        return plane
 
     @property
     def energy(self) -> float:

@@ -8,9 +8,8 @@ use dexter_equilibrium::{
     Bfield, Current, EvalError, FluxCommute, Harmonic, Perturbation, Qfactor,
 };
 
-use crate::Result;
 use crate::particle::{EqObjects, IntegrationCaches};
-use crate::{FluxCoordinate, InitialConditions, InitialFlux};
+use crate::{FluxCoordinate, InitialConditions, InitialFlux, SimulationError};
 
 /// State of the Guiding Center at each step.
 ///
@@ -94,7 +93,7 @@ impl GCState {
         initial: &InitialConditions,
         objects: &EqObjects<Q, C, B, H>,
         caches: &mut IntegrationCaches<H::Cache>,
-    ) -> Result<Self>
+    ) -> Result<Self, SimulationError>
     where
         Q: Qfactor + FluxCommute,
         C: Current,
@@ -135,7 +134,7 @@ impl GCState {
         &mut self,
         objects: &EqObjects<Q, C, B, H>,
         caches: &mut IntegrationCaches<H::Cache>,
-    ) -> Result<()>
+    ) -> Result<(), SimulationError>
     where
         Q: Qfactor + FluxCommute,
         C: Current,
@@ -175,7 +174,7 @@ impl GCState {
         mut self,
         objects: &EqObjects<Q, C, B, H>,
         caches: &mut IntegrationCaches<H::Cache>,
-    ) -> Result<Self>
+    ) -> Result<Self, SimulationError>
     where
         Q: Qfactor + FluxCommute,
         C: Current,
@@ -199,7 +198,7 @@ impl GCState {
         &mut self,
         qfactor: &Q,
         caches: &mut IntegrationCaches<H::Cache>,
-    ) -> Result<()>
+    ) -> Result<(), SimulationError>
     where
         Q: Qfactor + FluxCommute,
         H: Harmonic,
@@ -224,7 +223,7 @@ impl GCState {
         &mut self,
         qfactor: &Q,
         caches: &mut IntegrationCaches<H::Cache>,
-    ) -> Result<()>
+    ) -> Result<(), SimulationError>
     where
         Q: Qfactor + FluxCommute,
         H: Harmonic,
@@ -241,7 +240,7 @@ impl GCState {
         &mut self,
         current: &C,
         caches: &mut IntegrationCaches<H::Cache>,
-    ) -> Result<()>
+    ) -> Result<(), SimulationError>
     where
         C: Current,
         H: Harmonic,
@@ -265,7 +264,7 @@ impl GCState {
         &mut self,
         bfield: &B,
         caches: &mut IntegrationCaches<H::Cache>,
-    ) -> Result<()>
+    ) -> Result<(), SimulationError>
     where
         B: Bfield,
         H: Harmonic,
@@ -288,7 +287,7 @@ impl GCState {
         &mut self,
         perturbation: &Perturbation<H>,
         caches: &mut IntegrationCaches<H::Cache>,
-    ) -> Result<()>
+    ) -> Result<(), SimulationError>
     where
         H: Harmonic,
     {

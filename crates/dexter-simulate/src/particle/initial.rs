@@ -4,7 +4,7 @@ use dexter_equilibrium::{Bfield, Current, FluxCommute, Harmonic, Qfactor};
 use rsl_interpolation::Accelerator;
 
 use crate::particle::EqObjects;
-use crate::{InitialFlux, Result};
+use crate::{InitialFlux, SimulationError};
 
 /// The kind of [`InitialConditions`] set.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -127,7 +127,10 @@ impl InitialConditions {
     /// Returns a [`SimulationError`] if the missing coordinates cannot be calculated. This can
     /// occur if the [`Current`] object specifically does not define g(ψ) (`MixedToroidal` case) or
     /// g(ψp) (`MixedPoloidal` case), which are necessary for calculating the fluxes.
-    pub(crate) fn finalize<Q, C, B, H>(&mut self, objects: &EqObjects<Q, C, B, H>) -> Result<()>
+    pub(crate) fn finalize<Q, C, B, H>(
+        &mut self,
+        objects: &EqObjects<Q, C, B, H>,
+    ) -> Result<(), SimulationError>
     where
         Q: Qfactor + FluxCommute,
         C: Current,
