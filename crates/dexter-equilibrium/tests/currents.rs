@@ -5,13 +5,17 @@
 use std::path::PathBuf;
 
 use approx::assert_abs_diff_eq;
-use dexter_equilibrium::{Current, EquilibriumType, LarCurrent, NcCurrentBuilder, NcFluxState};
+use dexter_equilibrium::{
+    Current, EquilibriumType, FluxCoordinateState, LarCurrent, NcCurrentBuilder,
+};
 use ndarray::Array1;
 use rsl_interpolation::Accelerator;
 
 #[test]
 fn lar_current() {
     let current = dbg!(LarCurrent::new());
+    assert_eq!(current.psi_state(), FluxCoordinateState::Good);
+    assert_eq!(current.psip_state(), FluxCoordinateState::Good);
 
     let mut acc = Accelerator::new();
     let p = 0.01;
@@ -31,13 +35,15 @@ fn nc_current() {
     let typ = "steffen";
     let builder = NcCurrentBuilder::new(&path, typ);
     let current = dbg!(builder.build().unwrap());
+    assert_eq!(current.psi_state(), FluxCoordinateState::Good);
+    assert_eq!(current.psip_state(), FluxCoordinateState::Good);
 
     let equilibrium_type: EquilibriumType = current.equilibrium_type();
     let netcdf_version: semver::Version = current.netcdf_version();
     let path: PathBuf = current.path();
     let interp_type: String = current.interp_type();
-    let psi_state: NcFluxState = current.psi_state();
-    let psip_state: NcFluxState = current.psip_state();
+    let psi_state: FluxCoordinateState = current.psi_state();
+    let psip_state: FluxCoordinateState = current.psip_state();
     let psi_last: f64 = current.psi_last().unwrap();
     let psip_last: f64 = current.psip_last().unwrap();
     let psi_array: Array1<f64> = current.psi_array().unwrap();

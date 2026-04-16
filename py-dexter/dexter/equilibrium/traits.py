@@ -12,6 +12,7 @@ from dexter._core import _PyUnityQfactor, _PyParabolicQfactor, _PyNcQfactor
 from dexter._core import _PyLarCurrent, _PyNcCurrent
 from dexter._core import _PyLarBfield, _PyNcBfield
 from dexter._core import _PyCosHarmonic, _PyNcHarmonic
+from dexter.types import FluxState
 
 
 class _FluxCommuteTrait:
@@ -62,6 +63,16 @@ class _GeometryTrait:
         self._zlab_of_psip = np.vectorize(self._rust.zlab_of_psip)
         self._jacobian_of_psi = np.vectorize(self._rust.jacobian_of_psi)
         self._jacobian_of_psip = np.vectorize(self._rust.jacobian_of_psip)
+
+    @property
+    def psi_state(self) -> FluxState:
+        """The state of the toroidal flux coordinate."""
+        return self._rust.psi_state
+
+    @property
+    def psip_state(self) -> FluxState:
+        """The state of the poloidal flux coordinate."""
+        return self._rust.psip_state
 
     def r_of_psi(self, psi: ArrayLike) -> NDArray:
         r"""The $r(\psi)$ value in $[m]$.
@@ -196,6 +207,16 @@ class _QfactorTrait:
         self._psi_of_q = np.vectorize(self._rust.psi_of_q)
         self._psip_of_q = np.vectorize(self._rust.psip_of_q)
 
+    @property
+    def psi_state(self) -> FluxState:
+        """The state of the toroidal flux coordinate."""
+        return self._rust.psi_state
+
+    @property
+    def psip_state(self) -> FluxState:
+        """The state of the poloidal flux coordinate."""
+        return self._rust.psip_state
+
     def q_of_psi(self, psi: ArrayLike) -> NDArray:
         r"""The $q(\psi)$ value.
 
@@ -297,6 +318,16 @@ class _CurrentTrait:
         self._di_dpsi = np.vectorize(self._rust.di_dpsi)
         self._di_dpsip = np.vectorize(self._rust.di_dpsip)
 
+    @property
+    def psi_state(self) -> FluxState:
+        """The state of the toroidal flux coordinate."""
+        return self._rust.psi_state
+
+    @property
+    def psip_state(self) -> FluxState:
+        """The state of the poloidal flux coordinate."""
+        return self._rust.psip_state
+
     def g_of_psi(self, psi: ArrayLike) -> NDArray:
         r"""The $g(\psi)$ value in Normalized Units.
 
@@ -391,6 +422,16 @@ class _BfieldTrait:
         self._db_dpsip = np.vectorize(self._rust.db_dpsip)
         self._db_of_psi_dtheta = np.vectorize(self._rust.db_of_psi_dtheta)
         self._db_of_psip_dtheta = np.vectorize(self._rust.db_of_psip_dtheta)
+
+    @property
+    def psi_state(self) -> FluxState:
+        """The state of the toroidal flux coordinate."""
+        return self._rust.psi_state
+
+    @property
+    def psip_state(self) -> FluxState:
+        """The state of the poloidal flux coordinate."""
+        return self._rust.psip_state
 
     def b_of_psi(self, psi: ArrayLike, theta: ArrayLike) -> NDArray:
         r"""The $B(\psi, \theta)$ value in Normalized Units.
@@ -487,6 +528,16 @@ class _HarmonicTrait:
         self._dh_of_psip_dzeta = np.vectorize(self._rust.dh_of_psip_dzeta)
         self._dh_of_psi_dt = np.vectorize(self._rust.dh_of_psi_dt)
         self._dh_of_psip_dt = np.vectorize(self._rust.dh_of_psip_dt)
+
+    @property
+    def psi_state(self) -> FluxState:
+        """The state of the toroidal flux coordinate."""
+        return self._rust.psi_state
+
+    @property
+    def psip_state(self) -> FluxState:
+        """The state of the poloidal flux coordinate."""
+        return self._rust.psip_state
 
     def alpha_of_psi(
         self,

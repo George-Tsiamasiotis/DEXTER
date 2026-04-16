@@ -2,9 +2,9 @@
 
 use crate::{
     debug_assert_is_finite, debug_assert_non_negative_psi, debug_assert_non_negative_psip,
-    debug_assert_non_negative_r, equilibrium_type_getter_impl, fluxes_state_getter_impl,
-    fluxes_values_array_getter_impl, fortran_vec_to_carray2d_impl, interp_type_getter_impl,
-    lcfs_getter_impl, netcdf_path_getter_impl, netcdf_version_getter_impl, shape2d_getter_impl,
+    debug_assert_non_negative_r, equilibrium_type_getter_impl, fluxes_values_array_getter_impl,
+    fortran_vec_to_carray2d_impl, interp_type_getter_impl, lcfs_getter_impl,
+    netcdf_path_getter_impl, netcdf_version_getter_impl, shape2d_getter_impl,
 };
 use dexter_common::vec_to_array1D_getter_impl;
 use ndarray::{Array1, Array2, Order::ColumnMajor};
@@ -15,7 +15,7 @@ use rsl_interpolation::{
 use std::path::{Path, PathBuf};
 
 use super::debug_assert_all_finite_values;
-use crate::objects::nc_flux::{NcFlux, NcFluxState};
+use crate::objects::nc_flux::{FluxCoordinateState, NcFlux};
 use crate::{EqError, EvalError};
 use crate::{EquilibriumType, FluxCommute, Geometry};
 
@@ -70,6 +70,14 @@ impl LarGeometry {
 }
 
 impl Geometry for LarGeometry {
+    fn psi_state(&self) -> FluxCoordinateState {
+        FluxCoordinateState::Good
+    }
+
+    fn psip_state(&self) -> FluxCoordinateState {
+        FluxCoordinateState::Bad
+    }
+
     fn r_of_psi(&self, psi: f64, _: &mut Accelerator) -> Result<f64, EvalError> {
         debug_assert_non_negative_psi!(psi);
         Ok(debug_assert_is_finite!((2.0 * psi).sqrt()))
@@ -414,14 +422,16 @@ impl NcGeometry {
         debug_assert_all_finite_values(&jacobian_values_fortran_flat);
 
         // Create interpolators, if possible
-        use NcFluxState::Good;
-        let psip_of_psi_interp = if (psi.state() == Good) & (psip.state() != NcFluxState::NoValues)
+        use FluxCoordinateState::Good;
+        let psip_of_psi_interp = if (psi.state() == Good)
+            & (psip.state() != FluxCoordinateState::NoValues)
         {
             Some(make_interp_type(&builder.interp1d_type)?.build(psi.uvalues(), psip.uvalues())?)
         } else {
             None
         };
-        let psi_of_psip_interp = if (psip.state() == Good) & (psi.state() != NcFluxState::NoValues)
+        let psi_of_psip_interp = if (psip.state() == Good)
+            & (psi.state() != FluxCoordinateState::NoValues)
         {
             Some(make_interp_type(&builder.interp1d_type)?.build(psip.uvalues(), psi.uvalues())?)
         } else {
@@ -442,13 +452,13 @@ impl NcGeometry {
         // Neither the fluxes or `r` is guaranteed to exist.
         // If `r` exists, then it is guaranteed it's in increasing order.
         let psi_of_r_interp = match psi.state() {
-            NcFluxState::NoValues => None,
+            FluxCoordinateState::NoValues => None,
             _ => make_interp_type(&builder.interp1d_type)?
                 .build(&r_values, psi.uvalues())
                 .ok(),
         };
         let psip_of_r_interp = match psip.state() {
-            NcFluxState::NoValues => None,
+            FluxCoordinateState::NoValues => None,
             _ => make_interp_type(&builder.interp1d_type)?
                 .build(&r_values, psip.uvalues())
                 .ok(),
@@ -573,6 +583,14 @@ impl FluxCommute for NcGeometry {
 }
 
 impl Geometry for NcGeometry {
+    fn psi_state(&self) -> FluxCoordinateState {
+        self.psi.state()
+    }
+
+    fn psip_state(&self) -> FluxCoordinateState {
+        self.psip.state()
+    }
+
     fn r_of_psi(&self, psi: f64, acc: &mut Accelerator) -> Result<f64, EvalError> {
         debug_assert_non_negative_psi!(psi);
         match self.r_of_psi_interp.as_ref() {
@@ -822,7 +840,6 @@ impl NcGeometry {
 
     shape2d_getter_impl!();
     lcfs_getter_impl!();
-    fluxes_state_getter_impl!();
     fluxes_values_array_getter_impl!();
     vec_to_array1D_getter_impl!(theta_array, theta_values, theta);
     vec_to_array1D_getter_impl!(r_array, r_values, r);
@@ -872,8 +889,11 @@ mod test_toroidal_nc_evals {
     #[test]
     fn flux_and_interp_states() {
         let geometry = create_nc_geometry(TOROIDAL_TEST_NETCDF_PATH);
-        assert_eq!(geometry.psi.state(), NcFluxState::Good);
-        assert_eq!(geometry.psip.state(), NcFluxState::Bad);
+        assert_eq!(geometry.psi_state(), FluxCoordinateState::Good);
+        assert_eq!(geometry.psip_state(), FluxCoordinateState::Bad);
+
+        assert_eq!(geometry.psi.state(), FluxCoordinateState::Good);
+        assert_eq!(geometry.psip.state(), FluxCoordinateState::Bad);
         assert!(geometry.psip_of_psi_interp.is_some());
         assert!(geometry.r_of_psi_interp.is_some());
         assert!(geometry.rlab_of_psi_interp.is_some());
@@ -939,8 +959,11 @@ mod test_poloidal_nc_evals {
     #[test]
     fn flux_and_interp_states() {
         let geometry = create_nc_geometry(POLOIDAL_TEST_NETCDF_PATH);
-        assert_eq!(geometry.psi.state(), NcFluxState::Bad);
-        assert_eq!(geometry.psip.state(), NcFluxState::Good);
+        assert_eq!(geometry.psi_state(), FluxCoordinateState::Bad);
+        assert_eq!(geometry.psip_state(), FluxCoordinateState::Good);
+
+        assert_eq!(geometry.psi.state(), FluxCoordinateState::Bad);
+        assert_eq!(geometry.psip.state(), FluxCoordinateState::Good);
         assert!(geometry.psip_of_psi_interp.is_none());
         assert!(geometry.r_of_psi_interp.is_none());
         assert!(geometry.rlab_of_psi_interp.is_none());

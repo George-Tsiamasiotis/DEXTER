@@ -64,25 +64,6 @@ macro_rules! lcfs_getter_impl {
     };
 }
 
-/// Generates getters for the fluxes' states.
-#[doc(hidden)]
-#[macro_export]
-macro_rules! fluxes_state_getter_impl {
-    () => {
-        /// Returns the toroidal flux's state.
-        #[must_use]
-        pub fn psi_state(&self) -> NcFluxState {
-            self.psi.state()
-        }
-
-        /// Returns the poloidal flux's state.
-        #[must_use]
-        pub fn psip_state(&self) -> NcFluxState {
-            self.psip.state()
-        }
-    };
-}
-
 /// Generates getters for a Harmonic's `m` and `n` mode numbers.
 #[doc(hidden)]
 #[macro_export]
@@ -197,12 +178,12 @@ macro_rules! shape2d_getter_impl {
         #[must_use]
         pub fn shape(&self) -> (usize, usize) {
             // One of the 2 is guaranteed to be non-zero.
-            let psi_len = match self.psi.state() {
-                NcFluxState::NoValues => 0,
+            let psi_len = match self.psi_state() {
+                FluxCoordinateState::NoValues => 0,
                 _ => self.psi.uvalues().len(),
             };
-            let psip_len = match self.psip.state() {
-                NcFluxState::NoValues => 0,
+            let psip_len = match self.psip_state() {
+                FluxCoordinateState::NoValues => 0,
                 _ => self.psip.uvalues().len(),
             };
             // If they both exist, they are guaranteed to have the same length.

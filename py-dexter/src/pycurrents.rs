@@ -28,6 +28,8 @@ impl PyLarCurrent {
 py_debug_impl!(PyLarCurrent);
 py_repr_impl!(PyLarCurrent);
 py_get_enum_string!(PyLarCurrent, equilibrium_type);
+py_get_enum_string!(PyLarCurrent, psi_state);
+py_get_enum_string!(PyLarCurrent, psip_state);
 py_eval1D!(PyLarCurrent, g_of_psi);
 py_eval1D!(PyLarCurrent, g_of_psip);
 py_eval1D!(PyLarCurrent, dg_dpsi);

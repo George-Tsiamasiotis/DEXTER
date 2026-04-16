@@ -10,6 +10,8 @@ from dexter import LarBfield, NcBfield
 def test_lar_bfield():
     bfield = LarBfield()
     assert bfield.equilibrium_type == "Analytical"
+    assert bfield.psi_state == "Good"
+    assert bfield.psip_state == "Bad"
     args = (0.01, 3.14)
     assert isfinite(bfield.b_of_psi(*args))
     assert isfinite(bfield.db_dpsi(*args))

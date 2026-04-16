@@ -8,6 +8,8 @@ from dexter import Current, NcCurrent, LarCurrent
 def test_lar_current():
     current = LarCurrent()
     assert current.equilibrium_type == "Analytical"
+    assert current.psi_state == "Good"
+    assert current.psip_state == "Good"
     _test_current_vectorized_evals(current)
     assert isinstance(current.__str__(), str)
     assert isinstance(current.__repr__(), str)

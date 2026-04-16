@@ -8,7 +8,7 @@ use crate::extract::netcdf_fields::{NC_PSI_NORM, NC_PSIP_NORM};
 /// Defines whether or not a Flux coordinate can be used for evaluations.
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 #[expect(clippy::exhaustive_enums, reason = "No other possible states")]
-pub enum NcFluxState {
+pub enum FluxCoordinateState {
     /// Good coordinate: values exist and are increasing. Can be used as an x coordinate for
     /// evaluations.
     Good,
@@ -18,7 +18,7 @@ pub enum NcFluxState {
     NoValues,
 }
 
-impl NcFluxState {
+impl FluxCoordinateState {
     /// Returns `Good` if the values are strictly monotonic, and `Bad`
     /// otherwise.
     #[expect(clippy::float_cmp, reason = "signum() always returns exactly 1.0_f64")]
@@ -44,7 +44,7 @@ pub(crate) struct NcFlux {
     /// The extracted flux values, if the extraction was successful.
     values: Option<Vec<f64>>,
     /// The state of the coordinate.
-    state: NcFluxState,
+    state: FluxCoordinateState,
 }
 
 impl NcFlux {
@@ -62,7 +62,7 @@ impl NcFlux {
     pub(crate) fn from_raw_values(values: &[f64]) -> Self {
         Self {
             values: Some(values.to_vec()),
-            state: NcFluxState::from_array(&Array1::from(values.to_vec())),
+            state: FluxCoordinateState::from_array(&Array1::from(values.to_vec())),
         }
     }
 
@@ -74,17 +74,17 @@ impl NcFlux {
         match extract::array_1d(file, netcdf_field) {
             Ok(array) => Self {
                 values: Some(array.to_vec()),
-                state: NcFluxState::from_array(&array),
+                state: FluxCoordinateState::from_array(&array),
             },
             Err(_) => Self {
                 values: None,
-                state: NcFluxState::NoValues,
+                state: FluxCoordinateState::NoValues,
             },
         }
     }
 
     /// Returns the state of the flux coordinate.
-    pub(crate) fn state(&self) -> NcFluxState {
+    pub(crate) fn state(&self) -> FluxCoordinateState {
         self.state
     }
 
@@ -144,7 +144,7 @@ mod test {
     fn create_empty_flux() -> NcFlux {
         NcFlux {
             values: None,
-            state: NcFluxState::NoValues,
+            state: FluxCoordinateState::NoValues,
         }
     }
 
@@ -168,7 +168,7 @@ mod test {
         let path = PathBuf::from(TEST_NETCDF_PATH);
         let file = open(&path).unwrap();
         let noflux = NcFlux::build(&file, "NOT_A_FIELD");
-        assert_eq!(noflux.state, NcFluxState::NoValues);
+        assert_eq!(noflux.state, FluxCoordinateState::NoValues);
         assert!(noflux.values.is_none());
     }
 }

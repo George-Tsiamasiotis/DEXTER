@@ -78,7 +78,7 @@ pub use error::{EqError, EvalError, NcError};
 
 pub use objects::{EquilibriumType, LastClosedFluxSurface};
 
-pub use objects::nc_flux::NcFluxState;
+pub use objects::nc_flux::FluxCoordinateState;
 
 pub use eval::HarmonicCache;
 pub use eval::{Bfield, Current, FluxCommute, Geometry, Harmonic, Qfactor};

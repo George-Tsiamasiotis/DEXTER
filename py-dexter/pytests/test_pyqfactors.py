@@ -15,6 +15,8 @@ def test_unity_qfactor():
     LCFS = LastClosedFluxSurface("Toroidal", 0.45)
     qfactor = UnityQfactor(LCFS)
     assert qfactor.equilibrium_type == "Analytical"
+    assert qfactor.psi_state == "Good"
+    assert qfactor.psip_state == "Good"
     assert qfactor.psi_last == 0.45
     assert qfactor.psip_last == 0.45
     assert qfactor.qlast == 1.0
@@ -28,6 +30,8 @@ def test_parabolic_qfactor_toroidal_lcfs():
     LCFS = LastClosedFluxSurface("Toroidal", 0.45)
     qfactor = ParabolicQfactor(1.1, 3.8, LCFS)
     assert qfactor.equilibrium_type == "Analytical"
+    assert qfactor.psi_state == "Good"
+    assert qfactor.psip_state == "Good"
     assert qfactor.qaxis == 1.1
     assert qfactor.qlast == 3.8
     assert qfactor.psi_last == 0.45
@@ -42,6 +46,8 @@ def test_parabolic_qfactor_poloidal_lcfs():
     LCFS = LastClosedFluxSurface("Poloidal", 0.45)
     qfactor = ParabolicQfactor(1.1, 3.8, LCFS)
     assert qfactor.equilibrium_type == "Analytical"
+    assert qfactor.psi_state == "Good"
+    assert qfactor.psip_state == "Good"
     assert qfactor.qaxis == 1.1
     assert qfactor.qlast == 3.8
     assert isfinite(qfactor.psip_last)

@@ -29,6 +29,8 @@ impl PyLarBfield {
 py_debug_impl!(PyLarBfield);
 py_repr_impl!(PyLarBfield);
 py_get_enum_string!(PyLarBfield, equilibrium_type);
+py_get_enum_string!(PyLarBfield, psi_state);
+py_get_enum_string!(PyLarBfield, psip_state);
 py_eval2D!(PyLarBfield, b_of_psi);
 py_eval2D!(PyLarBfield, b_of_psip);
 py_eval2D!(PyLarBfield, db_dpsi);

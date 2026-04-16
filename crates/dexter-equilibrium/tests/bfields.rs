@@ -5,7 +5,7 @@
 use std::path::PathBuf;
 
 use dexter_equilibrium::{
-    Bfield, EquilibriumType, EvalError, LarBfield, NcBfieldBuilder, NcFluxState,
+    Bfield, EquilibriumType, EvalError, FluxCoordinateState, LarBfield, NcBfieldBuilder,
 };
 use ndarray::{Array1, Array2};
 use rsl_interpolation::{Accelerator, Cache};
@@ -14,6 +14,8 @@ use rsl_interpolation::{Accelerator, Cache};
 #[rustfmt::skip]
 fn lar_bfield() {
     let bfield = dbg!(LarBfield::new());
+    assert_eq!(bfield.psi_state(), FluxCoordinateState::Good);
+    assert_eq!(bfield.psip_state(), FluxCoordinateState::Bad);
 
     let psi_acc = &mut Accelerator::new();
     let psip_acc = &mut Accelerator::new();
@@ -48,6 +50,8 @@ fn nc_bfield_no_pad() {
     let interp_type = "bicubic";
     let builder = NcBfieldBuilder::new(&path, interp_type).with_padding(0);
     let bfield = dbg!(builder.build().unwrap());
+    assert_eq!(bfield.psi_state(), FluxCoordinateState::Good);
+    assert_eq!(bfield.psip_state(), FluxCoordinateState::Good);
 
     let equilibrium_type: EquilibriumType = bfield.equilibrium_type();
     let netcdf_version: semver::Version = bfield.netcdf_version();
@@ -55,8 +59,8 @@ fn nc_bfield_no_pad() {
     let interp_type: String = bfield.interp_type();
     let baxis: f64 = bfield.baxis();
     let shape: (usize, usize) = bfield.shape();
-    let psi_state: NcFluxState = bfield.psi_state();
-    let psip_state: NcFluxState = bfield.psip_state();
+    let psi_state: FluxCoordinateState = bfield.psi_state();
+    let psip_state: FluxCoordinateState = bfield.psip_state();
     let psi_last: f64 = bfield.psi_last().unwrap();
     let psip_last: f64 = bfield.psip_last().unwrap();
     let psi_array: Array1<f64> = bfield.psi_array().unwrap();

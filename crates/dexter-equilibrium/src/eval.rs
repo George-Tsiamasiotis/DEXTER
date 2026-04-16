@@ -8,10 +8,16 @@ use core::fmt::Debug;
 use ndarray::Array1;
 use rsl_interpolation::{Accelerator, Cache};
 
-use crate::EvalError;
+use crate::{EvalError, FluxCoordinateState};
 
 /// Equilibrium geometry related quantities computation.
 pub trait Geometry {
+    /// Returns the [`FluxCoordinateState`] of the toroidal `ψ` flux coordinate.
+    fn psi_state(&self) -> FluxCoordinateState;
+
+    /// Returns the [`FluxCoordinateState`] of the toroidal `ψp` flux coordinate.
+    fn psip_state(&self) -> FluxCoordinateState;
+
     /// Calculates the radial coordinate `r(ψ)` in **\[m\]**.
     ///
     /// # Example
@@ -342,6 +348,12 @@ pub trait FluxCommute {
 
 /// q-factor related quantities computation.
 pub trait Qfactor {
+    /// Returns the [`FluxCoordinateState`] of the toroidal `ψ` flux coordinate.
+    fn psi_state(&self) -> FluxCoordinateState;
+
+    /// Returns the [`FluxCoordinateState`] of the toroidal `ψp` flux coordinate.
+    fn psip_state(&self) -> FluxCoordinateState;
+
     /// Returns the value of the last closed toroidal flux `ψ_last`.
     fn psi_last(&self) -> f64;
 
@@ -543,6 +555,12 @@ pub trait Qfactor {
 
 /// Plasma current related quantities computation.
 pub trait Current {
+    /// Returns the [`FluxCoordinateState`] of the toroidal `ψ` flux coordinate.
+    fn psi_state(&self) -> FluxCoordinateState;
+
+    /// Returns the [`FluxCoordinateState`] of the toroidal `ψp` flux coordinate.
+    fn psip_state(&self) -> FluxCoordinateState;
+
     /// Calculates `g(ψ)`.
     ///
     /// # Example
@@ -722,6 +740,12 @@ pub trait Current {
 
 /// Magnetic field related quantities computation.
 pub trait Bfield {
+    /// Returns the [`FluxCoordinateState`] of the toroidal `ψ` flux coordinate.
+    fn psi_state(&self) -> FluxCoordinateState;
+
+    /// Returns the [`FluxCoordinateState`] of the toroidal `ψp` flux coordinate.
+    fn psip_state(&self) -> FluxCoordinateState;
+
     /// Calculates `B(ψ, θ)`.
     ///
     /// # Example
@@ -939,6 +963,12 @@ pub trait HarmonicCache: Default + Clone + Debug {
 pub trait Harmonic: Clone {
     /// The implementor's corresponding caching object.
     type Cache: HarmonicCache;
+
+    /// Returns the [`FluxCoordinateState`] of the toroidal `ψ` flux coordinate.
+    fn psi_state(&self) -> FluxCoordinateState;
+
+    /// Returns the [`FluxCoordinateState`] of the toroidal `ψp` flux coordinate.
+    fn psip_state(&self) -> FluxCoordinateState;
 
     /// Returns a default instance of the Harmonic's corresponding caching object.
     ///

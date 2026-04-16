@@ -9,6 +9,8 @@ from dexter import LarGeometry, NcGeometry
 def test_lar_geometry():
     geometry = LarGeometry(baxis=2, raxis=1.75, rlast=0.5)
     assert geometry.equilibrium_type == "Analytical"
+    assert geometry.psi_state == "Good"
+    assert geometry.psip_state == "Bad"
     assert geometry.baxis == 2
     assert geometry.raxis == 1.75
     assert geometry.rlast == 0.5

@@ -51,6 +51,8 @@ class _PyLarGeometry:
     rgeo: float
     rlast: float
     psi_last: float
+    psi_state: FluxState
+    psip_state: FluxState
     rlab_last: Array1
     zlab_last: Array1
 
@@ -127,6 +129,8 @@ class _PyUnityQfactor:
     psip_last: float
     qlast: float
     qaxis: float
+    psi_state: FluxState
+    psip_state: FluxState
 
     def __init__(self, lcfs: _PyLastClosedFluxSurface): ...
     def psip_of_psi(self, psi: float) -> float: ...
@@ -150,6 +154,8 @@ class _PyParabolicQfactor:
     psip_last: float
     qlast: float
     qaxis: float
+    psi_state: FluxState
+    psip_state: FluxState
 
     def __init__(
         self,
@@ -207,6 +213,8 @@ class _PyLarCurrent:
     """PyO3 export of `dexter_equilibrium::LarCurrent`."""
 
     equilibrium_type: EquilibriumType
+    psi_state: FluxState
+    psip_state: FluxState
 
     def __init__(self) -> None: ...
     def g_of_psi(self, psi: float) -> float: ...
@@ -254,6 +262,8 @@ class _PyLarBfield:
     """PyO3 export of `dexter_equilibrium::LarBfield`."""
 
     equilibrium_type: EquilibriumType
+    psi_state: FluxState
+    psip_state: FluxState
 
     def __init__(self) -> None: ...
     def b_of_psi(self, psi: float, theta: float) -> float: ...
@@ -316,6 +326,8 @@ class _PyCosHarmonic:
     n: int
     psi_last: Optional[float]
     psip_last: Optional[float]
+    psi_state: FluxState
+    psip_state: FluxState
 
     def __init__(
         self,

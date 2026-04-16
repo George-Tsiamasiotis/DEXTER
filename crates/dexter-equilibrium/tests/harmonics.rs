@@ -12,6 +12,8 @@ use std::path::PathBuf;
 fn cos_harmonic_toroidal_lcfs() {
     let lcfs = LastClosedFluxSurface::Toroidal(0.45);
     let har = dbg!(CosHarmonic::new(1e-3, lcfs, 3, 2, PI));
+    assert_eq!(har.psi_state(), FluxCoordinateState::Good);
+    assert_eq!(har.psip_state(), FluxCoordinateState::Bad);
 
     assert_eq!(har.equilibrium_type(), EquilibriumType::Analytical);
     assert_eq!(har.epsilon(), 1e-3);
@@ -50,6 +52,8 @@ fn cos_harmonic_toroidal_lcfs() {
 fn cos_harmonic_poloidal_lcfs() {
     let lcfs = LastClosedFluxSurface::Poloidal(0.45);
     let har = dbg!(CosHarmonic::new(1e-3, lcfs, 3, 2, PI));
+    assert_eq!(har.psi_state(), FluxCoordinateState::Bad);
+    assert_eq!(har.psip_state(), FluxCoordinateState::Good);
 
     assert_eq!(har.equilibrium_type(), EquilibriumType::Analytical);
     assert_eq!(har.epsilon(), 1e-3);
@@ -91,6 +95,8 @@ fn nc_harmonic() {
     use PhaseMethod::Interpolation;
     let builder = NcHarmonicBuilder::new(&path, typ, m, n).with_phase_method(Interpolation);
     let har = dbg!(builder.build().unwrap());
+    assert_eq!(har.psi_state(), FluxCoordinateState::Good);
+    assert_eq!(har.psip_state(), FluxCoordinateState::Good);
 
     assert_eq!(har.equilibrium_type(), EquilibriumType::Numerical);
     assert_eq!(har.m(), 3);
@@ -100,8 +106,8 @@ fn nc_harmonic() {
     let netcdf_version: semver::Version = har.netcdf_version();
     let path: PathBuf = har.path();
     let interp_type: String = har.interp_type();
-    let psi_state: NcFluxState = har.psi_state();
-    let psip_state: NcFluxState = har.psip_state();
+    let psi_state: FluxCoordinateState = har.psi_state();
+    let psip_state: FluxCoordinateState = har.psip_state();
     let psi_last: f64 = har.psi_last().unwrap();
     let psip_last: f64 = har.psip_last().unwrap();
     let psi_array: Array1<f64> = har.psi_array().unwrap();

@@ -13,7 +13,7 @@ use std::f64::consts::TAU;
 use std::path::{Path, PathBuf};
 
 use super::debug_assert_all_finite_values;
-use crate::objects::nc_flux::{NcFlux, NcFluxState};
+use crate::objects::nc_flux::{FluxCoordinateState, NcFlux};
 use crate::{EqError, EvalError};
 use crate::{EquilibriumType, Harmonic, HarmonicCache};
 
@@ -180,8 +180,8 @@ impl NcHarmonic {
     }
 
     /// Checks if the called evaluation method is defined, returning `Err()` if not.
-    fn check_if_defined(state: &NcFluxState, msg: &str) -> Result<(), EvalError> {
-        if *state == NcFluxState::Good {
+    fn check_if_defined(state: &FluxCoordinateState, msg: &str) -> Result<(), EvalError> {
+        if *state == FluxCoordinateState::Good {
             Ok(())
         } else {
             Err(EvalError::UndefinedEvaluation(msg.into()))
@@ -277,6 +277,14 @@ impl HarmonicCache for NcHarmonicCache {
 // Perform psi/psip debug assertions here since he have the extra information about the flux.
 impl Harmonic for NcHarmonic {
     type Cache = NcHarmonicCache;
+
+    fn psi_state(&self) -> FluxCoordinateState {
+        self.psi_single.flux.state()
+    }
+
+    fn psip_state(&self) -> FluxCoordinateState {
+        self.psip_single.flux.state()
+    }
 
     fn generate_cache(&self) -> Self::Cache {
         Self::Cache {
@@ -516,17 +524,6 @@ impl NcHarmonic {
         self.psip_single.flux.last_value()
     }
 
-    /// Returns the toroidal flux's state.
-    #[must_use]
-    pub fn psi_state(&self) -> NcFluxState {
-        self.psi_single.flux.state()
-    }
-    /// Returns the poloidal flux's state.
-    #[must_use]
-    pub fn psip_state(&self) -> NcFluxState {
-        self.psip_single.flux.state()
-    }
-
     /// Returns the toroidal flux's values as a 1D array, if they exist.
     #[must_use]
     pub fn psi_array(&self) -> Option<Array1<f64>> {
@@ -643,7 +640,7 @@ impl SingleNcHarmonic {
         debug_assert_all_finite_values(&phases);
 
         // Create interpolators, if possible
-        use NcFluxState::Good;
+        use FluxCoordinateState::Good;
         let alpha_interp = match flux.state() {
             Good => Some(make_interp_type(&builder.interp_type)?.build(flux.uvalues(), &alphas)?),
             _ => None,
@@ -1027,8 +1024,8 @@ mod test_toroidal_nc_evals {
     #[test]
     fn flux_and_interp_states() {
         let harmonic = create_nc_harmonic(TOROIDAL_TEST_NETCDF_PATH);
-        assert_eq!(harmonic.psi_state(), NcFluxState::Good);
-        assert_eq!(harmonic.psip_state(), NcFluxState::Bad);
+        assert_eq!(harmonic.psi_state(), FluxCoordinateState::Good);
+        assert_eq!(harmonic.psip_state(), FluxCoordinateState::Bad);
         assert!(harmonic.psi_single.alpha_interp.is_some());
         assert!(harmonic.psi_single.phase_interp.is_some());
         assert!(harmonic.psip_single.alpha_interp.is_none());
@@ -1079,8 +1076,8 @@ mod test_poloidal_nc_evals {
     #[test]
     fn flux_and_interp_states() {
         let harmonic = create_nc_harmonic(POLOIDAL_TEST_NETCDF_PATH);
-        assert_eq!(harmonic.psi_state(), NcFluxState::Bad);
-        assert_eq!(harmonic.psip_state(), NcFluxState::Good);
+        assert_eq!(harmonic.psi_state(), FluxCoordinateState::Bad);
+        assert_eq!(harmonic.psip_state(), FluxCoordinateState::Good);
         assert!(harmonic.psi_single.alpha_interp.is_none());
         assert!(harmonic.psi_single.phase_interp.is_none());
         assert!(harmonic.psip_single.alpha_interp.is_some());

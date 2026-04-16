@@ -6,7 +6,7 @@ use std::path::PathBuf;
 
 use approx::{assert_abs_diff_eq, assert_relative_eq};
 use dexter_equilibrium::{
-    EquilibriumType, FluxCommute, LastClosedFluxSurface, NcFluxState, NcQfactorBuilder,
+    EquilibriumType, FluxCommute, FluxCoordinateState, LastClosedFluxSurface, NcQfactorBuilder,
     ParabolicQfactor, Qfactor, UnityQfactor,
 };
 use ndarray::Array1;
@@ -15,6 +15,9 @@ use rsl_interpolation::Accelerator;
 #[test]
 fn unity_qfactor() {
     let qfactor = dbg!(UnityQfactor::new(LastClosedFluxSurface::Toroidal(0.45)));
+
+    assert_eq!(qfactor.psi_state(), FluxCoordinateState::Good);
+    assert_eq!(qfactor.psip_state(), FluxCoordinateState::Good);
 
     let mut acc = Accelerator::new();
     let p = 0.01;
@@ -42,6 +45,9 @@ fn parabolic_qfactor() {
         LastClosedFluxSurface::Toroidal(0.45)
     ));
 
+    assert_eq!(qfactor.psi_state(), FluxCoordinateState::Good);
+    assert_eq!(qfactor.psip_state(), FluxCoordinateState::Good);
+
     let qaxis: f64 = qfactor.qaxis();
     let qlast: f64 = qfactor.qlast();
     let psi_last: f64 = qfactor.psi_last();
@@ -67,12 +73,15 @@ fn nc_qfactor() {
     let builder = NcQfactorBuilder::new(&path, typ);
     let qfactor = dbg!(builder.build().unwrap());
 
+    assert_eq!(qfactor.psi_state(), FluxCoordinateState::Good);
+    assert_eq!(qfactor.psip_state(), FluxCoordinateState::Good);
+
     let equilibrium_type: EquilibriumType = qfactor.equilibrium_type();
     let netcdf_version: semver::Version = qfactor.netcdf_version();
     let path: PathBuf = qfactor.path();
     let interp_type: String = qfactor.interp_type();
-    let psi_state: NcFluxState = qfactor.psi_state();
-    let psip_state: NcFluxState = qfactor.psip_state();
+    let psi_state: FluxCoordinateState = qfactor.psi_state();
+    let psip_state: FluxCoordinateState = qfactor.psip_state();
     let qaxis: f64 = qfactor.qaxis();
     let qlast: f64 = qfactor.qlast();
     let psi_last: f64 = qfactor.psi_last();

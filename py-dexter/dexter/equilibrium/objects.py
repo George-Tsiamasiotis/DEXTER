@@ -291,16 +291,6 @@ class NcGeometry(
         return self._rust.psip_last
 
     @property
-    def psi_state(self) -> FluxState:
-        """The state of the toroidal flux coordinate."""
-        return self._rust.psi_state
-
-    @property
-    def psip_state(self) -> FluxState:
-        """The state of the poloidal flux coordinate."""
-        return self._rust.psip_state
-
-    @property
     def psi_array(self) -> Array1:
         r"""The NetCDF $\psi$ data."""
         return self._rust.psi_array
@@ -581,16 +571,6 @@ class NcQfactor(_FluxCommuteTrait, _QfactorTrait, _FluxPlotter, _QfactorPlotter)
         return self._rust.qaxis
 
     @property
-    def psi_state(self) -> FluxState:
-        """The state of the toroidal flux coordinate."""
-        return self._rust.psi_state
-
-    @property
-    def psip_state(self) -> FluxState:
-        """The state of the poloidal flux coordinate."""
-        return self._rust.psip_state
-
-    @property
     def psi_array(self) -> Array1:
         r"""The NetCDF $\psi$ data."""
         return self._rust.psi_array
@@ -712,16 +692,6 @@ class NcCurrent(_CurrentTrait, _CurrentPlotter):
     def psip_last(self) -> float:
         r"""The value of the last closed poloidal flux surface $\psi_{p,LCFS}$ in Normalized Units."""
         return self._rust.psip_last
-
-    @property
-    def psi_state(self) -> FluxState:
-        """The state of the toroidal flux coordinate."""
-        return self._rust.psi_state
-
-    @property
-    def psip_state(self) -> FluxState:
-        """The state of the poloidal flux coordinate."""
-        return self._rust.psip_state
 
     @property
     def psi_array(self) -> Array1:
@@ -898,16 +868,6 @@ class NcBfield(_BfieldTrait):
     def psip_last(self) -> float:
         r"""The value of the last closed poloidal flux surface $\psi_{p,LCFS}$ in Normalized Units."""
         return self._rust.psip_last
-
-    @property
-    def psi_state(self) -> FluxState:
-        """The state of the toroidal flux coordinate."""
-        return self._rust.psi_state
-
-    @property
-    def psip_state(self) -> FluxState:
-        """The state of the poloidal flux coordinate."""
-        return self._rust.psip_state
 
     @property
     def psi_array(self) -> Array1:
@@ -1171,16 +1131,6 @@ class NcHarmonic(_HarmonicTrait, _HarmonicPlotter):
     def psip_last(self) -> float:
         r"""The value of the last closed poloidal flux surface $\psi_{p,LCFS}$ in Normalized Units."""
         return self._rust.psip_last
-
-    @property
-    def psi_state(self) -> FluxState:
-        """The state of the toroidal flux coordinate."""
-        return self._rust.psi_state
-
-    @property
-    def psip_state(self) -> FluxState:
-        """The state of the poloidal flux coordinate."""
-        return self._rust.psip_state
 
     @property
     def psi_array(self) -> Array1:

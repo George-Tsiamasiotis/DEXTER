@@ -5,7 +5,8 @@
 use std::path::PathBuf;
 
 use dexter_equilibrium::{
-    EquilibriumType, EvalError, FluxCommute, Geometry, LarGeometry, NcFluxState, NcGeometryBuilder,
+    EquilibriumType, EvalError, FluxCommute, FluxCoordinateState, Geometry, LarGeometry,
+    NcGeometryBuilder,
 };
 use ndarray::{Array1, Array2};
 use rsl_interpolation::{Accelerator, Cache};
@@ -14,6 +15,9 @@ use rsl_interpolation::{Accelerator, Cache};
 #[rustfmt::skip]
 fn lar_geometry() {
     let geometry = dbg!(LarGeometry::new(2.0, 1.75, 0.5));
+
+    assert_eq!(geometry.psi_state(), FluxCoordinateState::Good);
+    assert_eq!(geometry.psip_state(), FluxCoordinateState::Bad);
 
     let equilibrium_type: EquilibriumType = geometry.equilibrium_type();
     let baxis: f64 = geometry.baxis();
@@ -73,6 +77,9 @@ fn nc_geometry() {
     let builder = NcGeometryBuilder::new(&path, typ1d, typ2d);
     let geometry = dbg!(builder.build().unwrap());
 
+    assert_eq!(geometry.psi_state(), FluxCoordinateState::Good);
+    assert_eq!(geometry.psip_state(), FluxCoordinateState::Good);
+
     let equilibrium_type: EquilibriumType = geometry.equilibrium_type();
     let netcdf_version: semver::Version = geometry.netcdf_version();
     let path: PathBuf = geometry.path();
@@ -84,8 +91,8 @@ fn nc_geometry() {
     let rgeo: f64 = geometry.rgeo();
     let rlast: f64 = geometry.rlast();
     let shape: (usize, usize) = geometry.shape();
-    let psi_state: NcFluxState = geometry.psi_state();
-    let psip_state: NcFluxState = geometry.psip_state();
+    let psi_state: FluxCoordinateState = geometry.psi_state();
+    let psip_state: FluxCoordinateState = geometry.psip_state();
     let psi_last: f64 = geometry.psi_last().unwrap();
     let psip_last: f64 = geometry.psip_last().unwrap();
     let psi_array: Array1<f64> = geometry.psi_array().unwrap();

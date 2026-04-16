@@ -15,6 +15,8 @@ def test_cos_harmonic_toroidal_lcfs():
     lcfs = LastClosedFluxSurface("Toroidal", 0.45)
     harmonic = CosHarmonic(1e-3, lcfs, 3, 2, 0)
     assert harmonic.equilibrium_type == "Analytical"
+    assert harmonic.psi_state == "Good"
+    assert harmonic.psip_state == "Bad"
     assert harmonic.epsilon == 1e-3
     assert harmonic.lcfs.kind == "Toroidal"
     assert harmonic.lcfs.value == 0.45
@@ -29,6 +31,8 @@ def test_cos_harmonic_toroidal_lcfs():
 def test_cos_harmonic_poloidal_lcfs():
     lcfs = LastClosedFluxSurface("Poloidal", 0.45)
     harmonic = CosHarmonic(1e-3, lcfs, 3, 2, 0)
+    assert harmonic.psi_state == "Bad"
+    assert harmonic.psip_state == "Good"
     assert harmonic.equilibrium_type == "Analytical"
     assert harmonic.epsilon == 1e-3
     assert harmonic.lcfs.kind == "Poloidal"

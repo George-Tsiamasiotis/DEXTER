@@ -2,8 +2,8 @@
 
 use crate::{
     debug_assert_is_finite, debug_assert_non_negative_psi, debug_assert_non_negative_psip,
-    equilibrium_type_getter_impl, fluxes_state_getter_impl, fluxes_values_array_getter_impl,
-    interp_type_getter_impl, netcdf_path_getter_impl, netcdf_version_getter_impl,
+    equilibrium_type_getter_impl, fluxes_values_array_getter_impl, interp_type_getter_impl,
+    netcdf_path_getter_impl, netcdf_version_getter_impl,
 };
 use dexter_common::vec_to_array1D_getter_impl;
 use ndarray::Array1;
@@ -11,7 +11,7 @@ use rsl_interpolation::{Accelerator, DynInterpolation, InterpType, make_interp_t
 use std::path::{Path, PathBuf};
 
 use super::debug_assert_all_finite_values;
-use crate::objects::nc_flux::{NcFlux, NcFluxState};
+use crate::objects::nc_flux::{FluxCoordinateState, NcFlux};
 use crate::{EqError, EvalError};
 use crate::{EquilibriumType, FluxCommute, LastClosedFluxSurface, Qfactor};
 
@@ -69,6 +69,14 @@ impl FluxCommute for UnityQfactor {
 }
 
 impl Qfactor for UnityQfactor {
+    fn psi_state(&self) -> FluxCoordinateState {
+        FluxCoordinateState::Good
+    }
+
+    fn psip_state(&self) -> FluxCoordinateState {
+        FluxCoordinateState::Good
+    }
+
     fn psi_last(&self) -> f64 {
         self.psi_last
     }
@@ -263,6 +271,14 @@ impl FluxCommute for ParabolicQfactor {
 
 // TODO: Cache reoccurring values when sure the formulas are correct.
 impl Qfactor for ParabolicQfactor {
+    fn psi_state(&self) -> FluxCoordinateState {
+        FluxCoordinateState::Good
+    }
+
+    fn psip_state(&self) -> FluxCoordinateState {
+        FluxCoordinateState::Good
+    }
+
     fn psi_last(&self) -> f64 {
         self.psi_last
     }
@@ -469,7 +485,7 @@ impl NcQfactor {
         //
         // This operation cannot fail. If one of the fluxes is missing, then the other one is
         // guaranteed to be `Good` and therefore the interpolation and integration can be defined.
-        if psi.state() == NcFluxState::NoValues {
+        if psi.state() == FluxCoordinateState::NoValues {
             let acc = &mut Accelerator::new();
             let psip_values = psip.values().expect("At least one of the fluxes exists");
             let q_of_psip_interp =
@@ -490,7 +506,7 @@ impl NcQfactor {
         //
         // This operation cannot fail. If one of the fluxes is missing, then the other one is
         // guaranteed to be `Good` and therefore the interpolation and integration can be defined.
-        if psip.state() == NcFluxState::NoValues {
+        if psip.state() == FluxCoordinateState::NoValues {
             let acc = &mut Accelerator::new();
             let psi_values = psi.values().expect("At least one of the fluxes exists");
             let i_values: Vec<f64> = q_values.iter().map(|q| q.recip()).collect();
@@ -508,19 +524,19 @@ impl NcQfactor {
         }
 
         // Create interpolators, if possible
-        use NcFluxState::Good;
-        let psip_of_psi_interp = if (psi.state() == Good) & (psip.state() != NcFluxState::NoValues)
-        {
-            Some(make_interp_type(&builder.interp_type)?.build(psi.uvalues(), psip.uvalues())?)
-        } else {
-            None
-        };
-        let psi_of_psip_interp = if (psip.state() == Good) & (psi.state() != NcFluxState::NoValues)
-        {
-            Some(make_interp_type(&builder.interp_type)?.build(psip.uvalues(), psi.uvalues())?)
-        } else {
-            None
-        };
+        use FluxCoordinateState::Good;
+        let psip_of_psi_interp =
+            if (psi.state() == Good) & (psip.state() != FluxCoordinateState::NoValues) {
+                Some(make_interp_type(&builder.interp_type)?.build(psi.uvalues(), psip.uvalues())?)
+            } else {
+                None
+            };
+        let psi_of_psip_interp =
+            if (psip.state() == Good) & (psi.state() != FluxCoordinateState::NoValues) {
+                Some(make_interp_type(&builder.interp_type)?.build(psip.uvalues(), psi.uvalues())?)
+            } else {
+                None
+            };
 
         let q_of_psi_interp = match psi.state() {
             Good => Some(make_interp_type(&builder.interp_type)?.build(psi.uvalues(), &q_values)?),
@@ -533,13 +549,13 @@ impl NcQfactor {
 
         // If flux values exist, we must also check if q is monotonic
         let psi_of_q_interp = match psi.state() {
-            NcFluxState::NoValues => None,
+            FluxCoordinateState::NoValues => None,
             _ => make_interp_type(&builder.interp_type)?
                 .build(&q_values, psi.uvalues())
                 .ok(),
         };
         let psip_of_q_interp = match psip.state() {
-            NcFluxState::NoValues => None,
+            FluxCoordinateState::NoValues => None,
             _ => make_interp_type(&builder.interp_type)?
                 .build(&q_values, psip.uvalues())
                 .ok(),
@@ -592,6 +608,14 @@ impl FluxCommute for NcQfactor {
 }
 
 impl Qfactor for NcQfactor {
+    fn psi_state(&self) -> FluxCoordinateState {
+        self.psi.state()
+    }
+
+    fn psip_state(&self) -> FluxCoordinateState {
+        self.psip.state()
+    }
+
     fn psi_last(&self) -> f64 {
         self.psi
             .last_value()
@@ -720,7 +744,6 @@ impl NcQfactor {
         }
     }
 
-    fluxes_state_getter_impl!();
     fluxes_values_array_getter_impl!();
     vec_to_array1D_getter_impl!(q_array, q_values, q);
 }
@@ -793,6 +816,9 @@ mod test_parabolic_qfactor {
         let qfactor = ParabolicQfactor::new(1.1, 3.9, LastClosedFluxSurface::Toroidal(0.45));
         assert_abs_diff_eq!(qfactor.psi_last(), 0.45);
         assert_relative_eq!(qfactor.psip_last(), 0.25921022097041035, epsilon = 1e-12);
+
+        assert_eq!(qfactor.psi_state(), FluxCoordinateState::Good);
+        assert_eq!(qfactor.psip_state(), FluxCoordinateState::Good);
     }
 
     #[test]
@@ -805,6 +831,9 @@ mod test_parabolic_qfactor {
         );
         assert_abs_diff_eq!(qfactor.psip_last(), 0.25921022097041035);
         assert_relative_eq!(qfactor.psi_last(), 0.45, epsilon = 1e-12);
+
+        assert_eq!(qfactor.psi_state(), FluxCoordinateState::Good);
+        assert_eq!(qfactor.psip_state(), FluxCoordinateState::Good);
     }
 
     #[test]
@@ -878,8 +907,11 @@ mod test_toroidal_nc_evals {
     #[test]
     fn flux_and_interp_states() {
         let qfactor = create_nc_qfactor(TOROIDAL_TEST_NETCDF_PATH);
-        assert_eq!(qfactor.psi_state(), NcFluxState::Good);
-        assert_eq!(qfactor.psip_state(), NcFluxState::Bad);
+        assert_eq!(qfactor.psi_state(), FluxCoordinateState::Good);
+        assert_eq!(qfactor.psip_state(), FluxCoordinateState::Bad);
+
+        assert_eq!(qfactor.psi_state(), FluxCoordinateState::Good);
+        assert_eq!(qfactor.psip_state(), FluxCoordinateState::Bad);
         assert!(qfactor.q_of_psi_interp.is_some());
         assert!(qfactor.q_of_psip_interp.is_none());
         assert!(qfactor.psip_of_psi_interp.is_some());
@@ -921,8 +953,11 @@ mod test_poloidal_nc_evals {
     #[test]
     fn flux_and_interp_states() {
         let qfactor = create_nc_qfactor(POLOIDAL_TEST_NETCDF_PATH);
-        assert_eq!(qfactor.psi_state(), NcFluxState::Bad);
-        assert_eq!(qfactor.psip_state(), NcFluxState::Good);
+        assert_eq!(qfactor.psi_state(), FluxCoordinateState::Bad);
+        assert_eq!(qfactor.psip_state(), FluxCoordinateState::Good);
+
+        assert_eq!(qfactor.psi_state(), FluxCoordinateState::Bad);
+        assert_eq!(qfactor.psip_state(), FluxCoordinateState::Good);
         assert!(qfactor.q_of_psi_interp.is_none());
         assert!(qfactor.q_of_psip_interp.is_some());
         assert!(qfactor.psip_of_psi_interp.is_none());

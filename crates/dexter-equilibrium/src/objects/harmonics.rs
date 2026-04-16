@@ -1,9 +1,9 @@
 //! Representation of analytical Harmonics.
 
 use crate::{
-    debug_assert_is_finite, debug_assert_non_negative_psi, debug_assert_non_negative_psip,
-    equilibrium_type_getter_impl, harmonic_cache_counts_getter_impl,
-    harmonic_mode_number_getter_impl,
+    FluxCoordinateState, debug_assert_is_finite, debug_assert_non_negative_psi,
+    debug_assert_non_negative_psip, equilibrium_type_getter_impl,
+    harmonic_cache_counts_getter_impl, harmonic_mode_number_getter_impl,
 };
 use std::f64::consts::TAU;
 
@@ -202,6 +202,20 @@ impl HarmonicCache for CosHarmonicCache {
 
 impl Harmonic for CosHarmonic {
     type Cache = CosHarmonicCache;
+
+    fn psi_state(&self) -> FluxCoordinateState {
+        match self.psi_last {
+            Some(_) => FluxCoordinateState::Good,
+            None => FluxCoordinateState::Bad,
+        }
+    }
+
+    fn psip_state(&self) -> FluxCoordinateState {
+        match self.psip_last {
+            Some(_) => FluxCoordinateState::Good,
+            None => FluxCoordinateState::Bad,
+        }
+    }
 
     fn generate_cache(&self) -> Self::Cache {
         let lcfs_root = match self.lcfs {
@@ -488,6 +502,9 @@ mod cos_harmonic_values {
     fn desmos_values_toroidal_lcfs() -> Result<(), EvalError> {
         let lcfs = LastClosedFluxSurface::Toroidal(0.45);
         let har = dbg!(CosHarmonic::new(10.0, lcfs, 3, 2, 1.0));
+        assert_eq!(har.psi_state(), FluxCoordinateState::Good);
+        assert_eq!(har.psip_state(), FluxCoordinateState::Bad);
+
         let c = &mut har.generate_cache();
 
         let p = 0.1; // not used
@@ -520,6 +537,9 @@ mod cos_harmonic_values {
     fn desmos_values_poloidal_lcfs() -> Result<(), EvalError> {
         let lcfs = LastClosedFluxSurface::Poloidal(0.45);
         let har = dbg!(CosHarmonic::new(10.0, lcfs, 3, 2, 1.0));
+        assert_eq!(har.psi_state(), FluxCoordinateState::Bad);
+        assert_eq!(har.psip_state(), FluxCoordinateState::Good);
+
         let c = &mut har.generate_cache();
 
         let p = 0.1; // not used

@@ -2,8 +2,8 @@
 
 use crate::{
     debug_assert_is_finite, debug_assert_non_negative_psi, debug_assert_non_negative_psip,
-    equilibrium_type_getter_impl, fluxes_state_getter_impl, fluxes_values_array_getter_impl,
-    interp_type_getter_impl, lcfs_getter_impl, netcdf_path_getter_impl, netcdf_version_getter_impl,
+    equilibrium_type_getter_impl, fluxes_values_array_getter_impl, interp_type_getter_impl,
+    lcfs_getter_impl, netcdf_path_getter_impl, netcdf_version_getter_impl,
 };
 use dexter_common::vec_to_array1D_getter_impl;
 use ndarray::Array1;
@@ -11,7 +11,7 @@ use rsl_interpolation::{Accelerator, DynInterpolation, InterpType, make_interp_t
 use std::path::{Path, PathBuf};
 
 use super::debug_assert_all_finite_values;
-use crate::objects::nc_flux::{NcFlux, NcFluxState};
+use crate::objects::nc_flux::{FluxCoordinateState, NcFlux};
 use crate::{Current, EquilibriumType};
 use crate::{EqError, EvalError};
 
@@ -47,6 +47,14 @@ impl LarCurrent {
 }
 
 impl Current for LarCurrent {
+    fn psi_state(&self) -> FluxCoordinateState {
+        FluxCoordinateState::Good
+    }
+
+    fn psip_state(&self) -> FluxCoordinateState {
+        FluxCoordinateState::Good
+    }
+
     fn g_of_psi(&self, psi: f64, _: &mut Accelerator) -> Result<f64, EvalError> {
         debug_assert_non_negative_psi!(psi);
         Ok(1.0)
@@ -207,7 +215,7 @@ impl NcCurrent {
         debug_assert_all_finite_values(&i_values);
 
         // Create interpolators, if possible
-        use NcFluxState::Good;
+        use FluxCoordinateState::Good;
         let g_of_psi_interp = match psi.state() {
             Good => Some(make_interp_type(&builder.interp_type)?.build(psi.uvalues(), &g_values)?),
             _ => None,
@@ -244,6 +252,14 @@ impl NcCurrent {
 }
 
 impl Current for NcCurrent {
+    fn psi_state(&self) -> FluxCoordinateState {
+        self.psi.state()
+    }
+
+    fn psip_state(&self) -> FluxCoordinateState {
+        self.psip.state()
+    }
+
     fn g_of_psi(&self, psi: f64, acc: &mut Accelerator) -> Result<f64, EvalError> {
         debug_assert_non_negative_psi!(psi);
         match self.g_of_psi_interp.as_ref() {
@@ -356,7 +372,6 @@ impl NcCurrent {
     equilibrium_type_getter_impl!();
     interp_type_getter_impl!(1);
     lcfs_getter_impl!();
-    fluxes_state_getter_impl!();
     fluxes_values_array_getter_impl!();
     vec_to_array1D_getter_impl!(g_array, g_values, g);
     vec_to_array1D_getter_impl!(i_array, i_values, I);
@@ -396,8 +411,11 @@ mod test_toroidal_nc_evals {
     #[test]
     fn flux_and_interp_states() {
         let current = create_nc_current(TOROIDAL_TEST_NETCDF_PATH);
-        assert_eq!(current.psi.state(), NcFluxState::Good);
-        assert_eq!(current.psip.state(), NcFluxState::Bad);
+        assert_eq!(current.psi_state(), FluxCoordinateState::Good);
+        assert_eq!(current.psip_state(), FluxCoordinateState::Bad);
+
+        assert_eq!(current.psi.state(), FluxCoordinateState::Good);
+        assert_eq!(current.psip.state(), FluxCoordinateState::Bad);
         assert!(current.g_of_psi_interp.is_some());
         assert!(current.i_of_psi_interp.is_some());
         assert!(current.g_of_psip_interp.is_none());
@@ -439,8 +457,11 @@ mod test_poloidal_nc_evals {
     #[test]
     fn flux_and_interp_states() {
         let current = create_nc_current(POLOIDAL_TEST_NETCDF_PATH);
-        assert_eq!(current.psi.state(), NcFluxState::Bad);
-        assert_eq!(current.psip.state(), NcFluxState::Good);
+        assert_eq!(current.psi_state(), FluxCoordinateState::Bad);
+        assert_eq!(current.psip_state(), FluxCoordinateState::Good);
+
+        assert_eq!(current.psi.state(), FluxCoordinateState::Bad);
+        assert_eq!(current.psip.state(), FluxCoordinateState::Good);
         assert!(current.g_of_psi_interp.is_none());
         assert!(current.i_of_psi_interp.is_none());
         assert!(current.g_of_psip_interp.is_some());

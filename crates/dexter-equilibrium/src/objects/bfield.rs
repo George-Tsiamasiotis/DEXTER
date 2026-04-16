@@ -2,9 +2,9 @@
 
 use crate::{
     debug_assert_is_2pi_modulo, debug_assert_is_finite, debug_assert_non_negative_psi,
-    debug_assert_non_negative_psip, equilibrium_type_getter_impl, fluxes_state_getter_impl,
-    fluxes_values_array_getter_impl, interp_type_getter_impl, lcfs_getter_impl,
-    netcdf_path_getter_impl, netcdf_version_getter_impl, shape2d_getter_impl,
+    debug_assert_non_negative_psip, equilibrium_type_getter_impl, fluxes_values_array_getter_impl,
+    interp_type_getter_impl, lcfs_getter_impl, netcdf_path_getter_impl, netcdf_version_getter_impl,
+    shape2d_getter_impl,
 };
 use ndarray::{Array1, Array2, Axis, Order::ColumnMajor};
 use ndarray::{concatenate, s};
@@ -14,7 +14,7 @@ use std::path::{Path, PathBuf};
 
 use super::debug_assert_all_finite_values;
 use crate::constants::DEFAULT_THETA_PADDING_WIDTH;
-use crate::objects::nc_flux::{NcFlux, NcFluxState};
+use crate::objects::nc_flux::{FluxCoordinateState, NcFlux};
 use crate::{Bfield, EquilibriumType};
 use crate::{EqError, EvalError, NcError};
 
@@ -52,6 +52,14 @@ impl LarBfield {
 }
 
 impl Bfield for LarBfield {
+    fn psi_state(&self) -> FluxCoordinateState {
+        FluxCoordinateState::Good
+    }
+
+    fn psip_state(&self) -> FluxCoordinateState {
+        FluxCoordinateState::Bad
+    }
+
     fn b_of_psi(
         &self,
         psi: f64,
@@ -290,7 +298,7 @@ impl NcBfield {
         debug_assert_all_finite_values(&b_values_fortran_flat_padded);
 
         // Create interpolators, if possible
-        use NcFluxState::Good;
+        use FluxCoordinateState::Good;
         let b_of_psi_interp = match psi.state() {
             Good => Some(make_interp2d_type(&builder.interp_type)?.build(
                 psi.uvalues(),
@@ -367,6 +375,14 @@ impl NcBfield {
 }
 
 impl Bfield for NcBfield {
+    fn psi_state(&self) -> FluxCoordinateState {
+        self.psi.state()
+    }
+
+    fn psip_state(&self) -> FluxCoordinateState {
+        self.psip.state()
+    }
+
     fn b_of_psi(
         &self,
         psi: f64,
@@ -580,7 +596,6 @@ impl NcBfield {
 
     shape2d_getter_impl!();
     lcfs_getter_impl!();
-    fluxes_state_getter_impl!();
     fluxes_values_array_getter_impl!();
 }
 
@@ -621,8 +636,11 @@ mod test_toroidal_nc_evals {
     #[test]
     fn flux_and_interp_states() {
         let bfield = create_nc_bfield(TOROIDAL_TEST_NETCDF_PATH);
-        assert_eq!(bfield.psi_state(), NcFluxState::Good);
-        assert_eq!(bfield.psip_state(), NcFluxState::Bad);
+        assert_eq!(bfield.psi_state(), FluxCoordinateState::Good);
+        assert_eq!(bfield.psip_state(), FluxCoordinateState::Bad);
+
+        assert_eq!(bfield.psi_state(), FluxCoordinateState::Good);
+        assert_eq!(bfield.psip_state(), FluxCoordinateState::Bad);
         assert!(bfield.b_of_psi_interp.is_some());
         assert!(bfield.b_of_psip_interp.is_none());
 
@@ -672,8 +690,11 @@ mod test_poloidal_nc_evals {
     #[test]
     fn flux_and_interp_states() {
         let bfield = create_nc_bfield(POLOIDAL_TEST_NETCDF_PATH);
-        assert_eq!(bfield.psi_state(), NcFluxState::Bad);
-        assert_eq!(bfield.psip_state(), NcFluxState::Good);
+        assert_eq!(bfield.psi_state(), FluxCoordinateState::Bad);
+        assert_eq!(bfield.psip_state(), FluxCoordinateState::Good);
+
+        assert_eq!(bfield.psi_state(), FluxCoordinateState::Bad);
+        assert_eq!(bfield.psip_state(), FluxCoordinateState::Good);
         assert!(bfield.b_of_psi_interp.is_none());
         assert!(bfield.b_of_psip_interp.is_some());
 

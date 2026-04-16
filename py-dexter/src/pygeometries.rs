@@ -36,6 +36,8 @@ py_export_getter!(PyLarGeometry, zaxis, f64);
 py_export_getter!(PyLarGeometry, rgeo, f64);
 py_export_getter!(PyLarGeometry, rlast, f64);
 py_export_getter!(PyLarGeometry, psi_last, f64);
+py_get_enum_string!(PyLarGeometry, psi_state);
+py_get_enum_string!(PyLarGeometry, psip_state);
 py_eval1D!(PyLarGeometry, r_of_psi);
 py_eval1D!(PyLarGeometry, r_of_psip);
 py_eval1D!(PyLarGeometry, psi_of_r);
