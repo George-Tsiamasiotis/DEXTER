@@ -480,6 +480,9 @@ class _PyEnergyPzetaPlane:
     axis_parabola: _PyParabola
     left_wall_parabola: _PyParabola
     right_wall_parabola: _PyParabola
+    tp_pzeta_interval: Array1
+    tp_upper: Array1
+    tp_lower: Array1
     mu: float
 
     def __str__(self) -> str: ...

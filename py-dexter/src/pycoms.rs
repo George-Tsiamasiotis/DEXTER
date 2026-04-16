@@ -52,6 +52,21 @@ impl PyEnergyPzetaPlane {
     pub fn right_wall_parabola(&self) -> PyParabola {
         PyParabola(self.0.right_wall_parabola().clone())
     }
+
+    #[getter]
+    pub fn tp_pzeta_interval<'py>(&self, py: Python<'py>) -> Bound<'py, PyArray1<f64>> {
+        self.0.tp_pzeta_interval().into_pyarray(py)
+    }
+
+    #[getter]
+    pub fn tp_upper<'py>(&self, py: Python<'py>) -> Bound<'py, PyArray1<f64>> {
+        self.0.tp_upper().into_pyarray(py)
+    }
+
+    #[getter]
+    pub fn tp_lower<'py>(&self, py: Python<'py>) -> Bound<'py, PyArray1<f64>> {
+        self.0.tp_lower().into_pyarray(py)
+    }
 }
 
 py_export_getter!(PyEnergyPzetaPlane, mu, f64);

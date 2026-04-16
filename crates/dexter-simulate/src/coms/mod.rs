@@ -2,15 +2,17 @@
 
 mod energy;
 mod energy_pzeta_plane;
+mod tp_boundary;
 
 use dexter_equilibrium::{Bfield, Current, FluxCommute, Qfactor};
 use ndarray::{Array1, Array2};
 
 pub use energy_pzeta_plane::EnergyPzetaPlane;
+pub use tp_boundary::TrappedPassingBoundary;
 
 use crate::COMError;
 
-/// The constants of motion in an unperturbed equilibrium.
+/// The constants of motion `(E, Pζ, μ)` in an unperturbed equilibrium.
 #[derive(Debug)]
 pub struct COMs {
     /// The Energy in Normalized Units.
@@ -175,7 +177,7 @@ impl COMs {
         bfield: &B,
     ) -> Result<EnergyPzetaPlane, COMError>
     where
-        Q: Qfactor,
+        Q: Qfactor + FluxCommute,
         C: Current,
         B: Bfield,
     {

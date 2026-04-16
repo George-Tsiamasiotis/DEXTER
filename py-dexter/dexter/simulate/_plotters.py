@@ -55,6 +55,7 @@ PARABOLAS_PLOT_KW = {"linewidth": 2}
 MAGNETIC_AXIS_COLOR = "xkcd:cobalt blue"
 LEFT_WALL_COLOR = "xkcd:coral"
 RIGHT_WALL_COLOR = "xkcd:forrest green"
+TP_BOUNDARY_COLOR = "xkcd:bright pink"
 
 
 class _ParticlePlotter:
@@ -792,6 +793,9 @@ class _COMsPlotter:
         axis = plane.axis_parabola.eval_array1(pzeta_span) / energy_norm
         left_wall = plane.left_wall_parabola.eval_array1(pzeta_span) / energy_norm
         right_wall = plane.right_wall_parabola.eval_array1(pzeta_span) / energy_norm
+        tp_upper = plane.tp_upper / energy_norm
+        tp_lower = plane.tp_lower / energy_norm
+        tpx = plane.tp_pzeta_interval / psip_last  # not always a linspace
 
         ax.plot(
             xaxis_span,
@@ -812,6 +816,20 @@ class _COMsPlotter:
             right_wall,
             color=RIGHT_WALL_COLOR,
             label=r"$Right\ Wall$",
+            **PARABOLAS_PLOT_KW,  # type: ignore
+        )
+
+        ax.plot(
+            tpx,
+            tp_upper,
+            color=TP_BOUNDARY_COLOR,
+            label=r"$Trapped-Passing\ Boundary$",
+            **PARABOLAS_PLOT_KW,  # type: ignore
+        )
+        ax.plot(
+            tpx,
+            tp_lower,
+            color=TP_BOUNDARY_COLOR,
             **PARABOLAS_PLOT_KW,  # type: ignore
         )
 

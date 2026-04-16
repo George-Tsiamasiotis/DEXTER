@@ -24,7 +24,15 @@
 //!
 //! ### COMs space
 //!
-//! TODO:
+//! The container type [`COMs`] provides methods and constructors for calculations on the `(E, Pζ, μ)`
+//! space:
+//!
+//! + [`EnergyPzetaPlane`]: Representation of the COM space `(E, Pζ, μ=const)`.
+//! + [`TrappedPassingBoundary`]: Representation of the Trapped-Passing boundary curves on the `(E, Pζ, μ=const)` space.
+//! + [`energy_of_psi_grid`](COMs::energy_of_psi_grid): Calculation of the unperturbed Hamiltonian's
+//!   value in a 2x2 `θ-ψ` grid
+//! + [`energy_of_psip_grid`](COMs::energy_of_psip_grid): Calculation of the unperturbed Hamiltonian's
+//!   value in a 2x2 `θ-ψp` grid
 //!
 //! ### Parallelism
 //!
@@ -73,7 +81,7 @@ pub use particle::{
 pub use queue::{Queue, QueueInitialConditions, Routine};
 pub use queue::{poloidal_fluxes, toroidal_fluxes};
 
-pub use coms::{COMs, EnergyPzetaPlane};
+pub use coms::{COMs, EnergyPzetaPlane, TrappedPassingBoundary};
 
 // ============== Configuration constants
 
@@ -111,4 +119,7 @@ pub mod constants {
 
     /// See [`OrbitType::TrappedStagnated`][crate::OrbitType::TrappedStagnated].
     pub const TRAPPED_STAGNATED_CLASSIFICATION_CUTOFF: f64 = 0.999;
+
+    /// The density of the trapped-passing boundary curves' points.
+    pub const TRAPPED_PASSING_BOUNDARY_DENSITY: usize = 2000;
 }

@@ -131,6 +131,26 @@ class EnergyPzetaPlane:
         parabola._rust = self._rust.right_wall_parabola
         return parabola
 
+    @property
+    def tp_pzeta_interval(self) -> Array1:
+        r"""The trapped-passing boundary's $P_\zeta = [-\psi_{p, last}, 0]$ interval array."""
+        return self._rust.tp_pzeta_interval
+
+    @property
+    def tp_upper(self) -> Array1:
+        """The trapped-passing boundary's upper curve."""
+        return self._rust.tp_upper
+
+    @property
+    def tp_lower(self) -> Array1:
+        """The trapped-passing boundary's lower curve."""
+        return self._rust.tp_lower
+
+    @property
+    def mu(self) -> float:
+        r"""The constant magnetic moment $\mu$."""
+        return self._rust.mu
+
     def __str__(self) -> str:
         return self._rust.__str__()
 

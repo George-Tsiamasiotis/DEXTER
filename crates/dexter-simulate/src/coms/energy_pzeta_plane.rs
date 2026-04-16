@@ -2,11 +2,12 @@
 
 #![expect(clippy::min_ident_chars, reason = "parabola a, b, c coefficients")]
 
-use dexter_equilibrium::{Bfield, Current, Qfactor};
+use dexter_equilibrium::{Bfield, Current, FluxCommute, Qfactor};
+use ndarray::Array1;
 use parabola::Parabola;
 use rsl_interpolation::{Accelerator, Cache};
 
-use crate::{COMError, COMs};
+use crate::{COMError, COMs, TrappedPassingBoundary};
 
 /// Representation of the COM space `(E, Pζ, μ=const)`.
 #[derive(Debug, Clone)]
@@ -18,6 +19,8 @@ pub struct EnergyPzetaPlane {
     left_wall_parabola: Parabola,
     /// The right wall (RW) parabola.
     right_wall_parabola: Parabola,
+    /// The trapped-passing boundary curves.
+    tp_boundary: TrappedPassingBoundary,
     /// The constant magnetic moment `μ`.
     mu: f64,
 }
@@ -31,7 +34,7 @@ impl EnergyPzetaPlane {
         bfield: &B,
     ) -> Result<Self, COMError>
     where
-        Q: Qfactor,
+        Q: Qfactor + FluxCommute,
         C: Current,
         B: Bfield,
     {
@@ -43,6 +46,7 @@ impl EnergyPzetaPlane {
             axis_parabola: Self::build_magnetic_axis_parabola(coms, current, bfield),
             left_wall_parabola: Self::build_left_wall_parabola(coms, qfactor, current, bfield),
             right_wall_parabola: Self::build_right_wall_parabola(coms, qfactor, current, bfield),
+            tp_boundary: TrappedPassingBoundary::new(qfactor, bfield, mu),
             mu,
         })
     }
@@ -200,5 +204,23 @@ impl EnergyPzetaPlane {
     #[must_use]
     pub fn mu(&self) -> f64 {
         self.mu
+    }
+
+    /// Returns the [`TrappedPassingBoundary`]'s `Pζ = [-ψp_last, 0]` interval array.
+    #[must_use]
+    pub fn tp_pzeta_interval(&self) -> Array1<f64> {
+        self.tp_boundary.pzeta_interval()
+    }
+
+    /// Returns the [`TrappedPassingBoundary`]'s upper curve.
+    #[must_use]
+    pub fn tp_upper(&self) -> Array1<f64> {
+        self.tp_boundary.upper()
+    }
+
+    /// Returns the [`TrappedPassingBoundary`]'s lower curve.
+    #[must_use]
+    pub fn tp_lower(&self) -> Array1<f64> {
+        self.tp_boundary.lower()
     }
 }
