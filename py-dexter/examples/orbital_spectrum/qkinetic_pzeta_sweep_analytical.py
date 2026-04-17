@@ -30,4 +30,5 @@ queue = dex.Queue(initial_conditions)
 
 # Run
 queue.close(equilibrium=equilibrium)
+queue.classify(equilibrium)
 queue.plot_qkinetic_pzeta_sweep()

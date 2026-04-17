@@ -142,22 +142,42 @@ r"""The integration status of a Particle.
 """
 
 OrbitType: TypeAlias = Literal[
-    "CoPassing",
-    "CuPassing",
-    "TrappedStagnated",
-    "Unclassified",
     "Undefined",
+    "TrappedLost",
+    "TrappedConfined",
+    "CoPassingLost",
+    "CoPassingConfined",
+    "CuPassingLost",
+    "CuPassingConfined",
+    "Potato",
+    "Stagnated",
+    "Unclassified",
+    "Failed(..)",
 ]
 r"""A particle's orbit type, calculated through the [`dexter.Particle.close()`] routine.
 
-    - `CoPassing`: $\rho>0$ during the whole integration.
-    - `CuPassing`: $\rho<0$ during the whole integration.
-    - `TrappedStagnated`: $|\theta_{max} - \theta_{min}| < 2\pi$ The $0.999$ is needed since passing particles
-      also have a span of $2\pi$ when integrated for a single period. This might cut off some particles very
-      close to the separatrix. At this moment, there is no good method of determining whether a particle is
-      trapped or stagnated.
-    - `Unclassified`: Failed to classify the particle’s orbit into a valid type.
-    - `Undefined`: Particle has not been integrated.
+    - `Undefined`: Particle has not been classified.
+    - `TrappedLost`: A Trapped-Lost particle. A particle is called trapped if there exists a
+      mirror point where $\rho=0$.
+    - `TrappedConfined`: A Trapped-Confined particle. A particle is called trapped if there
+      exists a mirror point where $\rho=0$.
+    - `CoPassingLost`: A CoPassing-Lost particle. A particle is called passing if it is not
+      trapped and it holds that $\rho>0$.
+    - `CoPassingConfined`: A CoPassing-Confined particle. A particle is called passing if it
+      is not trapped and it holds that $\rho>0$.
+    - `CuPassingLost`: A CounterPassing-Lost particle. A particle is called passing if it is
+      not trapped and it holds that $\rho<0$.
+    - `CuPassingConfined`: A CounterPassing-Confined particle. A particle is called passing
+      if it is not trapped and it holds that $\rho<0$.
+    - `Potato`: A Potato particle. A particle’s orbit is called a potato orbit if it is trapped
+      but still circles the magnetic axis due to its drift. In the $(E, P_\zeta)$ plane, those
+      lie inside the intersection of the trapped-passing boundary and the magnetic axis parabola.
+    - `Stagnated`: A Potato particle. A particle is called stagnated if it always has positive
+      parallel velocity but does not circle the magnetic axis. In the $(E, P_\zeta)$ plane,
+      those lie to the right of the trapped-passing boundary and above the magnetic axis parabola.
+    - `Unclassified`: Not falling under any of the other categories.
+    - `Failed(..)`: Error classifying the orbit.
+
 """
 
 SteppingMethod = (

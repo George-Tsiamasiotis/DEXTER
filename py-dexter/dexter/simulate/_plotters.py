@@ -45,17 +45,6 @@ RZ_POINCARE_INITIAL_KW = {
     "zorder": -2,
 }
 QKINETIC_POINCARE_FIG_KW = {"figsize": (9, 6), "layout": "constrained", "dpi": 120}
-COPASSING_COLOR = "xkcd:light purple"
-CUPASSING_COLOR = "xkcd:navy blue"
-TRAPPED_STAGNATED_COLOR = "xkcd:blue"
-UNDEFINED_COLOR = "xkcd:coral"
-UNCLASSIFIED_COLOR = "xkcd:crimson"
-PARABOLAS_FIG_KW = {"figsize": (9, 6), "layout": "constrained", "dpi": 120}
-PARABOLAS_PLOT_KW = {"linewidth": 2}
-MAGNETIC_AXIS_COLOR = "xkcd:cobalt blue"
-LEFT_WALL_COLOR = "xkcd:coral"
-RIGHT_WALL_COLOR = "xkcd:forrest green"
-TP_BOUNDARY_COLOR = "xkcd:bright pink"
 
 
 class _ParticlePlotter:
@@ -624,15 +613,12 @@ class _QueuePlotter:
             ax.scatter(fluxes / flux_last, self._rust.qkinetic_array, c=colors, s=1)
             ax.set_xlabel(rf"{flux_coord}$/${flux_coord_last}")
 
-        copassing = Patch(color=COPASSING_COLOR, label="Copassing")
-        cupassing = Patch(color=CUPASSING_COLOR, label="CuPassing")
-        tr_st = Patch(color=TRAPPED_STAGNATED_COLOR, label="Trapped/Stagnated")
-        undefined = Patch(color=UNDEFINED_COLOR, label="Undefined")
-        unclassified = Patch(color=UNCLASSIFIED_COLOR, label="Unclassified")
-
         ax.set_ylabel("$q_{kinetic}$")
         ax.set_title("$q_{kinetic}-$" + flux_coord)
-        ax.legend(handles=[tr_st, copassing, cupassing, undefined, unclassified])
+        found_orbit_types: set[OrbitType] = set(
+            [particle.orbit_type for particle in self._rust.particles]
+        )
+        ax.legend(handles=orbit_color_legend_handles(found_orbit_types))
         ax.axhline(y=0, ls="--", lw=1.5, c="k")
         ax.grid(True)
 
@@ -676,15 +662,12 @@ class _QueuePlotter:
             ax.scatter(pzetas / psip_last, self._rust.qkinetic_array, c=colors, s=1)
             ax.set_xlabel(r"$P_\zeta/\psi_{p,last}$")
 
-        copassing = Patch(color=COPASSING_COLOR, label="Copassing")
-        cupassing = Patch(color=CUPASSING_COLOR, label="CuPassing")
-        tr_st = Patch(color=TRAPPED_STAGNATED_COLOR, label="Trapped/Stagnated")
-        undefined = Patch(color=UNDEFINED_COLOR, label="Undefined")
-        unclassified = Patch(color=UNCLASSIFIED_COLOR, label="Unclassified")
-
         ax.set_ylabel("$q_{kinetic}$")
         ax.set_title(r"$q_{kinetic}-P_\zeta$")
-        ax.legend(handles=[tr_st, copassing, cupassing, undefined, unclassified])
+        found_orbit_types: set[OrbitType] = set(
+            [particle.orbit_type for particle in self._rust.particles]
+        )
+        ax.legend(handles=orbit_color_legend_handles(found_orbit_types))
         ax.axhline(y=0, ls="--", lw=1.5, c="k")
         ax.grid(True)
 
@@ -716,129 +699,15 @@ class _QueuePlotter:
         colors = np.asarray([orbit_color(p.orbit_type) for p in self._rust.particles])
         ax.scatter(energies, self._rust.qkinetic_array, c=colors, s=1)
 
-        copassing = Patch(color=COPASSING_COLOR, label="Copassing")
-        cupassing = Patch(color=CUPASSING_COLOR, label="CuPassing")
-        tr_st = Patch(color=TRAPPED_STAGNATED_COLOR, label="Trapped/Stagnated")
-        undefined = Patch(color=UNDEFINED_COLOR, label="Undefined")
-        unclassified = Patch(color=UNCLASSIFIED_COLOR, label="Unclassified")
-
         ax.set_xlabel(rf"$Energy\ [Normalized]$")
         ax.set_ylabel("$q_{kinetic}$")
         ax.set_title("$q_{kinetic}-Energy$")
-        ax.legend(handles=[tr_st, copassing, cupassing, undefined, unclassified])
+        found_orbit_types: set[OrbitType] = set(
+            [particle.orbit_type for particle in self._rust.particles]
+        )
+        ax.legend(handles=orbit_color_legend_handles(found_orbit_types))
         ax.axhline(y=0, ls="--", lw=1.5, c="k")
         ax.grid(True)
-
-        if show:
-            plt.show()
-            plt.close()
-
-        return (fig, ax)
-
-
-class _COMsPlotter:
-    """Provides plotting functions for the COMs Class."""
-
-    _rust: _PyCOMs
-    build_energy_pzeta_plane: Callable  # need the monomorphized version
-
-    def plot_parabolas(
-        self,
-        equilibrium: Equilibrium,
-        xlim: tuple[float, float] = (-1.6, 0.5),
-        ymax: float = 3,
-        density: int = 1000,
-        show: bool = True,
-    ):
-        r"""Plots the orbit classification parabolas on the $(E, P_\zeta, \mu=const)$ space.
-
-        Parameters
-        ----------
-        equilibrium
-            The equilibrium in which the particle was integrated.
-        xlim
-            The xaxis limits, normalized to $\psi_{p,wall}$. Defaults to (-1.6, 0.5).
-        ymax
-            The yaxis upper limit. If not provided, the axes are autoscaled by the
-            parabolas. Note that by definition, the minimum of the magnetic axis parabola is
-            always the point $(0, 1)$. Defaults to 3.
-        density
-            The number of points to evaluate each parabola on. Defaults to 1000.
-        show
-            Whether or not to call `plt.show()`. Defaults to True.
-
-        Returns
-        -------
-        Canvas
-            The produced `Figure` and `Ax`.
-        """
-        if self._rust.mu is None:
-            raise AttributeError("'mu' must be defined.")
-        else:
-            mu = self._rust.mu
-
-        fig = plt.figure(**PARABOLAS_FIG_KW)
-        ax = fig.add_subplot()
-        fig.suptitle(
-            rf"Orbit classification parabolas on the $(E, P_\zeta, \mu={mu})$ space."
-        )
-
-        psip_last = equilibrium.psip_last
-        xaxis_span = np.linspace(xlim[0], xlim[1], density)
-        pzeta_span = xaxis_span * psip_last
-        energy_norm = mu
-
-        plane: _PyEnergyPzetaPlane = self.build_energy_pzeta_plane(equilibrium)
-
-        axis = plane.axis_parabola.eval_array1(pzeta_span) / energy_norm
-        left_wall = plane.left_wall_parabola.eval_array1(pzeta_span) / energy_norm
-        right_wall = plane.right_wall_parabola.eval_array1(pzeta_span) / energy_norm
-        tp_upper = plane.tp_upper / energy_norm
-        tp_lower = plane.tp_lower / energy_norm
-        tpx = plane.tp_pzeta_interval / psip_last  # not always a linspace
-
-        ax.plot(
-            xaxis_span,
-            axis,
-            color=MAGNETIC_AXIS_COLOR,
-            label=r"$Magnetic\ Axis$",
-            **PARABOLAS_PLOT_KW,  # type: ignore
-        )
-        ax.plot(
-            xaxis_span,
-            left_wall,
-            color=LEFT_WALL_COLOR,
-            label=r"$Left\ Wall$",
-            **PARABOLAS_PLOT_KW,  # type: ignore
-        )
-        ax.plot(
-            xaxis_span,
-            right_wall,
-            color=RIGHT_WALL_COLOR,
-            label=r"$Right\ Wall$",
-            **PARABOLAS_PLOT_KW,  # type: ignore
-        )
-
-        ax.plot(
-            tpx,
-            tp_upper,
-            color=TP_BOUNDARY_COLOR,
-            label=r"$Trapped-Passing\ Boundary$",
-            **PARABOLAS_PLOT_KW,  # type: ignore
-        )
-        ax.plot(
-            tpx,
-            tp_lower,
-            color=TP_BOUNDARY_COLOR,
-            **PARABOLAS_PLOT_KW,  # type: ignore
-        )
-
-        ax.margins(0)
-        ax.set_ylim(0, ymax)
-        ax.set_xlabel(r"$P_\zeta/\psi_{p,wall}$")
-        ax.set_ylabel(r"$E/\mu$")
-        ax.grid(True)
-        ax.legend()
 
         if show:
             plt.show()
@@ -859,15 +728,33 @@ def pi_mod(arr: Array1) -> Array1:
 
 def orbit_color(orbit_type: OrbitType) -> str:
     match orbit_type:
-        case "CoPassing":
-            return COPASSING_COLOR
-        case "CuPassing":
-            return CUPASSING_COLOR
-        case "TrappedStagnated":
-            return TRAPPED_STAGNATED_COLOR
-        case "Unclassified":
-            return UNCLASSIFIED_COLOR
         case "Undefined":
-            return UNDEFINED_COLOR
-        case _:
-            assert_never(orbit_type)
+            return "xkcd:coral"
+        case "TrappedConfined":
+            return "xkcd:deep red"
+        case "TrappedLost":
+            return "xkcd:bright red"
+        case "CoPassingConfined":
+            return "xkcd:deep blue"
+        case "CoPassingLost":
+            return "xkcd:bright blue"
+        case "CuPassingConfined":
+            return "xkcd:deep green"
+        case "CuPassingLost":
+            return "xkcd:bright green"
+        case "Potato":
+            return "xkcd:dark brown"
+        case "Stagnated":
+            return "xkcd:sky"
+        case "Unclassified":
+            return "xkcd:bright purple"
+        case _:  # Failed(..)
+            return "xkcd:indigo"
+
+
+def orbit_color_legend_handles(which: set[OrbitType]) -> list[Patch]:
+    return [
+        Patch(color=orbit_color(orbit_type), label=orbit_type)
+        for orbit_type in OrbitType.__args__
+        if orbit_type in which
+    ]

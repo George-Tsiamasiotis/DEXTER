@@ -9,8 +9,8 @@ use pyo3::prelude::*;
 use pyo3::types::{PyTuple, PyType};
 
 use crate::{
-    py_debug_impl, py_export_getter, py_export_pub_field, py_get_enum_string, py_get_numpy1D,
-    py_repr_impl,
+    generic_particle_classify_impl, py_debug_impl, py_export_getter, py_export_pub_field,
+    py_get_enum_string, py_get_numpy1D, py_repr_impl,
 };
 
 // ===============================================================================================
@@ -331,4 +331,21 @@ mod py_particle_generics_impl {
     generic_particle_close_impl!(__close_ncdQ_ncdC_larB_ncdP, ncdQ, ncdC, larB, ncdP);
     generic_particle_close_impl!(__close_ncdQ_ncdC_ncdB_cosP, ncdQ, ncdC, ncdB, cosP);
     generic_particle_close_impl!(__close_ncdQ_ncdC_ncdB_ncdP, ncdQ, ncdC, ncdB, ncdP);
+
+    // ================= Classify
+
+    generic_particle_classify_impl!(__classify_uniQ_larC_larB, uniQ, larC, larB);
+    generic_particle_classify_impl!(__classify_uniQ_larC_ncdB, uniQ, larC, ncdB);
+    generic_particle_classify_impl!(__classify_uniQ_ncdC_larB, uniQ, ncdC, larB);
+    generic_particle_classify_impl!(__classify_uniQ_ncdC_ncdB, uniQ, ncdC, ncdB);
+
+    generic_particle_classify_impl!(__classify_parQ_larC_larB, parQ, larC, larB);
+    generic_particle_classify_impl!(__classify_parQ_larC_ncdB, parQ, larC, ncdB);
+    generic_particle_classify_impl!(__classify_parQ_ncdC_larB, parQ, ncdC, larB);
+    generic_particle_classify_impl!(__classify_parQ_ncdC_ncdB, parQ, ncdC, ncdB);
+
+    generic_particle_classify_impl!(__classify_ncdQ_larC_larB, ncdQ, larC, larB);
+    generic_particle_classify_impl!(__classify_ncdQ_larC_ncdB, ncdQ, larC, ncdB);
+    generic_particle_classify_impl!(__classify_ncdQ_ncdC_larB, ncdQ, ncdC, larB);
+    generic_particle_classify_impl!(__classify_ncdQ_ncdC_ncdB, ncdQ, ncdC, ncdB);
 }

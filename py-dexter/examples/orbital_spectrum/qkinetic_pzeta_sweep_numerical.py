@@ -28,4 +28,5 @@ queue.close(
     max_steps=100_000,
     energy_rel_tol=1e-11,
 )
+queue.classify(equilibrium)
 queue.plot_qkinetic_pzeta_sweep(psip_last=equilibrium.psip_last)

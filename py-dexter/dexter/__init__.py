@@ -4,14 +4,32 @@ import matplotlib.pyplot
 matplotlib.use("gtk3agg")
 matplotlib.pyplot.rcParams["text.usetex"] = True
 
-from dexter.equilibrium import LastClosedFluxSurface
-from dexter.equilibrium import Geometry, LarGeometry, NcGeometry
-from dexter.equilibrium import Qfactor, UnityQfactor, ParabolicQfactor, NcQfactor
-from dexter.equilibrium import Current, LarCurrent, NcCurrent
-from dexter.equilibrium import Bfield, LarBfield, NcBfield
-from dexter.equilibrium import Harmonic, CosHarmonic, NcHarmonic
-from dexter.equilibrium import Perturbation
-from dexter.equilibrium import Equilibrium, numerical_equilibrium
+
+from dexter.equilibrium.objects import (
+    LastClosedFluxSurface,
+    Geometry,
+    LarGeometry,
+    NcGeometry,
+    Qfactor,
+    UnityQfactor,
+    ParabolicQfactor,
+    NcQfactor,
+    Current,
+    LarCurrent,
+    NcCurrent,
+    Bfield,
+    LarBfield,
+    NcBfield,
+    Harmonic,
+    CosHarmonic,
+    NcHarmonic,
+    Perturbation,
+)
+
+from dexter.equilibrium.equilibrium import (
+    Equilibrium,
+    numerical_equilibrium,
+)
 
 from dexter.types import (
     ArrayLike,
@@ -37,7 +55,7 @@ from dexter.types import (
     Routine,
 )
 
-from dexter.simulate import (
+from dexter.simulate.objects import (
     COMs,
     InitialFlux,
     InitialConditions,
@@ -46,13 +64,18 @@ from dexter.simulate import (
     InitialFluxArray,
     QueueInitialConditions,
     Queue,
-    plot_energy_contour,
-    plot_particle_poloidal_drift,
     Parabola,
     EnergyPzetaPlane,
 )
 
+from dexter.simulate.energy_contour import (
+    plot_energy_contour,
+    plot_particle_poloidal_drift,
+)
+
 from dexter.common import get_max_threads, set_num_threads
+
+from dexter.compound_plots.plot_parabolas import plot_parabolas
 
 __all__ = [
     # Free functions
@@ -115,4 +138,6 @@ __all__ = [
     "plot_particle_poloidal_drift",
     "Parabola",
     "EnergyPzetaPlane",
+    # Plotting methods
+    "plot_parabolas",
 ]

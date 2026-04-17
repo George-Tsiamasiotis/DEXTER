@@ -145,7 +145,6 @@ def test_coms_plots(nc_equilibrium: Equilibrium):
     )
     plot_energy_contour(psi_array, theta_array, energy_of_psi_grid)
     plot_energy_contour(psip_array, theta_array, energy_of_psip_grid)
-    coms.plot_parabolas(nc_equilibrium, density=40)
 
 
 # ================================================================================================

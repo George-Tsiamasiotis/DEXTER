@@ -5,9 +5,8 @@ use std::time::Instant;
 
 use approx::relative_eq;
 use dexter_equilibrium::{Bfield, Current, FluxCommute, Harmonic, HarmonicCache, Qfactor};
-use ndarray_stats::QuantileExt;
 
-use crate::constants::{PSI_RELATIVE_TOLERANCE, TRAPPED_STAGNATED_CLASSIFICATION_CUTOFF};
+use crate::constants::PSI_RELATIVE_TOLERANCE;
 use crate::particle::intersect::{
     calculate_intersection_state, calculate_mod_state1, calculate_mod_state2, calculate_mod_step,
     intersected,
@@ -15,7 +14,7 @@ use crate::particle::intersect::{
 use crate::particle::{EqObjects, IntegrationCaches, Particle, ParticleCacheStats};
 use crate::solve::{SolverParams, Stepper};
 use crate::state::GCState;
-use crate::{Frequencies, IntersectParams, OrbitType};
+use crate::{Frequencies, IntersectParams};
 
 use super::{IntegrationStatus, Intersection};
 
@@ -164,7 +163,6 @@ pub(super) fn close<Q, C, B, H>(
 
     // =============== Finalize
 
-    classify_orbit(particle);
     calculate_frequencies(particle, closed_periods);
     particle.evolution.duration = start.elapsed();
     particle.final_energy = Some(state1.energy());
@@ -196,41 +194,6 @@ fn closed_period(
         || intersected(state1.psi, state2.psi, psi0))
         && intersected(state1.theta, state2.theta, theta0)
         && state1.theta_dot.signum() == theta_dot0_sign
-}
-
-/// Classifies the particle's [`OrbitType`].
-///
-/// See [`OrbitType`]'s variants' documentation for the definitions.
-fn classify_orbit(particle: &mut Particle) {
-    // `min()` and `max()` can only fail if `theta_array` contains `NaN`s
-    let Ok(theta_min) = particle.theta_array().min().copied() else {
-        particle.orbit_type = OrbitType::Unclassified;
-        return;
-    };
-    let Ok(theta_max) = particle.theta_array().max().copied() else {
-        particle.orbit_type = OrbitType::Unclassified;
-        return;
-    };
-    if (theta_max - theta_min).abs() < TAU * TRAPPED_STAGNATED_CLASSIFICATION_CUTOFF {
-        particle.orbit_type = OrbitType::TrappedStagnated;
-        return;
-    }
-
-    if particle
-        .rho_array()
-        .iter()
-        .all(|rho| rho.is_sign_positive())
-    {
-        particle.orbit_type = OrbitType::CoPassing
-    } else if particle
-        .rho_array()
-        .iter()
-        .all(|rho| rho.is_sign_negative())
-    {
-        particle.orbit_type = OrbitType::CuPassing
-    } else {
-        particle.orbit_type = OrbitType::Unclassified
-    }
 }
 
 /// Calculates the final `ωθ`, `ωζ` and `qkinetic` and stores them in the particle's

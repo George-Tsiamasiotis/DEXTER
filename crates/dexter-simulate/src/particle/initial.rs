@@ -27,7 +27,7 @@ pub enum CoordinateSet {
 /// + Boozer-Poloidal: Initial conditions set in the `(t, ψp, θ, ζ, ρ, μ)` space.
 /// + Mixed-Toroidal: Initial conditions set in the `(t, Pζ, ψ, θ, ζ, μ)` space.
 /// + Mixed-Poloidal: Initial conditions set in the `(t, Pζ, ψp, θ, ζ, μ)` space.
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 #[non_exhaustive]
 pub struct InitialConditions {
     /// The initial time.
@@ -233,6 +233,21 @@ impl InitialConditions {
     #[must_use]
     pub fn coordinate_set(&self) -> CoordinateSet {
         self.coordinate_set.clone()
+    }
+}
+
+impl std::fmt::Debug for InitialConditions {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("InitialConditions")
+            .field("t0", &self.t0)
+            .field("flux0", &self.flux0)
+            .field("theta0", &self.theta0)
+            .field("zeta0", &self.zeta0)
+            .field("mu0", &self.mu0)
+            .field("rho0", &format!("{:?}", self.rho0))
+            .field("pzeta0", &format!("{:?}", self.pzeta0))
+            .field("coordinate_set", &self.coordinate_set)
+            .finish()
     }
 }
 

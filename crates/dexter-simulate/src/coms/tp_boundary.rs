@@ -4,7 +4,7 @@ use std::f64::consts::PI;
 
 use dexter_equilibrium::{Bfield, FluxCommute, FluxCoordinateState, Qfactor};
 use ndarray::Array1;
-use rsl_interpolation::{Accelerator, Cache};
+use rsl_interpolation::{Accelerator, Cache, InterpType, Interpolation, Steffen, SteffenInterp};
 
 use crate::constants::TRAPPED_PASSING_BOUNDARY_DENSITY;
 
@@ -31,14 +31,18 @@ use crate::constants::TRAPPED_PASSING_BOUNDARY_DENSITY;
 /// If ψ is the only `good` coordinate, some extra conversions are necessary and the
 /// `pzeta_interval` is no longer a linspace.
 ///
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct TrappedPassingBoundary {
     /// The `Pζ = [-ψp_last, 0]` interval array.
-    pub(crate) pzeta_interval: Array1<f64>,
+    pub(crate) pzeta_interval: Vec<f64>,
     /// The curve corresponding to the lower part of the boundary, defined by `θ=0` (eq. 1).
-    pub(crate) lower: Array1<f64>,
+    pub(crate) lower: Vec<f64>,
     /// The curve corresponding to the upper part of the boundary, defined by `θ=π` (eq. 2).
-    pub(crate) upper: Array1<f64>,
+    pub(crate) upper: Vec<f64>,
+    /// The `Pζ` -> lower trapped-passing boundary interpolator.
+    pub(crate) lower_interp: SteffenInterp<f64>,
+    /// The `Pζ` -> upper trapped-passing boundary interpolator.
+    pub(crate) upper_interp: SteffenInterp<f64>,
 }
 
 impl TrappedPassingBoundary {
@@ -61,19 +65,55 @@ impl TrappedPassingBoundary {
     /// Returns the [`TrappedPassingBoundary`]'s `Pζ = [-ψp_last, 0]` interval array.
     #[must_use]
     pub fn pzeta_interval(&self) -> Array1<f64> {
-        self.pzeta_interval.clone()
+        Array1::from(self.pzeta_interval.clone())
     }
 
     /// Returns the [`TrappedPassingBoundary`]'s upper curve.
     #[must_use]
     pub fn upper(&self) -> Array1<f64> {
-        self.upper.clone()
+        Array1::from(self.upper.clone())
     }
 
     /// Returns the [`TrappedPassingBoundary`]'s lower curve.
     #[must_use]
     pub fn lower(&self) -> Array1<f64> {
-        self.lower.clone()
+        Array1::from(self.lower.clone())
+    }
+}
+
+impl TrappedPassingBoundary {
+    /// Returns `true` if an `(E, Pζ)` is inside the Trapped-Passing boundary.
+    #[must_use]
+    pub fn contains(&self, energy: f64, pzeta: f64) -> bool {
+        !self.is_below(energy, pzeta) && !self.is_above(energy, pzeta)
+    }
+
+    /// Returns `true` if an `(E, Pζ)` is below the Trapped-Passing boundary's lower curve.
+    #[must_use]
+    pub fn is_below(&self, energy: f64, pzeta: f64) -> bool {
+        let acc = &mut Accelerator::new();
+        let Some(lower_energy) = self
+            .lower_interp
+            .eval(&self.pzeta_interval, &self.lower, pzeta, acc)
+            .ok()
+        else {
+            return false;
+        };
+        energy < lower_energy
+    }
+
+    /// Returns `true` if an `(E, Pζ)` is above the Trapped-Passing boundary's above curve.
+    #[must_use]
+    pub fn is_above(&self, energy: f64, pzeta: f64) -> bool {
+        let acc = &mut Accelerator::new();
+        let Some(upper) = self
+            .upper_interp
+            .eval(&self.pzeta_interval, &self.upper, pzeta, acc)
+            .ok()
+        else {
+            return false;
+        };
+        energy > upper
     }
 }
 
@@ -87,28 +127,41 @@ impl TrappedPassingBoundary {
         B: Bfield,
     {
         let psip_last = qfactor.psip_last();
-        let psip_interval = Array1::linspace(0.0, psip_last, TRAPPED_PASSING_BOUNDARY_DENSITY);
+        let psip_interval = Array1::linspace(psip_last, 0.0, TRAPPED_PASSING_BOUNDARY_DENSITY);
 
         let mut psip_acc = Accelerator::new();
         let mut theta_acc = Accelerator::new();
         let mut cache = Cache::new();
 
-        let lower = mu
+        let lower_array = mu
             * psip_interval.mapv(|psip| {
                 bfield
                     .b_of_psip(psip, 0.0, &mut psip_acc, &mut theta_acc, &mut cache)
                     .expect("-pzeta=psip is always inbound and evaluation is defined")
             });
-        let upper = mu
+        let upper_array = mu
             * psip_interval.mapv(|psip| {
                 bfield
                     .b_of_psip(psip, PI, &mut psip_acc, &mut theta_acc, &mut cache)
                     .expect("-pzeta=psip is always inbound and evaluation is defined")
             });
+
+        let pzeta_interval = (-&psip_interval).to_vec();
+        let lower = lower_array.to_vec();
+        let upper = upper_array.to_vec();
+        let lower_interp = Steffen
+            .build(&pzeta_interval, &lower)
+            .expect("sorted dataset and same shape by definition");
+        let upper_interp = Steffen
+            .build(&pzeta_interval, &upper)
+            .expect("sorted dataset and same shape by definition");
+
         Self {
-            pzeta_interval: -&psip_interval,
-            upper,
+            pzeta_interval,
             lower,
+            upper,
+            lower_interp,
+            upper_interp,
         }
     }
 
@@ -126,19 +179,19 @@ impl TrappedPassingBoundary {
         Q: Qfactor + FluxCommute,
     {
         let psi_last = qfactor.psi_last();
-        let psi_interval = Array1::linspace(0.0, psi_last, TRAPPED_PASSING_BOUNDARY_DENSITY);
+        let psi_interval = Array1::linspace(psi_last, 0.0, TRAPPED_PASSING_BOUNDARY_DENSITY);
 
         let mut psi_acc = Accelerator::new();
         let mut theta_acc = Accelerator::new();
         let mut cache = Cache::new();
 
-        let lower = mu
+        let lower_array = mu
             * psi_interval.mapv(|psi| {
                 bfield
                     .b_of_psi(psi, 0.0, &mut psi_acc, &mut theta_acc, &mut cache)
                     .expect("-pzeta=psip is always inbound and evaluation is defined")
             });
-        let upper = mu
+        let upper_array = mu
             * psi_interval.mapv(|psi| {
                 bfield
                     .b_of_psi(psi, PI, &mut psi_acc, &mut theta_acc, &mut cache)
@@ -151,10 +204,32 @@ impl TrappedPassingBoundary {
                 .expect("psi is always inbound and evaluation is defined")
         });
 
+        let pzeta_interval = (-&psip_interval).to_vec();
+        let lower = lower_array.to_vec();
+        let upper = upper_array.to_vec();
+        let lower_interp = Steffen
+            .build(&pzeta_interval, &lower)
+            .expect("sorted dataset and same shape by definition");
+        let upper_interp = Steffen
+            .build(&pzeta_interval, &upper)
+            .expect("sorted dataset and same shape by definition");
+
         Self {
-            pzeta_interval: -&psip_interval,
-            upper,
+            pzeta_interval,
             lower,
+            upper,
+            lower_interp,
+            upper_interp,
         }
+    }
+}
+
+impl std::fmt::Debug for TrappedPassingBoundary {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("TrappedPassingBoundary")
+            .field("pzeta_interval", &self.pzeta_interval)
+            .field("lower", &self.lower)
+            .field("upper", &self.upper)
+            .finish()
     }
 }

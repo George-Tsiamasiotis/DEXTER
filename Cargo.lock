@@ -335,7 +335,7 @@ version = "0.1.3-pre.1"
 
 [[package]]
 name = "dexter-equilibrium"
-version = "0.1.6-pre.7"
+version = "0.1.6-pre.8"
 dependencies = [
  "approx",
  "criterion",
@@ -1227,7 +1227,7 @@ dependencies = [
 
 [[package]]
 name = "py-dexter"
-version = "0.1.7-pre.15"
+version = "0.1.7-pre.16"
 dependencies = [
  "dexter",
  "ndarray",
@@ -1430,9 +1430,8 @@ checksum = "dc897dd8d9e8bd1ed8cdad82b5966c3e0ecae09fb1907d58efaa013543185d0a"
 
 [[package]]
 name = "rsl-interpolation"
-version = "0.1.19-pre.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "78ed112acf2a9bd364e1e7f4ef3687e8b0b7a1dbdcc3115d04271da53ce3c903"
+version = "0.1.19-pre.2"
+source = "git+https://github.com/George-Tsiamasiotis/rsl-interpolation?branch=dev#b738aa931d2bc77863431463ae8acb79ed5d77b3"
 dependencies = [
  "is_close",
  "ndarray",

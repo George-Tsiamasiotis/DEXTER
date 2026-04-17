@@ -11,7 +11,8 @@ use pyo3::types::PyType;
 
 use crate::pyerror::PySimulationError;
 use crate::{
-    py_debug_impl, py_get_enum_string, py_get_numpy1D, py_get_numpy1D_fallible, py_repr_impl,
+    generic_queue_classify_impl, py_debug_impl, py_get_enum_string, py_get_numpy1D,
+    py_get_numpy1D_fallible, py_repr_impl,
 };
 
 use crate::pyparticle::{PyInitialConditions, PyParticle};
@@ -320,4 +321,21 @@ mod py_particle_generics_impl {
     generic_queue_close_impl!(__close_ncdQ_ncdC_larB_ncdP, ncdQ, ncdC, larB, ncdP);
     generic_queue_close_impl!(__close_ncdQ_ncdC_ncdB_cosP, ncdQ, ncdC, ncdB, cosP);
     generic_queue_close_impl!(__close_ncdQ_ncdC_ncdB_ncdP, ncdQ, ncdC, ncdB, ncdP);
+
+    // ================= Classify
+
+    generic_queue_classify_impl!(__classify_uniQ_larC_larB, uniQ, larC, larB);
+    generic_queue_classify_impl!(__classify_uniQ_larC_ncdB, uniQ, larC, ncdB);
+    generic_queue_classify_impl!(__classify_uniQ_ncdC_larB, uniQ, ncdC, larB);
+    generic_queue_classify_impl!(__classify_uniQ_ncdC_ncdB, uniQ, ncdC, ncdB);
+
+    generic_queue_classify_impl!(__classify_parQ_larC_larB, parQ, larC, larB);
+    generic_queue_classify_impl!(__classify_parQ_larC_ncdB, parQ, larC, ncdB);
+    generic_queue_classify_impl!(__classify_parQ_ncdC_larB, parQ, ncdC, larB);
+    generic_queue_classify_impl!(__classify_parQ_ncdC_ncdB, parQ, ncdC, ncdB);
+
+    generic_queue_classify_impl!(__classify_ncdQ_larC_larB, ncdQ, larC, larB);
+    generic_queue_classify_impl!(__classify_ncdQ_larC_ncdB, ncdQ, larC, ncdB);
+    generic_queue_classify_impl!(__classify_ncdQ_ncdC_larB, ncdQ, ncdC, larB);
+    generic_queue_classify_impl!(__classify_ncdQ_ncdC_ncdB, ncdQ, ncdC, ncdB);
 }

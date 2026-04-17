@@ -29,7 +29,6 @@ fn field_line_single_period_uniQ() {
     let mut particle = Particle::new(&initial);
     particle.close(&qfactor, &current, &bfield, &perturbation, 1, &SolverParams::default());
     assert!(matches!(particle.integration_status(), IntegrationStatus::ClosedPeriods(1)));
-    assert!(particle.orbit_type() == OrbitType::CoPassing);
 
     let expected_dt = 17085113170546.295;
     let expected_omega_theta = TAU / expected_dt;
@@ -60,8 +59,9 @@ fn trapped_particle_single_period_uniQ() {
     let initial = InitialConditions::boozer(0.0, InitialFlux::Toroidal(0.02), 1.0, 0.0, 1e-6, 1e-6);
     let mut particle = Particle::new(&initial);
     particle.close(&qfactor, &current, &bfield, &perturbation, 1, &SolverParams::default());
+    particle.classify(&qfactor, &current, &bfield);
     assert!(matches!(particle.integration_status(), IntegrationStatus::ClosedPeriods(1)));
-    assert!(particle.orbit_type() == OrbitType::TrappedStagnated);
+    assert_eq!(particle.orbit_type(), OrbitType::TrappedConfined);
 
     let expected_dt = 17708.921170693902;
     let expected_dzeta = 0.07681124462891854; // from manual integration

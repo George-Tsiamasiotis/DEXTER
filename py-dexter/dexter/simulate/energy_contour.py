@@ -3,8 +3,9 @@ import matplotlib.pyplot as plt
 from math import pi as PI
 from matplotlib.ticker import LogLocator, MaxNLocator
 
-from dexter.equilibrium import Equilibrium, LarGeometry
-from dexter.simulate import Particle, COMs
+from dexter.equilibrium.equilibrium import Equilibrium
+from dexter.equilibrium.objects import LarGeometry
+from dexter.simulate.objects import Particle, COMs
 from dexter.types import Array1, Array2, Canvas, Locator
 
 SCATTER_KW = {"s": 0.8, "c": "red"}
@@ -158,7 +159,7 @@ def plot_particle_poloidal_drift(
 
     fig.colorbar(contour, label=r"$Energy\ [Normalized]$")
     ax.scatter(rlab, zlab, **SCATTER_KW)
-    ax.set_title(title)
+    ax.set_title(title + rf" (orbit type: ${particle.orbit_type}$)")
     ax.grid(False)
 
     if show:

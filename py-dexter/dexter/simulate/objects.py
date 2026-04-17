@@ -23,8 +23,8 @@ from dexter._core import (
     _PyQueue,
 )
 
-from ..equilibrium import Equilibrium
-from ._plotters import _ParticlePlotter, _QueuePlotter, _COMsPlotter
+from dexter.equilibrium.equilibrium import Equilibrium
+from ._plotters import _ParticlePlotter, _QueuePlotter
 
 from dexter.types import (
     Array1,
@@ -161,7 +161,7 @@ class EnergyPzetaPlane:
 # ================================================================================================
 
 
-class COMs(_COMsPlotter):
+class COMs:
     r"""The Constants of motion in an unperturbed equilibrium.
 
     Parameters
@@ -564,7 +564,7 @@ class InitialConditions:
         return self._rust.mu0
 
     @property
-    def rho0(self) -> Optional[float]:
+    def rho0(self) -> float:
         r"""The initial parallel radius $\rho_{||}$, in Normalized Units."""
         if self._rust.rho0 is None:
             raise AttributeError("'rho0' has not been defined")
@@ -572,7 +572,7 @@ class InitialConditions:
             return self._rust.rho0
 
     @property
-    def pzeta0(self) -> Optional[float]:
+    def pzeta0(self) -> float:
         r"""The initial canonical momentum $P_\zeta$, in Normalized Units."""
         if self._rust.pzeta0 is None:
             raise AttributeError("'pzeta0' has not been defined")
@@ -731,19 +731,28 @@ class Particle(_ParticlePlotter):
         return self._rust.steps_stored
 
     @property
-    def initial_energy(self) -> Optional[float]:
+    def initial_energy(self) -> float:
         """The particle's initial energy before the integration in Normalized Units."""
-        return self._rust.initial_energy
+        if self._rust.initial_energy is None:
+            raise AttributeError("'initial_energy' has not been calculated")
+        else:
+            return self._rust.initial_energy
 
     @property
-    def final_energy(self) -> Optional[float]:
+    def final_energy(self) -> float:
         """The particle's final energy after the integration in Normalized Units."""
-        return self._rust.final_energy
+        if self._rust.final_energy is None:
+            raise AttributeError("'final_energy' has not been calculated")
+        else:
+            return self._rust.final_energy
 
     @property
-    def energy_var(self) -> Optional[float]:
+    def energy_var(self) -> float:
         """The variance of energy throughout the integration."""
-        return self._rust.energy_var
+        if self._rust.energy_var is None:
+            raise AttributeError("'energy_var' has not been calculated")
+        else:
+            return self._rust.energy_var
 
     @property
     def orbit_type(self) -> OrbitType:
@@ -1142,6 +1151,57 @@ class Particle(_ParticlePlotter):
             error_abs_tol,
         )
 
+    def classify(
+        self,
+        /,
+        equilibrium: Equilibrium,
+    ):
+        r"""Classifies the particle’s orbit using its position on the $(E, P_\zeta, \mu=const)$
+        plane without integrating.
+
+        Parameters
+        ----------
+        equilibrium
+            The equilibrium in which to integrate the particle.
+
+        Example
+        -------
+        ```python title="Particle classification"
+        >>> # Equilibrium setup
+        >>> LCFS = dex.LastClosedFluxSurface(kind="Toroidal", value=0.45)
+        >>> equilibrium = dex.Equilibrium(
+        ...     qfactor=dex.ParabolicQfactor(qaxis=1.1, qlast=4.1, lcfs=LCFS),
+        ...     current=dex.LarCurrent(),
+        ...     bfield=dex.LarBfield(),
+        ... )
+        >>>
+        >>> # Initial conditions setup
+        >>> initial_conditions = dex.InitialConditions.boozer(
+        ...     t0=0,
+        ...     flux0=dex.InitialFlux("Toroidal", 0.1),
+        ...     theta0=3.14,
+        ...     zeta0=0,
+        ...     rho0=1e-4,
+        ...     mu0=7e-6,
+        ... )
+        >>>
+        >>> # Particle setup and classification
+        >>> particle = dex.Particle(initial_conditions)
+        >>> particle.close(equilibrium=equilibrium)
+
+        ```
+        """
+        prefix = "__classify"
+        q = equilibrium.qfactor._dyn
+        c = equilibrium.current._dyn
+        b = equilibrium.bfield._dyn
+        method_name: Callable = getattr(self._rust, f"{prefix}_{q}_{c}_{b}")
+        method_name(
+            equilibrium.qfactor._rust,
+            equilibrium.current._rust,
+            equilibrium.bfield._rust,
+        )
+
     def __str__(self) -> str:
         return self._rust.__str__()
 
@@ -1339,14 +1399,20 @@ class QueueInitialConditions:
         return self._rust.mu_array
 
     @property
-    def rho_array(self) -> Optional[Array1]:
+    def rho_array(self) -> Array1:
         r"""The initial $\rho$ array."""
-        return self._rust.rho_array
+        if self._rust.rho_array is None:
+            raise AttributeError("'rho_array' has not been defined")
+        else:
+            return self._rust.rho_array
 
     @property
-    def pzeta_array(self) -> Optional[Array1]:
+    def pzeta_array(self) -> Array1:
         r"""The initial $P_\zeta$ array."""
-        return self._rust.pzeta_array
+        if self._rust.pzeta_array is None:
+            raise AttributeError("'pzeta_array' has not been defined")
+        else:
+            return self._rust.pzeta_array
 
     def __iter__(self):
         self._iter_index = 0
@@ -1834,6 +1900,62 @@ class Queue(_QueuePlotter):
             energy_abs_tol,
             error_rel_tol,
             error_abs_tol,
+        )
+
+    def classify(
+        self,
+        /,
+        equilibrium: Equilibrium,
+    ):
+        r"""Classifies the particles' orbits using their position on the $(E, P_\zeta, \mu=const)$
+        plane without integrating.
+
+        Parameters
+        ----------
+        equilibrium
+            The equilibrium in which to integrate the particles.
+
+        Example
+        -------
+        ```python title="Queue Classification"
+        >>> # Equilibrium setup
+        >>> LCFS = dex.LastClosedFluxSurface(kind="Toroidal", value=0.45)
+        >>> equilibrium = dex.Equilibrium(
+        ...     qfactor=dex.ParabolicQfactor(qaxis=1.1, qlast=4.1, lcfs=LCFS),
+        ...     current=dex.LarCurrent(),
+        ...     bfield=dex.LarBfield(),
+        ... )
+        >>>
+        >>> # Initial Conditions setup
+        >>> num = 10
+        >>> psi0s = InitialFluxArray("Toroidal", np.linspace(0.01, 0.4, num))
+        >>>
+        >>> initial_conditions = QueueInitialConditions.boozer(
+        ...     t0=np.zeros(num),
+        ...     flux0=psi0s,
+        ...     theta0=np.zeros(num),
+        ...     zeta0=np.zeros(num),
+        ...     rho0=np.full(num, 1e-5),
+        ...     mu0=np.full(num, 7e-7),
+        ... )
+        >>>
+        >>> # Queue setup
+        >>> queue = dex.Queue(initial_conditions)
+        >>>
+        >>> # Run
+        >>> queue.classify(equilibrium=equilibrium)
+
+        ```
+        """
+        prefix = "__classify"
+        q = equilibrium.qfactor._dyn
+        c = equilibrium.current._dyn
+        b = equilibrium.bfield._dyn
+        method_name: Callable = getattr(self._rust, f"{prefix}_{q}_{c}_{b}")
+        method_name(
+            equilibrium.qfactor._rust,
+            equilibrium.current._rust,
+            equilibrium.bfield._rust,
         )
 
     def __getitem__(self, index: int):

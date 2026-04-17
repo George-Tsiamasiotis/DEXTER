@@ -1,3 +1,4 @@
+import pytest
 import numpy as np
 
 from dexter import (
@@ -48,7 +49,8 @@ def test_queue_boozer_initial_conditions():
     assert init.zeta_array.shape == (particle_count,)
     assert init.mu_array.shape == (particle_count,)
     assert init.rho_array is not None and init.rho_array.shape == (particle_count,)
-    assert init.pzeta_array is None
+    with pytest.raises(AttributeError):
+        init.pzeta_array
     assert isinstance(init.__str__(), str)
     assert isinstance(init.__repr__(), str)
 
@@ -72,7 +74,8 @@ def test_queue_mixed_initial_conditions():
     assert init.theta_array.shape == (particle_count,)
     assert init.zeta_array.shape == (particle_count,)
     assert init.mu_array.shape == (particle_count,)
-    assert init.rho_array is None
+    with pytest.raises(AttributeError):
+        init.rho_array
     assert init.pzeta_array is not None and init.pzeta_array.shape == (particle_count,)
     assert isinstance(init.__str__(), str)
     assert isinstance(init.__repr__(), str)

@@ -10,6 +10,10 @@
 //! + [`Particle::integrate`]: Integrates the particle in a specific time interval.
 //! + [`Particle::intersect`]: Integrates the particle, calculating its intersections with a
 //!   constant `θ` or `ζ` surface.
+//! + [`Particle::close`]: Integrates the particle, for a given number of `θ-ψ` periods, and calculates
+//!   its `ωθ`, `ωζ` and `qkinetic`.
+//! + [`Particle::classify`]: Classifies the particle's [`orbit`](crate::OrbitType) using its position
+//!   on the `(E, Pζ, μ=const)` plane without integrating.
 //!
 //! ### [`Queue`]: A container for batch initializing and running Particle routines.
 //!
@@ -21,6 +25,10 @@
 //! + [`Queue::integrate`]: Integrates the contained particles in a specific time interval.
 //! + [`Queue::intersect`]: Integrates the contained particles, calculating their intersections with a
 //!   constant `θ` or `ζ` surface. Otherwise known as a `Poincare map`.
+//! + [`Queue::close`]: Integrates all the contained particles for a specific number of periods and
+//!   calculates their frequencies.
+//! + [`Queue::classify`]: Classifies all the contained particles' [`orbits`](crate::OrbitType), using
+//!   their position on the (E, Pζ, μ=const) plane without integrating.
 //!
 //! ### COMs space
 //!
@@ -28,7 +36,8 @@
 //! space:
 //!
 //! + [`EnergyPzetaPlane`]: Representation of the COM space `(E, Pζ, μ=const)`.
-//! + [`TrappedPassingBoundary`]: Representation of the Trapped-Passing boundary curves on the `(E, Pζ, μ=const)` space.
+//! + [`TrappedPassingBoundary`]: Representation of the Trapped-Passing boundary curves on the
+//!   `(E, Pζ, μ=const)` space.
 //! + [`energy_of_psi_grid`](COMs::energy_of_psi_grid): Calculation of the unperturbed Hamiltonian's
 //!   value in a 2x2 `θ-ψ` grid
 //! + [`energy_of_psip_grid`](COMs::energy_of_psip_grid): Calculation of the unperturbed Hamiltonian's
@@ -117,9 +126,8 @@ pub mod constants {
     /// [`Particle::close`][crate::Particle::close] routine.
     pub const PSI_RELATIVE_TOLERANCE: f64 = 1e-6;
 
-    /// See [`OrbitType::TrappedStagnated`][crate::OrbitType::TrappedStagnated].
-    pub const TRAPPED_STAGNATED_CLASSIFICATION_CUTOFF: f64 = 0.999;
-
     /// The density of the trapped-passing boundary curves' points.
-    pub const TRAPPED_PASSING_BOUNDARY_DENSITY: usize = 2000;
+    ///
+    /// A higher number is needed to better classify Potato and Stagnated orbits.
+    pub const TRAPPED_PASSING_BOUNDARY_DENSITY: usize = 300;
 }

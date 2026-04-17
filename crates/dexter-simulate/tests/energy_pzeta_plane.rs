@@ -2,7 +2,7 @@
 
 #![allow(unused_variables)]
 
-use dexter_equilibrium::extract::{POLOIDAL_TEST_NETCDF_PATH, TOROIDAL_TEST_NETCDF_PATH};
+use dexter_equilibrium::extract::{POLOIDAL_TEST_NETCDF_PATH, TEST_NETCDF_PATH};
 use dexter_equilibrium::*;
 use dexter_simulate::*;
 use parabola::Parabola;
@@ -27,13 +27,14 @@ fn lar_energy_pzeta_parabola() {
     let axis: &Parabola = plane.axis_parabola();
     let left_wall: &Parabola = plane.left_wall_parabola();
     let right_wall: &Parabola = plane.right_wall_parabola();
+    let tp_boundary: &TrappedPassingBoundary = plane.tp_boundary();
 
     assert_eq!(plane.mu(), coms.mu.unwrap());
 }
 
 #[test]
 fn toroidal_nc_energy_pzeta_parabola() {
-    let path = PathBuf::from(TOROIDAL_TEST_NETCDF_PATH);
+    let path = PathBuf::from(TEST_NETCDF_PATH);
     let qfactor = NcQfactorBuilder::new(&path, "steffen").build().unwrap();
     let current = NcCurrentBuilder::new(&path, "steffen").build().unwrap();
     let bfield = NcBfieldBuilder::new(&path, "bicubic").build().unwrap();
@@ -50,6 +51,7 @@ fn toroidal_nc_energy_pzeta_parabola() {
     let axis: &Parabola = plane.axis_parabola();
     let left_wall: &Parabola = plane.left_wall_parabola();
     let right_wall: &Parabola = plane.right_wall_parabola();
+    let tp_boundary: &TrappedPassingBoundary = plane.tp_boundary();
 
     assert_eq!(plane.mu(), coms.mu.unwrap());
 }
@@ -73,6 +75,7 @@ fn poloidal_nc_energy_pzeta_parabola() {
     let axis: &Parabola = plane.axis_parabola();
     let left_wall: &Parabola = plane.left_wall_parabola();
     let right_wall: &Parabola = plane.right_wall_parabola();
+    let tp_boundary: &TrappedPassingBoundary = plane.tp_boundary();
 
     assert_eq!(plane.mu(), coms.mu.unwrap());
 }

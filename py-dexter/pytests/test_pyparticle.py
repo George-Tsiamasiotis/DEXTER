@@ -123,9 +123,6 @@ def test_particle_instantiation():
     assert isinstance(particle.__repr__(), str)
     assert isinstance(particle.initial_conditions, InitialConditions)
     assert particle.integration_status == "Initialized"
-    assert particle.initial_energy is None
-    assert particle.final_energy is None
-    assert particle.energy_var is None
     assert particle.steps_stored == 0
     assert particle.steps_taken == 0
 
@@ -287,11 +284,24 @@ class TestToroidalParticle:
         )
         particle = Particle(initial)
         particle.close(self.equilibrium_unperturbed)
-        assert particle.orbit_type == "TrappedStagnated"
+        assert particle.orbit_type == "Undefined"
         assert "ClosedPeriods" in particle.integration_status
         assert particle.omega_theta is not None
         assert particle.omega_zeta is not None
         assert particle.qkinetic is not None
+
+    def test_classify(self):
+        initial = InitialConditions.boozer(
+            t0=0,
+            flux0=InitialFlux("Toroidal", 0.02),
+            theta0=1,
+            zeta0=0,
+            rho0=1e-6,
+            mu0=1e-6,
+        )
+        particle = Particle(initial)
+        particle.classify(self.equilibrium_unperturbed)
+        assert particle.orbit_type == "TrappedConfined"
 
 
 class TestPoloidalParticle:
@@ -410,10 +420,22 @@ class TestPoloidalParticle:
         particle = Particle(initial)
         particle.close(self.equilibrium_unperturbed)
         assert "ClosedPeriods" in particle.integration_status
-        assert particle.orbit_type == "TrappedStagnated"
         assert particle.omega_theta is not None
         assert particle.omega_zeta is not None
         assert particle.qkinetic is not None
+
+    def test_classify(self):
+        initial = InitialConditions.boozer(
+            t0=0,
+            flux0=InitialFlux("Poloidal", 0.2),
+            theta0=0,
+            zeta0=0,
+            rho0=1e-6,
+            mu0=1e-6,
+        )
+        particle = Particle(initial)
+        particle.classify(self.equilibrium_unperturbed)
+        assert particle.orbit_type == "Stagnated"
 
 
 def _check_valid_integration(particle: Particle):

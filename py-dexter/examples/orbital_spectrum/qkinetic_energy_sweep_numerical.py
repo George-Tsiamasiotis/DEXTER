@@ -24,4 +24,5 @@ queue = dex.Queue(initial_conditions)
 
 # Run
 queue.close(equilibrium=equilibrium, max_steps=50_000)
+queue.classify(equilibrium)
 queue.plot_qkinetic_energy_sweep()

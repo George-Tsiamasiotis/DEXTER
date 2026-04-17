@@ -1,7 +1,7 @@
 # Constants of motion
 
 - Constants of motion related types.
-- [`Constants of Motion`](dexter.COMs) class.
+- [`Constants of Motion`][dexter.COMs] class.
 - [Plotting](#plots) functions.
 
 

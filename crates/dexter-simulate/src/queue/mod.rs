@@ -18,6 +18,7 @@ use std::time::Duration;
 
 use dexter_equilibrium::{Bfield, Current, FluxCommute, Harmonic, Perturbation, Qfactor};
 
+use crate::queue::pbars::ClassifyPbar;
 use crate::{IntersectParams, Particle, SolverParams};
 
 /// Indicates the routine Queue's particles executed.
@@ -30,6 +31,10 @@ pub enum Routine {
     Integrate,
     /// [`Queue`] has run the [`Particle::intersect`] routine.
     Intersect,
+    /// [`Queue`] has run the [`Particle::close`] routine.
+    Close,
+    /// [`Queue`] has run the [`Particle::classify`] routine.
+    Classify,
 }
 
 /// A collection of multiple [`Particles`](Particle), constructed from a
@@ -163,7 +168,7 @@ impl Queue {
         self.stats = QueueStats::from_completed_queue(self);
     }
 
-    /// Integrates all the contained particle, calculating their intersections with a constant θ or ζ surface.
+    /// Integrates all the contained particles, calculating their intersections with a constant θ or ζ surface.
     ///
     /// Otherwise known as a `Poincare map`.
     ///
@@ -303,13 +308,60 @@ impl Queue {
                 periods,
                 solver_params,
             );
-            pbar.inc(&particle.integration_status(), &particle.orbit_type());
+            pbar.inc(&particle.integration_status());
             pbar.print_stats();
             particle.discard_arrays();
         });
         pbar.finish();
 
-        self.routine = Routine::Intersect;
+        self.routine = Routine::Close;
+        self.stats = QueueStats::from_completed_queue(self);
+    }
+
+    /// Classifies all the contained particles' orbits. using their position on the (E, Pζ, μ=const)
+    /// plane without integrating.
+    ///
+    /// # Example
+    /// ```
+    /// # use dexter_equilibrium::*;
+    /// # use dexter_simulate::*;
+    /// # use std::path::PathBuf;
+    /// #
+    /// let lcfs = LastClosedFluxSurface::Toroidal(0.6);
+    /// let qfactor = ParabolicQfactor::new(1.1, 4.2, lcfs);
+    /// let current = LarCurrent::new();
+    /// let bfield = LarBfield::new();
+    ///
+    /// use InitialFlux::*;
+    /// let initial_conditions = QueueInitialConditions::boozer(
+    ///     &[0.0, 0.1],
+    ///     &[Toroidal(0.15), Toroidal(0.3)],
+    ///     &[0.0, 0.1],
+    ///     &[0.0, 0.0],
+    ///     &[1e-4, 2e-4],
+    ///     &[7e-6, 7e-6],
+    /// )?;
+    /// let mut queue = Queue::new(&initial_conditions);
+    /// queue.classify(&qfactor, &current, &bfield);
+    /// # Ok::<_, SimulationError>(())
+    /// ```
+    pub fn classify<Q, C, B>(&mut self, qfactor: &Q, current: &C, bfield: &B)
+    where
+        Q: Qfactor + FluxCommute + Send + Sync,
+        C: Current + Send + Sync,
+        B: Bfield + Send + Sync,
+    {
+        let pbar = ClassifyPbar::new(self);
+        pbar.print_prelude();
+
+        self.particles.par_iter_mut().for_each(|particle| {
+            particle.classify(qfactor, current, bfield);
+            pbar.inc(&particle.orbit_type());
+            pbar.print_stats();
+        });
+        pbar.finish();
+
+        self.routine = Routine::Classify;
         self.stats = QueueStats::from_completed_queue(self);
     }
 }

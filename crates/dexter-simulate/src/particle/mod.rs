@@ -5,6 +5,7 @@ mod evolution;
 mod initial;
 mod integrate;
 mod intersect;
+mod orbit_classification;
 
 use crate::SolverParams;
 pub use initial::{CoordinateSet, InitialConditions};
@@ -156,27 +157,74 @@ pub struct Frequencies {
     pub qkinetic: Option<f64>,
 }
 
-/// The particle's orbit type, calculated through the [`Particle::close`] routine.
-#[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
+/// A particle's orbit type.
+///
+/// As described by [`R. B. White`], an orbit is classified depending on its location relative
+/// to the well-defined `(E, Pζ, μ=const)`.
+///
+/// [`R. B. White`]: https://doi.org/10.1142/P440
+#[derive(Default, Debug, Clone, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum OrbitType {
-    /// `ρ>0` during the whole integration.
-    CoPassing,
-    /// `ρ<0` during the whole integration.
-    CuPassing,
-    /// `|θmax - θmin| < 0.999 * 2π`. The `0.999` is needed since passing particles also have a span
-    /// of `2π` when integrated for a single period.
-    ///
-    /// This might cut off some particles very close to the separatrix.
-    ///
-    /// At this moment, there is no good method of determining whether a particle is trapped or
-    /// stagnated.
-    TrappedStagnated,
-    /// Failed to classify the particle's orbit into a valid type.
-    Unclassified,
-    /// Particle has not been integrated.
+    /// Particle has not been classified.
     #[default]
     Undefined,
+    /// A Trapped-Lost particle.
+    ///
+    /// # Definition
+    ///
+    /// A particle is called *trapped* if there exists a mirror point where `ρ=0`.
+    TrappedLost,
+    /// A Trapped-Confined particle.
+    ///
+    /// # Definition
+    ///
+    /// A particle is called *trapped* if there exists a mirror point where `ρ=0`.
+    TrappedConfined,
+    /// A CoPassing-Lost particle.
+    ///
+    /// # Definition
+    ///
+    /// A particle is called *passing* if it is not trapped and it holds that `ρ>0`.
+    CoPassingLost,
+    /// A CoPassing-Confined particle.
+    ///
+    /// # Definition
+    ///
+    /// A particle is called *passing* if it is not trapped and it holds that `ρ>0`.
+    CoPassingConfined,
+    /// A CounterPassing-Lost particle.
+    ///
+    /// # Definition
+    ///
+    /// A particle is called *passing* if it is not trapped and it holds that `ρ<0`.
+    CuPassingLost,
+    /// A CounterPassing-Confined particle.
+    ///
+    /// # Definition
+    ///
+    /// A particle is called *passing* if it is not trapped and it holds that `ρ<0`.
+    CuPassingConfined,
+    /// A Potato particle.
+    ///
+    /// # Definition
+    ///
+    /// A particle's orbit is called a *potato* orbit if it is trapped but still circles the
+    /// magnetic axis due to its drift. In the `(E, Pζ)` plane, those lie inside the intersection
+    /// of the trapped-passing boundary and the magnetic axis parabola.
+    Potato,
+    /// A Potato particle.
+    ///
+    /// # Definition
+    ///
+    /// A particle is called *stagnated* if it always has positive parallel velocity but does
+    /// not circle the magnetic axis. In the `(E, Pζ)` plane, those lie to the right of the
+    /// trapped-passing boundary and above the magnetic axis parabola.
+    Stagnated,
+    /// Not falling under any of the other categories.
+    Unclassified,
+    /// Error classifying the orbit.
+    Failed(Box<str>),
 }
 
 // ===============================================================================================
@@ -387,7 +435,6 @@ impl Particle {
     /// ```
     /// # use dexter_equilibrium::*;
     /// # use dexter_simulate::*;
-    /// # use std::path::PathBuf;
     /// #
     /// let qfactor = UnityQfactor::new(LastClosedFluxSurface::Toroidal(0.1));
     /// let current = LarCurrent::new();
@@ -425,6 +472,45 @@ impl Particle {
             perturbation,
         };
         close::close(self, &objects, periods, solver_params);
+    }
+
+    /// Classifies the particle's orbit using its position on the `(E, Pζ, μ=const)` plane without integrating.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use dexter_equilibrium::*;
+    /// # use dexter_simulate::*;
+    /// #
+    /// let lcfs = LastClosedFluxSurface::Toroidal(0.03);
+    /// let qfactor = ParabolicQfactor::new(1.1, 3.9, lcfs);
+    /// let current = LarCurrent::new();
+    /// let bfield = LarBfield::new();
+    ///
+    /// let psi0 = InitialFlux::Toroidal(0.001);
+    /// let pzeta0 = - 0.8 * qfactor.psip_last();
+    /// let initial = InitialConditions::mixed(0.0, psi0, 1.0, 0.0, pzeta0, 6e-5);
+    ///
+    /// let mut particle = Particle::new(&initial);
+    /// particle.classify(&qfactor, &current, &bfield);
+    ///
+    /// assert_eq!(particle.orbit_type(), OrbitType::CuPassingConfined);
+    /// # Ok::<_, SimulationError>(())
+    ///
+    /// ```
+    pub fn classify<Q, C, B>(&mut self, qfactor: &Q, current: &C, bfield: &B)
+    where
+        Q: Qfactor + FluxCommute,
+        C: Current,
+        B: Bfield,
+    {
+        let objects = EqObjects {
+            qfactor,
+            current,
+            bfield,
+            perturbation: &Perturbation::zero(),
+        };
+        orbit_classification::classify(self, &objects)
     }
 }
 
@@ -489,7 +575,7 @@ impl Particle {
     /// Returns the particle's [`OrbitType`].
     #[must_use]
     pub fn orbit_type(&self) -> OrbitType {
-        self.orbit_type
+        self.orbit_type.clone()
     }
 
     /// Returns the particle's [`Frequencies`].

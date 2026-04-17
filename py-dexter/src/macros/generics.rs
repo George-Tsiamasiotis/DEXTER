@@ -398,3 +398,33 @@ macro_rules! generic_build_energy_pzeta_impl {
         }
     };
 }
+
+// ===============================================================================================
+
+/// Manually monomorphizes Partlcle's `classify()` method for the specific equilibrium objects.
+#[macro_export]
+macro_rules! generic_particle_classify_impl {
+    ($fun_name:ident, $Q:ty, $C:ty, $B:ty) => {
+        #[pymethods]
+        impl PyParticle {
+            #[allow(non_snake_case)]
+            pub fn $fun_name<'py>(&mut self, qfactor: &$Q, current: &$C, bfield: &$B) {
+                self.0.classify(&qfactor.0, &current.0, &bfield.0);
+            }
+        }
+    };
+}
+
+/// Manually monomorphizes Queue's `classify()` method for the specific equilibrium objects.
+#[macro_export]
+macro_rules! generic_queue_classify_impl {
+    ($fun_name:ident, $Q:ty, $C:ty, $B:ty) => {
+        #[pymethods]
+        impl PyQueue {
+            #[allow(non_snake_case)]
+            pub fn $fun_name<'py>(&mut self, qfactor: &$Q, current: &$C, bfield: &$B) {
+                self.0.classify(&qfactor.0, &current.0, &bfield.0);
+            }
+        }
+    };
+}

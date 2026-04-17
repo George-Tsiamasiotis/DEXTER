@@ -28,10 +28,10 @@ pub struct EnergyPzetaPlane {
 impl EnergyPzetaPlane {
     /// Creates a new `EnergyPzetaPlane` from a set of [`COMs`], in a given equilibrium.
     pub(crate) fn from_coms<Q, C, B>(
-        coms: &COMs,
         qfactor: &Q,
         current: &C,
         bfield: &B,
+        coms: &COMs,
     ) -> Result<Self, COMError>
     where
         Q: Qfactor + FluxCommute,
@@ -42,13 +42,23 @@ impl EnergyPzetaPlane {
             return Err(COMError::UndefinedMu);
         };
 
-        Ok(Self {
-            axis_parabola: Self::build_magnetic_axis_parabola(coms, current, bfield),
-            left_wall_parabola: Self::build_left_wall_parabola(coms, qfactor, current, bfield),
-            right_wall_parabola: Self::build_right_wall_parabola(coms, qfactor, current, bfield),
+        Ok(Self::from_mu(qfactor, current, bfield, mu))
+    }
+
+    /// Creates a new `EnergyPzetaPlane` from a set magnetic moment `μ=const` value.
+    pub(crate) fn from_mu<Q, C, B>(qfactor: &Q, current: &C, bfield: &B, mu: f64) -> Self
+    where
+        Q: Qfactor + FluxCommute,
+        C: Current,
+        B: Bfield,
+    {
+        Self {
+            axis_parabola: Self::build_magnetic_axis_parabola(current, bfield, mu),
+            left_wall_parabola: Self::build_left_wall_parabola(qfactor, current, bfield, mu),
+            right_wall_parabola: Self::build_right_wall_parabola(qfactor, current, bfield, mu),
             tp_boundary: TrappedPassingBoundary::new(qfactor, bfield, mu),
             mu,
-        })
+        }
     }
 
     /// Constructs the Magnetic Axis (MA) parabola:
@@ -57,7 +67,7 @@ impl EnergyPzetaPlane {
     ///
     /// where all values are evaluated at `(ψ/ψp, θ) = (0, 0)`.
     #[must_use]
-    fn build_magnetic_axis_parabola<C, B>(coms: &COMs, current: &C, bfield: &B) -> Parabola
+    fn build_magnetic_axis_parabola<C, B>(current: &C, bfield: &B, mu: f64) -> Parabola
     where
         C: Current,
         B: Bfield,
@@ -80,8 +90,6 @@ impl EnergyPzetaPlane {
                     .expect("At least one of the evaluations will always succeed")
             });
 
-        let mu = coms.mu.expect("checked");
-
         Parabola {
             a: (baxis / gaxis).powi(2),
             b: 0.0,
@@ -95,12 +103,7 @@ impl EnergyPzetaPlane {
     ///
     /// where all values are evaluated at `(ψ/ψp, θ) = (ψlast/ψplast, π)`.
     #[must_use]
-    fn build_left_wall_parabola<Q, C, B>(
-        coms: &COMs,
-        qfactor: &Q,
-        current: &C,
-        bfield: &B,
-    ) -> Parabola
+    fn build_left_wall_parabola<Q, C, B>(qfactor: &Q, current: &C, bfield: &B, mu: f64) -> Parabola
     where
         Q: Qfactor,
         C: Current,
@@ -127,8 +130,6 @@ impl EnergyPzetaPlane {
                     .expect("At least one of the evaluations will always succeed")
             });
 
-        let mu = coms.mu.expect("checked");
-
         let a = (blast / glast).powi(2);
         let h = psip_last;
         let k = mu * blast;
@@ -141,12 +142,7 @@ impl EnergyPzetaPlane {
     ///
     /// where all values are evaluated at `(ψ/ψp, θ) = (ψlast/ψplast, 0)`.
     #[must_use]
-    fn build_right_wall_parabola<Q, C, B>(
-        coms: &COMs,
-        qfactor: &Q,
-        current: &C,
-        bfield: &B,
-    ) -> Parabola
+    fn build_right_wall_parabola<Q, C, B>(qfactor: &Q, current: &C, bfield: &B, mu: f64) -> Parabola
     where
         Q: Qfactor,
         C: Current,
@@ -172,8 +168,6 @@ impl EnergyPzetaPlane {
                     .expect("At least one of the evaluations will always succeed")
             });
 
-        let mu = coms.mu.expect("checked");
-
         let a = (blast / glast).powi(2);
         let h = psip_last;
         let k = mu * blast;
@@ -198,6 +192,12 @@ impl EnergyPzetaPlane {
     #[must_use]
     pub fn right_wall_parabola(&self) -> &Parabola {
         &self.right_wall_parabola
+    }
+
+    /// Returns a reference to the [`TrappedPassingBoundary`].
+    #[must_use]
+    pub fn tp_boundary(&self) -> &TrappedPassingBoundary {
+        &self.tp_boundary
     }
 
     /// Returns the constant magnetic moment `μ`.

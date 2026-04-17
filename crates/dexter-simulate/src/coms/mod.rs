@@ -13,7 +13,7 @@ pub use tp_boundary::TrappedPassingBoundary;
 use crate::COMError;
 
 /// The constants of motion `(E, Pζ, μ)` in an unperturbed equilibrium.
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct COMs {
     /// The Energy in Normalized Units.
     pub energy: Option<f64>,
@@ -181,6 +181,6 @@ impl COMs {
         C: Current,
         B: Bfield,
     {
-        EnergyPzetaPlane::from_coms(self, qfactor, current, bfield)
+        EnergyPzetaPlane::from_coms(qfactor, current, bfield, self)
     }
 }
