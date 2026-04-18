@@ -7,7 +7,7 @@ mod integrate;
 mod intersect;
 mod orbit_classification;
 
-use crate::SolverParams;
+use crate::{EnergyPzetaPlane, SolverParams};
 pub use initial::{CoordinateSet, InitialConditions};
 pub use intersect::{IntersectParams, Intersection};
 
@@ -504,13 +504,32 @@ impl Particle {
         C: Current,
         B: Bfield,
     {
+        self._classify(qfactor, current, bfield, None);
+    }
+
+    /// Does the actual classification.
+    ///
+    /// OPTIM: Since the most common scenario is to classify particles with the same `μ`, we can
+    /// generate the [`EnergyPzetaPlane`] only once and use it for all particles. This method should
+    /// only be called by [`crate::Queue::classify_common_mu`].
+    pub(crate) fn _classify<Q, C, B>(
+        &mut self,
+        qfactor: &Q,
+        current: &C,
+        bfield: &B,
+        _plane: Option<&EnergyPzetaPlane>,
+    ) where
+        Q: Qfactor + FluxCommute,
+        C: Current,
+        B: Bfield,
+    {
         let objects = EqObjects {
             qfactor,
             current,
             bfield,
             perturbation: &Perturbation::zero(),
         };
-        orbit_classification::classify(self, &objects)
+        orbit_classification::classify(self, &objects, _plane)
     }
 }
 

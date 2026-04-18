@@ -29,6 +29,8 @@
 //!   calculates their frequencies.
 //! + [`Queue::classify`]: Classifies all the contained particles' [`orbits`](crate::OrbitType), using
 //!   their position on the (E, Pζ, μ=const) plane without integrating.
+//! + [`Queue::classify_common_mu`]: An optimization to [`Queue::classify`] for classifying
+//!   particles with common `μ`. Results to about 5-8 times better performance.
 //!
 //! ### COMs space
 //!

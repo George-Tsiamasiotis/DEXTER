@@ -1,7 +1,7 @@
 //! `dexter_simulate::Queue` newtype, constructors and method exports.
 
 use dexter::dexter_simulate::{
-    FluxCoordinate, Queue, QueueInitialConditions, poloidal_fluxes, toroidal_fluxes,
+    FluxCoordinate, Particle, Queue, QueueInitialConditions, poloidal_fluxes, toroidal_fluxes,
 };
 use ndarray::Array1;
 use numpy::{IntoPyArray, PyArray1};
@@ -11,8 +11,8 @@ use pyo3::types::PyType;
 
 use crate::pyerror::PySimulationError;
 use crate::{
-    generic_queue_classify_impl, py_debug_impl, py_get_enum_string, py_get_numpy1D,
-    py_get_numpy1D_fallible, py_repr_impl,
+    generic_queue_classify_common_mu_impl, generic_queue_classify_impl, py_debug_impl,
+    py_get_enum_string, py_get_numpy1D, py_get_numpy1D_fallible, py_repr_impl,
 };
 
 use crate::pyparticle::{PyInitialConditions, PyParticle};
@@ -144,6 +144,18 @@ impl PyQueue {
     #[pyo3(signature = (initial_conditions))]
     pub fn new(initial_conditions: &PyQueueInitialConditions) -> Self {
         Self(Queue::new(&initial_conditions.0))
+    }
+
+    #[classmethod]
+    pub fn from_particles<'py>(
+        _: &Bound<'_, PyType>,
+        pyparticles: Vec<Bound<'py, PyParticle>>,
+    ) -> PyResult<Self> {
+        let mut particles = Vec::<Particle>::with_capacity(pyparticles.len());
+        for pyparticle in pyparticles {
+            particles.push(pyparticle.extract::<PyParticle>()?.0);
+        }
+        Ok(Self(Queue::from_particles(&particles)))
     }
 
     #[getter]
@@ -338,4 +350,21 @@ mod py_particle_generics_impl {
     generic_queue_classify_impl!(__classify_ncdQ_larC_ncdB, ncdQ, larC, ncdB);
     generic_queue_classify_impl!(__classify_ncdQ_ncdC_larB, ncdQ, ncdC, larB);
     generic_queue_classify_impl!(__classify_ncdQ_ncdC_ncdB, ncdQ, ncdC, ncdB);
+
+    // ================= Classify
+
+    generic_queue_classify_common_mu_impl!(__classify_common_mu_uniQ_larC_larB, uniQ, larC, larB);
+    generic_queue_classify_common_mu_impl!(__classify_common_mu_uniQ_larC_ncdB, uniQ, larC, ncdB);
+    generic_queue_classify_common_mu_impl!(__classify_common_mu_uniQ_ncdC_larB, uniQ, ncdC, larB);
+    generic_queue_classify_common_mu_impl!(__classify_common_mu_uniQ_ncdC_ncdB, uniQ, ncdC, ncdB);
+
+    generic_queue_classify_common_mu_impl!(__classify_common_mu_parQ_larC_larB, parQ, larC, larB);
+    generic_queue_classify_common_mu_impl!(__classify_common_mu_parQ_larC_ncdB, parQ, larC, ncdB);
+    generic_queue_classify_common_mu_impl!(__classify_common_mu_parQ_ncdC_larB, parQ, ncdC, larB);
+    generic_queue_classify_common_mu_impl!(__classify_common_mu_parQ_ncdC_ncdB, parQ, ncdC, ncdB);
+
+    generic_queue_classify_common_mu_impl!(__classify_common_mu_ncdQ_larC_larB, ncdQ, larC, larB);
+    generic_queue_classify_common_mu_impl!(__classify_common_mu_ncdQ_larC_ncdB, ncdQ, larC, ncdB);
+    generic_queue_classify_common_mu_impl!(__classify_common_mu_ncdQ_ncdC_larB, ncdQ, ncdC, larB);
+    generic_queue_classify_common_mu_impl!(__classify_common_mu_ncdQ_ncdC_ncdB, ncdQ, ncdC, ncdB);
 }

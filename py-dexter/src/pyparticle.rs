@@ -143,6 +143,7 @@ py_export_pub_field!(PyIntersectParams, turns, usize);
 // ===============================================================================================
 
 #[pyclass(name = "_PyParticle")]
+#[derive(Clone)]
 pub struct PyParticle(pub(crate) Particle);
 
 #[pymethods]

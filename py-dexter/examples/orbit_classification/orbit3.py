@@ -19,12 +19,12 @@ equilibrium = dex.Equilibrium(
     bfield=dex.LarBfield(),
 )
 
-pzeta = -equilibrium.psip_last * 1.3
+pzeta = -equilibrium.psip_last * 1.5
 mu = 6e-5
 
 initial_conditions = dex.InitialConditions.mixed(
     t0=0,
-    flux0=dex.InitialFlux("Toroidal", 0.015),
+    flux0=dex.InitialFlux("Toroidal", 0.02),
     theta0=1.0,
     zeta0=0.0,
     pzeta0=pzeta,

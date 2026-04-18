@@ -428,3 +428,17 @@ macro_rules! generic_queue_classify_impl {
         }
     };
 }
+
+/// Manually monomorphizes Queue's `classify_common_mu()` method for the specific equilibrium objects.
+#[macro_export]
+macro_rules! generic_queue_classify_common_mu_impl {
+    ($fun_name:ident, $Q:ty, $C:ty, $B:ty) => {
+        #[pymethods]
+        impl PyQueue {
+            #[allow(non_snake_case)]
+            pub fn $fun_name<'py>(&mut self, qfactor: &$Q, current: &$C, bfield: &$B) {
+                self.0.classify_common_mu(&qfactor.0, &current.0, &bfield.0);
+            }
+        }
+    };
+}

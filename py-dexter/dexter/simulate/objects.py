@@ -1485,6 +1485,14 @@ class Queue(_QueuePlotter):
         self._initial_conditions = initial_conditions
         self._rust = _PyQueue(initial_conditions=initial_conditions._rust)
 
+    @classmethod
+    def from_particles(cls, particles: list[Particle]) -> Queue:
+        queue = Queue.__new__(Queue)
+        queue._rust = _PyQueue.from_particles(
+            [particle._rust for particle in particles]
+        )
+        return queue
+
     @property
     def initial_conditions(self) -> QueueInitialConditions:
         """The Queue's initial conditions."""
@@ -1947,7 +1955,13 @@ class Queue(_QueuePlotter):
 
         ```
         """
-        prefix = "__classify"
+        # Enable optimization if possible
+        mus = self._rust.initial_conditions.mu_array
+        if np.all(mus == mus[0]):
+            prefix = "__classify"
+        else:
+            prefix = "__classify"
+
         q = equilibrium.qfactor._dyn
         c = equilibrium.current._dyn
         b = equilibrium.bfield._dyn

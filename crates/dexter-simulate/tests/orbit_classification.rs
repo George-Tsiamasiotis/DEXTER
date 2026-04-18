@@ -28,9 +28,11 @@ fn orbit1() {
     assert_eq!(particle.orbit_type(), OrbitType::Undefined);
 
     particle.classify(&qfactor, &current, &bfield);
-    dbg!(&particle);
 
     assert_eq!(particle.orbit_type(), OrbitType::CuPassingConfined);
+
+    particle.close(&qfactor, &current, &bfield, &Perturbation::zero(), 1,&SolverParams::default());
+    assert_eq!(particle.integration_status(), IntegrationStatus::ClosedPeriods(1));
 }
 
 /// CoPassingConfined inside the magnetic axis parabola.
@@ -47,9 +49,11 @@ fn orbit2() {
     assert_eq!(particle.orbit_type(), OrbitType::Undefined);
 
     particle.classify(&qfactor, &current, &bfield);
-    dbg!(&particle);
 
     assert_eq!(particle.orbit_type(), OrbitType::CoPassingConfined);
+
+    particle.close(&qfactor, &current, &bfield, &Perturbation::zero(), 1,&SolverParams::default());
+    assert_eq!(particle.integration_status(), IntegrationStatus::ClosedPeriods(1));
 }
 
 /// CuPassing-Lost inside the right wall parabola, outside the left wall parabola and left from the
@@ -59,17 +63,19 @@ fn orbit2() {
 fn orbit3() {
     let (qfactor, current, bfield) = create_equilibrium();
 
-    let psi0 = InitialFlux::Toroidal(0.015);
-    let pzeta0 = - 1.3 * qfactor.psip_last();
+    let psi0 = InitialFlux::Toroidal(0.02);
+    let pzeta0 = - 1.5 * qfactor.psip_last();
     let initial = InitialConditions::mixed(0.0, psi0, 1.0, 0.0, pzeta0, 6e-5);
 
     let mut particle = Particle::new(&initial);
     assert_eq!(particle.orbit_type(), OrbitType::Undefined);
 
     particle.classify(&qfactor, &current, &bfield);
-    dbg!(&particle);
 
     assert_eq!(particle.orbit_type(), OrbitType::CuPassingLost);
+
+    particle.close(&qfactor, &current, &bfield, &Perturbation::zero(), 1,&SolverParams::default());
+    assert_eq!(particle.integration_status(), IntegrationStatus::Escaped);
 }
 
 /// Trapped-Lost inside the right wall parabola.
@@ -86,9 +92,11 @@ fn orbit4() {
     assert_eq!(particle.orbit_type(), OrbitType::Undefined);
 
     particle.classify(&qfactor, &current, &bfield);
-    dbg!(&particle);
 
     assert_eq!(particle.orbit_type(), OrbitType::TrappedLost);
+
+    particle.close(&qfactor, &current, &bfield, &Perturbation::zero(), 1,&SolverParams::default());
+    assert_eq!(particle.integration_status(), IntegrationStatus::Escaped);
 }
 
 /// Trapped-Confined outside of all parabolas.
@@ -105,9 +113,11 @@ fn orbit5() {
     assert_eq!(particle.orbit_type(), OrbitType::Undefined);
 
     particle.classify(&qfactor, &current, &bfield);
-    dbg!(&particle);
 
     assert_eq!(particle.orbit_type(), OrbitType::TrappedConfined);
+
+    particle.close(&qfactor, &current, &bfield, &Perturbation::zero(), 1,&SolverParams::default());
+    assert_eq!(particle.integration_status(), IntegrationStatus::ClosedPeriods(1));
 }
 
 /// Potato
@@ -124,9 +134,11 @@ fn orbit6() {
     assert_eq!(particle.orbit_type(), OrbitType::Undefined);
 
     particle.classify(&qfactor, &current, &bfield);
-    dbg!(&particle);
 
     assert_eq!(particle.orbit_type(), OrbitType::Potato);
+
+    particle.close(&qfactor, &current, &bfield, &Perturbation::zero(), 1,&SolverParams::default());
+    assert_eq!(particle.integration_status(), IntegrationStatus::ClosedPeriods(1));
 }
 
 /// Stagnated
@@ -143,9 +155,11 @@ fn orbit7() {
     assert_eq!(particle.orbit_type(), OrbitType::Undefined);
 
     particle.classify(&qfactor, &current, &bfield);
-    dbg!(&particle);
 
     assert_eq!(particle.orbit_type(), OrbitType::Stagnated);
+
+    particle.close(&qfactor, &current, &bfield, &Perturbation::zero(), 1,&SolverParams::default());
+    assert_eq!(particle.integration_status(), IntegrationStatus::ClosedPeriods(1));
 }
 
 /// CuPassingConfined outside of all parabolas and above the tp boundary.
@@ -162,7 +176,9 @@ fn orbit8() {
     assert_eq!(particle.orbit_type(), OrbitType::Undefined);
 
     particle.classify(&qfactor, &current, &bfield);
-    dbg!(&particle);
 
     assert_eq!(particle.orbit_type(), OrbitType::CuPassingConfined);
+
+    particle.close(&qfactor, &current, &bfield, &Perturbation::zero(), 1,&SolverParams::default());
+    assert_eq!(particle.integration_status(), IntegrationStatus::ClosedPeriods(1));
 }

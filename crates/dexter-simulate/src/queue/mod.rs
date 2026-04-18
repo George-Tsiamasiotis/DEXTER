@@ -19,7 +19,7 @@ use std::time::Duration;
 use dexter_equilibrium::{Bfield, Current, FluxCommute, Harmonic, Perturbation, Qfactor};
 
 use crate::queue::pbars::ClassifyPbar;
-use crate::{IntersectParams, Particle, SolverParams};
+use crate::{EnergyPzetaPlane, IntersectParams, Particle, SolverParams};
 
 /// Indicates the routine Queue's particles executed.
 #[derive(Default, Clone, Debug, PartialEq, Eq)]
@@ -101,6 +101,45 @@ impl Queue {
         }
     }
 
+    /// Creates a [`Queue`] from a slice of [`Particles`](Particle).
+    ///
+    /// The particles do not have to be initialized, but they must be defined on the same coordinate
+    /// set (boozer/mixed).
+    ///
+    /// # Panics
+    ///
+    /// Panics if the slice is empty.
+    ///
+    /// # Example
+    ///
+    /// Initial conditions in Mixed coordinates.
+    /// ```
+    /// # use dexter_simulate::*;
+    /// let psi0 = InitialFlux::Toroidal(0.02);
+    /// let initial1 = InitialConditions::mixed(0.0, psi0, 1.0, 0.0, 0.0, 0.0);
+    /// let initial2 = InitialConditions::mixed(0.0, psi0, 2.0, 0.0, 0.1, 0.0);
+    /// let particle1 = Particle::new(&initial1);
+    /// let particle2 = Particle::new(&initial2);
+    ///
+    /// let queue = Queue::from_particles(&[particle1, particle2]);
+    ///
+    /// assert_eq!(initial1.theta0(), queue[0].initial_conditions().theta0());
+    /// assert_eq!(initial2.theta0(), queue[1].initial_conditions().theta0());
+    /// # Ok::<_, SimulationError>(())
+    /// ```
+    #[must_use]
+    pub fn from_particles(particles: &[Particle]) -> Self {
+        assert!(!particles.is_empty(), "Particle slice cannot be empty");
+        Self {
+            initial_conditions: QueueInitialConditions::from_particles(particles),
+            particles: particles.to_vec(),
+            stats: QueueStats::default(),
+            routine: Routine::None,
+        }
+    }
+}
+
+impl Queue {
     /// Integrates all the contained particles for a specific time interval.
     ///
     /// # Example
@@ -356,6 +395,74 @@ impl Queue {
 
         self.particles.par_iter_mut().for_each(|particle| {
             particle.classify(qfactor, current, bfield);
+            pbar.inc(&particle.orbit_type());
+            pbar.print_stats();
+        });
+        pbar.finish();
+
+        self.routine = Routine::Classify;
+        self.stats = QueueStats::from_completed_queue(self);
+    }
+
+    /// Classifies all the contained particles' orbits. using their position on the (E, Pζ, μ=const)
+    /// plane without integrating.
+    ///
+    /// This method is an optimization to [`Self::classify`]. Since the most common scenario is to
+    /// classify particles with the same `μ`, we can generate the [`EnergyPzetaPlane`] only once
+    /// and use it for all particles. This improves performance by 5-8 times.
+    ///
+    /// # Panics
+    ///
+    /// Panics if not every initial `μ` is equal with the others.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use dexter_equilibrium::*;
+    /// # use dexter_simulate::*;
+    /// # use std::path::PathBuf;
+    /// #
+    /// let lcfs = LastClosedFluxSurface::Toroidal(0.6);
+    /// let qfactor = ParabolicQfactor::new(1.1, 4.2, lcfs);
+    /// let current = LarCurrent::new();
+    /// let bfield = LarBfield::new();
+    ///
+    /// use InitialFlux::*;
+    /// let initial_conditions = QueueInitialConditions::boozer(
+    ///     &[0.0, 0.1],
+    ///     &[Toroidal(0.15), Toroidal(0.3)],
+    ///     &[0.0, 0.1],
+    ///     &[0.0, 0.0],
+    ///     &[1e-4, 2e-4],
+    ///     &[7e-6, 7e-6], // must all be equal
+    /// )?;
+    /// let mut queue = Queue::new(&initial_conditions);
+    /// queue.classify_common_mu(&qfactor, &current, &bfield);
+    /// # Ok::<_, SimulationError>(())
+    /// ```
+    #[expect(clippy::float_cmp, reason = "we need bit-to-bit equivalence")]
+    pub fn classify_common_mu<Q, C, B>(&mut self, qfactor: &Q, current: &C, bfield: &B)
+    where
+        Q: Qfactor + FluxCommute + Send + Sync,
+        C: Current + Send + Sync,
+        B: Bfield + Send + Sync,
+    {
+        let mus = self.initial_conditions.mu_array_view();
+        let mu = mus
+            .first()
+            .expect("Queue cannot be instantiated with empty arrays");
+        assert!(
+            mus.iter().all(|_mu| _mu == mu),
+            "All initial `mu0` must be equal"
+        );
+
+        let plane = EnergyPzetaPlane::from_mu(qfactor, current, bfield, *mu);
+
+        let pbar = ClassifyPbar::new(self);
+        pbar.print_prelude();
+
+        self.particles.par_iter_mut().for_each(|particle| {
+            particle._classify(qfactor, current, bfield, Some(&plane));
             pbar.inc(&particle.orbit_type());
             pbar.print_stats();
         });

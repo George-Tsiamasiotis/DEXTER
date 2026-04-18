@@ -1,6 +1,6 @@
 """Plotter Parent classes that provide simple plotting methods"""
 
-from collections.abc import Callable
+from collections import Counter
 import numpy as np
 import matplotlib.pyplot as plt
 from math import floor, log10, sqrt
@@ -8,11 +8,8 @@ from math import pi as PI
 from warnings import warn
 from cycler import cycler
 from matplotlib.patches import Patch
-from matplotlib.figure import Figure
-from matplotlib.axes import Axes
-from typing import Any, assert_never
 
-from dexter._core import _PyParticle, _PyQueue, _PyCOMs, _PyEnergyPzetaPlane
+from dexter._core import _PyParticle, _PyQueue
 from dexter import Equilibrium, LarGeometry, OrbitType
 from dexter.types import Array1, Canvas, MultiCanvas
 
@@ -222,10 +219,6 @@ class _ParticlePlotter:
 
 class _QueuePlotter:
     """Provides plotting functions for the Queue Class."""
-
-    fig: Figure
-    ax: Axes
-    axes: Any  # list[Axes]
 
     _rust: _PyQueue
 
@@ -593,18 +586,17 @@ class _QueuePlotter:
         fig = plt.figure(**QKINETIC_POINCARE_FIG_KW)
         ax = fig.add_subplot()
 
-        if self._rust.particles[0].initial_conditions.flux0.kind == "Toroidal":
+        particles = self._rust.particles
+        if particles[0].initial_conditions.flux0.kind == "Toroidal":
             flux_coord = r"$\psi$"
             flux_coord_last = r"$\psi_{last}$"
         else:
             flux_coord = r"$\psi_p$"
             flux_coord_last = r"$\psi_{p,last}$"
 
-        fluxes = np.asarray(
-            [p.initial_conditions.flux0.value for p in self._rust.particles]
-        )
+        fluxes = np.asarray([p.initial_conditions.flux0.value for p in particles])
         fluxes[fluxes == None] = np.nan
-        colors = np.asarray([orbit_color(p.orbit_type) for p in self._rust.particles])
+        colors = np.asarray([orbit_color(p.orbit_type) for p in particles])
 
         if flux_last is None:
             ax.scatter(fluxes, self._rust.qkinetic_array, c=colors, s=1)
@@ -615,9 +607,7 @@ class _QueuePlotter:
 
         ax.set_ylabel("$q_{kinetic}$")
         ax.set_title("$q_{kinetic}-$" + flux_coord)
-        found_orbit_types: set[OrbitType] = set(
-            [particle.orbit_type for particle in self._rust.particles]
-        )
+        found_orbit_types = Counter([particle.orbit_type for particle in particles])
         ax.legend(handles=orbit_color_legend_handles(found_orbit_types))
         ax.axhline(y=0, ls="--", lw=1.5, c="k")
         ax.grid(True)
@@ -652,9 +642,10 @@ class _QueuePlotter:
         fig = plt.figure(**QKINETIC_POINCARE_FIG_KW)
         ax = fig.add_subplot()
 
-        pzetas = np.asarray([p.initial_conditions.pzeta0 for p in self._rust.particles])
+        particles = self._rust.particles
+        pzetas = np.asarray([p.initial_conditions.pzeta0 for p in particles])
         pzetas[pzetas == None] = np.nan
-        colors = np.asarray([orbit_color(p.orbit_type) for p in self._rust.particles])
+        colors = np.asarray([orbit_color(p.orbit_type) for p in particles])
         if psip_last is None:
             ax.scatter(pzetas, self._rust.qkinetic_array, c=colors, s=1)
             ax.set_xlabel(r"$P_\zeta\ [Normalized]$")
@@ -664,9 +655,7 @@ class _QueuePlotter:
 
         ax.set_ylabel("$q_{kinetic}$")
         ax.set_title(r"$q_{kinetic}-P_\zeta$")
-        found_orbit_types: set[OrbitType] = set(
-            [particle.orbit_type for particle in self._rust.particles]
-        )
+        found_orbit_types = Counter([particle.orbit_type for particle in particles])
         ax.legend(handles=orbit_color_legend_handles(found_orbit_types))
         ax.axhline(y=0, ls="--", lw=1.5, c="k")
         ax.grid(True)
@@ -694,17 +683,16 @@ class _QueuePlotter:
         fig = plt.figure(**QKINETIC_POINCARE_FIG_KW)
         ax = fig.add_subplot()
 
-        energies = np.asarray([p.initial_energy for p in self._rust.particles])
+        particles = self._rust.particles
+        energies = np.asarray([p.initial_energy for p in particles])
         energies[energies == None] = np.nan
-        colors = np.asarray([orbit_color(p.orbit_type) for p in self._rust.particles])
+        colors = np.asarray([orbit_color(p.orbit_type) for p in particles])
         ax.scatter(energies, self._rust.qkinetic_array, c=colors, s=1)
 
         ax.set_xlabel(rf"$Energy\ [Normalized]$")
         ax.set_ylabel("$q_{kinetic}$")
         ax.set_title("$q_{kinetic}-Energy$")
-        found_orbit_types: set[OrbitType] = set(
-            [particle.orbit_type for particle in self._rust.particles]
-        )
+        found_orbit_types = Counter([particle.orbit_type for particle in particles])
         ax.legend(handles=orbit_color_legend_handles(found_orbit_types))
         ax.axhline(y=0, ls="--", lw=1.5, c="k")
         ax.grid(True)
@@ -727,34 +715,39 @@ def pi_mod(arr: Array1) -> Array1:
 
 
 def orbit_color(orbit_type: OrbitType) -> str:
+    r"""Confined = 'bright', Lost = 'deep'"""
     match orbit_type:
         case "Undefined":
             return "xkcd:coral"
         case "TrappedConfined":
-            return "xkcd:deep red"
-        case "TrappedLost":
             return "xkcd:bright red"
+        case "TrappedLost":
+            return "xkcd:deep red"
         case "CoPassingConfined":
-            return "xkcd:deep blue"
-        case "CoPassingLost":
             return "xkcd:bright blue"
+        case "CoPassingLost":
+            return "xkcd:deep blue"
         case "CuPassingConfined":
-            return "xkcd:deep green"
-        case "CuPassingLost":
             return "xkcd:bright green"
+        case "CuPassingLost":
+            return "xkcd:deep green"
         case "Potato":
-            return "xkcd:dark brown"
+            return "xkcd:tan"
         case "Stagnated":
             return "xkcd:sky"
         case "Unclassified":
             return "xkcd:bright purple"
-        case _:  # Failed(..)
+        case _:  # Failed(..), also update legend handlers
             return "xkcd:indigo"
 
 
-def orbit_color_legend_handles(which: set[OrbitType]) -> list[Patch]:
-    return [
-        Patch(color=orbit_color(orbit_type), label=orbit_type)
-        for orbit_type in OrbitType.__args__
-        if orbit_type in which
-    ]
+def orbit_color_legend_handles(counter: Counter) -> list[Patch]:
+    res = []
+    for orbit_type, counts in counter.items():
+        if orbit_type.startswith("Failed"):
+            continue
+        res.append(
+            Patch(color=orbit_color(orbit_type), label=f"{orbit_type} ({counts})")
+        )
+    res.append(Patch(color="xkcd:indigo", label="Failed"))
+    return res

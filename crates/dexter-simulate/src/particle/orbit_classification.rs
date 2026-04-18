@@ -10,8 +10,14 @@ use crate::{EnergyPzetaPlane, OrbitType};
 /// We dont want this function to return an error; Instead, we want to set a corresponding
 /// [`OrbitType`] variant for each valid orbit calculation (including "erroneous" orbits),
 /// and set [`OrbitType::Failed`] for hard errors.
-pub(super) fn classify<Q, C, B, H>(particle: &mut Particle, objects: &EqObjects<Q, C, B, H>)
-where
+///
+/// If a `_plane` is passed, then that plane is used for the calculations, avoiding the
+/// need for generating a new one. See [`Particle::_classify`].
+pub(super) fn classify<Q, C, B, H>(
+    particle: &mut Particle,
+    objects: &EqObjects<Q, C, B, H>,
+    _plane: Option<&EnergyPzetaPlane>,
+) where
     Q: Qfactor + FluxCommute,
     C: Current,
     B: Bfield,
@@ -45,8 +51,18 @@ where
     // =============== Energy-Pζ plane Setup
 
     let mu = particle.initial_conditions.mu0;
-    let plane = EnergyPzetaPlane::from_mu(objects.qfactor, objects.current, objects.bfield, mu);
-    check_parabola_alphas(&plane);
+    let plane = match _plane {
+        Some(plane) => {
+            #[expect(clippy::float_cmp, reason = "we need bit-to-bit equivalence")]
+            if mu != plane.mu() {
+                unreachable!("New EnergyPzetaPlanes must be generated");
+            }
+            plane
+        }
+        None => &EnergyPzetaPlane::from_mu(objects.qfactor, objects.current, objects.bfield, mu),
+    };
+
+    check_parabola_alphas(plane);
 
     let pzeta = particle
         .initial_conditions
@@ -80,6 +96,10 @@ where
     }
     if is_in_axis && !is_trapped {
         particle.orbit_type = OrbitType::CoPassingConfined;
+    }
+
+    if !is_in_axis && (pzeta.is_sign_positive()) {
+        particle.orbit_type = OrbitType::Stagnated;
     }
 
     if is_in_right_wall && !is_in_left_wall {

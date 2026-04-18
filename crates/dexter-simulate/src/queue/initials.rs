@@ -1,6 +1,6 @@
 //! Queue Initial Conditions for batch Particle initialization.
 
-use ndarray::Array1;
+use ndarray::{Array1, ArrayView1};
 
 use crate::{CoordinateSet, InitialConditions, InitialFlux, Particle, SimulationError};
 
@@ -144,6 +144,66 @@ impl QueueInitialConditions {
         })
     }
 
+    /// Creates a new `QueueInitialConditions` from a slice of particles by extracting their
+    /// `InitialConditions`.
+    ///
+    /// The particles do not have to be fully initialized.
+    ///
+    /// # Panics
+    ///
+    /// Panics if *not* all the particles are defined in the same coordinate set (boozer/mixed).
+    pub(crate) fn from_particles(particles: &[Particle]) -> Self {
+        let mut t0 = Vec::with_capacity(particles.len());
+        let mut flux0 = Vec::with_capacity(particles.len());
+        let mut theta0 = Vec::with_capacity(particles.len());
+        let mut zeta0 = Vec::with_capacity(particles.len());
+        let mut mu0 = Vec::with_capacity(particles.len());
+
+        // If any values are found, store them here, and the create the array
+        let mut rho0 = Vec::new();
+        let mut pzeta0 = Vec::new();
+
+        for particle in particles {
+            let initial = particle.initial_conditions();
+            t0.push(initial.t0);
+            flux0.push(initial.flux0);
+            theta0.push(initial.theta0);
+            zeta0.push(initial.zeta0);
+            mu0.push(initial.mu0);
+            match initial.coordinate_set() {
+                CoordinateSet::BoozerToroidal | CoordinateSet::BoozerPoloidal => {
+                    rho0.push(initial.rho0.expect("is defined"))
+                }
+                CoordinateSet::MixedToroidal | CoordinateSet::MixedPoloidal => {
+                    pzeta0.push(initial.pzeta0.expect("is defined"))
+                }
+            }
+        }
+
+        // Sanity check
+        let len = t0.len();
+        let other_len = rho0.len().max(pzeta0.len());
+        if !(flux0.len() == len
+            && theta0.len() == len
+            && zeta0.len() == len
+            && mu0.len() == len
+            && other_len == len)
+        {
+            unreachable!()
+        }
+
+        Self {
+            t0: Array1::from(t0),
+            flux0: Array1::from(flux0),
+            theta0: Array1::from(theta0),
+            zeta0: Array1::from(zeta0),
+            mu0: Array1::from(mu0),
+            rho0: (!rho0.is_empty()).then(|| Array1::from(rho0)),
+            pzeta0: (!pzeta0.is_empty()).then(|| Array1::from(pzeta0)),
+            coordinate_set: particles[0].initial_conditions().coordinate_set(),
+        }
+    }
+
     /// Creates a [`Vec<Particle>`] initialized from each set of the contained
     /// [`InitialConditions`].
     #[must_use]
@@ -259,6 +319,12 @@ impl QueueInitialConditions {
         self.mu0.clone()
     }
 
+    /// Returns an [`ArrayView1`] of the `mu` array.
+    #[must_use]
+    pub(crate) fn mu_array_view(&self) -> ArrayView1<'_, f64> {
+        self.mu0.view()
+    }
+
     /// Returns the initial `ρ` array.
     #[must_use]
     pub fn rho_array(&self) -> Option<Array1<f64>> {
@@ -288,7 +354,7 @@ mod test {
     use InitialFlux::*;
 
     #[test]
-    fn test_queue_boozer_initial_conditions_creation() {
+    fn queue_boozer_initial_conditions_creation() {
         let initial = QueueInitialConditions::boozer(
             &[0.0, 0.0],
             &[Toroidal(0.1), Toroidal(0.2)],
@@ -315,7 +381,7 @@ mod test {
     }
 
     #[test]
-    fn test_queue_mixed_initial_conditions_creation() {
+    fn queue_mixed_initial_conditions_creation() {
         let initial = QueueInitialConditions::mixed(
             &[0.0, 0.0],
             &[Toroidal(0.1), Toroidal(0.2)],
@@ -342,7 +408,7 @@ mod test {
     }
 
     #[test]
-    fn test_queue_boozer_initial_conditions_data_extraction() {
+    fn queue_boozer_initial_conditions_data_extraction() {
         let initial = QueueInitialConditions::boozer(
             &[0.0, 1.0],
             &[Toroidal(0.1), Toroidal(0.2)],
@@ -363,7 +429,7 @@ mod test {
     }
 
     #[test]
-    fn test_queue_mixed_initial_conditions_data_extraction() {
+    fn queue_mixed_initial_conditions_data_extraction() {
         let initial = QueueInitialConditions::mixed(
             &[0.0, 1.0],
             &[Toroidal(0.1), Toroidal(0.2)],
@@ -384,7 +450,7 @@ mod test {
     }
 
     #[test]
-    fn test_queue_boozer_initial_conditions_to_particles() {
+    fn queue_boozer_initial_conditions_to_particles() {
         let initial = QueueInitialConditions::boozer(
             &[0.0, 1.0],
             &[Toroidal(0.1), Toroidal(0.2)],
@@ -406,7 +472,7 @@ mod test {
     }
 
     #[test]
-    fn test_queue_mixed_initial_conditions_to_particles() {
+    fn queue_mixed_initial_conditions_to_particles() {
         let initial = QueueInitialConditions::mixed(
             &[0.0, 1.0],
             &[Toroidal(0.1), Toroidal(0.2)],
@@ -428,8 +494,54 @@ mod test {
     }
 
     #[test]
-    fn test_fluxes_queue_init_helpers() {
+    fn fluxes_queue_init_helpers() {
         let _: Array1<InitialFlux> = toroidal_fluxes(&[0.1, 0.2]);
         let _: Array1<InitialFlux> = poloidal_fluxes(&[0.1, 0.2]);
+    }
+
+    #[test]
+    fn from_boozer_particles() {
+        let psi0 = Toroidal(0.001);
+        let initial1 = InitialConditions::boozer(0.0, psi0, 1.0, 0.0, 0.1, 0.0);
+        let initial2 = InitialConditions::boozer(0.0, psi0, 2.0, 0.0, 0.1, 0.0);
+        let particle1 = Particle::new(&initial1);
+        let particle2 = Particle::new(&initial2);
+
+        let initials = QueueInitialConditions::from_particles(&[particle1, particle2]);
+        let queue = crate::Queue::new(&initials);
+
+        assert_eq!(initial1.theta0, queue[0].initial_conditions().theta0);
+        assert_eq!(initial2.theta0, queue[1].initial_conditions().theta0);
+    }
+
+    #[test]
+    fn from_mixed_particles() {
+        let psi0 = Toroidal(0.001);
+        let initial1 = InitialConditions::mixed(0.0, psi0, 1.0, 0.0, 0.0, 0.0);
+        let initial2 = InitialConditions::mixed(0.0, psi0, 2.0, 0.0, 0.0, 0.0);
+        let particle1 = Particle::new(&initial1);
+        let particle2 = Particle::new(&initial2);
+
+        let initials = QueueInitialConditions::from_particles(&[particle1, particle2]);
+        let queue = crate::Queue::new(&initials);
+
+        assert_eq!(initial1.theta0, queue[0].initial_conditions().theta0);
+        assert_eq!(initial2.theta0, queue[1].initial_conditions().theta0);
+    }
+
+    #[test]
+    #[should_panic]
+    fn from_boozer_mixed_particles() {
+        let psi0 = Toroidal(0.001);
+        let initial1 = InitialConditions::mixed(0.0, psi0, 1.0, 0.0, 0.0, 0.0);
+        let initial2 = InitialConditions::boozer(0.0, psi0, 2.0, 0.0, 0.1, 0.0);
+        let particle1 = Particle::new(&initial1);
+        let particle2 = Particle::new(&initial2);
+
+        let initials = QueueInitialConditions::from_particles(&[particle1, particle2]);
+        let queue = crate::Queue::new(&initials);
+
+        assert_eq!(initial1.theta0, queue[0].initial_conditions().theta0);
+        assert_eq!(initial2.theta0, queue[1].initial_conditions().theta0);
     }
 }

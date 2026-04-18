@@ -1,5 +1,6 @@
 """Plots the orbit classification parabolas on the (E, Pζ, μ=const) space."""
 
+from collections import Counter
 from math import isfinite
 import numpy as np
 import matplotlib.pyplot as plt
@@ -120,8 +121,8 @@ def plot_parabolas(
             except AttributeError:
                 continue
         ax.scatter(pzetas, energies, c=colors, s=1)
-        types: set[OrbitType] = set([particle.orbit_type for particle in particles])
-        ax.legend(handles=orbit_color_legend_handles(types))
+        found_orbit_types = Counter([particle.orbit_type for particle in particles])
+        ax.legend(handles=orbit_color_legend_handles(found_orbit_types))
     else:
         ax.legend()
 

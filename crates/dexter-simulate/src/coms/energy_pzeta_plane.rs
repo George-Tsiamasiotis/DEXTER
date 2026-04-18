@@ -63,7 +63,7 @@ impl EnergyPzetaPlane {
 
     /// Constructs the Magnetic Axis (MA) parabola:
     ///
-    /// E(Pζ) = Pζ²B²/g² + μB.
+    /// E(Pζ) = Pζ²B²/2g² + μB.
     ///
     /// where all values are evaluated at `(ψ/ψp, θ) = (0, 0)`.
     #[must_use]
@@ -91,7 +91,7 @@ impl EnergyPzetaPlane {
             });
 
         Parabola {
-            a: (baxis / gaxis).powi(2),
+            a: (baxis / gaxis).powi(2) / 2.0,
             b: 0.0,
             c: mu * baxis,
         }
@@ -99,7 +99,7 @@ impl EnergyPzetaPlane {
 
     /// Constructs the Left Wall (LW) parabola:
     ///
-    /// E(Pζ) = (Pζ + ψp)²B²/g² + μB.
+    /// E(Pζ) = (Pζ + ψp)²B²/2g² + μB.
     ///
     /// where all values are evaluated at `(ψ/ψp, θ) = (ψlast/ψplast, π)`.
     #[must_use]
@@ -130,7 +130,7 @@ impl EnergyPzetaPlane {
                     .expect("At least one of the evaluations will always succeed")
             });
 
-        let a = (blast / glast).powi(2);
+        let a = (blast / glast).powi(2) / 2.0;
         let h = psip_last;
         let k = mu * blast;
         Parabola::from_square(a, h, k)
@@ -138,7 +138,7 @@ impl EnergyPzetaPlane {
 
     /// Constructs the Right Wall (RW) parabola:
     ///
-    /// E(Pζ) = (Pζ + ψp)²B²/g² + μB.
+    /// E(Pζ) = (Pζ + ψp)²B²/2g² + μB.
     ///
     /// where all values are evaluated at `(ψ/ψp, θ) = (ψlast/ψplast, 0)`.
     #[must_use]
@@ -168,7 +168,7 @@ impl EnergyPzetaPlane {
                     .expect("At least one of the evaluations will always succeed")
             });
 
-        let a = (blast / glast).powi(2);
+        let a = (blast / glast).powi(2) / 2.0;
         let h = psip_last;
         let k = mu * blast;
         Parabola::from_square(a, h, k)

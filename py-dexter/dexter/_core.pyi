@@ -731,6 +731,8 @@ class _PyQueue:
     _durations_as_nanos: Array1
 
     def __init__(self, initial_conditions: _PyQueueInitialConditions) -> None: ...
+    @classmethod
+    def from_particles(cls, particles: list[_PyParticle]) -> _PyQueue: ...
     def integrate(
         self,
         /,
