@@ -5,6 +5,7 @@ from typing import Literal, TypeAlias
 from collections.abc import Sequence
 from matplotlib.figure import Figure
 from matplotlib.axes import Axes
+from mpl_toolkits.mplot3d.axes3d import Axes3D
 
 # =================== Common
 
@@ -27,6 +28,9 @@ ArrayLike: TypeAlias = float | Array | Sequence
 
 Canvas: TypeAlias = tuple[Figure, Axes]
 """A tuple of a `figure` and an `ax`, returned by plotting methods."""
+
+Canvas3d: TypeAlias = tuple[Figure, Axes3D]
+"""A tuple of a `figure` and a 3D `ax`, returned by 3D plotting methods."""
 
 MultiCanvas: TypeAlias = tuple[Figure, tuple[Axes, ...]]
 """A tuple of a `figure` and multiple `axes`, returned by plotting methods."""

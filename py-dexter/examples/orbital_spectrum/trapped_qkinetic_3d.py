@@ -16,7 +16,7 @@ equilibrium = dex.Equilibrium(
 mu = 1e-4
 
 # Initial Conditions setup
-num = 4_000_000
+num = 1_000_000
 psi0s = dex.InitialFluxArray("Toroidal", np.random.random(num) * LCFS.value)
 
 initial_conditions = dex.QueueInitialConditions.mixed(
@@ -56,5 +56,9 @@ plt.show()
 # Frequency calculation
 filtered_queue.close(equilibrium, max_steps=100000)
 
-filtered_queue.plot_qkinetic_pzeta_sweep(psip_last=equilibrium.psip_last)
-filtered_queue.plot_qkinetic_energy_sweep()
+_, ax = filtered_queue.plot_qkinetic_pzeta_energy3d(
+    psip_last=equilibrium.psip_last,
+    show=False,
+)
+ax.set_zbound(upper=4)
+plt.show()

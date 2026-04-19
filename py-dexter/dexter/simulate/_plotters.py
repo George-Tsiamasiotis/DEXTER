@@ -11,7 +11,7 @@ from matplotlib.patches import Patch
 
 from dexter._core import _PyParticle, _PyQueue
 from dexter import Equilibrium, LarGeometry, OrbitType
-from dexter.types import Array1, Canvas, MultiCanvas
+from dexter.types import Array1, Canvas, Canvas3d, MultiCanvas
 
 dpi = 120
 figsize = (10, 7)
@@ -41,7 +41,7 @@ RZ_POINCARE_INITIAL_KW = {
     "alpha": 0.4,
     "zorder": -2,
 }
-QKINETIC_POINCARE_FIG_KW = {"figsize": (9, 6), "layout": "constrained", "dpi": 120}
+QKINETIC_SCATTER_FIG_KW = {"figsize": (9, 6), "layout": "constrained", "dpi": 120}
 
 
 class _ParticlePlotter:
@@ -583,7 +583,7 @@ class _QueuePlotter:
             The produced `Figure` and `Ax`.
         """
 
-        fig = plt.figure(**QKINETIC_POINCARE_FIG_KW)
+        fig = plt.figure(**QKINETIC_SCATTER_FIG_KW)
         ax = fig.add_subplot()
 
         particles = self._rust.particles
@@ -596,7 +596,8 @@ class _QueuePlotter:
 
         fluxes = np.asarray([p.initial_conditions.flux0.value for p in particles])
         fluxes[fluxes == None] = np.nan
-        colors = np.asarray([orbit_color(p.orbit_type) for p in particles])
+        orbit_types = np.asarray([p.orbit_type for p in particles])
+        colors = np.asarray([orbit_color(orbit_type) for orbit_type in orbit_types])
 
         if flux_last is None:
             ax.scatter(fluxes, self._rust.qkinetic_array, c=colors, s=1)
@@ -607,8 +608,7 @@ class _QueuePlotter:
 
         ax.set_ylabel("$q_{kinetic}$")
         ax.set_title("$q_{kinetic}-$" + flux_coord)
-        found_orbit_types = Counter([particle.orbit_type for particle in particles])
-        ax.legend(handles=orbit_color_legend_handles(found_orbit_types))
+        ax.legend(handles=orbit_color_legend_handles(Counter(orbit_types)))
         ax.axhline(y=0, ls="--", lw=1.5, c="k")
         ax.grid(True)
 
@@ -639,13 +639,14 @@ class _QueuePlotter:
             The produced `Figure` and `Ax`.
         """
 
-        fig = plt.figure(**QKINETIC_POINCARE_FIG_KW)
+        fig = plt.figure(**QKINETIC_SCATTER_FIG_KW)
         ax = fig.add_subplot()
 
         particles = self._rust.particles
         pzetas = np.asarray([p.initial_conditions.pzeta0 for p in particles])
         pzetas[pzetas == None] = np.nan
-        colors = np.asarray([orbit_color(p.orbit_type) for p in particles])
+        orbit_types = np.asarray([p.orbit_type for p in particles])
+        colors = np.asarray([orbit_color(orbit_type) for orbit_type in orbit_types])
         if psip_last is None:
             ax.scatter(pzetas, self._rust.qkinetic_array, c=colors, s=1)
             ax.set_xlabel(r"$P_\zeta\ [Normalized]$")
@@ -655,8 +656,7 @@ class _QueuePlotter:
 
         ax.set_ylabel("$q_{kinetic}$")
         ax.set_title(r"$q_{kinetic}-P_\zeta$")
-        found_orbit_types = Counter([particle.orbit_type for particle in particles])
-        ax.legend(handles=orbit_color_legend_handles(found_orbit_types))
+        ax.legend(handles=orbit_color_legend_handles(Counter(orbit_types)))
         ax.axhline(y=0, ls="--", lw=1.5, c="k")
         ax.grid(True)
 
@@ -680,21 +680,82 @@ class _QueuePlotter:
             The produced `Figure` and `Ax`.
         """
 
-        fig = plt.figure(**QKINETIC_POINCARE_FIG_KW)
+        fig = plt.figure(**QKINETIC_SCATTER_FIG_KW)
         ax = fig.add_subplot()
 
         particles = self._rust.particles
         energies = np.asarray([p.initial_energy for p in particles])
         energies[energies == None] = np.nan
-        colors = np.asarray([orbit_color(p.orbit_type) for p in particles])
+        orbit_types = np.asarray([p.orbit_type for p in particles])
+        colors = np.asarray([orbit_color(orbit_type) for orbit_type in orbit_types])
         ax.scatter(energies, self._rust.qkinetic_array, c=colors, s=1)
 
         ax.set_xlabel(rf"$Energy\ [Normalized]$")
         ax.set_ylabel("$q_{kinetic}$")
         ax.set_title("$q_{kinetic}-Energy$")
-        found_orbit_types = Counter([particle.orbit_type for particle in particles])
-        ax.legend(handles=orbit_color_legend_handles(found_orbit_types))
+        ax.legend(handles=orbit_color_legend_handles(Counter(orbit_types)))
         ax.axhline(y=0, ls="--", lw=1.5, c="k")
+        ax.grid(True)
+
+        if show:
+            plt.show()
+            plt.close()
+
+        return (fig, ax)
+
+    def plot_qkinetic_pzeta_energy3d(
+        self,
+        psip_last: float | None = None,
+        show: bool = True,
+    ) -> Canvas3d:
+        r"""Plots the contained particles' calculated $q_{kinetic}$ with respect to their $P_\zeta$ and $E$.
+
+        Parameters
+        ----------
+        psip_last
+            The value of the poloidal flux $\psi_p$ at the Last Closed Flux Surface. If passed, the
+            $P_\zeta$ values are displayed with respect to $\psi_{p,last}$
+        show
+            Whether or not to call `plt.show()`. Defaults to True.
+
+        Returns
+        -------
+        Canvas
+            The produced `Figure` and `Ax`.
+        """
+
+        fig = plt.figure(**QKINETIC_SCATTER_FIG_KW)
+        ax = fig.add_subplot(projection="3d")
+
+        particles = self._rust.particles
+        pzetas = np.asarray([p.initial_conditions.pzeta0 for p in particles])
+        energies = np.asarray([p.initial_energy for p in particles])
+        pzetas[pzetas == None] = np.nan
+        orbit_types = np.asarray([p.orbit_type for p in particles])
+        colors = np.asarray([orbit_color(orbit_type) for orbit_type in orbit_types])
+        if psip_last is None:
+            ax.scatter(
+                xs=pzetas,
+                ys=energies,
+                zs=self._rust.qkinetic_array,  # type: ignore
+                c=colors,
+                s=1,
+            )
+            ax.set_xlabel(r"$P_\zeta\ [Normalized]$")
+        else:
+            ax.scatter(
+                pzetas / psip_last,
+                energies,
+                zs=self._rust.qkinetic_array,  # type: ignore
+                c=colors,
+                s=1,
+            )
+            ax.set_xlabel(r"$P_\zeta/\psi_{p,last}$")
+
+        ax.set_ylabel(r"$E\ [Normalized]$")
+        ax.set_zlabel(r"$q_{kinetic}$")
+        ax.set_title(r"$q_{kinetic}(P_\zeta, E)$")
+        ax.legend(handles=orbit_color_legend_handles(Counter(orbit_types)))
         ax.grid(True)
 
         if show:
