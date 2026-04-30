@@ -2,10 +2,147 @@
 
 use dexter_equilibrium::{Bfield, Current, FluxCommute, Harmonic, Qfactor};
 use parabola::Point;
+use rsl_interpolation::Accelerator;
 
 use crate::particle::{EqObjects, IntegrationCaches, Particle};
 use crate::state::GCState;
 use crate::{EnergyPzetaPlane, OrbitType};
+
+/// The position of an `(E-Pζ)` point on the `(E-Pζ)` plane, relative to the orbit
+/// classification curves.
+///
+/// See the diagram for explanation.
+#[non_exhaustive]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+#[expect(missing_docs, reason = "see diagram")]
+pub enum EnergyPzetaPosition {
+    /// No classification has been attempted.
+    #[default]
+    Undefined,
+    Alpha,
+    Beta,
+    Gamma,
+    Delta,
+    Epsilon,
+    Zeta,
+    Eta,
+    Theta,
+    Iota,
+    Kappa,
+    Lambda,
+    Mu,
+    Nu,
+    /// Not falling under any of the above categories.
+    Unclassified,
+}
+
+impl EnergyPzetaPosition {
+    /// Creates a new `EnergyPzetaPosition` from an `(E, Pζ)` plane and a point.
+    #[expect(clippy::redundant_else, reason = "hopeless")]
+    pub(crate) fn new(point: Point, plane: &EnergyPzetaPlane, theta0_dot: f64) -> Self {
+        let psip_last = -plane
+            .left_wall_parabola()
+            .axis()
+            .expect("parabola's 'a' checked");
+
+        let pzeta = point.x;
+        let energy = point.y;
+
+        let mut acc = Accelerator::new();
+        let is_in_axis = plane.axis_parabola().contains(point);
+        let is_in_left_wall = plane.left_wall_parabola().contains(point);
+        let is_in_right_wall = plane.right_wall_parabola().contains(point);
+        let is_in_psip = (-psip_last..=0.0).contains(&pzeta);
+
+        // Short-circuit condition to avoid the more expensive interpolations
+        let might_be_trapped = !is_in_left_wall && is_in_psip;
+
+        let tpb = plane.tp_boundary();
+        let is_above_tp = might_be_trapped && tpb.is_above(energy, pzeta, &mut acc);
+        let is_below_tp = might_be_trapped && tpb.is_below(energy, pzeta, &mut acc);
+        let is_in_tpb = is_in_psip && !is_above_tp && !is_below_tp;
+
+        // Inside left wall
+
+        if is_in_left_wall {
+            if is_in_axis {
+                return Self::Beta;
+            } else {
+                return Self::Alpha;
+            }
+        }
+
+        // Inside right wall, outside left wall. No need to check for left wall again
+
+        if is_in_right_wall {
+            if pzeta <= -psip_last {
+                return Self::Gamma;
+            } else if is_in_tpb {
+                return Self::Delta; // Trapped-Lost
+            } else if is_in_axis {
+                return Self::Eta;
+            } else {
+                if theta0_dot.is_sign_positive() {
+                    return Self::Epsilon;
+                } else {
+                    return Self::Zeta;
+                }
+            }
+        }
+
+        // Inside magnetic axis only. No need to check for walls again
+
+        if is_in_axis {
+            if is_in_tpb {
+                return Self::Iota; // Potato
+            } else {
+                return Self::Theta;
+            }
+        }
+
+        // Outside all parabolas. No need to check for any of them.
+
+        if is_in_tpb {
+            return Self::Kappa; // Trapped-Confined
+        }
+
+        if is_above_tp {
+            if theta0_dot.is_sign_positive() {
+                return Self::Lambda;
+            } else {
+                return Self::Mu;
+            }
+        } else {
+            if pzeta > -psip_last {
+                return Self::Nu; // Stagnated
+            }
+        }
+
+        Self::Unclassified
+    }
+
+    /// Calculates the [`OrbitType`] from the resolved [`EnergyPzetaPosition`].
+    #[expect(clippy::match_same_arms, reason = "clearer this way")]
+    fn orbit_type(&self) -> OrbitType {
+        match *self {
+            Self::Undefined => OrbitType::Undefined,
+            Self::Alpha => OrbitType::CuPassingConfined,
+            Self::Beta => OrbitType::Unclassified,
+            Self::Gamma => OrbitType::CuPassingLost,
+            Self::Delta => OrbitType::TrappedLost,
+            Self::Epsilon => OrbitType::CoPassingLost,
+            Self::Zeta => OrbitType::CuPassingConfined,
+            Self::Eta => OrbitType::CoPassingLost,
+            Self::Theta => OrbitType::CoPassingConfined,
+            Self::Iota => OrbitType::Potato,
+            Self::Kappa => OrbitType::TrappedConfined,
+            Self::Lambda => OrbitType::CoPassingConfined,
+            Self::Mu => OrbitType::CuPassingConfined,
+            Self::Nu => OrbitType::Stagnated,
+            Self::Unclassified => OrbitType::Unclassified,
+        }
+    }
+}
 
 /// We dont want this function to return an error; Instead, we want to set a corresponding
 /// [`OrbitType`] variant for each valid orbit calculation (including "erroneous" orbits),
@@ -33,15 +170,15 @@ pub(super) fn classify<Q, C, B, H>(
 
     // Return early if the initial flux happens to be exactly 0.0 or out of bounds.
     if particle.initial_conditions().flux0.value() == 0.0 {
-        particle.orbit_type = OrbitType::Failed("Out of bounds initialization".into());
+        particle.orbit_type = OrbitType::Undefined;
         return;
     }
     if particle.initial_conditions.finalize(objects).is_err() {
-        particle.orbit_type = OrbitType::Failed("Invalid initial conditions".into());
+        particle.orbit_type = OrbitType::Undefined;
         return;
     }
     let Ok(initial_state) = GCState::new(&particle.initial_conditions, objects, &mut caches) else {
-        particle.orbit_type = OrbitType::Failed("Invalid initial conditions".into());
+        particle.orbit_type = OrbitType::Undefined;
         return;
     };
 
@@ -75,72 +212,19 @@ pub(super) fn classify<Q, C, B, H>(
         x: pzeta,
         y: energy,
     };
-    let psip_last = -plane
-        .left_wall_parabola()
-        .axis()
-        .expect("parabola's 'a' checked");
-    let tp = plane.tp_boundary();
 
     // =============== Routine
 
-    let is_in_axis = plane.axis_parabola().contains(point);
-    let is_in_left_wall = plane.left_wall_parabola().contains(point);
-    let is_in_right_wall = plane.right_wall_parabola().contains(point);
-    let is_in_psip = (-psip_last..=0.0).contains(&pzeta);
-    let is_trapped = is_in_psip && tp.contains(energy, pzeta); // Short-circuit
-    let is_above_tp = tp.is_above(energy, pzeta);
-    let is_below_tp = tp.is_below(energy, pzeta);
-
-    if is_in_left_wall {
-        particle.orbit_type = OrbitType::CuPassingConfined;
-    }
-    if is_in_axis && !is_trapped {
-        particle.orbit_type = OrbitType::CoPassingConfined;
-    }
-
-    if !is_in_axis && (pzeta.is_sign_positive()) {
-        particle.orbit_type = OrbitType::Stagnated;
-    }
-
-    if is_in_right_wall && !is_in_left_wall {
-        if pzeta < -psip_last {
-            particle.orbit_type = OrbitType::CuPassingLost;
-        } else {
-            if is_trapped {
-                particle.orbit_type = OrbitType::TrappedLost;
-            } else {
-                particle.orbit_type = OrbitType::Failed(
-                        "Unimplemented(h, i, j orbits): is_in_right_wall, !is_in_left_wall, !is_trapped, !is_in_psip".into(),
-                    );
-            }
-        }
-    }
-
-    if is_trapped && !is_in_right_wall && !is_in_axis {
-        particle.orbit_type = OrbitType::TrappedConfined;
-    }
-
-    if is_trapped && is_in_axis {
-        particle.orbit_type = OrbitType::Potato;
-    }
-
-    if !is_trapped && !is_in_axis && !is_in_right_wall && is_in_psip {
-        if is_above_tp {
-            particle.orbit_type = OrbitType::CuPassingConfined;
-        } else if is_below_tp {
-            // WARN: not sure
-            particle.orbit_type = OrbitType::Stagnated;
-        } else {
-            unreachable!("One of the above checks should pass")
-        }
-    }
+    particle.energy_pzeta_position =
+        EnergyPzetaPosition::new(point, plane, initial_state.theta_dot);
+    particle.orbit_type = particle.energy_pzeta_position.orbit_type();
 }
 
 // ===============================================================================================
 
 /// Checks that all parabolas have nonzero `α` coefficients.
 ///
-/// This is a corner case that should fatal.
+/// This is a corner case that should be fatal.
 fn check_parabola_alphas(plane: &EnergyPzetaPlane) {
     assert!(
         plane.axis_parabola().a != 0.0,

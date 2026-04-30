@@ -34,6 +34,7 @@ from dexter.types import (
     Intersection,
     SteppingMethod,
     IntegrationStatus,
+    EnergyPzetaPosition,
     OrbitType,
     Routine,
 )
@@ -753,6 +754,15 @@ class Particle(_ParticlePlotter):
             raise AttributeError("'energy_var' has not been calculated")
         else:
             return self._rust.energy_var
+
+    @property
+    def energy_pzeta_position(self) -> EnergyPzetaPosition:
+        r"""The particle's position on the $E-P_\zeta$ plane, relative to the orbit
+        classification curves.
+
+        See the diagram for explanation.
+        """
+        return self._rust.energy_pzeta_position
 
     @property
     def orbit_type(self) -> OrbitType:
@@ -1487,10 +1497,14 @@ class Queue(_QueuePlotter):
 
     @classmethod
     def from_particles(cls, particles: list[Particle]) -> Queue:
+        """Creates a new Queue from a list of Particles, copying all their attributes."""
         queue = Queue.__new__(Queue)
         queue._rust = _PyQueue.from_particles(
             [particle._rust for particle in particles]
         )
+        init = QueueInitialConditions.__new__(QueueInitialConditions)
+        init._rust = queue._rust.initial_conditions
+        queue._initial_conditions = init
         return queue
 
     @property

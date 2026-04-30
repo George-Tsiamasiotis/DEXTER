@@ -145,6 +145,28 @@ r"""The integration status of a Particle.
     - `Failed(...)`: Simulation failed for unknown reasons.
 """
 
+EnergyPzetaPosition = Literal[
+    "Alpha",
+    "Beta",
+    "Gamma",
+    "Delta",
+    "Epsilon",
+    "Zeta",
+    "Eta",
+    "Theta",
+    "Iota",
+    "Kappa",
+    "Lambda",
+    "Mu",
+    "Nu",
+    "Unclassified",
+]
+r"""The position of an $(E, P_\zeta)$ point on the $(E, P_\zeta)$ plane, relative to the orbit
+classification curves.
+
+See the diagram for explanation.
+"""
+
 OrbitType: TypeAlias = Literal[
     "Undefined",
     "TrappedLost",

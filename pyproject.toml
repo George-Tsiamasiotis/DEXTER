@@ -1,6 +1,6 @@
 [project]
 name = "dexter"
-version = "0.1.7-pre.16"
+version = "0.1.7-pre.17"
 description = "Calculations and simulations in analytical and reconstructed equilibria of toroidal fusion devices."
 readme = "README.md"
 authors = [
@@ -8,6 +8,7 @@ authors = [
 ]
 requires-python = ">=3.14"
 dependencies = [
+    "alpha-shapes>=1.1.1",
     "matplotlib>=3.10.8",
     "numpy>=2.4.4",
     "semver>=3.0.4",

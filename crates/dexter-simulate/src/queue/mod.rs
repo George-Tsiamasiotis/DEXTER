@@ -360,6 +360,11 @@ impl Queue {
     /// Classifies all the contained particles' orbits. using their position on the (E, Pζ, μ=const)
     /// plane without integrating.
     ///
+    /// # Note
+    ///
+    /// This method is experimental. It is exact for LAR equilibria and approximately correct for
+    /// tokamak equilibria, depending on how shaped they are.
+    ///
     /// # Example
     /// ```
     /// # use dexter_equilibrium::*;
@@ -410,6 +415,11 @@ impl Queue {
     /// This method is an optimization to [`Self::classify`]. Since the most common scenario is to
     /// classify particles with the same `μ`, we can generate the [`EnergyPzetaPlane`] only once
     /// and use it for all particles. This improves performance by 5-8 times.
+    ///
+    /// # Note
+    ///
+    /// This method is experimental. It is exact for LAR equilibria and approximately correct for
+    /// tokamak equilibria, depending on how shaped they are.
     ///
     /// # Panics
     ///

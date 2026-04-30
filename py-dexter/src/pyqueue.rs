@@ -224,7 +224,7 @@ py_get_numpy1D!(PyQueue, qkinetic_array);
 /// where `_dyn` is a 4 letter class attribute string in each final wrapped object. Each
 /// routine's wrapper concatenates these attributes to form the monomorphized methods name and
 /// calls it.
-mod py_particle_generics_impl {
+mod py_queue_generics_impl {
     use super::*;
     use dexter::dexter_simulate::SolverParams;
 

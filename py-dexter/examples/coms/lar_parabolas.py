@@ -9,4 +9,4 @@ equilibrium = dex.Equilibrium(
     bfield=dex.LarBfield(),
 )
 
-dex.plot_parabolas(equilibrium, mu=2e-4, xlim=(-2.1, 1), ymax=3)
+dex.plot_parabolas(equilibrium, mu=1e-4, xlim=(-2.1, 1), ymax=3)

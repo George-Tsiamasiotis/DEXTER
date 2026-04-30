@@ -163,7 +163,7 @@ pub(super) fn close<Q, C, B, H>(
 
     // =============== Finalize
 
-    calculate_frequencies(particle, closed_periods);
+    calculate_frequencies(particle);
     particle.evolution.duration = start.elapsed();
     particle.final_energy = Some(state1.energy());
     particle.evolution.finish();
@@ -188,27 +188,28 @@ fn closed_period(
 ) -> bool {
     // Short-circuit the `ψ` check since `intersected()` can be significantly more expensive to
     // calculate.
-    //
-    // It should probably take into account the `θ` direction too.
     (relative_eq!(state1.psi, psi0, epsilon = PSI_RELATIVE_TOLERANCE)
         || intersected(state1.psi, state2.psi, psi0))
-        && intersected(state1.theta, state2.theta, theta0)
         && state1.theta_dot.signum() == theta_dot0_sign
+        && intersected(state1.theta, state2.theta, theta0)
 }
 
 /// Calculates the final `ωθ`, `ωζ` and `qkinetic` and stores them in the particle's
 /// `frequencies` field.
 ///
 /// Also takes account the number of periods closed.
-fn calculate_frequencies(particle: &mut Particle, periods: usize) {
-    let periodsf64 = periods as f64;
+fn calculate_frequencies(particle: &mut Particle) {
+    let periodsf64 = match particle.integration_status {
+        IntegrationStatus::ClosedPeriods(periods) => periods as f64,
+        _ => return,
+    };
     // Use `NaN`for particles with invalid initial conditions or out of bounds initialization.
-    let t0 = particle.t_array().first().copied().unwrap_or(f64::NAN);
-    let tf = particle.t_array().last().copied().unwrap_or(f64::NAN);
+    let t0 = particle.evolution.t.first().copied().unwrap_or(f64::NAN);
+    let tf = particle.evolution.t.last().copied().unwrap_or(f64::NAN);
     let theta_period = tf - t0;
 
-    let zeta0 = particle.zeta_array().first().copied().unwrap_or(f64::NAN);
-    let zetaf = particle.zeta_array().last().copied().unwrap_or(f64::NAN);
+    let zeta0 = particle.evolution.zeta.first().copied().unwrap_or(f64::NAN);
+    let zetaf = particle.evolution.zeta.last().copied().unwrap_or(f64::NAN);
     let dzeta = zetaf - zeta0;
 
     let omega_theta = TAU / theta_period / periodsf64;

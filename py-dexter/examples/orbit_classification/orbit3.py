@@ -34,6 +34,7 @@ initial_conditions = dex.InitialConditions.mixed(
 particle = dex.Particle(initial_conditions)
 particle.close(equilibrium=equilibrium)
 particle.classify(equilibrium=equilibrium)
+assert particle.energy_pzeta_position == "Gamma"
 assert particle.orbit_type == "CuPassingLost"
 energy_pzeta_point = (
     pzeta / equilibrium.psip_last,

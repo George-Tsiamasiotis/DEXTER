@@ -25,6 +25,8 @@ from dexter import (
     QueueInitialConditions,
     COMs,
     plot_energy_contour,
+    plot_parabolas,
+    plot_qkinetic_tricontour,
     plot_particle_poloidal_drift,
 )
 
@@ -145,6 +147,37 @@ def test_coms_plots(nc_equilibrium: Equilibrium):
     )
     plot_energy_contour(psi_array, theta_array, energy_of_psi_grid)
     plot_energy_contour(psip_array, theta_array, energy_of_psip_grid)
+
+
+def test_parabola_plots(nc_equilibrium: Equilibrium):
+    plot_parabolas(nc_equilibrium, 1e-4)
+    initials = QueueInitialConditions.boozer(
+        t0=np.zeros(3),
+        flux0=InitialFluxArray("Toroidal", np.linspace(0, 0.001, 3)),
+        theta0=np.zeros(3),
+        zeta0=np.zeros(3),
+        rho0=np.full(3, 1e-6),
+        mu0=np.zeros(3),
+    )
+    queue = Queue(initials)
+    queue.close(nc_equilibrium)
+    plot_parabolas(nc_equilibrium, 1e-4, particles=queue.particles)
+
+
+def test_qkinetic_tricontour_plots(nc_equilibrium: Equilibrium):
+    initials = QueueInitialConditions.boozer(
+        t0=np.zeros(3),
+        flux0=InitialFluxArray("Toroidal", np.linspace(0, 0.001, 3)),
+        theta0=np.zeros(3),
+        zeta0=np.zeros(3),
+        rho0=np.full(3, 1e-6),
+        mu0=np.full(3, 1e-6),
+    )
+    queue = Queue(initials)
+    queue.classify(nc_equilibrium)
+    queue.close(nc_equilibrium)
+    plot_qkinetic_tricontour(nc_equilibrium, queue, levels=None)
+    plot_qkinetic_tricontour(nc_equilibrium, queue, levels=[-1, 1, 2, 3])
 
 
 # ================================================================================================

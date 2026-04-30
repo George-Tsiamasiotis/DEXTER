@@ -5,6 +5,7 @@ from dexter import (
     LastClosedFluxSurface,
     InitialConditions,
     InitialFluxArray,
+    InitialFlux,
     QueueInitialConditions,
     Queue,
     Particle,
@@ -115,6 +116,21 @@ def test_queue_mixed_instantiation():
     assert queue.particle_count == len(particles) == particle_count
     assert isinstance(queue.initial_conditions, QueueInitialConditions)
     assert isinstance(queue[0], Particle)
+
+
+def test_queue_from_particles(nc_equilibrium: Equilibrium):
+    psi0 = InitialFlux("Toroidal", 0.01)
+    i = InitialConditions.boozer(0, psi0, 0, 0, 1e-4, 1e-6)
+    p1 = Particle(i)
+    p2 = Particle(i)
+    p1.close(nc_equilibrium)
+    queue = Queue.from_particles([p1, p2])
+    particles = queue.particles
+    assert len(particles) == 2
+    assert isinstance(particles[0], Particle)
+    assert isinstance(particles[1], Particle)
+    assert "Closed" in particles[0].integration_status
+    assert particles[1].integration_status == "Initialized"
 
 
 class TestQueue:

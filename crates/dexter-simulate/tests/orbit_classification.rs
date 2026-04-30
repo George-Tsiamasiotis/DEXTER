@@ -29,6 +29,7 @@ fn orbit1() {
 
     particle.classify(&qfactor, &current, &bfield);
 
+    assert_eq!(particle.energy_pzeta_position(), EnergyPzetaPosition::Alpha);
     assert_eq!(particle.orbit_type(), OrbitType::CuPassingConfined);
 
     particle.close(&qfactor, &current, &bfield, &Perturbation::zero(), 1,&SolverParams::default());
@@ -50,6 +51,7 @@ fn orbit2() {
 
     particle.classify(&qfactor, &current, &bfield);
 
+    assert_eq!(particle.energy_pzeta_position(), EnergyPzetaPosition::Theta);
     assert_eq!(particle.orbit_type(), OrbitType::CoPassingConfined);
 
     particle.close(&qfactor, &current, &bfield, &Perturbation::zero(), 1,&SolverParams::default());
@@ -72,6 +74,7 @@ fn orbit3() {
 
     particle.classify(&qfactor, &current, &bfield);
 
+    assert_eq!(particle.energy_pzeta_position(), EnergyPzetaPosition::Gamma);
     assert_eq!(particle.orbit_type(), OrbitType::CuPassingLost);
 
     particle.close(&qfactor, &current, &bfield, &Perturbation::zero(), 1,&SolverParams::default());
@@ -93,6 +96,7 @@ fn orbit4() {
 
     particle.classify(&qfactor, &current, &bfield);
 
+    assert_eq!(particle.energy_pzeta_position(), EnergyPzetaPosition::Delta);
     assert_eq!(particle.orbit_type(), OrbitType::TrappedLost);
 
     particle.close(&qfactor, &current, &bfield, &Perturbation::zero(), 1,&SolverParams::default());
@@ -114,6 +118,7 @@ fn orbit5() {
 
     particle.classify(&qfactor, &current, &bfield);
 
+    assert_eq!(particle.energy_pzeta_position(), EnergyPzetaPosition::Kappa);
     assert_eq!(particle.orbit_type(), OrbitType::TrappedConfined);
 
     particle.close(&qfactor, &current, &bfield, &Perturbation::zero(), 1,&SolverParams::default());
@@ -135,6 +140,7 @@ fn orbit6() {
 
     particle.classify(&qfactor, &current, &bfield);
 
+    assert_eq!(particle.energy_pzeta_position(), EnergyPzetaPosition::Iota);
     assert_eq!(particle.orbit_type(), OrbitType::Potato);
 
     particle.close(&qfactor, &current, &bfield, &Perturbation::zero(), 1,&SolverParams::default());
@@ -156,6 +162,7 @@ fn orbit7() {
 
     particle.classify(&qfactor, &current, &bfield);
 
+    assert_eq!(particle.energy_pzeta_position(), EnergyPzetaPosition::Nu);
     assert_eq!(particle.orbit_type(), OrbitType::Stagnated);
 
     particle.close(&qfactor, &current, &bfield, &Perturbation::zero(), 1,&SolverParams::default());
@@ -177,6 +184,7 @@ fn orbit8() {
 
     particle.classify(&qfactor, &current, &bfield);
 
+    assert_eq!(particle.energy_pzeta_position(), EnergyPzetaPosition::Mu);
     assert_eq!(particle.orbit_type(), OrbitType::CuPassingConfined);
 
     particle.close(&qfactor, &current, &bfield, &Perturbation::zero(), 1,&SolverParams::default());

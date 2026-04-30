@@ -322,6 +322,31 @@ class Equilibrium:
         contour2 = axes[1].contourf(
             rlab_array, zlab_array, db_dtheta_array, **contour_kw
         )
+
+        # Add dB/dθ line
+        lines = plt.contour(
+            rlab_array,
+            zlab_array,
+            db_dtheta_array,
+            levels=[0],
+        ).allsegs[0]
+        for line in lines:
+            axes[1].plot(
+                *line.T,
+                c="k",
+                linewidth=2,
+                linestyle="--",
+            )
+        if len(lines) > 0:  # label must be added separately
+            plt.plot(
+                [],
+                [],
+                c="k",
+                linestyle="--",
+                label=r"$\partial B/\partial \theta = 0$",
+            )
+        axes[1].legend()
+
         plt.colorbar(
             contour1, ax=axes[0], label=rf"$dB/d\{flux}[Normalized\quad Units]$"
         )

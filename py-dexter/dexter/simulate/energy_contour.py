@@ -105,6 +105,9 @@ def plot_particle_poloidal_drift(
     Canvas
         The produced `Figure` and `Ax`.
     """
+    if particle.steps_stored == 0:
+        raise ValueError("Particle has not been integrated")
+
     fig, ax = equilibrium.geometry.plot_last(show=False)
     if flux_span[1] != 1.0:
         ax.clear()

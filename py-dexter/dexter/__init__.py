@@ -51,6 +51,7 @@ from dexter.types import (
     CoordinateSet,
     Intersection,
     IntegrationStatus,
+    EnergyPzetaPosition,
     OrbitType,
     SteppingMethod,
     Routine,
@@ -76,7 +77,10 @@ from dexter.simulate.energy_contour import (
 
 from dexter.common import get_max_threads, set_num_threads
 
-from dexter.compound_plots.plot_parabolas import plot_parabolas
+from dexter.compound_plots.plot_parabolas import (
+    plot_parabolas,
+    plot_qkinetic_tricontour,
+)
 
 __all__ = [
     # Free functions
@@ -103,6 +107,7 @@ __all__ = [
     "CoordinateSet",
     "Intersection",
     "IntegrationStatus",
+    "EnergyPzetaPosition",
     "OrbitType",
     "SteppingMethod",
     "Routine",
@@ -142,4 +147,5 @@ __all__ = [
     "EnergyPzetaPlane",
     # Plotting methods
     "plot_parabolas",
+    "plot_qkinetic_tricontour",
 ]

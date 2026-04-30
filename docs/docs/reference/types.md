@@ -30,6 +30,7 @@
 ::: dexter.CoordinateSet
 ::: dexter.Intersection
 ::: dexter.IntegrationStatus
+::: dexter.EnergyPzetaPosition
 ::: dexter.OrbitType
 ::: dexter.SteppingMethod
 ::: dexter.Routine

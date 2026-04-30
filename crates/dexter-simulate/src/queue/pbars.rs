@@ -348,7 +348,6 @@ pub(crate) struct ClassifyPbar {
     potato: Arc<AtomicUsize>,
     stagnated: Arc<AtomicUsize>,
     unclassified: Arc<AtomicUsize>,
-    failed: Arc<AtomicUsize>,
 }
 
 impl ClassifyPbar {
@@ -372,7 +371,6 @@ impl ClassifyPbar {
             potato: Arc::default(),
             stagnated: Arc::default(),
             unclassified: Arc::default(),
-            failed: Arc::default(),
         }
     }
 
@@ -400,7 +398,6 @@ impl ClassifyPbar {
             OrbitType::Potato => self.potato.fetch_add(1, SeqCst),
             OrbitType::Stagnated => self.stagnated.fetch_add(1, SeqCst),
             OrbitType::Unclassified => self.unclassified.fetch_add(1, SeqCst),
-            OrbitType::Failed(..) => self.failed.fetch_add(1, SeqCst),
         };
     }
 

@@ -10,6 +10,7 @@ mod orbit_classification;
 use crate::{EnergyPzetaPlane, SolverParams};
 pub use initial::{CoordinateSet, InitialConditions};
 pub use intersect::{IntersectParams, Intersection};
+pub use orbit_classification::EnergyPzetaPosition;
 
 // ===============================================================================================
 
@@ -223,8 +224,6 @@ pub enum OrbitType {
     Stagnated,
     /// Not falling under any of the other categories.
     Unclassified,
-    /// Error classifying the orbit.
-    Failed(Box<str>),
 }
 
 // ===============================================================================================
@@ -241,6 +240,8 @@ pub struct Particle {
     evolution: Evolution,
     /// Stats about the particle's integration.
     stats: ParticleCacheStats,
+    /// The particle's position on the `E-Pζ` plane, relative to the orbit classification curves.
+    energy_pzeta_position: EnergyPzetaPosition,
     /// The particle's orbit type.
     orbit_type: OrbitType,
     /// The particle's calculated `ωθ`, `ωζ` and `qkinetic`.
@@ -282,6 +283,7 @@ impl Particle {
             initial_conditions: initial_conditions.to_owned(),
             integration_status,
             evolution: Evolution::default(),
+            energy_pzeta_position: EnergyPzetaPosition::default(),
             orbit_type: OrbitType::default(),
             frequencies: Frequencies::default(),
             stats: ParticleCacheStats::default(),
@@ -476,6 +478,11 @@ impl Particle {
 
     /// Classifies the particle's orbit using its position on the `(E, Pζ, μ=const)` plane without integrating.
     ///
+    /// # Note
+    ///
+    /// This method is experimental. It is exact for LAR equilibria and approximately correct for
+    /// tokamak equilibria, depending on how shaped they are.
+    ///
     /// # Example
     ///
     /// ```
@@ -589,6 +596,12 @@ impl Particle {
     #[must_use]
     pub fn cache_stats(&self) -> ParticleCacheStats {
         self.stats.clone()
+    }
+
+    /// Returns the particle's [`EnergyPzetaPosition`].
+    #[must_use]
+    pub fn energy_pzeta_position(&self) -> EnergyPzetaPosition {
+        self.energy_pzeta_position
     }
 
     /// Returns the particle's [`OrbitType`].

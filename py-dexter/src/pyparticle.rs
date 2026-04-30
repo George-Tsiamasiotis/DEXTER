@@ -191,6 +191,7 @@ pub fn resolve_stepping_method<'py>(arg: Bound<'py, PyAny>) -> PyResult<Stepping
 py_debug_impl!(PyParticle);
 py_repr_impl!(PyParticle);
 py_get_enum_string!(PyParticle, integration_status);
+py_get_enum_string!(PyParticle, energy_pzeta_position);
 py_get_enum_string!(PyParticle, orbit_type);
 py_export_getter!(PyParticle, steps_taken, usize);
 py_export_getter!(PyParticle, steps_stored, usize);

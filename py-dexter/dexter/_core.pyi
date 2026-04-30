@@ -16,6 +16,7 @@ from dexter.types import (
     CoordinateSet,
     Intersection,
     IntegrationStatus,
+    EnergyPzetaPosition,
     OrbitType,
     SteppingMethod,
     Routine,
@@ -589,6 +590,7 @@ class _PyParticle:
     initial_energy: Optional[float]
     final_energy: Optional[float]
     energy_var: Optional[float]
+    energy_pzeta_position: EnergyPzetaPosition
     orbit_type: OrbitType
     omega_theta: Optional[float]
     omega_zeta: Optional[float]

@@ -84,14 +84,13 @@ impl TrappedPassingBoundary {
 impl TrappedPassingBoundary {
     /// Returns `true` if an `(E, Pζ)` is inside the Trapped-Passing boundary.
     #[must_use]
-    pub fn contains(&self, energy: f64, pzeta: f64) -> bool {
-        !self.is_below(energy, pzeta) && !self.is_above(energy, pzeta)
+    pub fn contains(&self, energy: f64, pzeta: f64, acc: &mut Accelerator) -> bool {
+        !self.is_below(energy, pzeta, acc) && !self.is_above(energy, pzeta, acc)
     }
 
     /// Returns `true` if an `(E, Pζ)` is below the Trapped-Passing boundary's lower curve.
     #[must_use]
-    pub fn is_below(&self, energy: f64, pzeta: f64) -> bool {
-        let acc = &mut Accelerator::new();
+    pub fn is_below(&self, energy: f64, pzeta: f64, acc: &mut Accelerator) -> bool {
         let Some(lower_energy) = self
             .lower_interp
             .eval(&self.pzeta_interval, &self.lower, pzeta, acc)
@@ -104,8 +103,7 @@ impl TrappedPassingBoundary {
 
     /// Returns `true` if an `(E, Pζ)` is above the Trapped-Passing boundary's above curve.
     #[must_use]
-    pub fn is_above(&self, energy: f64, pzeta: f64) -> bool {
-        let acc = &mut Accelerator::new();
+    pub fn is_above(&self, energy: f64, pzeta: f64, acc: &mut Accelerator) -> bool {
         let Some(upper) = self
             .upper_interp
             .eval(&self.pzeta_interval, &self.upper, pzeta, acc)

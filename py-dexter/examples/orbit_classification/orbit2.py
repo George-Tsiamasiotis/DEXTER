@@ -33,6 +33,7 @@ initial_conditions = dex.InitialConditions.mixed(
 particle = dex.Particle(initial_conditions)
 particle.close(equilibrium=equilibrium)
 particle.classify(equilibrium=equilibrium)
+assert particle.energy_pzeta_position == "Theta"
 assert particle.orbit_type == "CoPassingConfined"
 energy_pzeta_point = (
     pzeta / equilibrium.psip_last,

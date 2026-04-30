@@ -85,8 +85,8 @@ pub use error::{COMError, SimulationError};
 pub use solve::{FluxCoordinate, SolverParams, SteppingMethod};
 
 pub use particle::{
-    CoordinateSet, Frequencies, InitialConditions, InitialFlux, IntegrationStatus, IntersectParams,
-    Intersection, OrbitType, Particle, ParticleCacheStats,
+    CoordinateSet, EnergyPzetaPosition, Frequencies, InitialConditions, InitialFlux,
+    IntegrationStatus, IntersectParams, Intersection, OrbitType, Particle, ParticleCacheStats,
 };
 
 pub use queue::{Queue, QueueInitialConditions, Routine};
@@ -126,10 +126,10 @@ pub mod constants {
 
     /// The default relative tolerance of the `ψ-ψ0` check in the
     /// [`Particle::close`][crate::Particle::close] routine.
-    pub const PSI_RELATIVE_TOLERANCE: f64 = 1e-6;
+    pub const PSI_RELATIVE_TOLERANCE: f64 = 1e-3;
 
     /// The density of the trapped-passing boundary curves' points.
     ///
     /// A higher number is needed to better classify Potato and Stagnated orbits.
-    pub const TRAPPED_PASSING_BOUNDARY_DENSITY: usize = 300;
+    pub const TRAPPED_PASSING_BOUNDARY_DENSITY: usize = 500;
 }

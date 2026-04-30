@@ -810,5 +810,4 @@ def orbit_color_legend_handles(counter: Counter) -> list[Patch]:
         res.append(
             Patch(color=orbit_color(orbit_type), label=f"{orbit_type} ({counts})")
         )
-    res.append(Patch(color="xkcd:indigo", label="Failed"))
     return res
