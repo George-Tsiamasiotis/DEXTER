@@ -1242,7 +1242,7 @@ class _HarmonicPlotter:
         """
 
         psi_last = getattr(self, "psi_last", PSI_LAST_BOUND)
-        psis = np.linspace(0, psi_last, points)
+        psis = np.linspace(1e-7, 1, points) * psi_last
         alphas = self.alpha_of_psi(psis, 0, 0, 0)
 
         fig = plt.figure(**FIG_KW)
@@ -1299,7 +1299,7 @@ class _HarmonicPlotter:
         """
 
         psip_last = getattr(self, "psip_last", PSIP_LAST_BOUND)
-        psips = np.linspace(0, psip_last, points)
+        psips = np.linspace(1e-7, 1, points) * psip_last
         alphas = self.alpha_of_psip(psips, 0, 0, 0)
 
         fig = plt.figure(**FIG_KW)
@@ -1360,7 +1360,7 @@ class _HarmonicPlotter:
         """
 
         psi_last = getattr(self, "psi_last", PSI_LAST_BOUND)
-        psis = np.linspace(0, psi_last, points)
+        psis = np.linspace(1e-7, 1, points) * psi_last
         phis = self.phase_of_psi(psis, 0, 0, 0)
 
         fig = plt.figure(**FIG_KW)
@@ -1429,7 +1429,7 @@ class _HarmonicPlotter:
         """
 
         psip_last = getattr(self, "psip_last", PSIP_LAST_BOUND)
-        psips = np.linspace(0, psip_last, points)
+        psips = np.linspace(1e-7, 1, points) * psip_last
         phis = self.phase_of_psip(psips, 0, 0, 0)
 
         fig = plt.figure(**FIG_KW)
@@ -1491,7 +1491,7 @@ class _HarmonicPlotter:
         """
 
         psi_last = getattr(self, "psi_last", PSI_LAST_BOUND)
-        psis = np.linspace(0, psi_last, points)
+        psis = np.linspace(1e-7, 1, points) * psi_last
         alphas = self.alpha_of_psi(psis, 0, 0, 0)
         dalphas = np.gradient(alphas)
 
@@ -1539,7 +1539,7 @@ class _HarmonicPlotter:
         """
 
         psip_last = getattr(self, "psip_last", PSIP_LAST_BOUND)
-        psips = np.linspace(0, psip_last, points)
+        psips = np.linspace(1e-7, 1, points) * psip_last
         alphas = self.alpha_of_psip(psips, 0, 0, 0)
         dalphas = np.gradient(alphas)
 

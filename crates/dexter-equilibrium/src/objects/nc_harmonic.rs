@@ -13,6 +13,7 @@ use std::f64::consts::TAU;
 use std::path::{Path, PathBuf};
 
 use super::debug_assert_all_finite_values;
+use crate::constants::NC_ANALYTICAL_THRESHOLD_INDEX;
 use crate::objects::nc_flux::{FluxCoordinateState, NcFlux};
 use crate::{EqError, EvalError};
 use crate::{EquilibriumType, Harmonic, HarmonicCache};
@@ -57,6 +58,8 @@ pub struct NcHarmonicBuilder {
     n: i64,
     /// The calculation method of the phase `φ`.
     phase_method: PhaseMethod,
+    /// The index of the data point under witch to use the analytical form.
+    analytical_threshold_index: usize,
 }
 
 impl NcHarmonicBuilder {
@@ -78,6 +81,7 @@ impl NcHarmonicBuilder {
             m,
             n,
             phase_method: PhaseMethod::default(),
+            analytical_threshold_index: NC_ANALYTICAL_THRESHOLD_INDEX,
         }
     }
 
@@ -96,6 +100,44 @@ impl NcHarmonicBuilder {
     #[must_use]
     pub fn with_phase_method(mut self, method: PhaseMethod) -> Self {
         self.phase_method = method;
+        self
+    }
+
+    /// Sets the harmonic's analytical threshold point.
+    ///
+    /// By definition, flute modes must behave like `sqrt(ψ)` close to the axis, and therefore their
+    /// derivative with respect to the flux must go to infinity. This is a behavior that splines
+    /// cannot replicate, resulting to unnatural orbits close to the magnetic axis.
+    ///
+    /// To solve this, the harmonic switches to an analytical formula for the values of `ψ/ψp` under
+    /// a certain threshold. The threshold is defined by the flux value at the position `index` of
+    /// the data array.
+    ///
+    /// # Formula
+    ///
+    /// The patch has the form `β*sqrt(ψ) + γ`, where `β` and `γ` are adjusted in order to ensure
+    /// continuity of both `α(ψ)` and its first derivative. `β` is calculated first by `β = 2a' * sqrt(ψ)`
+    /// to ensure the correct value of the derivative `α'` at the patch's edge. Finally,
+    /// `γ = α - β * sqrt(ψ)` ensures the continuity of `α` itself.
+    ///
+    /// Note that sometimes `γ` may become slightly negative, resulting to `α` becoming slightly
+    /// negative extremely close to the axis. However this error should be negligible compared to
+    /// the possible non-continuity of `α`'s higher derivatives and/or its deviation from the
+    /// actual data.
+    ///
+    /// # Example
+    /// ```
+    /// # use std::path::PathBuf;
+    /// # use dexter_equilibrium::*;
+    /// # let path = PathBuf::from("./netcdf.nc");
+    /// let builder = NcHarmonicBuilder::new(&path, "steffen", 3, 2)
+    ///     .with_analytical_threshold_index(4)
+    ///     .build()?;
+    /// # Ok::<_, EqError>(())
+    /// ```
+    #[must_use]
+    pub fn with_analytical_threshold_index(mut self, index: usize) -> Self {
+        self.analytical_threshold_index = index;
         self
     }
 
@@ -201,6 +243,10 @@ impl std::fmt::Debug for NcHarmonic {
             .field("psi single", &self.psi_single)
             .field("psip single", &self.psip_single)
             .field("phase method", &self.psi_single.phase_method)
+            .field(
+                "analytical threshold index",
+                &self.psi_single.analytical_threshold_index,
+            )
             .finish()
     }
 }
@@ -552,6 +598,13 @@ impl NcHarmonic {
     pub fn phase_array(&self) -> Array1<f64> {
         Array1::from_vec(self.psi_single.phase_values.clone())
     }
+
+    /// Returns the index of the analytical threshold.
+    #[must_use]
+    pub fn analytical_threshold_index(&self) -> usize {
+        // This exists in both single harmonics
+        self.psi_single.analytical_threshold_index
+    }
 }
 
 // ===============================================================================================
@@ -581,6 +634,14 @@ struct SingleNcHarmonic {
     phase_average: Option<f64>,
     /// The phase's value at the resonance, if `phase_method` is `Resonance`.
     phase_resonance: Option<f64>,
+    /// The index of the data point under witch to use the analytical formula.
+    analytical_threshold_index: usize,
+    /// The flux's value at the `analytical_threshold_index`.
+    analytical_threshold_flux: Option<f64>,
+    /// The patch's `β` coefficient.
+    patch_beta: Option<f64>,
+    /// The patch's `γ` coefficient.
+    patch_gamma: Option<f64>,
 
     /// The amplitude values.
     alpha_values: Vec<f64>,
@@ -604,6 +665,10 @@ impl Clone for SingleNcHarmonic {
             phase_method: self.phase_method.clone(),
             phase_average: self.phase_average,
             phase_resonance: self.phase_resonance,
+            analytical_threshold_index: self.analytical_threshold_index,
+            analytical_threshold_flux: self.analytical_threshold_flux,
+            patch_beta: self.patch_beta,
+            patch_gamma: self.patch_gamma,
             alpha_values: self.alpha_values.clone(),
             phase_values: self.phase_values.clone(),
             alpha_interp: make_interp_type(&self.interp_type)
@@ -654,7 +719,7 @@ impl SingleNcHarmonic {
         let _m = builder.m as f64;
         let _n = builder.n as f64;
 
-        let uninit_self = Self {
+        let self_state0 = Self {
             interp_type: builder.interp_type.clone(),
             flux,
             which,
@@ -663,13 +728,18 @@ impl SingleNcHarmonic {
             phase_method: builder.phase_method.clone(),
             phase_average: None,
             phase_resonance: None,
+            analytical_threshold_index: builder.analytical_threshold_index,
+            analytical_threshold_flux: None,
+            patch_beta: None,
+            patch_gamma: None,
             alpha_values: alphas,
             phase_values: phases,
             alpha_interp,
             phase_interp,
         };
-        let init_self = uninit_self.resolve_phase_method(file);
-        Ok(init_self)
+        let self_state1 = self_state0.resolve_phase_method(file);
+        let final_state = self_state1.patch_axis()?;
+        Ok(final_state)
     }
 
     /// Calculates the phase method. Should only be used on initialization.
@@ -705,6 +775,39 @@ impl SingleNcHarmonic {
         }
     }
 
+    /// Calculates the patch's `β` and `γ` coefficients.
+    #[expect(clippy::unwrap_in_result, reason = "cannot panic")]
+    fn patch_axis(mut self) -> Result<Self, EqError> {
+        let Some(interp) = self.alpha_interp.as_ref() else {
+            return Ok(self);
+        };
+
+        let acc = &mut Accelerator::new();
+        let flux_value = self
+            .flux
+            .uvalues()
+            .get(self.analytical_threshold_index)
+            .copied()
+            .ok_or(EqError::InvalidHarmonicAnalyticalThresholdIndex)?;
+        let switch_alpha = interp
+            .eval(self.flux.uvalues(), &self.alpha_values, flux_value, acc)
+            .expect("domain just checked");
+        let switch_dalpha = interp
+            .eval_deriv(self.flux.uvalues(), &self.alpha_values, flux_value, acc)
+            .expect("domain just checked");
+
+        // 1st derivative continuity condition
+        let patch_beta = 2.0 * switch_dalpha * flux_value.sqrt();
+        // `α` continuity condition
+        let patch_gamma = switch_alpha - patch_beta * flux_value.sqrt();
+
+        self.analytical_threshold_flux = Some(flux_value);
+        self.patch_beta = Some(patch_beta);
+        self.patch_gamma = Some(patch_gamma);
+
+        Ok(self)
+    }
+
     /// Calculates the phase's value at the resonance.
     fn find_resonance_phase(&self, _: &netcdf::File) -> Option<f64> {
         unimplemented!()
@@ -726,14 +829,23 @@ impl SingleNcHarmonic {
     ) -> Result<(), EvalError> {
         let acc = &mut cache.acc;
 
-        cache.cache[3] = match self.alpha_interp.as_ref() {
-            Some(interp) => interp.eval(self.flux.uvalues(), &self.alpha_values, flux, acc)?,
-            None => return Err(EvalError::UndefinedEvaluation("α(flux)".into())),
-        };
-        cache.cache[4] = match self.alpha_interp.as_ref() {
-            Some(interp) => interp.eval_deriv(self.flux.uvalues(), &self.alpha_values, flux, acc)?,
-            None => return Err(EvalError::UndefinedEvaluation("da(flux)/dflux".into())),
-        };
+        if self.analytical_threshold_flux.is_some_and(|threshold| flux < threshold) {
+            let root = flux.sqrt();
+            let patch_beta = self.patch_beta.expect("just checked");
+            let patch_gamma = self.patch_gamma.expect("just checked");
+            cache.cache[3] = patch_beta * root + patch_gamma;
+            cache.cache[4] = patch_beta / (2.0 * root);
+        } else {
+            cache.cache[3] = match self.alpha_interp.as_ref() {
+                Some(interp) => interp.eval(self.flux.uvalues(), &self.alpha_values, flux, acc)?,
+                None => return Err(EvalError::UndefinedEvaluation("α(flux)".into())),
+            };
+            cache.cache[4] = match self.alpha_interp.as_ref() {
+                Some(interp) => interp.eval_deriv(self.flux.uvalues(), &self.alpha_values, flux, acc)?,
+                None => return Err(EvalError::UndefinedEvaluation("da(flux)/dflux".into())),
+            };
+        }
+
         cache.cache[5] = match self.phase_method {
             PhaseMethod::Zero => 0.0,
             PhaseMethod::Average => self.phase_average.expect("Exists"),
@@ -859,6 +971,18 @@ impl std::fmt::Debug for SingleNcHarmonic {
             .field("NcFlux", &self.flux)
             .field("phase method", &self.phase_method)
             .field("phase average", &self.phase_average)
+            .field(
+                "analytical threshold",
+                &format!("{:?}", self.analytical_threshold_flux),
+            )
+            .field(
+                "analytical threshold patch-beta",
+                &format!("{:?}", self.patch_beta),
+            )
+            .field(
+                "analytical threshold patch-gamma",
+                &format!("{:?}", self.patch_gamma),
+            )
             .finish()
     }
 }
@@ -1165,5 +1289,64 @@ mod nc_harmonic_cache {
         assert_eq!(c.misses(), 3);
 
         // dbg!(&c); // Accelerator counts should also match
+    }
+}
+
+#[cfg(test)]
+mod nc_harmonic_analytical_threshold {
+    use crate::extract::TEST_NETCDF_PATH;
+
+    use super::*;
+
+    #[test]
+    fn normal_construction() {
+        let path = PathBuf::from(TEST_NETCDF_PATH);
+        let harmonic = NcHarmonicBuilder::new(&path, "steffen", 3, 2)
+            .with_phase_method(PhaseMethod::Zero)
+            .with_analytical_threshold_index(5)
+            .build()
+            .unwrap();
+
+        let mut cache = harmonic.generate_cache();
+        assert_eq!(harmonic.analytical_threshold_index(), 5);
+        // set cos=1 and make sure it does go to infinity
+        assert!(
+            dbg!(harmonic.dh_dpsi(1e-20, 0.0, 0.0, 0.0, &mut cache))
+                .is_ok_and(|value| value.abs() > 1000.0)
+        )
+    }
+
+    #[test]
+    fn construction_with_zero_index() {
+        let path = PathBuf::from(TEST_NETCDF_PATH);
+        let harmonic_attempt = NcHarmonicBuilder::new(&path, "steffen", 3, 2)
+            .with_phase_method(PhaseMethod::Zero)
+            .with_analytical_threshold_index(0)
+            .build();
+        assert!(harmonic_attempt.is_ok());
+
+        let harmonic = harmonic_attempt.unwrap();
+
+        let mut cache = harmonic.generate_cache();
+        assert!(
+            harmonic
+                .h_of_psi(1e-5, 0.0, 0.0, 0.0, &mut cache)
+                .unwrap()
+                .is_finite()
+        );
+    }
+
+    #[test]
+    fn erroneous_construction() {
+        let path = PathBuf::from(TEST_NETCDF_PATH);
+        let harmonic_attempt = NcHarmonicBuilder::new(&path, "steffen", 3, 2)
+            .with_phase_method(PhaseMethod::Zero)
+            .with_analytical_threshold_index(5000000000)
+            .build();
+
+        assert!(
+            harmonic_attempt
+                .is_err_and(|err| matches!(err, EqError::InvalidHarmonicAnalyticalThresholdIndex))
+        );
     }
 }

@@ -370,6 +370,7 @@ class _PyNcHarmonic:
     phase_average: float
     psi_phase_resonance: float
     psip_phase_resonance: float
+    analytical_threshold_index: int
     psi_last: float
     psip_last: float
     psi_state: FluxState
@@ -386,6 +387,7 @@ class _PyNcHarmonic:
         m: int,
         n: int,
         phase_method: PhaseMethod = "Zero",
+        analytical_threshold_index: int = 3,
     ) -> None: ...
     # fmt: off
     def alpha_of_psi(self, psi: float, theta: float, zeta: float, t: float) -> float: ...

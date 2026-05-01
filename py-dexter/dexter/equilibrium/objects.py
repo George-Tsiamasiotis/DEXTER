@@ -1032,6 +1032,29 @@ class NcHarmonic(_HarmonicTrait, _HarmonicPlotter):
 
             ```
 
+    !!! note "Analytical patch"
+
+        By definition, flute modes must behave like $\sqrt\psi$ close to the axis, and therefore their
+        derivative with respect to the flux must go to infinity. This is a behavior that splines
+        cannot replicate, resulting to unnatural orbits close to the magnetic axis.
+
+        To solve this, the harmonic switches to an analytical formula for the values of $\psi/\psi_p$
+        under a certain threshold. The threshold is defined by the flux value at the position
+        `analytical_threshold_index` of the data array.
+
+        !!! note "Formula"
+
+            The patch has the form $\beta\sqrt\psi + \gamma$, where $\beta$ and $\gamma$ are adjusted
+            in order to ensure continuity of both $\alpha\psi and its first derivative. $\beta$ is
+            calculated first by $\beta = 2\alpha'\sqrt\psi$ to ensure the correct value of the
+            derivative $\alpha'$ at the patch’s edge. Finally, $\gamma = \alpha - \beta \sqrt\psi$
+            ensures the continuity of $\alpha$ itself.
+
+            Note that sometimes $\gamma$ may become slightly negative, resulting to $\alpha$ becoming
+            slightly negative extremely close to the axis. However this error should be negligible
+            compared to the possible non-continuity of $\alpha$’s higher derivatives or its deviation
+            from the actual data.
+
     Parameters
     ----------
     path
@@ -1044,6 +1067,8 @@ class NcHarmonic(_HarmonicTrait, _HarmonicPlotter):
         The poloidal mode number $n$.
     phase_method
         The method of calculation of the phase $\phi(\psi/\psi_p)$. Defaults to "Resonance".
+    analytical_threshold_index
+        The harmonic’s analytical threshold point. See Note. Defaults to 3.
     """
 
     _dyn: str = "ncdH"
@@ -1056,6 +1081,7 @@ class NcHarmonic(_HarmonicTrait, _HarmonicPlotter):
         m: int,
         n: int,
         phase_method: PhaseMethod = "Zero",
+        analytical_threshold_index: int = 3,
     ) -> None:
         setattr(
             self,
@@ -1066,6 +1092,7 @@ class NcHarmonic(_HarmonicTrait, _HarmonicPlotter):
                 m=m,
                 n=n,
                 phase_method=phase_method,
+                analytical_threshold_index=analytical_threshold_index,
             ),
         )
         _HarmonicTrait.__init__(self)
@@ -1121,6 +1148,11 @@ class NcHarmonic(_HarmonicTrait, _HarmonicPlotter):
         """The poloidal flux’s value where the resonance is met, if `phase_method` is `Resonance` and
         the resonance is in bounds."""
         return self._rust.psip_phase_resonance
+
+    @property
+    def analytical_threshold_index(self) -> float:
+        """The harmonic’s analytical threshold point."""
+        return self._rust.analytical_threshold_index
 
     @property
     def psi_last(self) -> float:

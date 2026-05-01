@@ -111,4 +111,8 @@ pub use objects::perturbation::Perturbation;
 pub mod constants {
     /// The default `B` array `θ` padding width.
     pub const DEFAULT_THETA_PADDING_WIDTH: usize = 15;
+
+    /// The index of the flux array, under which to switch to the analytical formula for the
+    /// [`crate::NcHarmonic`] in order to ensure the correct `~sqrt(ψ)` behaviour near the axis.
+    pub const NC_ANALYTICAL_THRESHOLD_INDEX: usize = 3;
 }

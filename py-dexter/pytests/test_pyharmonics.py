@@ -54,6 +54,7 @@ def test_nc_harmonic_getters(nc_harmonic: NcHarmonic):
     assert isinstance(nc_harmonic.m, int)
     assert isinstance(nc_harmonic.n, int)
     assert nc_harmonic.phase_method == "Zero"
+    assert nc_harmonic.analytical_threshold_index == 3
     assert isfinite(nc_harmonic.psi_last)
     assert isfinite(nc_harmonic.psip_last)
     assert nc_harmonic.psi_state == "Good"
@@ -74,7 +75,7 @@ def test_nc_harmonic_eval(nc_harmonic: NcHarmonic):
 def test_nc_harmonic_phase_methods():
     harmonic = NcHarmonic(netcdf_path, "Cubic", 3, 2, "Zero")
     assert harmonic.phase_method == "Zero"
-    assert harmonic.phase_of_psi(0, 0, 0, 0) == 0
+    assert harmonic.phase_of_psi(1e-5, 0, 0, 0) == 0
     _test_toroidal_harmonic_vectorized_evals(harmonic)
     _test_poloidal_harmonic_vectorized_evals(harmonic)
 
@@ -94,7 +95,7 @@ def test_nc_harmonic_phase_methods():
 
     harmonic = NcHarmonic(netcdf_path, "Cubic", 3, 2, ("Custom", 10))
     assert harmonic.phase_method == "Custom(10.0)"
-    assert harmonic.phase_of_psi(0, 0, 0, 0) == 10
+    assert harmonic.phase_of_psi(1e-5, 0, 0, 0) == 10
     _test_toroidal_harmonic_vectorized_evals(harmonic)
     _test_poloidal_harmonic_vectorized_evals(harmonic)
 
@@ -112,7 +113,7 @@ def test_toroidal_nc_harmonic():
     harmonic = NcHarmonic(toroidal_netcdf_path, "Cubic", 3, 2, "Interpolation")
     assert harmonic.psi_state == "Good"
     assert harmonic.psip_state == "Bad"
-    args = (0.0, 0.0, 0.0, 0.0)
+    args = (1e-5, 0.0, 0.0, 0.0)
     assert isfinite(harmonic.alpha_of_psi(*args))
     assert isfinite(harmonic.phase_of_psi(*args))
     assert isfinite(harmonic.h_of_psi(*args))
@@ -140,7 +141,7 @@ def test_poloidal_nc_harmonic():
     harmonic = NcHarmonic(poloidal_netcdf_path, "Cubic", 3, 2, "Interpolation")
     assert harmonic.psi_state == "Bad"
     assert harmonic.psip_state == "Good"
-    args = (0.0, 0.0, 0.0, 0.0)
+    args = (1e-5, 0.0, 0.0, 0.0)
     assert isfinite(harmonic.alpha_of_psip(*args))
     assert isfinite(harmonic.phase_of_psip(*args))
     assert isfinite(harmonic.h_of_psip(*args))

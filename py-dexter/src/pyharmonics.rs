@@ -70,17 +70,20 @@ pub struct PyNcHarmonic(pub(crate) NcHarmonic);
 #[pymethods]
 impl PyNcHarmonic {
     #[new]
-    #[pyo3(signature = (path, interp_type, m, n, phase_method))]
+    #[pyo3(signature = (path, interp_type, m, n, phase_method, analytical_threshold_index))]
     pub fn new<'py>(
         path: &str,
         interp_type: &str,
         m: i64,
         n: i64,
         phase_method: Option<Bound<'py, PyAny>>,
+        analytical_threshold_index: usize,
     ) -> Result<Self, PyEqError> {
         let path = std::path::PathBuf::from(path);
         let method: PhaseMethod = Self::resolve_phase_method(phase_method)?;
-        let builder = NcHarmonicBuilder::new(&path, interp_type, m, n).with_phase_method(method);
+        let builder = NcHarmonicBuilder::new(&path, interp_type, m, n)
+            .with_phase_method(method)
+            .with_analytical_threshold_index(analytical_threshold_index);
         Ok(Self(builder.build()?))
     }
 }
@@ -132,6 +135,7 @@ py_get_enum_string!(PyNcHarmonic, phase_method);
 py_export_getter!(PyNcHarmonic, phase_average, Option<f64>);
 py_export_getter!(PyNcHarmonic, psi_phase_resonance, Option<f64>);
 py_export_getter!(PyNcHarmonic, psip_phase_resonance, Option<f64>);
+py_export_getter!(PyNcHarmonic, analytical_threshold_index, usize);
 py_export_getter!(PyNcHarmonic, psi_last, Option<f64>);
 py_export_getter!(PyNcHarmonic, psip_last, Option<f64>);
 py_get_enum_string!(PyNcHarmonic, psi_state);
