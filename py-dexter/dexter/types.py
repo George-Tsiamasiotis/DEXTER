@@ -158,7 +158,6 @@ EnergyPzetaPosition = Literal[
     "Kappa",
     "Lambda",
     "Mu",
-    "Nu",
     "Unclassified",
 ]
 r"""The position of an $(E, P_\zeta)$ point on the $(E, P_\zeta)$ plane, relative to the orbit

@@ -1,6 +1,6 @@
-"""Classification of Co-Passing particle in a LAR equilibrium.
+"""Classification of a particle in a LAR equilibrium.
 
-CoPassing-Confined inside the magnetic axis parabola.
+CuPassingConfined outside all parabolas and above trapped-passing boundary.
 
 This script accompanies Rust's `orbit_classification` tests.
 """
@@ -18,13 +18,13 @@ equilibrium = dex.Equilibrium(
     bfield=dex.LarBfield(),
 )
 
-pzeta = -equilibrium.psip_last * 0.1
+pzeta = -equilibrium.psip_last * 0.36
 mu = 6e-5
 
 initial_conditions = dex.InitialConditions.mixed(
     t0=0,
-    flux0=dex.InitialFlux("Toroidal", 0.015),
-    theta0=1.0,
+    flux0=dex.InitialFlux("Toroidal", 0.001),
+    theta0=0,
     zeta0=0.0,
     pzeta0=pzeta,
     mu0=mu,
@@ -33,13 +33,13 @@ initial_conditions = dex.InitialConditions.mixed(
 particle = dex.Particle(initial_conditions)
 particle.close(equilibrium=equilibrium)
 particle.classify(equilibrium=equilibrium)
-assert particle.energy_pzeta_position == "Theta"
-assert particle.orbit_type == "CoPassingConfined"
+assert particle.energy_pzeta_position == "Lambda"
+assert particle.orbit_type == "CuPassingConfined"
 energy_pzeta_point = (
     pzeta / equilibrium.psip_last,
     particle.initial_energy / mu,
 )
-print(energy_pzeta_point)
+print(particle)
 
 # =========================
 

@@ -31,7 +31,6 @@ pub enum EnergyPzetaPosition {
     Kappa,
     Lambda,
     Mu,
-    Nu,
     /// Not falling under any of the above categories.
     Unclassified,
 }
@@ -66,7 +65,7 @@ impl EnergyPzetaPosition {
 
         if is_in_left_wall {
             if is_in_axis {
-                return Self::Beta;
+                return Self::Unclassified; // No allowed orbits here.
             } else {
                 return Self::Alpha;
             }
@@ -76,16 +75,16 @@ impl EnergyPzetaPosition {
 
         if is_in_right_wall {
             if pzeta <= -psip_last {
-                return Self::Gamma;
+                return Self::Beta;
             } else if is_in_tpb {
-                return Self::Delta; // Trapped-Lost
+                return Self::Gamma; // Trapped-Lost
             } else if is_in_axis {
-                return Self::Eta;
+                return Self::Zeta;
             } else {
                 if theta0_dot.is_sign_positive() {
-                    return Self::Epsilon;
+                    return Self::Delta;
                 } else {
-                    return Self::Zeta;
+                    return Self::Epsilon;
                 }
             }
         }
@@ -94,27 +93,27 @@ impl EnergyPzetaPosition {
 
         if is_in_axis {
             if is_in_tpb {
-                return Self::Iota; // Potato
+                return Self::Theta; // Potato
             } else {
-                return Self::Theta;
+                return Self::Eta;
             }
         }
 
         // Outside all parabolas. No need to check for any of them.
 
         if is_in_tpb {
-            return Self::Kappa; // Trapped-Confined
+            return Self::Iota; // Trapped-Confined
         }
 
         if is_above_tp {
             if theta0_dot.is_sign_positive() {
-                return Self::Lambda;
+                return Self::Kappa;
             } else {
-                return Self::Mu;
+                return Self::Lambda;
             }
         } else {
             if pzeta > -psip_last {
-                return Self::Nu; // Stagnated
+                return Self::Mu; // Stagnated
             }
         }
 
@@ -127,18 +126,17 @@ impl EnergyPzetaPosition {
         match *self {
             Self::Undefined => OrbitType::Undefined,
             Self::Alpha => OrbitType::CuPassingConfined,
-            Self::Beta => OrbitType::Unclassified,
-            Self::Gamma => OrbitType::CuPassingLost,
-            Self::Delta => OrbitType::TrappedLost,
-            Self::Epsilon => OrbitType::CoPassingLost,
-            Self::Zeta => OrbitType::CuPassingConfined,
-            Self::Eta => OrbitType::CoPassingLost,
-            Self::Theta => OrbitType::CoPassingConfined,
-            Self::Iota => OrbitType::Potato,
-            Self::Kappa => OrbitType::TrappedConfined,
-            Self::Lambda => OrbitType::CoPassingConfined,
-            Self::Mu => OrbitType::CuPassingConfined,
-            Self::Nu => OrbitType::Stagnated,
+            Self::Beta => OrbitType::CuPassingLost,
+            Self::Gamma => OrbitType::TrappedLost,
+            Self::Delta => OrbitType::CoPassingLost,
+            Self::Epsilon => OrbitType::CuPassingConfined,
+            Self::Zeta => OrbitType::CoPassingLost,
+            Self::Eta => OrbitType::CoPassingConfined,
+            Self::Theta => OrbitType::Potato,
+            Self::Iota => OrbitType::TrappedConfined,
+            Self::Kappa => OrbitType::CoPassingConfined,
+            Self::Lambda => OrbitType::CuPassingConfined,
+            Self::Mu => OrbitType::Stagnated,
             Self::Unclassified => OrbitType::Unclassified,
         }
     }

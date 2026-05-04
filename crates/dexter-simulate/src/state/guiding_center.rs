@@ -64,6 +64,10 @@ pub(crate) struct GCState {
     dp_dzeta: f64,
     dp_dt: f64,
 
+    delta: f64,
+    ddelta_dtheta: f64,
+    ddelta_dzeta: f64,
+
     /// Constants D, K, C, F, as they appear in the equations of motion.
     dterm: f64,
     kterm: f64,
@@ -154,6 +158,7 @@ impl GCState {
 
         // Then the intermediate quantities that only depend on the interpolated quantities
         self.calculate_canonical_momenta();
+        self.calculate_delta_terms();
         self.calculate_capitals();
         self.calculate_mu_par();
         self.calculate_braces();
@@ -333,16 +338,28 @@ impl GCState {
         self.pzeta = self.rho * self.g - self.psip;
     }
 
+    fn calculate_delta_terms(&mut self) {
+        self.delta = 0.0;
+        self.ddelta_dtheta = 0.0;
+        self.ddelta_dzeta = 0.0;
+    }
+
     /// Calculates the matrix coefficients denoted with capital letters that appear in the
     /// perturbed equations of motion.
     ///
     /// If `ψ` is the coordinate, we must apply the chainrule in all g, I, p derivatives (with
     /// respect to `ψp`), which results in multiplying them with q.
     fn calculate_capitals(&mut self) {
-        self.cterm = -1.0 + (self.rho + self.p) * self.dg_dflux + self.g * self.dp_dflux;
         self.fterm = self.q + (self.rho + self.p) * self.di_dflux + self.i * self.dp_dflux;
-        self.kterm = self.g * self.dp_dtheta - self.i * self.dp_dzeta;
+        self.fterm -= self.q * self.rho * self.ddelta_dtheta; // δ term
+
+        self.cterm = -1.0 + (self.rho + self.p) * self.dg_dflux + self.g * self.dp_dflux;
+        self.cterm -= self.q * self.rho * self.ddelta_dzeta; // δ term
+
+        self.kterm = self.g * self.dp_dtheta - self.i * self.dp_dzeta; // same without δ
+
         self.dterm = self.g * self.fterm - self.i * self.cterm;
+        self.dterm += self.delta * self.q * self.kterm; // δ term
     }
 
     /// Calculates (μ + ρ^2B).
@@ -383,10 +400,12 @@ impl GCState {
 
     fn calculate_theta_dot(&mut self) {
         self.theta_dot = -self.cterm * self.rho_bsquared_d + self.g_over_d * self.dflux_brace;
+        self.theta_dot += -self.delta * self.q / self.dterm * self.dp_dt;
     }
 
     fn calculate_zeta_dot(&mut self) {
-        self.zeta_dot = self.fterm * self.rho_bsquared_d - self.i_over_d * self.dflux_brace
+        self.zeta_dot = self.fterm * self.rho_bsquared_d - self.i_over_d * self.dflux_brace;
+        self.zeta_dot += self.delta * self.q / self.dterm * (self.dtheta_brace + self.dp_dt);
     }
 
     fn calculate_rho_dot(&mut self) {
@@ -485,6 +504,9 @@ impl Default for GCState {
             dp_dtheta: f64::NAN,
             dp_dzeta: f64::NAN,
             dp_dt: f64::NAN,
+            delta: f64::NAN,
+            ddelta_dtheta: f64::NAN,
+            ddelta_dzeta: f64::NAN,
             dterm: f64::NAN,
             kterm: f64::NAN,
             cterm: f64::NAN,

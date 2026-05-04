@@ -10,8 +10,9 @@ from cycler import cycler
 from matplotlib.patches import Patch
 
 from dexter._core import _PyParticle, _PyQueue
-from dexter import Equilibrium, LarGeometry, OrbitType
+from dexter import Equilibrium, LarGeometry
 from dexter.types import Array1, Canvas, Canvas3d, MultiCanvas
+from dexter.simulate.colors import orbit_color
 
 dpi = 120
 figsize = (10, 7)
@@ -773,33 +774,6 @@ def pi_mod(arr: Array1) -> Array1:
     a: Array1 = np.mod(arr, 2 * np.pi)
     a = a - 2 * np.pi * (a > np.pi)
     return a
-
-
-def orbit_color(orbit_type: OrbitType) -> str:
-    r"""Confined = 'bright', Lost = 'deep'"""
-    match orbit_type:
-        case "Undefined":
-            return "xkcd:coral"
-        case "TrappedConfined":
-            return "xkcd:bright red"
-        case "TrappedLost":
-            return "xkcd:deep red"
-        case "CoPassingConfined":
-            return "xkcd:bright blue"
-        case "CoPassingLost":
-            return "xkcd:deep blue"
-        case "CuPassingConfined":
-            return "xkcd:bright green"
-        case "CuPassingLost":
-            return "xkcd:deep green"
-        case "Potato":
-            return "xkcd:tan"
-        case "Stagnated":
-            return "xkcd:sky"
-        case "Unclassified":
-            return "xkcd:bright purple"
-        case _:  # Failed(..), also update legend handlers
-            return "xkcd:indigo"
 
 
 def orbit_color_legend_handles(counter: Counter) -> list[Patch]:

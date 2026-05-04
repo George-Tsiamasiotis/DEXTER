@@ -1,6 +1,6 @@
-"""Classification of Cu-Passing particle in a LAR equilibrium.
+"""Classification of a particle in a LAR equilibrium.
 
-Trapped-Confined outside of all parabolas.
+Potato
 
 This script accompanies Rust's `orbit_classification` tests.
 """
@@ -18,12 +18,12 @@ equilibrium = dex.Equilibrium(
     bfield=dex.LarBfield(),
 )
 
-pzeta = -equilibrium.psip_last * 0.5
+pzeta = -equilibrium.psip_last * 0.0448
 mu = 6e-5
 
 initial_conditions = dex.InitialConditions.mixed(
     t0=0,
-    flux0=dex.InitialFlux("Toroidal", 0.018),
+    flux0=dex.InitialFlux("Toroidal", 0.0045),
     theta0=1.0,
     zeta0=0.0,
     pzeta0=pzeta,
@@ -33,14 +33,13 @@ initial_conditions = dex.InitialConditions.mixed(
 particle = dex.Particle(initial_conditions)
 particle.close(equilibrium=equilibrium)
 particle.classify(equilibrium=equilibrium)
-assert particle.energy_pzeta_position == "Kappa"
-assert particle.orbit_type == "TrappedConfined"
+assert particle.energy_pzeta_position == "Theta"
+assert particle.orbit_type == "Potato"
 energy_pzeta_point = (
     pzeta / equilibrium.psip_last,
     particle.initial_energy / mu,
 )
 print(particle)
-print(energy_pzeta_point)
 
 # =========================
 

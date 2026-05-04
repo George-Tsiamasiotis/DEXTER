@@ -1,4 +1,4 @@
-"""Classification of Cu-Passing particle in a LAR equilibrium.
+"""Classification of a particle in a LAR equilibrium.
 
 CuPassing-Lost inside the right wall parabola, outside the left wall parabola and left from the
 `Pζ/ψp_last = -1` line.
@@ -34,7 +34,7 @@ initial_conditions = dex.InitialConditions.mixed(
 particle = dex.Particle(initial_conditions)
 particle.close(equilibrium=equilibrium)
 particle.classify(equilibrium=equilibrium)
-assert particle.energy_pzeta_position == "Gamma"
+assert particle.energy_pzeta_position == "Beta"
 assert particle.orbit_type == "CuPassingLost"
 energy_pzeta_point = (
     pzeta / equilibrium.psip_last,

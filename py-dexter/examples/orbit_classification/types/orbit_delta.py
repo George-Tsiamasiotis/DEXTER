@@ -1,12 +1,13 @@
-"""Classification of Cu-Passing particle in a LAR equilibrium.
+"""Classification of a particle in a LAR equilibrium.
 
-Potato
+CoPassing-Lost inside the right wall parabola, outside the left wall parabola, outside of the
+axis parabola and outside the trapped-passing boundary.
 
 This script accompanies Rust's `orbit_classification` tests.
 """
 
 import dexter as dex
-from math import sqrt
+from math import sqrt, pi
 
 LCFS = dex.LastClosedFluxSurface("Toroidal", 0.03)
 raxis = 1.75
@@ -18,13 +19,13 @@ equilibrium = dex.Equilibrium(
     bfield=dex.LarBfield(),
 )
 
-pzeta = -equilibrium.psip_last * 0.0448
+pzeta = -equilibrium.psip_last * 0.6
 mu = 6e-5
 
 initial_conditions = dex.InitialConditions.mixed(
     t0=0,
-    flux0=dex.InitialFlux("Toroidal", 0.0045),
-    theta0=1.0,
+    flux0=dex.InitialFlux("Toroidal", 0.018),
+    theta0=pi,
     zeta0=0.0,
     pzeta0=pzeta,
     mu0=mu,
@@ -33,8 +34,8 @@ initial_conditions = dex.InitialConditions.mixed(
 particle = dex.Particle(initial_conditions)
 particle.close(equilibrium=equilibrium)
 particle.classify(equilibrium=equilibrium)
-assert particle.energy_pzeta_position == "Iota"
-assert particle.orbit_type == "Potato"
+assert particle.energy_pzeta_position == "Delta"
+assert particle.orbit_type == "CoPassingLost"
 energy_pzeta_point = (
     pzeta / equilibrium.psip_last,
     particle.initial_energy / mu,

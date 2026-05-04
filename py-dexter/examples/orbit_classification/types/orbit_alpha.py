@@ -1,6 +1,6 @@
-"""Classification of Cu-Passing particle in a LAR equilibrium.
+"""Classification of a particle in a LAR equilibrium.
 
-Stagnated
+CuPassing-Confined inside the left wall parabola.
 
 This script accompanies Rust's `orbit_classification` tests.
 """
@@ -18,12 +18,12 @@ equilibrium = dex.Equilibrium(
     bfield=dex.LarBfield(),
 )
 
-pzeta = -equilibrium.psip_last * 0.0
+pzeta = -equilibrium.psip_last * 0.8
 mu = 6e-5
 
 initial_conditions = dex.InitialConditions.mixed(
     t0=0,
-    flux0=dex.InitialFlux("Toroidal", 0.0014),
+    flux0=dex.InitialFlux("Toroidal", 0.001),
     theta0=1.0,
     zeta0=0.0,
     pzeta0=pzeta,
@@ -33,8 +33,8 @@ initial_conditions = dex.InitialConditions.mixed(
 particle = dex.Particle(initial_conditions)
 particle.close(equilibrium=equilibrium)
 particle.classify(equilibrium=equilibrium)
-assert particle.energy_pzeta_position == "Nu"
-assert particle.orbit_type == "Stagnated"
+assert particle.energy_pzeta_position == "Alpha"
+assert particle.orbit_type == "CuPassingConfined"
 energy_pzeta_point = (
     pzeta / equilibrium.psip_last,
     particle.initial_energy / mu,
