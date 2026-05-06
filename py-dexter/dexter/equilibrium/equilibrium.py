@@ -5,8 +5,18 @@ import matplotlib.pyplot as plt
 
 from math import sqrt
 from typing import Optional, Any
+from pint.facets.plain import PlainQuantity
 
-from dexter.types import Interp1DType, Interp2DType, Canvas, MultiCanvas
+from dexter.registry import _Registry
+from dexter.types import (
+    Interp1DType,
+    Interp2DType,
+    Canvas,
+    MultiCanvas,
+    ArrayLike,
+    UnitSystem,
+    ParticleSpecies,
+)
 from .objects import (
     LarBfield,
     NcGeometry,
@@ -68,7 +78,7 @@ def numerical_equilibrium(
 class Equilibrium:
     """An Equilibrium.
 
-    Contains all the necessary equilibrium objects and provides plots.
+    Contains all the necessary equilibrium objects, defines conversions to SI and provides plots.
 
     For conveniently constructing a numerical equilibrium from a netCDF file, see
     [`numerical_equilibrium`][dexter.numerical_equilibrium]
@@ -85,6 +95,8 @@ class Equilibrium:
         todo: The equilibrium's perturbation, if they exist. Defaults to None (unperturbed equilibrium).
     geometry
         The equilibrium's geometry. This field is not required for calculations. Defaults to None.
+    species
+        The particle species under study. This only affects unit conversions to SI. Defaults to "Proton".
 
     Example
     -------
@@ -105,14 +117,17 @@ class Equilibrium:
     _bfield: Bfield
     _perturbation: Perturbation
     _geometry: Optional[Geometry]
+    _unit_registry: _Registry
 
     def __init__(
         self,
         qfactor: Qfactor,
         current: Current,
         bfield: Bfield,
+        *,
         perturbation: Optional[Perturbation] = Perturbation([]),
         geometry: Optional[Geometry] = None,
+        species: ParticleSpecies = "Proton",
     ):
         self._geometry = geometry
         self._qfactor = qfactor
@@ -122,6 +137,33 @@ class Equilibrium:
             self._perturbation = Perturbation([])
         else:
             self._perturbation = perturbation
+
+        if self._geometry is not None:
+            self._unit_registry = _Registry(case_sensitive=False, cache_folder=":auto:")
+            self._unit_registry.__after_init__(
+                raxis=self._geometry.raxis,
+                baxis=self._geometry.baxis,
+                species=species,
+            )
+
+    def quantity(self, value: float | ArrayLike, units: str) -> PlainQuantity:
+        r"""Constructs a Quantity"""
+        return self._unit_registry.quantity(value, units)
+
+    @property
+    def _has_pint(self) -> bool:
+        """Returns True if the UnitRegistry is constructed."""
+        return hasattr(self, "_unit_registry")
+
+    @property
+    def _frequency_unit(self) -> float:
+        r"""The normalization constant $\omega_0$."""
+        return self._unit_registry.frequency_unit
+
+    @property
+    def _energy_unit(self) -> float:
+        r"""The normalization constant $E_0$."""
+        return self._unit_registry.energy_unit
 
     @property
     def geometry(self) -> Geometry:
@@ -213,13 +255,20 @@ class Equilibrium:
     def __repr__(self) -> str:
         return self.__str__()
 
-    def plot_b(self, levels: int = 20, show: bool = True) -> Canvas:
+    def plot_b(
+        self,
+        levels: int = 20,
+        units: UnitSystem = "SI",
+        show: bool = True,
+    ) -> Canvas:
         """Plots a contour plot of the magnetic field strength for a numerical equilibrium.
 
         Parameters
         ----------
         levels
             The number of contour levels. Defaults to 20.
+        units
+            The unit system of the magnetic field magnitude. Defaults to "SI".
         show
             Whether or not to call `plt.show()`. Defaults to True.
 
@@ -242,6 +291,15 @@ class Equilibrium:
         rlab_last = self.geometry.rlab_last
         zlab_last = self.geometry.zlab_last
         b_array = self.bfield.b_array
+        b_array = self.quantity(b_array, "bfield_units")
+
+        if units.lower() == "si":
+            b_array.ito("Tesla")
+            units_str = "Tesla"
+        elif units.lower() == "nu":
+            units_str = r"Normalized\ Units"
+        else:
+            raise TypeError("'units' must be either 'SI' or 'NU'")
 
         ax.set_title(r"$Magnetic$ $field$ $strength$ $B$")
         ax.set_xlabel(r"$R[m]$")
@@ -249,8 +307,8 @@ class Equilibrium:
 
         contour_kw = {"levels": levels, "cmap": "plasma"}
 
-        contour = ax.contourf(rlab_array, zlab_array, b_array, **contour_kw)
-        plt.colorbar(contour, ax=ax, label=r"$B[Normalized\quad Units]$")
+        contour = ax.contourf(rlab_array, zlab_array, b_array.m, **contour_kw)
+        plt.colorbar(contour, ax=ax, label=rf"$B[{units_str}]$")
 
         ax.plot(rlab_last, zlab_last, color="k", linewidth=2)
         ax.use_sticky_edges = False

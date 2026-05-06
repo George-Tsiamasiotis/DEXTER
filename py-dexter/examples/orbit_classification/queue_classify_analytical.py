@@ -6,8 +6,10 @@ from math import pi as PI
 import matplotlib.pyplot as plt
 
 # Equilibrium setup
-LCFS = dex.LastClosedFluxSurface(kind="Toroidal", value=0.05)
+geometry = dex.LarGeometry(1, 1.75, 0.5)
+LCFS = dex.LastClosedFluxSurface("Toroidal", geometry.psi_last)
 equilibrium = dex.Equilibrium(
+    geometry=geometry,
     qfactor=dex.ParabolicQfactor(qaxis=1.1, qlast=3.9, lcfs=LCFS),
     current=dex.LarCurrent(),
     bfield=dex.LarBfield(),

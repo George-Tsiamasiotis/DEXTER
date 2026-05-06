@@ -2,6 +2,7 @@
 
 import argparse
 from dexter import numerical_equilibrium
+from dexter.types import UnitSystem
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument(
@@ -15,11 +16,19 @@ parser.add_argument(
     type=int,
     default=20,
 )
+parser.add_argument(
+    "-u",
+    "--units",
+    help="The units of the magnetic field strength (default='SI')",
+    type=str,
+    choices=UnitSystem.__args__,
+    default="SI",
+)
 args = parser.parse_args()
 
 equilibrium = numerical_equilibrium(args.nc_file, "Cubic", "Bicubic")
 
-equilibrium.plot_b(args.levels)
+equilibrium.plot_b(args.levels, show=False)
 equilibrium.plot_db(args.levels)
 
 raise SystemExit

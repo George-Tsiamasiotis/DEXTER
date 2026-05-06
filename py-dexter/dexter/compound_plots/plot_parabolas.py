@@ -1,36 +1,39 @@
 """Plots the orbit classification parabolas on the (E, Pζ, μ=const) space."""
 
 from collections import Counter
+from fractions import Fraction
 from math import isfinite
-from typing import Literal
-from matplotlib.tri import Triangulation
+from matplotlib.ticker import Formatter
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.colors import BoundaryNorm
 from alpha_shapes import Alpha_Shaper
 
 from dexter import EnergyPzetaPlane, Equilibrium, COMs, Particle, Queue
-from dexter.simulate._plotters import orbit_color, orbit_color_legend_handles
-from dexter.types import Array1, Canvas
+from dexter.simulate.colors import orbit_color, _orbit_color_legend_handles
+from dexter.types import Array1, Canvas, EnergyPzetaPosition
 
-PARABOLAS_FIG_KW = {"figsize": (9, 6), "layout": "constrained", "dpi": 120}
+PARABOLAS_FIG_KW = {"figsize": (7, 5), "layout": "constrained", "dpi": 160}
 MAGNETIC_AXIS_KW = {
     "color": "xkcd:cobalt blue",
     "label": r"$Magnetic\ Axis$",
     "linewidth": 3,
     "linestyle": "-",
+    "zorder": 5,
 }
 LEFT_WALL_KW = {
     "color": "xkcd:coral",
     "label": r"$Left\ Wall$",
     "linewidth": 3,
     "linestyle": "-",
+    "zorder": 5,
 }
 RIGHT_WALL_KW = {
     "color": "xkcd:forrest green",
     "label": r"$Right\ Wall$",
     "linewidth": 3,
     "linestyle": "-",
+    "zorder": 5,
 }
 TP_BOUNDARY_KW = {
     "color": "xkcd:bright pink",
@@ -109,7 +112,7 @@ def plot_parabolas(
     ax.plot(
         [tpx[0]] * 2,
         [tp_lower[0], tp_upper[0]],
-        **(TP_BOUNDARY_KW | dict(label=r"$Trapped-Passing\ Boundary$")),
+        **(TP_BOUNDARY_KW | dict(label=r"$Trapped-Passing\ Boundary$")),  # type: ignore
     )
 
     if particles is not None:
@@ -128,9 +131,16 @@ def plot_parabolas(
                 continue
         ax.scatter(pzetas, energies, c=colors, s=1)
         found_orbit_types = Counter([particle.orbit_type for particle in particles])
-        ax.legend(handles=orbit_color_legend_handles(found_orbit_types))
+        ax.legend(handles=_orbit_color_legend_handles(found_orbit_types))
     else:
         ax.legend()
+
+    if equilibrium._has_pint:
+        si_ax = ax.twinx()
+        max_energy_nu = ymax * mu
+        max_energy_si = equilibrium.quantity(max_energy_nu, "energy_units").to("keV")
+        si_ax.set_ybound(0, max_energy_si.m)
+        si_ax.set_ylabel(r"$Energy\ [keV]$")
 
     ax.margins(0)
     ax.set_ylim(0, ymax)
@@ -148,8 +158,7 @@ def plot_parabolas(
 def plot_qkinetic_tricontour(
     equilibrium: Equilibrium,
     queue: Queue,
-    levels: Array1 | list[float] | None = None,
-    clabel: bool = True,
+    levels: Array1 | list[float] | int = 20,
     qmax: float = np.inf,
     alpha: float = 30,
     xlim: tuple[float, float] = (-1.6, 0.5),
@@ -171,11 +180,8 @@ def plot_qkinetic_tricontour(
     Other Parameters
     ----------------
     levels
-        The levels of the contour lines. If an array is passed then its values are plotter. If None, the
-        levels are $[q_{min}, ..., q_{max}]$, rounded to the closest half-integer. Defaults to None.
-    clabel
-        Whether or not to add a label on the contour lines. Defaults
-        to True.
+        The levels of the contour lines. If an array is passed then its values are plotted. If an int $n$ is passed,
+        the levels are a linear space from $q_{min}$ to $q_{max}$ of length $n$. Defaults to 20.
     qmax
         An upper limit to the $q_kinetic$ values. Useful when particle close to the separatrix appear.
         Defaults to np.inf.
@@ -198,7 +204,7 @@ def plot_qkinetic_tricontour(
     if not np.all(queue.initial_conditions.mu_array == mu):
         raise ValueError("All particles must have the same 'μ'")
 
-    particles = queue.particles
+    all_particles = queue.particles
     fig, ax = plot_parabolas(
         equilibrium,
         mu,
@@ -207,44 +213,32 @@ def plot_qkinetic_tricontour(
         density=density,
         show=False,
     )
-    fig.suptitle(r"$q_{qkinetic}$ on the " rf"$(E, P_\zeta, \mu={mu})$ space.")
+    fig.suptitle(r"$q_{kinetic}$ on the " rf"$(E, P_\zeta, \mu={mu})$ space.")
     ax.grid(False)
 
     energy_norm = mu
 
-    trapped = [
-        particle
-        for particle in particles
-        if particle.energy_pzeta_position in ["Iota", "Kappa", "Nu"]
-    ]
-    copassing = [
-        particle
-        for particle in particles
-        if particle.energy_pzeta_position in ["Theta", "Lambda"]
-    ]
-    cupassing = [
-        particle
-        for particle in particles
-        if particle.energy_pzeta_position in ["Alpha", "Zeta", "Epsilon", "Mu"]
-    ]
+    all_qkinetics = queue.qkinetic_array
+    qmin = np.nanmin(all_qkinetics)
+    qmax = np.nanmax(all_qkinetics)
 
-    if levels is None:
-        qkinetic_array = queue.qkinetic_array
-        qmin = np.nanmin(qkinetic_array)
-        qmax = np.nanmax(qkinetic_array)
+    if isinstance(levels, int):
+        levels = np.linspace(qmin, qmax, levels)
+        formatter = None
     else:
-        qmin = min(levels)
-        qmax = max(levels)
-    levels = np.arange(np.floor(qmin), np.ceil(qmax), 0.5)
+        levels = np.sort(levels)
+        formatter = FractionFormatter()
 
-    for family in [trapped, copassing, cupassing]:
-        if len(family) == 0:
-            continue
+    families: tuple[EnergyPzetaPosition] = EnergyPzetaPosition.__args__
+
+    for family in families:
         pzetas = []
         energies = []
         qkinetics = []
-        colors = []
-        for particle in family:
+        particles = [p for p in all_particles if p.energy_pzeta_position == family]
+        if len(particles) == 0:
+            continue
+        for particle in particles:
             try:
                 pzeta = particle.initial_conditions.pzeta0
                 energy = particle.initial_energy
@@ -258,19 +252,16 @@ def plot_qkinetic_tricontour(
             pzetas.append(pzeta / equilibrium.psip_last)
             energies.append(energy / energy_norm)
             qkinetics.append(qkinetic)
-            colors.append(orbit_color(particle.orbit_type))
 
         if len(qkinetics) < 3:  # Problems with Triangulation
             continue
 
-        points = np.asarray((pzetas, energies))
-        if len(levels) > 4:  # requirement for alpha_shapes
-            triang = Alpha_Shaper(points.T, normalize=False)
-            triang.set_mask_at_alpha(alpha)
-        else:
-            triang = Triangulation(points[0], points[1])
+        points = np.asarray((pzetas, energies)).T
 
-        tri = ax.tricontour(
+        triang = Alpha_Shaper(points, normalize=True)
+        triang.set_mask_at_alpha(alpha)
+
+        ax.tricontour(
             triang,
             qkinetics,
             levels=levels,
@@ -279,20 +270,17 @@ def plot_qkinetic_tricontour(
             cmap="cool",
         )
 
-        if clabel:
-            ax.clabel(
-                tri,
-                levels=levels,
-                fmt=contour_clabel_fmt,
-                fontsize=10,
-                manual=False,
-            )
-
-    if not clabel:
-        cmap = plt.get_cmap("cool")
-        norm = BoundaryNorm(levels, cmap.N)
-        cm = plt.cm.ScalarMappable(norm=norm, cmap=cmap)
-        fig.colorbar(cm, ticks=levels, ax=ax, label="$q_{kinetic}$")
+    cmap = plt.get_cmap("cool")
+    norm = BoundaryNorm(levels, cmap.N)
+    cm = plt.cm.ScalarMappable(norm=norm, cmap=cmap)
+    fig.colorbar(
+        cm,
+        ticks=levels,
+        ax=ax,
+        format=formatter,
+        drawedges=False,
+        label="$q_{kinetic}$",
+    )
 
     ax.margins(0)
     ax.set_ylim(0, ymax)
@@ -309,17 +297,13 @@ def plot_qkinetic_tricontour(
 # ================================================================================================
 
 
-def contour_clabel_fmt(x: float) -> str:
-    """Formats the contour line labels."""
-    ratio = x.as_integer_ratio()
-    numerator = ratio[0]
-    denominator = ratio[1]
+class FractionFormatter(Formatter):
+    r"""Formats values as integer ratios."""
 
-    _numerator_str = f"{numerator:.1f}"
-    _denominator_str = f"{denominator:.1f}"
-    if _numerator_str.endswith("0"):
-        _numerator_str = f"{numerator:.0f}"
-    if _denominator_str.endswith("0"):
-        _denominator_str = f"{denominator:.0f}"
+    denominator_limit: int = 25
 
-    return f"{_numerator_str}/{_denominator_str}"
+    def format_data(self, value: float) -> str:
+        return str(Fraction(value).limit_denominator(self.denominator_limit))
+
+    def __call__(self, x: float, _: int | None = None) -> str:
+        return self.format_data(x)

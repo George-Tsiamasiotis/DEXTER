@@ -133,7 +133,7 @@ def test_queue_plots(nc_equilibrium: Equilibrium):
     queue.plot_qkinetic_energy_sweep()
     queue.plot_qkinetic_pzeta_sweep()
     queue.plot_qkinetic_pzeta_sweep(psip_last=nc_equilibrium.psip_last)
-    queue.plot_qkinetic_radial_sweep(flux_last=nc_equilibrium.psi_last)
+    queue.plot_qkinetic_radial_sweep(lcfs_value=nc_equilibrium.psi_last)
 
 
 def test_coms_plots(nc_equilibrium: Equilibrium):
@@ -176,7 +176,7 @@ def test_qkinetic_tricontour_plots(nc_equilibrium: Equilibrium):
     queue = Queue(initials)
     queue.classify(nc_equilibrium)
     queue.close(nc_equilibrium)
-    plot_qkinetic_tricontour(nc_equilibrium, queue, levels=None)
+    plot_qkinetic_tricontour(nc_equilibrium, queue, levels=10)
     plot_qkinetic_tricontour(nc_equilibrium, queue, levels=[-1, 1, 2, 3])
 
 

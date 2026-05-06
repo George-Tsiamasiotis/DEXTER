@@ -7,12 +7,11 @@ from math import floor, log10, sqrt
 from math import pi as PI
 from warnings import warn
 from cycler import cycler
-from matplotlib.patches import Patch
 
 from dexter._core import _PyParticle, _PyQueue
 from dexter import Equilibrium, LarGeometry
 from dexter.types import Array1, Canvas, Canvas3d, MultiCanvas
-from dexter.simulate.colors import orbit_color
+from dexter.simulate.colors import orbit_color, _orbit_color_legend_handles
 
 dpi = 120
 figsize = (10, 7)
@@ -562,7 +561,7 @@ class _QueuePlotter:
 
     def plot_qkinetic_radial_sweep(
         self,
-        flux_last: float | None = None,
+        lcfs_value: float | None = None,
         show: bool = True,
     ) -> Canvas:
         r"""Plots the contained particles' calculated $q_{kinetic}$ with respect to their $\psi_0/\psi_{p,0}$.
@@ -572,7 +571,7 @@ class _QueuePlotter:
 
         Parameters
         ----------
-        flux_last
+        lcfs_value
             The value of the magnetic flux $/psi/\psi_p$ at the Last Closed Flux Surface. If passed, the
             magnetic flux values are displayed with respect to it.
         show
@@ -600,16 +599,16 @@ class _QueuePlotter:
         orbit_types = np.asarray([p.orbit_type for p in particles])
         colors = np.asarray([orbit_color(orbit_type) for orbit_type in orbit_types])
 
-        if flux_last is None:
+        if lcfs_value is None:
             ax.scatter(fluxes, self._rust.qkinetic_array, c=colors, s=1)
             ax.set_xlabel(rf"${flux_coord}\ [Normalized]$")
         else:
-            ax.scatter(fluxes / flux_last, self._rust.qkinetic_array, c=colors, s=1)
+            ax.scatter(fluxes / lcfs_value, self._rust.qkinetic_array, c=colors, s=1)
             ax.set_xlabel(rf"{flux_coord}$/${flux_coord_last}")
 
         ax.set_ylabel("$q_{kinetic}$")
         ax.set_title("$q_{kinetic}-$" + flux_coord)
-        ax.legend(handles=orbit_color_legend_handles(Counter(orbit_types)))
+        ax.legend(handles=_orbit_color_legend_handles(Counter(orbit_types)))
         ax.axhline(y=0, ls="--", lw=1.5, c="k")
         ax.grid(True)
 
@@ -657,7 +656,7 @@ class _QueuePlotter:
 
         ax.set_ylabel("$q_{kinetic}$")
         ax.set_title(r"$q_{kinetic}-P_\zeta$")
-        ax.legend(handles=orbit_color_legend_handles(Counter(orbit_types)))
+        ax.legend(handles=_orbit_color_legend_handles(Counter(orbit_types)))
         ax.axhline(y=0, ls="--", lw=1.5, c="k")
         ax.grid(True)
 
@@ -668,7 +667,7 @@ class _QueuePlotter:
         return (fig, ax)
 
     def plot_qkinetic_energy_sweep(self, show: bool = True) -> Canvas:
-        """TODO:
+        r"""Plots the contained particles' calculated $q_{kinetic}$ with respect to their Energy.
 
         Parameters
         ----------
@@ -694,7 +693,7 @@ class _QueuePlotter:
         ax.set_xlabel(rf"$Energy\ [Normalized]$")
         ax.set_ylabel("$q_{kinetic}$")
         ax.set_title("$q_{kinetic}-Energy$")
-        ax.legend(handles=orbit_color_legend_handles(Counter(orbit_types)))
+        ax.legend(handles=_orbit_color_legend_handles(Counter(orbit_types)))
         ax.axhline(y=0, ls="--", lw=1.5, c="k")
         ax.grid(True)
 
@@ -756,7 +755,7 @@ class _QueuePlotter:
         ax.set_ylabel(r"$E\ [Normalized]$")
         ax.set_zlabel(r"$q_{kinetic}$")
         ax.set_title(r"$q_{kinetic}(P_\zeta, E)$")
-        ax.legend(handles=orbit_color_legend_handles(Counter(orbit_types)))
+        ax.legend(handles=_orbit_color_legend_handles(Counter(orbit_types)))
         ax.grid(True)
 
         if show:
@@ -774,14 +773,3 @@ def pi_mod(arr: Array1) -> Array1:
     a: Array1 = np.mod(arr, 2 * np.pi)
     a = a - 2 * np.pi * (a > np.pi)
     return a
-
-
-def orbit_color_legend_handles(counter: Counter) -> list[Patch]:
-    res = []
-    for orbit_type, counts in counter.items():
-        if orbit_type.startswith("Failed"):
-            continue
-        res.append(
-            Patch(color=orbit_color(orbit_type), label=f"{orbit_type} ({counts})")
-        )
-    return res
