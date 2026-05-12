@@ -23,7 +23,9 @@ equilibrium = dex.Equilibrium(
 )
 
 particle_count = 50
-psi0s = np.linspace(0, 1, particle_count) * equilibrium.psi_last
+rlast = np.sqrt(equilibrium.psi_last * 2)
+r0s = np.linspace(0, rlast, particle_count)
+psi0s = equilibrium.geometry.psi_of_r(r0s)
 initial_conditions = dex.QueueInitialConditions.boozer(
     t0=np.zeros(particle_count),
     flux0=dex.InitialFluxArray("Toroidal", psi0s),
@@ -33,7 +35,7 @@ initial_conditions = dex.QueueInitialConditions.boozer(
     mu0=0 * np.ones(particle_count),
 )
 
-intersect_params = dex.IntersectParams("ConstZeta", 0.0, 300)
+intersect_params = dex.IntersectParams("ConstZeta", 0.0, 800)
 queue = dex.Queue(initial_conditions)
 
 queue.intersect(
@@ -42,6 +44,5 @@ queue.intersect(
     max_steps=1_000_000,
     energy_rel_tol=1e-11,
 )
-print(queue)
 queue.plot_const_zeta_cartesian_poincare(initial=True)
 queue.plot_const_zeta_rz_poincare(equilibrium=equilibrium, initial=True)

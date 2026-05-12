@@ -271,11 +271,12 @@ pub struct NcHarmonicCache {
     ///     3 = alpha
     ///     4 = dalpha
     ///     5 = phase
-    ///     6 = modarg
-    ///     7 = sin
-    ///     8 = cos
+    ///     6 = dphase
+    ///     7 = modarg
+    ///     8 = sin
+    ///     9 = cos
     /// ].
-    cache: [f64; 9],
+    cache: [f64; 10],
     /// The Accelerator of the current flux coordinate.
     acc: Accelerator,
 }
@@ -287,7 +288,7 @@ impl Default for NcHarmonicCache {
             misses: 0,
             m: f64::NAN,
             n: f64::NAN,
-            cache: [f64::NAN; 9],
+            cache: [f64::NAN; 10],
             acc: Accelerator::new(),
         }
     }
@@ -313,8 +314,8 @@ impl HarmonicCache for NcHarmonicCache {
         self.cache[1] = theta;
         self.cache[2] = zeta;
 
-        self.cache[6] = (self.m * theta - self.n * zeta + self.cache[5]).rem_euclid(TAU);
-        (self.cache[7], self.cache[8]) = self.cache[6].sin_cos();
+        self.cache[7] = (self.m * theta - self.n * zeta + self.cache[5]).rem_euclid(TAU);
+        (self.cache[8], self.cache[9]) = self.cache[7].sin_cos();
     }
 
     harmonic_cache_counts_getter_impl!(NcHarmonicCache);
@@ -336,7 +337,7 @@ impl Harmonic for NcHarmonic {
         Self::Cache {
             m: self.m as f64,
             n: self.n as f64,
-            cache: [f64::NAN; 9],
+            cache: [f64::NAN; 10],
             ..Default::default()
         }
     }
@@ -858,6 +859,15 @@ impl SingleNcHarmonic {
                 }
             }
         };
+        cache.cache[6] = match self.phase_method {
+            PhaseMethod::Interpolation => {
+                match self.phase_interp.as_ref() {
+                    Some(interp) => interp.eval_deriv(self.flux.uvalues(), &self.phase_values, flux, acc)?,
+                    None => return Err(EvalError::UndefinedEvaluation("φ(flux)".into())),
+                }
+            }
+            _ => 0.0,
+        };
         Ok(())
     }
 }
@@ -909,7 +919,7 @@ impl SingleNcHarmonic {
             self.update_cache_interps(flux, cache)?;
             cache.update(flux, theta, zeta, t);
         };
-        Ok(debug_assert_is_finite!(cache.cache[3] * cache.cache[8]))
+        Ok(debug_assert_is_finite!(cache.cache[3] * cache.cache[9]))
     }
 
     /// Calculates the single harmonic's derivative with respect to the current flux coordinate.
@@ -925,7 +935,8 @@ impl SingleNcHarmonic {
             self.update_cache_interps(flux, cache)?;
             cache.update(flux, theta, zeta, t);
         };
-        Ok(debug_assert_is_finite!(cache.cache[4] * cache.cache[8]))
+        Ok(debug_assert_is_finite!(cache.cache[4] * cache.cache[9])
+            - cache.cache[3] * cache.cache[8] * cache.cache[6])
     }
 
     /// Calculates the single harmonic's derivative with respect to theta.
@@ -942,7 +953,7 @@ impl SingleNcHarmonic {
             cache.update(flux, theta, zeta, t);
         };
         Ok(debug_assert_is_finite!(
-            -cache.m * cache.cache[3] * cache.cache[7]
+            -cache.m * cache.cache[3] * cache.cache[8]
         ))
     }
 
@@ -960,7 +971,7 @@ impl SingleNcHarmonic {
             cache.update(flux, theta, zeta, t);
         };
         Ok(debug_assert_is_finite!(
-            cache.n * cache.cache[3] * cache.cache[7]
+            cache.n * cache.cache[3] * cache.cache[8]
         ))
     }
 }

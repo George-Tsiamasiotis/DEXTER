@@ -339,7 +339,7 @@ class TestPoloidalParticle:
         particle = Particle(self.initial)
         particle.integrate(
             self.equilibrium,
-            (0, 80000),
+            (0, 3e5),
         )
         assert particle.integration_status == "Integrated"
         _check_valid_integration(particle)
