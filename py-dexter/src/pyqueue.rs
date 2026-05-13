@@ -7,7 +7,7 @@ use ndarray::Array1;
 use numpy::{IntoPyArray, PyArray1};
 use pyo3::exceptions::PyTypeError;
 use pyo3::prelude::*;
-use pyo3::types::PyType;
+use pyo3::types::{PyTuple, PyType};
 
 use crate::pyerror::PySimulationError;
 use crate::{
@@ -156,6 +156,26 @@ impl PyQueue {
             particles.push(pyparticle.extract::<PyParticle>()?.0);
         }
         Ok(Self(Queue::from_particles(&particles)))
+    }
+
+    pub fn retain_pzeta<'py>(&mut self, span: Bound<'py, PyAny>) -> PyResult<()> {
+        let tuple = span.cast::<PyTuple>()?;
+        let pzeta1 = tuple.get_item(0)?.extract::<f64>()?;
+        let pzeta2 = tuple.get_item(1)?.extract::<f64>()?;
+        self.0.retain_pzeta(pzeta1..pzeta2);
+        Ok(())
+    }
+
+    pub fn retain_energy<'py>(&mut self, span: Bound<'py, PyAny>) -> PyResult<()> {
+        let tuple = span.cast::<PyTuple>()?;
+        let energy1 = tuple.get_item(0)?.extract::<f64>()?;
+        let energy2 = tuple.get_item(1)?.extract::<f64>()?;
+        self.0.retain_energy(energy1..energy2);
+        Ok(())
+    }
+
+    pub fn bin_pzeta(&mut self, num_bins: usize) {
+        self.0.bin_pzeta(num_bins);
     }
 
     #[getter]

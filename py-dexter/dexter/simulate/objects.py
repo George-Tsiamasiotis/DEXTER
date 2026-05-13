@@ -1507,6 +1507,39 @@ class Queue(_QueuePlotter):
         queue._initial_conditions = init
         return queue
 
+    def retain_pzeta(self, span: tuple[float, float]) -> None:
+        r"""Iterates through self’s particles, keeping only the ones with an initial $P_\zeta$
+        within the given span, discarding the rest.
+        """
+        self._rust.retain_pzeta(span=span)
+
+    def retain_energy(self, span: tuple[float, float]) -> None:
+        r"""Iterates through self’s particles, keeping only the ones with an initial Energy
+        within the given span, discarding the rest.
+        """
+        self._rust.retain_energy(span=span)
+
+    def bin_pzeta(self, num_bins: int) -> None:
+        r"""Iterates through self’s particles, keeping only one particle in each Pζ bin.
+
+        Bins are defined as the intervals:
+        $$
+        P_{\zeta, min} <= P_{\zeta, min} + \Delta P_\zeta <= P_{\zeta, min} + 2\Delta P_\zeta <= ... <= P_{\zeta, min} + (n-1)\Delta P_\zeta <= P_{\zeta, max},
+        $$
+        where $n$=1..num_bins and $\Delta P_\zeta = (P_{\zeta,max} - P_{\zeta,min})/n$.
+
+        When called after [`retain_energy`][dexter.Queue.retain_energy] with a small energy span,
+        we can obtain a set of particles of approximately same energy and approximately equispaced
+        $P_\zeta$s, depending on the span and num_bins parameters. This is useful since we
+        essentially have no control over the particles’ energies.
+
+        !!! note
+
+            Particles are visited in order of instantiation, and the first particle that falls
+            in an unfilled bin will be selected.
+        """
+        self._rust.bin_pzeta(num_bins)
+
     @property
     def initial_conditions(self) -> QueueInitialConditions:
         """The Queue's initial conditions."""

@@ -8,11 +8,12 @@ pub use initials::QueueInitialConditions;
 pub use initials::{poloidal_fluxes, toroidal_fluxes};
 
 use ndarray::Array1;
+use ndarray_stats::QuantileExt;
 use pbars::{ClosePbar, IntegratePbar, IntersectPbar};
 use stats::QueueStats;
 
 use rayon::iter::{IntoParallelRefMutIterator, ParallelIterator};
-use std::ops::Index;
+use std::ops::{Index, Range};
 use std::slice::Iter;
 use std::time::Duration;
 
@@ -480,6 +481,99 @@ impl Queue {
 
         self.routine = Routine::Classify;
         self.stats = QueueStats::from_completed_queue(self);
+    }
+}
+
+/// Slicing.
+impl Queue {
+    /// Iterates through `self`'s particles, keeping only the ones with an initial `Pζ` within the
+    /// given `span`, discarding the rest.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use dexter_equilibrium::*;
+    /// # use dexter_simulate::*;
+    /// # use std::path::PathBuf;
+    /// # use ndarray::Array1;
+    /// #
+    /// let num = 11;
+    /// let psi0s = toroidal_fluxes(&Array1::linspace(0.0, 0.05, num).to_vec());
+    /// let initial_conditions = QueueInitialConditions::mixed(
+    ///     &Array1::zeros(num).to_vec(),
+    ///     &psi0s.to_vec(),
+    ///     &Array1::zeros(num).to_vec(),
+    ///     &Array1::zeros(num).to_vec(),
+    ///     &Array1::linspace(0.0, 1.0, num).to_vec(), // Pζ = 0.0, 0.1, ..., 0.9, 1.0
+    ///     &Array1::zeros(num).to_vec(),
+    /// )?;
+    /// let mut queue = Queue::new(&initial_conditions);
+    ///
+    /// queue.retain_pzeta(0.45..0.64); // Only Pζ = 0.5 and Pζ = 0.6 remain
+    /// assert_eq!(queue.particle_count(), 2);
+    ///
+    /// # Ok::<_, SimulationError>(())
+    /// ```
+    pub fn retain_pzeta(&mut self, span: Range<f64>) {
+        self.particles.retain(|particle| {
+            particle
+                .initial_conditions()
+                .pzeta0
+                .is_some_and(|pzeta| span.contains(&pzeta))
+        });
+    }
+
+    /// Iterates through `self`'s particles, keeping only the ones with an initial energy within the
+    /// given `span`, discarding the rest.
+    pub fn retain_energy(&mut self, span: Range<f64>) {
+        self.particles.retain(|particle| {
+            particle
+                .initial_energy()
+                .is_some_and(|energy| span.contains(&energy))
+        });
+    }
+
+    /// Iterates through `self`'s particles, keeping only **one** particle in each `Pζ` *bin*.
+    ///
+    /// *Bins* are defined as the intervals:\
+    /// `Pζmin <= Pζmin + ΔPζ <= Pζmin + 2ΔPζ <= ... <= Pζmin + (n-1)ΔPζ <= Pζmax`,\
+    /// where `n=1..num_bins` and `ΔPζ = (Pζmax - Pζmin)/n`.
+    ///
+    /// When called after [`Queue::retain_energy`] with a small energy span, we can obtain a set of
+    /// particles of approximately same energy and approximately equispaced `Pζ`s, depending on
+    /// the `span` and `num_bins` parameters. This is useful since we essentially have no control
+    /// over the particles' energies.
+    ///
+    /// # Note
+    ///
+    /// Particles are visited in order of instantiation, and the first particle that falls in an
+    /// unfilled bin will be selected.
+    pub fn bin_pzeta(&mut self, num_bins: usize) {
+        // SAFETY: In the case that all Pζs are NaNs, which can happen with partly initialized
+        // particles, all particles are simply discarded.
+        let pzetas = Array1::from_iter(
+            self.particles
+                .iter()
+                .map(|particle| particle.initial_conditions().pzeta0.unwrap_or(f64::NAN)),
+        );
+        let pzetamin = *pzetas.min_skipnan();
+        let pzetamax = *pzetas.max_skipnan();
+
+        let bins = Array1::linspace(pzetamin, pzetamax, num_bins + 1);
+        let mut filled: Array1<bool> = Array1::from_elem(bins.len(), false);
+
+        self.particles.retain(|particle| {
+            let mut found = false;
+            let pzeta = particle.initial_conditions().pzeta0.unwrap_or(f64::NAN);
+            for n in 0..num_bins {
+                if !filled[n] && (bins[n] <= pzeta) && (pzeta <= bins[n + 1]) {
+                    filled[n] = true;
+                    found = true;
+                    break;
+                }
+            }
+            found
+        });
     }
 }
 
