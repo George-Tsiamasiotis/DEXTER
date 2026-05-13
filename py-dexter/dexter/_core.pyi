@@ -1,5 +1,6 @@
 """This file mirrors all the definitions made in the `py-dexter` Rust API."""
 
+from collections.abc import Iterable
 from typing import Optional, TypeAlias
 
 from dexter.types import (
@@ -740,6 +741,14 @@ class _PyQueue:
     def retain_pzeta(self, span: tuple[float, float]) -> None: ...
     def retain_energy(self, span: tuple[float, float]) -> None: ...
     def bin_pzeta(self, num_bins: int) -> None: ...
+    def retain_energy_pzeta_positions(
+        self,
+        positions: Iterable[EnergyPzetaPosition],
+    ) -> None: ...
+    def retain_orbit_types(
+        self,
+        orbit_types: Iterable[OrbitType],
+    ) -> None: ...
     def integrate(
         self,
         /,

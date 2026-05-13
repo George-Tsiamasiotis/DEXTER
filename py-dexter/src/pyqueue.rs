@@ -1,8 +1,8 @@
 //! `dexter_simulate::Queue` newtype, constructors and method exports.
 
-use dexter::dexter_simulate::{
-    FluxCoordinate, Particle, Queue, QueueInitialConditions, poloidal_fluxes, toroidal_fluxes,
-};
+use dexter::dexter_simulate::{EnergyPzetaPosition, OrbitType};
+use dexter::dexter_simulate::{FluxCoordinate, Particle, Queue, QueueInitialConditions};
+use dexter::dexter_simulate::{poloidal_fluxes, toroidal_fluxes};
 use ndarray::Array1;
 use numpy::{IntoPyArray, PyArray1};
 use pyo3::exceptions::PyTypeError;
@@ -172,6 +172,51 @@ impl PyQueue {
         let energy2 = tuple.get_item(1)?.extract::<f64>()?;
         self.0.retain_energy(energy1..energy2);
         Ok(())
+    }
+
+    pub fn retain_energy_pzeta_positions(&mut self, positions: Vec<String>) {
+        let positions: Vec<EnergyPzetaPosition> = positions
+            .iter()
+            .map(|pos| match pos.as_str() {
+                "Alpha" => EnergyPzetaPosition::Alpha,
+                "Beta" => EnergyPzetaPosition::Beta,
+                "Gamma" => EnergyPzetaPosition::Gamma,
+                "Delta" => EnergyPzetaPosition::Delta,
+                "Epsilon" => EnergyPzetaPosition::Epsilon,
+                "Zeta" => EnergyPzetaPosition::Zeta,
+                "Eta" => EnergyPzetaPosition::Eta,
+                "Theta" => EnergyPzetaPosition::Theta,
+                "Iota" => EnergyPzetaPosition::Iota,
+                "Kappa" => EnergyPzetaPosition::Kappa,
+                "Lambda" => EnergyPzetaPosition::Lambda,
+                "Mu" => EnergyPzetaPosition::Mu,
+                "Unclassified" => EnergyPzetaPosition::Unclassified,
+                _ => panic!("'positions' must be valid 'EnergyPzetaPosition' variants"),
+            })
+            .collect();
+
+        self.0.retain_energy_pzeta_positions(&positions);
+    }
+
+    pub fn retain_orbit_types(&mut self, orbit_types: Vec<String>) {
+        let orbit_types: Vec<OrbitType> = orbit_types
+            .iter()
+            .map(|typ| match typ.as_str() {
+                "Undefined" => OrbitType::Undefined,
+                "TrappedLost" => OrbitType::TrappedLost,
+                "TrappedConfined" => OrbitType::TrappedConfined,
+                "CoPassingLost" => OrbitType::CoPassingLost,
+                "CoPassingConfined" => OrbitType::CoPassingConfined,
+                "CuPassingLost" => OrbitType::CuPassingLost,
+                "CuPassingConfined" => OrbitType::CuPassingConfined,
+                "Potato" => OrbitType::Potato,
+                "Stagnated" => OrbitType::Stagnated,
+                "Unclassified" => OrbitType::Unclassified,
+                _ => panic!("'orbit_types' must be valid 'OrbitType' variants"),
+            })
+            .collect();
+
+        self.0.retain_orbit_types(&orbit_types);
     }
 
     pub fn bin_pzeta(&mut self, num_bins: usize) {

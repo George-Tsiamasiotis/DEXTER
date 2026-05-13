@@ -4,6 +4,8 @@ import numpy as np
 import dexter as dex
 import matplotlib.pyplot as plt
 
+RNG = np.random.default_rng(42)
+
 # Equilibrium setup
 LCFS = dex.LastClosedFluxSurface(kind="Toroidal", value=0.05)
 equilibrium = dex.Equilibrium(
@@ -17,7 +19,7 @@ mu = 3e-5
 
 # Initial Conditions setup
 num = 50000
-psi0s = dex.InitialFluxArray("Toroidal", np.random.random(num) * LCFS.value)
+psi0s = dex.InitialFluxArray("Toroidal", RNG.random(num) * LCFS.value)
 
 initial_conditions = dex.QueueInitialConditions.mixed(
     t0=np.zeros(num),
@@ -34,23 +36,21 @@ queue.classify(equilibrium)
 
 
 max_energy = 1.8
-filtered_particles = [
-    p
-    for p in queue.particles
-    if "Lost" not in p.orbit_type and p.initial_energy / mu < max_energy
-]
-filtered_queue = dex.Queue.from_particles(filtered_particles)
+queue.retain_orbit_types(
+    ["TrappedConfined", "CoPassingConfined", "CuPassingConfined", "Potato", "Stagnated"]
+)
+queue.retain_energy((0, max_energy * mu))
 
 dex.plot_parabolas(
     equilibrium,
     mu,
-    particles=filtered_queue.particles,
+    particles=queue.particles,
     xlim=(-1.4, 0.2),
     ymax=max_energy,
 )
 
-filtered_queue.close(equilibrium, max_steps=100000)
-_, ax = filtered_queue.plot_qkinetic_pzeta_energy3d(
+queue.close(equilibrium, max_steps=100000)
+_, ax = queue.plot_qkinetic_pzeta_energy3d(
     psip_last=equilibrium.psip_last,
     show=False,
 )

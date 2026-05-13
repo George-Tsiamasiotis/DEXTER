@@ -21,6 +21,7 @@ use dexter_equilibrium::{Bfield, Current, FluxCommute, Harmonic, Perturbation, Q
 
 use crate::queue::pbars::ClassifyPbar;
 use crate::{EnergyPzetaPlane, IntersectParams, Particle, SolverParams};
+use crate::{EnergyPzetaPosition, OrbitType};
 
 /// Indicates the routine Queue's particles executed.
 #[derive(Default, Clone, Debug, PartialEq, Eq)]
@@ -573,6 +574,36 @@ impl Queue {
                 }
             }
             found
+        });
+    }
+
+    /// Iterates through `self`'s particles, keeping only the ones with an [`EnergyPzetaPosition`]
+    /// that matches an element of `positions`.
+    pub fn retain_energy_pzeta_positions(&mut self, positions: &[EnergyPzetaPosition]) {
+        self.particles.retain(|particle| {
+            let mut keep = false;
+            for pos in positions {
+                if particle.energy_pzeta_position() == *pos {
+                    keep = true;
+                    break;
+                }
+            }
+            keep
+        });
+    }
+
+    /// Iterates through `self`'s particles, keeping only the ones with an [`OrbitType`]
+    /// that matches an element of `orbit_types`.
+    pub fn retain_orbit_types(&mut self, orbit_types: &[OrbitType]) {
+        self.particles.retain(|particle| {
+            let mut keep = false;
+            for typ in orbit_types {
+                if particle.orbit_type() == *typ {
+                    keep = true;
+                    break;
+                }
+            }
+            keep
         });
     }
 }

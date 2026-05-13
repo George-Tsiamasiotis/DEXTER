@@ -4,6 +4,8 @@ import numpy as np
 import dexter as dex
 import matplotlib.pyplot as plt
 
+RNG = np.random.default_rng(42)
+
 # Equilibrium setup
 LCFS = dex.LastClosedFluxSurface(kind="Toroidal", value=0.05)
 equilibrium = dex.Equilibrium(
@@ -17,7 +19,7 @@ mu = 7e-6
 
 # Initial Conditions setup
 num = 50000
-psi0s = dex.InitialFluxArray("Toroidal", np.random.random(num) * LCFS.value)
+psi0s = dex.InitialFluxArray("Toroidal", RNG.random(num) * LCFS.value)
 
 initial_conditions = dex.QueueInitialConditions.mixed(
     t0=np.zeros(num),
@@ -40,32 +42,25 @@ ax.set_title("All discovered particles")
 plt.show()
 
 # Filter out lost particles that are going to escape
-confined_queue = dex.Queue.from_particles(
-    [particle for particle in queue.particles if "Lost" not in particle.orbit_type]
+queue.retain_orbit_types(
+    ["CoPassingConfined", "CuPassingConfined", "TrappedConfined", "Potato", "Stagnated"]
 )
-_, ax = dex.plot_parabolas(
-    equilibrium, mu, particles=confined_queue.particles, show=False
-)
+_, ax = dex.plot_parabolas(equilibrium, mu, particles=queue.particles, show=False)
 ax.set_title(r"All non-Lost particles")
 plt.show()
-confined_queue.close(equilibrium, max_steps=100000)
-confined_queue.plot_qkinetic_pzeta_sweep(psip_last=equilibrium.psip_last)
-confined_queue.plot_qkinetic_energy_sweep()
+queue.close(equilibrium, max_steps=100000)
+queue.plot_qkinetic_pzeta_sweep(psip_last=equilibrium.psip_last)
+queue.plot_qkinetic_energy_sweep()
 
 # =========================
 
 # Calculate the frequencies of the trapped particles only
-trapped_particles = [
-    particle
-    for particle in queue.particles
-    if particle.orbit_type in ["TrappedConfined", "Stagnated", "Potato"]
-]
-_, ax = dex.plot_parabolas(equilibrium, mu, particles=trapped_particles, show=False)
+queue.retain_orbit_types(["TrappedConfined", "Stagnated", "Potato"])
+_, ax = dex.plot_parabolas(equilibrium, mu, particles=queue.particles, show=False)
 ax.set_title("Trapped particles only")
 plt.show()
 
-trapped_queue = dex.Queue.from_particles(trapped_particles)
-trapped_queue.close(equilibrium)
+queue.close(equilibrium)
 
-trapped_queue.plot_qkinetic_pzeta_sweep(psip_last=equilibrium.psip_last)
-trapped_queue.plot_qkinetic_energy_sweep()
+queue.plot_qkinetic_pzeta_sweep(psip_last=equilibrium.psip_last)
+queue.plot_qkinetic_energy_sweep()

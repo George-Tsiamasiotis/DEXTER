@@ -7,6 +7,7 @@ Python methods that wrap rust 'generic' methods, assemble the monomorphized meth
 using the generic object's `_dyn` attribute.
 """
 
+from collections.abc import Iterable
 import numpy as np
 from typing import Callable, Optional
 
@@ -1539,6 +1540,25 @@ class Queue(_QueuePlotter):
             in an unfilled bin will be selected.
         """
         self._rust.bin_pzeta(num_bins)
+
+    def retain_energy_pzeta_positions(
+        self,
+        positions: Iterable[EnergyPzetaPosition],
+    ) -> None:
+        r"""Iterates through self’s particles, keeping only the ones with an
+        [`EnergyPzetaPosition`][dexter.EnergyPzetaPosition] that matches an element of
+        `positions`.
+        """
+        self._rust.retain_energy_pzeta_positions(positions)
+
+    def retain_orbit_types(
+        self,
+        orbit_types: Iterable[OrbitType],
+    ) -> None:
+        r"""Iterates through self’s particles, keeping only the ones with an
+        [`OrbitType`][dexter.OrbitType] that matches an element of `orbit_types`.
+        """
+        self._rust.retain_orbit_types(orbit_types)
 
     @property
     def initial_conditions(self) -> QueueInitialConditions:

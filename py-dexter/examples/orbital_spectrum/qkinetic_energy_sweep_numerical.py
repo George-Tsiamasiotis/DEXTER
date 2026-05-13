@@ -10,12 +10,12 @@ equilibrium = dex.numerical_equilibrium("data.nc", "Steffen", "Bicubic")
 num = 10000
 psip0s = dex.InitialFluxArray("Poloidal", np.full(num, 0.25 * equilibrium.psip_last))
 
-initial_conditions = dex.QueueInitialConditions.mixed(
+initial_conditions = dex.QueueInitialConditions.boozer(
     t0=np.zeros(num),
     flux0=psip0s,
     theta0=np.zeros(num),
     zeta0=np.zeros(num),
-    pzeta0=np.linspace(-0.3, 0.25, num),
+    rho0=np.geomspace(1e-4, 1e-2, num),
     mu0=np.full(num, 5e-5),
 )
 

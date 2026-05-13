@@ -42,21 +42,14 @@ queue.classify(equilibrium)
 
 dex.plot_parabolas(equilibrium, mu, queue.particles)
 
-# Keep only specific E-Pζ regions
-filter: list[EnergyPzetaPosition] = ["Alpha", "Epsilon", "Kappa", "Iota"]
-filtered_queue = dex.Queue.from_particles(
-    [
-        particle
-        for particle in queue.particles
-        if particle.initial_energy / mu < ymax + 0.1
-        and particle.energy_pzeta_position in filter
-    ]
-)
+# Keep only specific E-Pζ regions and energies
+queue.retain_energy_pzeta_positions(["Alpha", "Epsilon", "Kappa", "Iota"])
+queue.retain_energy((0, (ymax + 0.1) * mu))
 
-dex.plot_parabolas(equilibrium, mu, filtered_queue.particles, ymax=ymax)
+dex.plot_parabolas(equilibrium, mu, queue.particles, ymax=ymax)
 
 
-filtered_queue.close(
+queue.close(
     equilibrium,
     max_steps=100000,
     energy_rel_tol=1e-13,
@@ -65,13 +58,13 @@ filtered_queue.close(
 
 dex.plot_qkinetic_tricontour(
     equilibrium,
-    queue=filtered_queue,
+    queue=queue,
     ymax=2.5,
 )
 
 dex.plot_qkinetic_tricontour(
     equilibrium,
-    queue=filtered_queue,
+    queue=queue,
     ymax=2.5,
     levels=np.arange(-4, 4, 0.5),
 )
