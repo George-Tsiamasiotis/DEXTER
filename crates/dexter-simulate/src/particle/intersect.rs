@@ -3,19 +3,16 @@
 use std::f64::consts::{PI, TAU};
 use std::time::Instant;
 
+use approx::abs_diff_eq;
 use dexter_equilibrium::{Bfield, Current, FluxCommute, Harmonic, HarmonicCache, Qfactor};
 
+use crate::constants::ANGLE_INTERSECTION_THRESHOLD;
 use crate::particle::{EqObjects, Evolution, IntegrationCaches, Particle, ParticleCacheStats};
 use crate::solve::{SolverParams, Stepper};
 use crate::state::GCState;
 use crate::{FluxCoordinate, SimulationError};
 
 use super::IntegrationStatus;
-
-/// The maximum allowed relative difference between two consecutive intersections.
-///
-/// The difference must be smaller that the solver's truncation error.
-const INTERSECTION_THRESHOLD: f64 = 1e-9;
 
 /// Defines the surface of the Poincare section.
 #[derive(Debug, Clone, Copy)]
@@ -257,8 +254,17 @@ pub(crate) fn calculate_mod_state1(state1: &GCState, intersection: &Intersection
 /// dτ here has units of angle, since it is the 'time' step on the modified system.
 pub(crate) fn calculate_mod_step(state1: &GCState, intersect_params: &IntersectParams) -> f64 {
     let surface_angle = intersect_params.angle;
-    // NOTE: This is needed to move the %2π pole when α happens to be a multiple of 2π.
-    let pole = if surface_angle.abs() < 1e-2 { PI } else { 0.0 };
+    // NOTE: This is needed to move the %2π pole when the surface angle happens to be close to
+    // a multiple of 2π. The surface angle is always modded to 2π, so we only need to check inside
+    // this interval.
+    // The tolerance doesn't have to be very tight, since moving the pole doesn't change the result.
+    let pole = if abs_diff_eq!(surface_angle.abs(), 0.0, epsilon = 1e-1) {
+        PI
+    } else if abs_diff_eq!(surface_angle.abs(), TAU, epsilon = 1e-1) {
+        -PI
+    } else {
+        0.0
+    };
     match intersect_params.intersection {
         Intersection::ConstTheta => surface_angle - (state1.theta + pole).rem_euclid(TAU) + pole,
         Intersection::ConstZeta => surface_angle - (state1.zeta + pole).rem_euclid(TAU) + pole,
@@ -281,8 +287,8 @@ where
 {
     let mut mod_stepper = Stepper::new(mod_state1);
     mod_stepper.start(dtau, objects, mod_caches)?;
+    // NOTE: This is equivalent to adjusting the step-size for the modified system.
     {
-        // NOTE: This is equivalent to adjusting the step-size for the modified system.
         mod_stepper.weights[0] = match mod_state1.coordinate {
             FluxCoordinate::Toroidal => mod_state1.psi_dot,
             FluxCoordinate::Poloidal => mod_state1.psip_dot,
@@ -376,7 +382,6 @@ fn check_mapping_accuracy(evolution: &Evolution, intersection: &Intersection) ->
 
 /// Extracted for testing.
 fn _check_mapping_accuracy(intersections_array: &[f64]) -> Result<(), ()> {
-    // FIXME: fix this and its tests when add proper orbit classification
     if intersections_array
         .windows(2)
         .skip(1) // Skip the starting point, since it is often not on the intersection
@@ -384,11 +389,11 @@ fn _check_mapping_accuracy(intersections_array: &[f64]) -> Result<(), ()> {
             approx::abs_diff_eq!(
                 (angle_pair[1] - angle_pair[0]).rem_euclid(TAU),
                 TAU,
-                epsilon = INTERSECTION_THRESHOLD
+                epsilon = ANGLE_INTERSECTION_THRESHOLD
             ) || approx::abs_diff_eq!(
                 (angle_pair[1] - angle_pair[0]).rem_euclid(TAU),
                 0.0,
-                epsilon = INTERSECTION_THRESHOLD
+                epsilon = ANGLE_INTERSECTION_THRESHOLD
             )
         })
     {

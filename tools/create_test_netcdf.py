@@ -63,7 +63,7 @@ OUTPUT = Path(args.output)
 baxis = 1.5
 raxis = 1.75
 zaxis = 0
-rgeo = 1.7
+rgeo = raxis
 a = 0.5  # "small radius"
 
 flux_last_value_norm = 0.5  # can be either ψ_last or ψp_last

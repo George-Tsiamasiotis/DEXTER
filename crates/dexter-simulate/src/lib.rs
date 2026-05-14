@@ -100,6 +100,8 @@ pub use coms::{COMs, EnergyPzetaPlane, TrappedPassingBoundary};
 pub mod constants {
     use super::SteppingMethod;
 
+    // ================ Solver Parameters ================
+
     /// The default optimal step calculation method.
     pub const DEFAULT_STEPPING_METHOD: SteppingMethod = SteppingMethod::EnergyAdaptiveStep;
 
@@ -124,12 +126,29 @@ pub mod constants {
     /// The default absolute tolerance of the local truncation error in every step.
     pub const DEFAULT_ERROR_ABS_TOL: f64 = 1e-14;
 
-    /// The default relative tolerance of the `ψ-ψ0` check in the
-    /// [`Particle::close`][crate::Particle::close] routine.
-    pub const PSI_RELATIVE_TOLERANCE: f64 = 1e-3;
+    // ============== COMs Space Parameters ==============
 
     /// The density of the trapped-passing boundary curves' points.
     ///
     /// A higher number is needed to better classify Potato and Stagnated orbits.
     pub const TRAPPED_PASSING_BOUNDARY_DENSITY: usize = 500;
+
+    // ============== Poincare intersection ==============
+
+    /// The maximum allowed relative difference between two consecutive poincare intersections.
+    ///
+    /// The difference must be smaller that the solver's truncation error.
+    pub const ANGLE_INTERSECTION_THRESHOLD: f64 = 1e-9;
+
+    // ================== Orbit closing ==================
+
+    /// The default relative tolerance of the short-circuit `flux-flux0` check in the
+    /// [`Particle::close`][crate::Particle::close] routine.
+    ///
+    /// This only affects performance, but should be smaller than [`FLUX_REL_TOL`].
+    pub const SHORT_CIRCUIT_FLUX_REL_TOL: f64 = 1e-4;
+
+    /// The default relative tolerance of the `flux-flux0` check in the
+    /// [`Particle::close`][crate::Particle::close] routine.
+    pub const FLUX_REL_TOL: f64 = 1e-6;
 }

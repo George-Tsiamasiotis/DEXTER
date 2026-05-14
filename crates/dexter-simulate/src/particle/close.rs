@@ -6,7 +6,7 @@ use std::time::Instant;
 use approx::relative_eq;
 use dexter_equilibrium::{Bfield, Current, FluxCommute, Harmonic, HarmonicCache, Qfactor};
 
-use crate::constants::PSI_RELATIVE_TOLERANCE;
+use crate::constants::{FLUX_REL_TOL, SHORT_CIRCUIT_FLUX_REL_TOL};
 use crate::particle::intersect::{
     calculate_intersection_state, calculate_mod_state1, calculate_mod_state2, calculate_mod_step,
     intersected,
@@ -55,16 +55,14 @@ pub(super) fn close<Q, C, B, H>(
         particle.integration_status = IntegrationStatus::InvalidInitialConditions;
         return;
     }
-    let Ok(mut state1) = GCState::new(&particle.initial_conditions, objects, &mut caches) else {
+    let Ok(state0) = GCState::new(&particle.initial_conditions, objects, &mut caches) else {
         particle.integration_status = IntegrationStatus::OutOfBoundsInitialization;
         return;
     };
 
-    // `state1` has been evaluated on the initial point
-    particle.initial_energy = Some(state1.energy());
-    let theta_dot0_sign = state1.theta_dot.signum();
-    let theta0 = state1.theta;
-    let psi0 = state1.psi;
+    // `state0` has been evaluated on the initial point
+    particle.initial_energy = Some(state0.energy());
+    let mut state1 = state0.clone();
 
     let mut state2: GCState;
     let mut dt = solver_params.first_step;
@@ -72,7 +70,7 @@ pub(super) fn close<Q, C, B, H>(
 
     // Phony intersection parameters to be used in the modified system. The `turns` field is
     // ignored.
-    let intersect_params = &IntersectParams::new(Intersection::ConstTheta, theta0, 0);
+    let intersect_params = &IntersectParams::new(Intersection::ConstTheta, state0.theta, 0);
 
     // =============== Main loop
 
@@ -99,12 +97,23 @@ pub(super) fn close<Q, C, B, H>(
             break;
         };
 
+        // This may only fail if an evaluation of the modified system fails
+        let Ok(close_period_check) = closed_period(
+            objects,
+            &state0,
+            &state1,
+            &state2,
+            intersect_params,
+            &mut mod_caches,
+        ) else {
+            particle.integration_status = IntegrationStatus::ModStateEscaped;
+            break;
+        };
+
         // Avoid stopping the particle at the start of the integration. When the `stepping_method`
         // is `EnergyAdaptiveStep`, the step size grows almost exponentially, so 10 steps should be
         // enough for `ψ` to move sufficiently far from `ψ0`.
-        if closed_period(&state1, &state2, theta0, psi0, theta_dot0_sign)
-            && particle.steps_taken() > 10
-        {
+        if particle.steps_taken() > 10 && close_period_check {
             closed_periods += 1;
         };
 
@@ -178,20 +187,65 @@ pub(super) fn close<Q, C, B, H>(
 
 /// Checks if `state1` and `state2` stand 'left and right' of the period closing point. This
 /// indicates that the particle reached its starting point.
-#[expect(clippy::float_cmp, reason = "sign check")]
-fn closed_period(
+///
+/// The check is performed by taking a step on the modified system, which guarantees that `θ` will
+/// be exactly `θ0`. Then, it checks if `ψ` is also close to `ψ0`, which indicates that the orbit is
+/// closed.
+///
+/// # Errors
+///
+/// This method returns an `Err(())` if an evaluation on the modified system fails, which is the
+/// only possible error.
+fn closed_period<Q, C, B, H>(
+    objects: &EqObjects<Q, C, B, H>,
+    state0: &GCState,
     state1: &GCState,
     state2: &GCState,
-    theta0: f64,
-    psi0: f64,
-    theta_dot0_sign: f64,
-) -> bool {
-    // Short-circuit the `ψ` check since `intersected()` can be significantly more expensive to
-    // calculate.
-    (relative_eq!(state1.psi, psi0, epsilon = PSI_RELATIVE_TOLERANCE)
-        || intersected(state1.psi, state2.psi, psi0))
-        && state1.theta_dot.signum() == theta_dot0_sign
-        && intersected(state1.theta, state2.theta, theta0)
+    intersect_params: &IntersectParams,
+    mod_caches: &mut IntegrationCaches<H::Cache>,
+) -> Result<bool, ()>
+where
+    Q: Qfactor + FluxCommute,
+    C: Current,
+    B: Bfield,
+    H: Harmonic,
+{
+    // PERF: Short-circuit the `ψ` check to avoid the more expensive checks
+    if !relative_eq!(state0.psi, state1.psi, epsilon = SHORT_CIRCUIT_FLUX_REL_TOL) {
+        return Ok(false);
+    }
+    if !intersected(state1.theta, state2.theta, state0.theta) {
+        return Ok(false);
+    }
+
+    // Switch to the modified system
+    let mod_state1 = calculate_mod_state1(state1, &intersect_params.intersection);
+    // Time step to accurately close the orbit
+    let dtau = calculate_mod_step(state1, intersect_params);
+
+    // Perform the step on the modified system
+    //
+    // If `mod_state2` was calculated correctly, switch back to the normal system, calculate
+    // `intersection_state` and check for closed period
+    //
+    // The two calculations can only fail if an evaluation of the modified system is out of bounds
+    let Ok(mod_state2) = calculate_mod_state2(objects, &mod_state1, dtau, mod_caches) else {
+        return Err(());
+    };
+    let Ok(intersection_state) =
+        calculate_intersection_state(objects, &mod_state2, intersect_params, mod_caches)
+    else {
+        return Err(());
+    };
+
+    // Final `ψ-ψ0` and `θ` direction checks
+    if !relative_eq!(state0.psi, intersection_state.psi, epsilon = FLUX_REL_TOL) {
+        return Ok(false);
+    }
+    if state0.theta_dot.signum() != intersection_state.theta_dot.signum() {
+        return Ok(false);
+    }
+    Ok(true)
 }
 
 /// Calculates the final `ωθ`, `ωζ` and `qkinetic` and stores them in the particle's

@@ -428,7 +428,7 @@ impl Particle {
     /// itself on the initial point exactly, similar to how [`Particle::intersect`] lands exactly
     /// on the intersection surface.
     ///
-    /// This routine yields the particle's `ωθ`, `ωζ` and `qkinetic`, and classifies its orbit.
+    /// This routine also yields the particle's `ωθ`, `ωζ` and `qkinetic`.
     ///
     /// [`Hénon`]: https://www.sciencedirect.com/science/article/abs/pii/0167278982900343
     ///
