@@ -17,19 +17,23 @@ pub enum EqError {
 
     /// Error from [`rsl_interpolation`].
     #[error("Interpolation error: {0}")]
-    InterpolationError(#[from] rsl_interpolation::InterpolationError),
+    InterpolationError(#[from] rsl_interpolation::InterpolatorError),
 
     /// Analytical threshold index cannot be greater that the number of data points.
     #[error("Analytical threshold index cannot be greater that the number of data points")]
-    InvalidHarmonicAnalyticalThresholdIndex,
+    InvalidFluteModeAnalyticalThresholdIndex,
 }
 
 /// Evaluation related errors.
 #[derive(thiserror::Error, Debug)]
 pub enum EvalError {
-    /// Interpolation domain error from [`rsl_interpolation`].
-    #[error("Interpolation domain error: {0}")]
-    DomainError(#[from] rsl_interpolation::DomainError),
+    /// 1D Interpolation domain error from [`rsl_interpolation`].
+    #[error("1D Interpolation domain error: {0}")]
+    Domain1dError(#[from] rsl_interpolation::Domain1dError),
+
+    /// 2D Interpolation domain error from [`rsl_interpolation`].
+    #[error("2D Interpolation domain error: {0}")]
+    Domain2dError(#[from] rsl_interpolation::Domain2dError),
 
     /// Analytical evaluation method received an out-of-bounds input.
     ///
@@ -92,9 +96,9 @@ pub enum NcError {
     #[error("'{0}' variable not found in NetCDF file")]
     VariableNotFound(Box<str>),
 
-    /// Harmonic with passed mode number does not exist.
+    /// Mode with passed mode number does not exist.
     #[error("Mode '{which}={mode}' not found in the NetCDF file.")]
-    HarmonicModeNotFound {
+    FluteModeNotFound {
         /// The name of the mode ('m' or 'n').
         which: String,
         /// The mode number.
