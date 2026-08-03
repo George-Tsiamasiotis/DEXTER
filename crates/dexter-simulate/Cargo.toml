@@ -1,6 +1,6 @@
 [package]
 name = "dexter-simulate"
-version = "0.1.5"
+version = "0.1.6-pre.2"
 authors.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -14,33 +14,17 @@ description = "Simulations of charge particles inside a plasma"
 
 [dependencies]
 dexter-common.workspace = true
-dexter-equilibrium.workspace = true
+dexter-machine.workspace = true
 thiserror.workspace = true
 ndarray.workspace = true
 approx.workspace = true
 parabola.workspace = true
 rsl-interpolation.workspace = true
-rayon = "1.11.0"
-indicatif = "0.18.4"
+rayon = "1.12.0"
+indicatif = "0.18.6"
 
 [lints]
 workspace = true
-
-[[example]]
-name = "integrate"
-path = "examples/integrate.rs"
-
-[[example]]
-name = "intersect"
-path = "examples/intersect.rs"
-
-[[example]]
-name = "stepping_method"
-path = "examples/stepping_method.rs"
-
-[[example]]
-name = "queue_integrate"
-path = "examples/queue_integrate.rs"
 
 [[bin]]
 name = "analytical_integration"
