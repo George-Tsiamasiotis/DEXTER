@@ -92,6 +92,12 @@ pub(super) fn intersect<Q, C, B, H>(
     particle.initial_energy = Some(state1.energy());
     let mut state2: GCState;
     let mut dt = solver_params.first_step;
+    let dot0_sign = match intersect_params.intersection {
+        Intersection::ConstTheta => state1.theta_dot,
+        Intersection::ConstZeta => state1.zeta_dot,
+    }
+    .signum()
+    .to_owned();
 
     // =============== Main loop
 
@@ -125,7 +131,15 @@ pub(super) fn intersect<Q, C, B, H>(
         };
 
         // Hénon's trick
-        if intersected(old_angle, new_angle, intersect_params.angle) {
+        let dot_sign = match intersect_params.intersection {
+            Intersection::ConstTheta => state1.theta_dot,
+            Intersection::ConstZeta => state1.zeta_dot,
+        }
+        .signum()
+        .to_owned();
+        let directions_ok = dot0_sign == dot_sign;
+        // let directions_ok = true;
+        if directions_ok & intersected(old_angle, new_angle, intersect_params.angle) {
             // Switch to the modified system
             let mod_state1 = calculate_mod_state1(&state1, &intersect_params.intersection);
 

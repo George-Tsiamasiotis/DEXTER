@@ -8,6 +8,8 @@ use crate::particle::{EqObjects, IntegrationCaches, Particle};
 use crate::state::GCState;
 use crate::{EnergyPzetaPlane, OrbitType};
 
+// const PSIP_REV: f64 = 0.09157457;
+
 /// The position of an `(E-Pζ)` point on the `(E-Pζ)` plane, relative to the orbit
 /// classification curves.
 ///
@@ -38,7 +40,7 @@ pub enum EnergyPzetaPosition {
 impl EnergyPzetaPosition {
     /// Creates a new `EnergyPzetaPosition` from an `(E, Pζ)` plane and a point.
     #[expect(clippy::redundant_else, reason = "hopeless")]
-    pub(crate) fn new(point: Point, plane: &EnergyPzetaPlane, theta0_dot: f64) -> Self {
+    pub(crate) fn new(point: Point, plane: &EnergyPzetaPlane, state0: &GCState) -> Self {
         let psip_last = -plane
             .left_wall_parabola()
             .axis()
@@ -46,6 +48,7 @@ impl EnergyPzetaPosition {
 
         let pzeta = point.x;
         let energy = point.y;
+        let dot0 = state0.theta_dot;
 
         let mut acc = Accelerator::new();
         let is_in_axis = plane.axis_parabola().contains(point);
@@ -81,7 +84,7 @@ impl EnergyPzetaPosition {
             } else if is_in_axis {
                 return Self::Zeta;
             } else {
-                if theta0_dot.is_sign_positive() {
+                if dot0.is_sign_positive() {
                     return Self::Delta;
                 } else {
                     return Self::Epsilon;
@@ -95,7 +98,11 @@ impl EnergyPzetaPosition {
             if is_in_tpb {
                 return Self::Theta; // Potato
             } else {
-                return Self::Eta;
+                if dot0.is_sign_negative() {
+                    return Self::Mu;
+                } else {
+                    return Self::Eta;
+                }
             }
         }
 
@@ -106,7 +113,7 @@ impl EnergyPzetaPosition {
         }
 
         if is_above_tp {
-            if theta0_dot.is_sign_positive() {
+            if dot0.is_sign_positive() {
                 return Self::Kappa;
             } else {
                 return Self::Lambda;
@@ -213,8 +220,7 @@ pub(super) fn classify<Q, C, B, H>(
 
     // =============== Routine
 
-    particle.energy_pzeta_position =
-        EnergyPzetaPosition::new(point, plane, initial_state.theta_dot);
+    particle.energy_pzeta_position = EnergyPzetaPosition::new(point, plane, &initial_state);
     particle.orbit_type = particle.energy_pzeta_position.orbit_type();
 }
 

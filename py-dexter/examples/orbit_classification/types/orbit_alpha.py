@@ -8,7 +8,7 @@ This script accompanies Rust's `orbit_classification` tests.
 import dexter as dex
 from math import sqrt
 
-LCFS = dex.LastClosedFluxSurface("Toroidal", 0.03)
+LCFS = dex.LastClosedFluxSurface("Toroidal", 0.4)
 raxis = 1.75
 rlast = sqrt(2 * LCFS.value) * raxis  # `rlast` must be in [m]
 equilibrium = dex.Equilibrium(

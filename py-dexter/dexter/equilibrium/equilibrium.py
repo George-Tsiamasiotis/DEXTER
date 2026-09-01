@@ -204,6 +204,11 @@ class Equilibrium:
         return self.qfactor.psip_last
 
     @property
+    def path(self) -> str:
+        r"""The netCDF file's path, if the equilibrium is numerical."""
+        return self._try_getattr("path")
+
+    @property
     def baxis(self) -> float:
         r"""The magnetic field strength on the axis, $B_{axis}$."""
         return self._try_getattr("baxis")
@@ -387,6 +392,7 @@ class Equilibrium:
             zlab_array,
             db_dtheta_array,
             levels=[0],
+            linewidths=0,
         ).allsegs[0]
         for line in lines:
             axes[1].plot(
@@ -445,7 +451,7 @@ class Equilibrium:
             The produced `Figure` and `Ax`.
         """
 
-        fig = plt.figure(figsize=(8, 7), layout="constrained", dpi=120)
+        fig = plt.figure(figsize=(3, 3), layout="constrained", dpi=200)
         ax = fig.add_subplot(aspect="equal")
 
         if (not isinstance(self.geometry, NcGeometry)) or (
@@ -474,15 +480,18 @@ class Equilibrium:
 
         setattr(ax, "format_coord", format_coord)
 
-        ax.set_title(r"$Poloidal\ flux\ surfaces$")
+        # ax.set_title(r"$Poloidal\ flux\ surfaces$")
         ax.set_xlabel(r"$R[m]$")
         ax.set_ylabel(r"$Z[m]$")
 
-        ax.plot(*axis_point, "ko", markersize=4, label="$R_{axis}$")
-        ax.plot(*geom_center, "ro", markersize=4, label="$R_{geometric}$")
+        ax.plot(
+            *axis_point, "ko", markersize=4, label=r"$R_{axis}\equiv R_{geometric}$"
+        )
+        # ax.plot(*geom_center, "ro", markersize=4, label="$R_{geometric}$")
 
         ax.plot(rlab_last, zlab_last, color="k", linewidth=2)
-        ax.legend()
+        ax.legend(loc="upper right")
+        ax.margins(0)
 
         if show:
             plt.show()
@@ -505,8 +514,9 @@ class Equilibrium:
         Canvas
             The produced `Figure` and `Ax`.
         """
+        print(self.bfield)
 
-        fig = plt.figure(figsize=(8, 7), layout="constrained", dpi=120)
+        fig = plt.figure(figsize=(3, 3), layout="constrained", dpi=200)
         ax = fig.add_subplot(aspect="equal")
 
         if (not isinstance(self.geometry, NcGeometry)) or (
@@ -537,15 +547,18 @@ class Equilibrium:
 
         setattr(ax, "format_coord", format_coord)
 
-        ax.set_title(r"$Boozer\ theta\ '\theta_B=const'\ lines$")
+        # ax.set_title(r"$Boozer\ theta\ '\theta_B=const'\ lines$")
         ax.set_xlabel(r"$R[m]$")
         ax.set_ylabel(r"$Z[m]$")
 
-        ax.plot(*axis_point, "ko", markersize=4, label="$R_{axis}$")
-        ax.plot(*geom_center, "ro", markersize=4, label="$R_{geometric}$")
+        ax.plot(
+            *axis_point, "ko", markersize=4, label=r"$R_{axis}\equiv R_{geometric}$"
+        )
+        # ax.plot(*geom_center, "ro", markersize=4, label="$R_{geometric}$")
 
         ax.plot(rlab_last, zlab_last, color="k", linewidth=2)
         ax.legend()
+        ax.margins(0)
 
         if show:
             plt.show()

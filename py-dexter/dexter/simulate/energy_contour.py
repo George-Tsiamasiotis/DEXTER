@@ -6,10 +6,10 @@ from matplotlib.ticker import LogLocator, MaxNLocator
 from dexter.equilibrium.equilibrium import Equilibrium
 from dexter.equilibrium.objects import LarGeometry
 from dexter.simulate.objects import Particle, COMs
-from dexter.types import Array1, Array2, Canvas, Locator
+from dexter.types import Array1, Array2, Canvas, Locator, UnitSystem
 
-SCATTER_KW = {"s": 0.8, "c": "red"}
-LOG_LOCATOR_BASE = 1 + 1e-10
+SCATTER_KW = {"s": 0.1, "c": "red", "zorder": 100, "edgecolor": None}
+LOG_LOCATOR_BASE = 1 + 1e-14
 
 
 def plot_energy_contour(
@@ -73,6 +73,8 @@ def plot_particle_poloidal_drift(
     particle: Particle,
     equilibrium: Equilibrium,
     *,
+    units: UnitSystem = "SI",
+    initial: bool = True,
     flux_span: tuple[float, float] = (0, 1),
     levels: int = 30,
     density: int = 200,
@@ -120,7 +122,7 @@ def plot_particle_poloidal_drift(
     )
 
     geom = equilibrium.geometry
-    if isinstance(geom, LarGeometry) or geom.psi_state == "Good":
+    if geom.psi_state == "Good":
         rlab_of_flux = geom.rlab_of_psi
         zlab_of_flux = geom.zlab_of_psi
         energy_of_flux = coms.energy_of_psi_grid
@@ -158,12 +160,42 @@ def plot_particle_poloidal_drift(
         "cmap": "plasma",
     }
 
-    contour = ax.contourf(rlab_grid, zlab_grid, energy_grid.T, **kw)
+    if units.lower() == "si":
+        energy_grid = equilibrium.quantity(energy_grid, "energy_unit").to("keV").m
+        pbar_label = r"$Energy\ [keV]$"
+    else:
+        pbar_label = r"$Energy\ [Normalized]$"
+    print(energy_grid.min(), energy_grid.max())
 
-    fig.colorbar(contour, label=r"$Energy\ [Normalized]$")
-    ax.scatter(rlab, zlab, **SCATTER_KW)
+    contour = ax.contourf(rlab_grid, zlab_grid, energy_grid.T, **kw)
+    ax.contour(
+        rlab_grid,
+        zlab_grid,
+        energy_grid.T,
+        colors="k",
+        levels=levels,
+        locator=_locator,
+        linewidths=0.4,
+    )
+
+    fig.colorbar(contour, label=pbar_label)
+    xbound = ax.get_xbound()
+    ybound = ax.get_ybound()
+    ax.plot(rlab, zlab, c="r", linewidth=1)
+
+    if initial:
+        flux0 = particle.initial_conditions.flux0.value
+        theta0 = thetas[0]
+        r0 = rlab_of_flux(flux0, theta0)
+        z0 = zlab_of_flux(flux0, theta0)
+        ax.scatter(
+            r0, z0, marker="x", s=30, c="k", label=r"$Initial\ (\psi_0, \theta_0)$"
+        )
+
     ax.set_title(title + rf" (orbit type: ${particle.orbit_type}$)")
     ax.grid(False)
+    ax.set_xbound(*xbound)
+    ax.set_ybound(*ybound)
 
     if show:
         plt.show()

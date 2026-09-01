@@ -699,7 +699,7 @@ impl SingleNcHarmonic {
         use crate::extract;
 
         let (alpha_data, phase_data) = extract::harmonic_arrays(file, builder.m, builder.n)?;
-        let alphas = alpha_data.to_vec();
+        let alphas = (8.0f64 * alpha_data).to_vec();
         let phases = phase_data.to_vec();
 
         debug_assert_all_finite_values(&alphas);

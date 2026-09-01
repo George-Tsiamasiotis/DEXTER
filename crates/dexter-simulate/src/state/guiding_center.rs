@@ -334,8 +334,9 @@ impl GCState {
     }
 
     fn calculate_canonical_momenta(&mut self) {
-        self.ptheta = self.psi + self.rho * self.i;
-        self.pzeta = self.rho * self.g - self.psip;
+        let new_rho = self.rho - self.p;
+        self.ptheta = self.psi + new_rho * self.i;
+        self.pzeta = new_rho * self.g - self.psip;
     }
 
     fn calculate_delta_terms(&mut self) {

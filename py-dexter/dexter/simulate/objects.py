@@ -33,6 +33,7 @@ from dexter.types import (
     FluxCoordinate,
     CoordinateSet,
     Intersection,
+    Point,
     SteppingMethod,
     IntegrationStatus,
     EnergyPzetaPosition,
@@ -76,19 +77,26 @@ class Parabola:
         """
         return self._rust.eval_array1(arr)
 
+    def horizontal_line_intercepts(self, y: float) -> tuple[Point, Point]:
+        r"""The parabola's intersepts with a $y=const$ line.
+
+        The points are returned as $((x_1, y_1), (x_2, y_2))$.
+        """
+        return self._rust.horizontal_line_intercepts(y)
+
     @property
     def a(self) -> float:
-        r"""The parabolas $a$ coefficient."""
+        r"""The parabola's $a$ coefficient."""
         return self._rust.a
 
     @property
     def b(self) -> float:
-        """The parabolas $b$ coefficient."""
+        """The parabola's $b$ coefficient."""
         return self._rust.b
 
     @property
     def c(self) -> float:
-        """The parabolas $c$ coefficient."""
+        """The parabola's $c$ coefficient."""
         return self._rust.c
 
     def __str__(self) -> str:
@@ -1524,9 +1532,11 @@ class Queue(_QueuePlotter):
         r"""Iterates through self’s particles, keeping only one particle in each Pζ bin.
 
         Bins are defined as the intervals:
+
         $$
-        P_{\zeta, min} <= P_{\zeta, min} + \Delta P_\zeta <= P_{\zeta, min} + 2\Delta P_\zeta <= ... <= P_{\zeta, min} + (n-1)\Delta P_\zeta <= P_{\zeta, max},
+        P_{\zeta, min} <= P_{\zeta, min} + \Delta P_\zeta <= P_{\zeta, min} + 2\Delta P_\zeta <= ... <= P_{\zeta, min} + (n-1)\Delta P_\zeta <= P_{\zeta, max}
         $$
+
         where $n$=1..num_bins and $\Delta P_\zeta = (P_{\zeta,max} - P_{\zeta,min})/n$.
 
         When called after [`retain_energy`][dexter.Queue.retain_energy] with a small energy span,

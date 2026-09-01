@@ -59,7 +59,7 @@ impl Evolution {
         self.theta.push(state.theta);
         self.zeta.push(state.zeta);
         self.rho.push(state.rho);
-        self.mu.push(state.mu);
+        self.mu.push(state.zeta_dot);
         self.ptheta.push(state.ptheta);
         self.pzeta.push(state.pzeta);
         self.energy.push(state.energy);
@@ -82,7 +82,8 @@ impl Evolution {
             .energy
             .len()
             .ge(&2)
-            .then(|| self.energy_array().var(1.0));
+            .then(|| self.energy_array().var(1.0) / self.energy.first().unwrap());
+        self.energy_var = self.energy_var.or(Some(0.0)); // FIXME:
     }
 
     /// Discards the vecs, keeping all the other fields.

@@ -82,6 +82,8 @@ from dexter.compound_plots.plot_parabolas import (
     plot_qkinetic_tricontour,
 )
 
+from dexter.compound_plots.plot_particle_drifts import plot_particle_drifts
+
 __all__ = [
     # Free functions
     "get_max_threads",
@@ -148,4 +150,5 @@ __all__ = [
     # Plotting methods
     "plot_parabolas",
     "plot_qkinetic_tricontour",
+    "plot_particle_drifts",
 ]

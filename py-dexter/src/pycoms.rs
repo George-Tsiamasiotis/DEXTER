@@ -3,7 +3,7 @@
 use dexter::dexter_simulate::{COMs, EnergyPzetaPlane};
 use ndarray::Array1;
 use numpy::{IntoPyArray, PyArray1};
-use parabola::Parabola;
+use parabola::{Line, LineIntercepts, Parabola};
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 
@@ -22,6 +22,19 @@ impl PyParabola {
 
     pub fn eval_array1<'py>(&self, py: Python<'py>, arr: Vec<f64>) -> Bound<'py, PyArray1<f64>> {
         Array1::from(arr).mapv(|e| self.0.eval(e)).into_pyarray(py)
+    }
+
+    pub fn horizontal_line_intercepts<'py>(&self, y: f64) -> ((f64, f64), (f64, f64)) {
+        let line = Line {
+            slope: 0.0,
+            intercept: y,
+        };
+        match self.0.line_intercepts(&line) {
+            LineIntercepts::TwoIntercepts(first, second) => {
+                ((first.x, first.y), (second.x, second.y))
+            }
+            _ => panic!("Line does not intercept the parabola at 2 points"),
+        }
     }
 }
 

@@ -18,11 +18,11 @@ from collections.abc import Callable
 
 from dexter.types import Canvas
 
-FIG_KW = {"figsize": (7, 6), "dpi": 120, "layout": "constrained"}
+FIG_KW = {"figsize": (7, 6), "dpi": 180, "layout": "constrained"}
 SUBPLOT_KW = {"xmargin": 0, "ymargin": 0}
-PLOT_KW = {"c": "r", "linewidth": 1}
+PLOT_KW = {"c": "r", "linewidth": 3}
 OVERLAY_PLOT_KW = PLOT_KW | {"c": "b", "linestyle": "--"}
-SCATTER_KW = {"c": "k", "s": 4, "zorder": 2}
+SCATTER_KW = {"c": "k", "s": 6, "marker": "x", "zorder": 2}
 HAXIS_KW = {"c": "k", "linewidth": 1.5}
 FLUX_SURFACE_KW = {"c": "b", "zorder": 2}
 JACOBIAN_KW = {"levels": None, "cmap": "plasma", "zorder": 2}
@@ -394,8 +394,8 @@ class _GeometryPlotter:
         geom_center = (self._rust.rgeo, self._rust.zaxis)
         axis = (self._rust.raxis, self._rust.zaxis)
 
-        ax.plot(*geom_center, "ko", markersize=4, label="$R_{axis}$")
-        ax.plot(*axis, "ro", markersize=4, label="$R_{geo}$")
+        # ax.plot(*geom_center, "ko", markersize=4, label="$R_{axis}$")
+        ax.plot(*axis, "k+", markersize=4)
 
         def format_coord(x, y):
             r = sqrt((axis[0] - x) ** 2 + (axis[1] - y) ** 2)
@@ -1366,8 +1366,8 @@ class _HarmonicPlotter:
         fig = plt.figure(**FIG_KW)
         ax = fig.add_subplot(**SUBPLOT_KW | {"ymargin": 0.1})
         ax.set_title(r"$\phi(\psi)$ $profile$")
-        ax.set_xlabel(r"$\psi$ $[Normalized]$")
-        ax.set_ylabel(r"$\phi(\psi)$ $[Normalized]$")
+        ax.set_xlabel(r"$\psi$")
+        ax.set_ylabel(r"$\phi(\psi)$")
 
         ax.plot(psis, phis, label=ax.get_ylabel(), **PLOT_KW)
         if self._rust.equilibrium_type == "Numerical" and data:
@@ -1435,8 +1435,8 @@ class _HarmonicPlotter:
         fig = plt.figure(**FIG_KW)
         ax = fig.add_subplot(**SUBPLOT_KW | {"ymargin": 0.1})
         ax.set_title(r"$\phi(\psi_p)$ $profile$")
-        ax.set_xlabel(r"$\psi_p$ $[Normalized]$")
-        ax.set_ylabel(r"$\phi(\psi_p)$ $[Normalized]$")
+        ax.set_xlabel(r"$\psi_p$")
+        ax.set_ylabel(r"$\phi(\psi_p)$")
 
         ax.plot(psips, phis, label=ax.get_ylabel(), **PLOT_KW)
         if self._rust.equilibrium_type == "Numerical" and data:

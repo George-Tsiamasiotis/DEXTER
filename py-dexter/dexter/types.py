@@ -24,6 +24,8 @@ Array: TypeAlias = np.ndarray[ArrayShape, np.dtype[np.float64]]
 ArrayLike: TypeAlias = float | Array | Sequence
 """Objects that can be converted to arrays, i.e. float, np.ndarray, sequences, ..."""
 
+Point: TypeAlias = (float, float)
+
 UnitSystem: TypeAlias = Literal["NU", "SI"]
 """The unit system to be used in plots."""
 

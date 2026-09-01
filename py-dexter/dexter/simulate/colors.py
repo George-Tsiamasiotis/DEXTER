@@ -1,5 +1,7 @@
 """Utilities for colors used in plots."""
 
+from collections import Counter
+
 from matplotlib.patches import Patch
 
 from dexter.types import OrbitType
@@ -22,7 +24,7 @@ def orbit_color(orbit_type: OrbitType) -> str:
         case "CoPassingLost":
             return "xkcd:deep blue"
         case "CuPassingConfined":
-            return "xkcd:bright green"
+            return "xkcd:sea green"
         case "CuPassingLost":
             return "xkcd:deep green"
         case "Potato":
@@ -45,6 +47,6 @@ def _orbit_color_legend_handles(counter: Counter) -> list[Patch]:
         if orbit_type.startswith("Failed"):
             continue
         res.append(
-            Patch(color=orbit_color(orbit_type), label=f"{orbit_type} ({counts})")
+            Patch(color=orbit_color(orbit_type), label=rf"${orbit_type}\ ({counts})$")
         )
     return res

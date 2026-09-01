@@ -13,25 +13,32 @@ from dexter import Equilibrium, LarGeometry
 from dexter.types import Array1, Canvas, Canvas3d, MultiCanvas
 from dexter.simulate.colors import orbit_color, _orbit_color_legend_handles
 
-dpi = 120
+dpi = 160
 figsize = (10, 7)
 EVOLUTION_TARGET_POINTS = 50_000
 SCATTER_KW = {"s": 0.8, "c": "blue"}
 LABEL_KW = {"labelpad": 10, "rotation": 0, "fontsize": 15}
-CARTESIAN_POINCARE_FIG_KW = {"figsize": (9, 6), "layout": "constrained", "dpi": 120}
-CARTESIAN_POINCARE_SCATTER_KW = {"s": 0.3, "marker": "o"}
+CARTESIAN_POINCARE_FIG_KW = {"figsize": (6, 5), "layout": "constrained", "dpi": dpi}
+CARTESIAN_POINCARE_PLOT_KW = {
+    "marker": ".",
+    "markersize": 0.9,
+    "markeredgewidth": 0,
+    "alpha": 0.5,
+    "linestyle": "",
+}
 CARTESIAN_POINCARE_INITIAL_KW = {
     "c": "k",
     "marker": "x",
     "markersize": 3,
-    "alpha": 0.4,
+    "alpha": 1.0,
     "zorder": -2,
 }
 RZ_POINCARE_PLOT_KW = {
     "marker": ".",
-    "markersize": 0.8,
-    "color": "blue",
-    "alpha": 0.6,
+    "markersize": 1.5,
+    "markeredgewidth": 0,
+    # "color": "blue",
+    "alpha": 0.5,
     "linestyle": "",
 }
 RZ_POINCARE_INITIAL_KW = {
@@ -374,7 +381,7 @@ class _QueuePlotter:
         for particle in self._rust.particles:
             theta = pi_mod(particle.theta_array)
             psi = particle.psi_array
-            ax.scatter(theta, psi, **CARTESIAN_POINCARE_SCATTER_KW)
+            ax.plot(theta, psi, **CARTESIAN_POINCARE_PLOT_KW)
             if initial:
                 init = particle.initial_conditions
                 initial_point = (init.theta0, init.flux0.value)
@@ -388,6 +395,7 @@ class _QueuePlotter:
 
     def plot_const_theta_cartesian_poincare(
         self,
+        equilibrium: Equilibrium | None = None,
         initial: bool = False,
         color: bool = False,
         show: bool = True,
@@ -429,25 +437,46 @@ class _QueuePlotter:
         else:
             ax.set_prop_cycle(cycler(color=["blue"]))
 
+        for particle in self._rust.particles:
+            zeta = pi_mod(particle.zeta_array)
+            psip = particle.psip_array
+            if len(psip) == 0:
+                continue
+            if equilibrium is not None:
+                r_norm = equilibrium.geometry.r_of_psip(psip) / equilibrium.rlast
+                ax.plot(zeta, r_norm, **CARTESIAN_POINCARE_PLOT_KW)
+                if initial:
+                    init = particle.initial_conditions
+                    r0 = (
+                        equilibrium.geometry.r_of_psip(init.flux0.value)
+                        / equilibrium.rlast
+                    )
+                    initial_point = (init.zeta0, r0)
+                    ax.plot(*initial_point, **CARTESIAN_POINCARE_INITIAL_KW)
+            else:
+                ax.plot(zeta, psip, **CARTESIAN_POINCARE_PLOT_KW)
+                if initial:
+                    init = particle.initial_conditions
+                    initial_point = (init.zeta0, init.flux0.value)
+                    ax.plot(*initial_point, **CARTESIAN_POINCARE_INITIAL_KW)
+
+        if equilibrium is None:
+            ax.set_ylabel(r"$\psi_p\ [Normalized]$")
+            ax.set_title(
+                rf"$\psi_p$ - $\zeta$ cross section at $\theta$ = {intersect_params.angle}"
+            )
+        else:
+            ax.set_ylabel(r"$r/\alpha$")
+            ax.set_title(
+                rf"$r/\alpha$ - $\zeta$ cross section at $\theta$ = {intersect_params.angle}"
+            )
+
         ax.set_xlabel(r"$\zeta\ [rads]$")
-        ax.set_ylabel(r"$\psi_p\ [Normalized]$")
         ax.set_xlim(-PI, PI)
         ax.set_xticks(
             np.linspace(-np.pi, np.pi, 5),
             [r"$-\pi$", r"$-\pi/2$", r"$0$", r"$\pi/2$", r"$\pi$"],
         )
-        ax.set_title(
-            rf"$\psi_p$ - $\zeta$ cross section at $\theta$ = {intersect_params.angle}"
-        )
-
-        for particle in self._rust.particles:
-            zeta = pi_mod(particle.zeta_array)
-            psip = particle.psip_array
-            ax.scatter(zeta, psip, **CARTESIAN_POINCARE_SCATTER_KW)
-            if initial:
-                init = particle.initial_conditions
-                initial_point = (init.theta0, init.flux0.value)
-                ax.plot(*initial_point, **CARTESIAN_POINCARE_INITIAL_KW)
 
         if show:
             plt.show()
@@ -491,22 +520,31 @@ class _QueuePlotter:
         if intersect_params.intersection != "ConstZeta":
             raise RuntimeError("Intersection surface must be 'ConstZeta'")
 
-        if initial and self._rust[0].initial_conditions.flux0.kind == "Poloidal":
-            raise ValueError("Cannot plot 'ψp0' in an 'theta-psi' plot")
-
         fig = plt.figure(**CARTESIAN_POINCARE_FIG_KW)
         ax = fig.add_subplot(aspect="equal")
 
         if color:
             ax.set_prop_cycle(cycler(color="brcmk"))
+            ax.set_prop_cycle(
+                cycler(
+                    color=[
+                        "xkcd:sky blue",
+                        "xkcd:salmon",
+                        "xkcd:purple",
+                        "xkcd:mint green",
+                        "xkcd:rust",
+                        "xkcd:fuchsia",
+                    ]
+                )
+            )
         else:
             ax.set_prop_cycle(cycler(color=["blue"]))
 
         ax.set_xlabel(r"$R\ [m]$")
-        ax.set_xlabel(r"$Z\ [m]$")
-        ax.set_title(
-            rf"Poincare map at $\zeta$ = {intersect_params.angle} cross section"
-        )
+        ax.set_ylabel(r"$Z\ [m]$")
+        # ax.set_title(
+        #     rf"Poincare map at $\zeta$ = {intersect_params.angle} cross section"
+        # )
 
         geom = equilibrium.geometry
         if isinstance(geom, LarGeometry) or geom.psi_state == "Good":
@@ -536,6 +574,8 @@ class _QueuePlotter:
                 initial_point = (rlab0, zlab0)
                 ax.plot(*initial_point, **RZ_POINCARE_INITIAL_KW)
 
+        # ax.plot([], [], **RZ_POINCARE_PLOT_KW, label=r"$Poincare\ intersections$")
+
         # Cursor
         geom_center = (geom.rgeo, geom.zaxis)
         axis_point = (geom.raxis, geom.zaxis)
@@ -546,11 +586,12 @@ class _QueuePlotter:
 
         setattr(ax, "format_coord", format_coord)
         ax.plot(*axis_point, "ko", markersize=4, label="$R_{axis}$")
-        ax.plot(*geom_center, "ro", markersize=4, label="$R_{geometric}$")
+        # ax.plot(*geom_center, "ro", markersize=4, label="$R_{geometric}$")
 
         rlab_last = equilibrium.geometry.rlab_last
         zlab_last = equilibrium.geometry.zlab_last
         ax.plot(rlab_last, zlab_last, color="k", linewidth=2)
+        ax.margins(0)
         ax.legend()
 
         if show:
@@ -757,6 +798,125 @@ class _QueuePlotter:
         ax.set_title(r"$q_{kinetic}(P_\zeta, E)$")
         ax.legend(handles=_orbit_color_legend_handles(Counter(orbit_types)))
         ax.grid(True)
+
+        if show:
+            plt.show()
+            plt.close()
+
+        return (fig, ax)
+
+    def plot_pzeta_zeta_poincare(
+        self,
+        equilibrium: Equilibrium,
+        initial: bool = False,
+        color: bool = False,
+        show: bool = True,
+    ) -> Canvas:
+        r""" """
+
+        try:
+            intersect_params = getattr(self, "_intersect_params")._rust
+        except:
+            raise RuntimeError("Queue must have run the 'intersect' routine.")
+
+        fig = plt.figure(**CARTESIAN_POINCARE_FIG_KW)
+        ax = fig.add_subplot()
+
+        if color:
+            ax.set_prop_cycle(cycler(color="brcmk"))
+        else:
+            ax.set_prop_cycle(cycler(color=["blue"]))
+
+        ax.set_xlabel(r"$\zeta\ [rads]$")
+        ax.set_ylabel(r"$P_\zeta/\psi_{p, last}$")
+        ax.set_xlim(-PI, PI)
+        ax.set_xticks(
+            np.linspace(-np.pi, np.pi, 5),
+            [r"$-\pi$", r"$-\pi/2$", r"$0$", r"$\pi/2$", r"$\pi$"],
+        )
+        ax.set_title(
+            rf"$\zeta-P_\zeta\ cross\ section\ at\ \theta = {intersect_params.angle}$"
+        )
+
+        for i, particle in enumerate(self._rust.particles):
+            zeta = pi_mod(particle.zeta_array)
+            pzeta = particle.pzeta_array / equilibrium.psip_last
+            ccolor = "b"
+            # ccolor = orbit_color(particle.orbit_type)  # higher trapped poincare
+            # ccolor = "b" if i not in [10, 20] else "green"  # trapped 1/17 poincare x4
+            # ccolor = (
+            #     "g" if i in [9, 15] else "r" if i in [4] else "b"
+            # )  # trapped 1/17 poincare x10
+            # ccolor = "r" if i < 4 or 11 <= i <= 17 else "b"  # trapped 1/17 poincare x25
+            # if i == self._rust.particle_count - 1:
+            #     ccolor = "xkcd:bright green"  # for tb
+            ax.plot(
+                zeta,
+                pzeta,
+                **CARTESIAN_POINCARE_PLOT_KW | {"color": ccolor},  # pyright: ignore
+            )
+            if initial:
+                init = particle.initial_conditions
+                assert init.pzeta0 is not None
+                initial_point = (init.zeta0, init.pzeta0 / equilibrium.psip_last)
+                ax.plot(*initial_point, **CARTESIAN_POINCARE_INITIAL_KW)
+
+        if show:
+            plt.show()
+            plt.close()
+
+        return (fig, ax)
+
+    def plot_pzeta_theta_poincare(
+        self,
+        equilibrium: Equilibrium,
+        initial: bool = False,
+        color: bool = False,
+        show: bool = True,
+    ) -> Canvas:
+        r""" """
+
+        try:
+            intersect_params = getattr(self, "_intersect_params")._rust
+        except:
+            raise RuntimeError("Queue must have run the 'intersect' routine.")
+
+        fig = plt.figure(**CARTESIAN_POINCARE_FIG_KW)
+        ax = fig.add_subplot()
+
+        if color:
+            ax.set_prop_cycle(cycler(color="brcmk"))
+        else:
+            ax.set_prop_cycle(cycler(color=["blue"]))
+
+        ax.set_xlabel(r"$\theta\ [rads]$")
+        ax.set_ylabel(r"$P_\zeta/\psi_{p, last}$")
+        ax.set_xlim(-PI, PI)
+        ax.set_xticks(
+            np.linspace(-np.pi, np.pi, 5),
+            [r"$-\pi$", r"$-\pi/2$", r"$0$", r"$\pi/2$", r"$\pi$"],
+        )
+        # ax.set_title(
+        #     rf"$\theta-P_\zeta\ cross\ section\ at\ \zeta = {intersect_params.angle}$"
+        # )
+
+        for i, particle in enumerate(self._rust.particles):
+            theta = pi_mod(particle.theta_array)
+            pzeta = particle.pzeta_array / equilibrium.psip_last
+            ccolor = "b"
+            # ccolor = "b" if i not in [19] else "xkcd:fuchsia"  # 1/6 poincare
+            # ccolor = "b" if i not in [3, 14] else "xkcd:fuchsia"  # 1/6 poincare1
+            ccolor = orbit_color(particle.orbit_type)  # higher trapped poincare
+            ax.plot(
+                theta,
+                pzeta,
+                **CARTESIAN_POINCARE_PLOT_KW | {"color": ccolor},  # pyright: ignore
+            )
+            if initial:
+                init = particle.initial_conditions
+                assert init.pzeta0 is not None
+                initial_point = (init.theta0, init.pzeta0 / equilibrium.psip_last)
+                ax.plot(*initial_point, **CARTESIAN_POINCARE_INITIAL_KW)
 
         if show:
             plt.show()

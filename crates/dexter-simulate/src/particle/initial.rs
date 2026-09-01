@@ -149,7 +149,18 @@ impl InitialConditions {
             CoordinateSet::BoozerPoloidal => {
                 let psip0 = self.flux0.value();
                 let g_of_psip0 = objects.current.g_of_psip(psip0, acc)?;
-                self.pzeta0 = Some(self.rho0.expect("boozer to mixed") * g_of_psip0 - psip0)
+                let alpha = objects
+                    .perturbation
+                    .p_of_psip(
+                        psip0,
+                        self.theta0,
+                        self.zeta0,
+                        self.t0,
+                        &mut objects.perturbation.generate_caches(),
+                    )
+                    .unwrap();
+                self.pzeta0 =
+                    Some((self.rho0.expect("boozer to mixed") - alpha) * g_of_psip0 - psip0)
             }
             // Calculate `rho0`
             CoordinateSet::MixedToroidal => {

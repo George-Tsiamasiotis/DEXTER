@@ -16,10 +16,10 @@ equilibrium = dex.Equilibrium(
     perturbation=dex.Perturbation([]),
 )
 
-mu = 7e-6
+mu = 6e-5
 
 # Initial Conditions setup
-num = 100000
+num = 1000000
 psi0s = dex.InitialFluxArray("Toroidal", np.random.random(num) * LCFS.value)
 
 initial_conditions = dex.QueueInitialConditions.mixed(
@@ -27,7 +27,7 @@ initial_conditions = dex.QueueInitialConditions.mixed(
     flux0=psi0s,
     theta0=2 * PI * np.random.random(num),
     zeta0=np.zeros(num),
-    pzeta0=np.linspace(-1.4, 0.2, num) * equilibrium.psip_last,
+    pzeta0=np.linspace(-1.8, 0.5, num) * equilibrium.psip_last,
     mu0=np.full(num, mu),
 )
 
@@ -40,7 +40,8 @@ queue.classify(equilibrium)
 # =========================
 
 # Plot orbits on the E-Pζ space
-dex.plot_parabolas(equilibrium, mu, particles=queue.particles, ymax=3)
+dex.plot_parabolas(equilibrium, mu, particles=queue.particles, ymax=2)
+raise SystemExit
 
 # =========================
 
