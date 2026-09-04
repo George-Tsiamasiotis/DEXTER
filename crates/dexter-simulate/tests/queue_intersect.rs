@@ -11,7 +11,6 @@ use std::path::PathBuf;
 
 #[test]
 fn queue_intersect_const_theta_parQ_larC_larB_cosP() -> Result<(), SimulationError> {
-    // Equilibrium setup
     let lcfs = LastClosedFluxSurface::Toroidal(0.45);
     let qfactor = ParabolicQfactor::new(1.1, 1.9, lcfs);
     let current = LarCurrent::new();
@@ -26,7 +25,7 @@ fn queue_intersect_const_theta_parQ_larC_larB_cosP() -> Result<(), SimulationErr
 
     // Initial Conditions setup
     let particle_count = 10;
-    let psis = machine.qfactor().psi_last() * Array1::linspace(0.0, 0.5, particle_count);
+    let psis = machine.qfactor().psi_last().value() * Array1::linspace(0.0, 0.5, particle_count);
     let psis = toroidal_fluxes(&psis.to_vec());
     let initial_conditions = QueueInitialConditions::boozer(
         &vec![0.0; particle_count],
@@ -68,7 +67,6 @@ fn queue_intersect_const_theta_parQ_larC_larB_cosP() -> Result<(), SimulationErr
 
 #[test]
 fn queue_poloidal_intersect_const_zeta_ncdQ_ncdC_ncdB_ncdP() -> Result<(), SimulationError> {
-    // Equilibrium setup
     use PhaseMethod::Interpolation;
     let path = PathBuf::from(POLOIDAL_TEST_NETCDF_PATH);
     let qfactor = NcQfactorBuilder::new(&path, Akima).build().unwrap();
@@ -94,7 +92,7 @@ fn queue_poloidal_intersect_const_zeta_ncdQ_ncdC_ncdB_ncdP() -> Result<(), Simul
 
     // Initial Conditions setup
     let particle_count = 10;
-    let psips = machine.qfactor().psip_last() * Array1::linspace(0.0, 0.3, particle_count);
+    let psips = machine.qfactor().psip_last().value() * Array1::linspace(0.0, 0.3, particle_count);
     let psips = poloidal_fluxes(&psips.to_vec());
     let initial_conditions = QueueInitialConditions::boozer(
         &vec![0.0; particle_count],

@@ -5,22 +5,19 @@ from math import isfinite
 
 from semver import Version
 
-LCFS = dex.LastClosedFluxSurface.Toroidal(0.05)
+LCFS = dex.MagneticFlux.Toroidal(0.05)
 
 
 def test_flute():
     mode = dex.FluteMode(1e-4, LCFS, 3, 2, 0)
     _test_mode_base(mode)
-    assert isfinite(mode.psi_last)
-    assert mode.lcfs.value == 0.05
+    assert mode.lcfs == dex.MagneticFlux.Toroidal(0.05)
     assert mode.phase == 0
     assert mode.epsilon == 1e-4
 
 
 def test_nc(nc_flute_mode: dex.NcFluteMode):
     _test_mode_base(nc_flute_mode)
-    assert isfinite(nc_flute_mode.psi_last)
-    assert isfinite(nc_flute_mode.psip_last)
     assert nc_flute_mode.interp_type == "Cubic"
     assert isinstance(nc_flute_mode.path, str)
     assert isinstance(nc_flute_mode.netcdf_version, Version)
@@ -45,52 +42,47 @@ def _test_mode_base(mode: dex.ModeObject):
     assert mode.m == 3
     assert mode.n == 2
 
+    flux = 0.02
+    fluxes = np.linspace(0.01, 0.04, 10)
+    theta = zeta = t = 1.2
+    thetas = zetas = ts = np.linspace(0.01, np.pi, 10)
+
     try:
-        # 1 Parameter Evaluations
-        methods = [
-            mode.ampl_of_psi,
-            mode.ampl_of_psip,
-            mode.phase_of_psi,
-            mode.phase_of_psip,
-            mode.m_of_psi,
-            mode.m_of_psip,
-            mode.dm_dpsi,
-            mode.dm_dpsip,
-            mode.dm_of_psi_dtheta,
-            mode.dm_of_psip_dtheta,
-            mode.dm_of_psi_dzeta,
-            mode.dm_of_psip_dzeta,
-            mode.dm_of_psi_dt,
-            mode.dm_of_psip_dt,
-        ]
 
-        # 0D evaluations
-        flux = 1e-5
-        theta = 1.57
-        zeta = 1.57
-        t = 0
-        for method in methods:
-            assert isfinite(method(flux, theta, zeta, t))
-            assert isinstance(method(flux, theta, zeta, t), float)
+        mode.eval_amplitude(psi=flux, theta=theta, zeta=zeta, t=t)
+        mode.eval_amplitude(psi=fluxes, theta=thetas, zeta=zetas, t=ts)
+        mode.eval_amplitude(psip=flux, theta=theta, zeta=zeta, t=t)
+        mode.eval_amplitude(psip=fluxes, theta=thetas, zeta=zetas, t=ts)
 
-        # 1D Evaluations
-        fluxes = np.linspace(1e-5, 1e-4, 5)
-        thetas = np.linspace(0, np.pi, 5)
-        zetas = np.linspace(0, np.pi, 5)
-        ts = np.linspace(0, 1, 5)
-        for method in methods:
-            assert method(fluxes, thetas, zetas, ts).ndim == 1
-            assert isinstance(method(fluxes, thetas, zetas, ts), np.ndarray)
+        mode.eval_phase(psi=flux, theta=theta, zeta=zeta, t=t)
+        mode.eval_phase(psi=fluxes, theta=thetas, zeta=zetas, t=ts)
+        mode.eval_phase(psip=flux, theta=theta, zeta=zeta, t=t)
+        mode.eval_phase(psip=fluxes, theta=thetas, zeta=zetas, t=ts)
 
-        # 4D Evaluations
-        fluxes = np.random.random([2] * 4) * 1e-5
-        thetas = np.random.random([2] * 4) * np.pi
-        zetas = np.random.random([2] * 4) * np.pi
-        ts = np.random.random([2] * 4) * 0
-        assert fluxes.ndim == 4
-        for method in methods:
-            assert method(fluxes, thetas, zetas, ts).ndim == 4
-            assert isinstance(method(fluxes, thetas, zetas, ts), np.ndarray)
+        mode.eval_m(psi=flux, theta=theta, zeta=zeta, t=t)
+        mode.eval_m(psi=fluxes, theta=thetas, zeta=zetas, t=ts)
+        mode.eval_m(psip=flux, theta=theta, zeta=zeta, t=t)
+        mode.eval_m(psip=fluxes, theta=thetas, zeta=zetas, t=ts)
+
+        mode.eval_deriv_flux(psi=flux, theta=theta, zeta=zeta, t=t)
+        mode.eval_deriv_flux(psi=fluxes, theta=thetas, zeta=zetas, t=ts)
+        mode.eval_deriv_flux(psip=flux, theta=theta, zeta=zeta, t=t)
+        mode.eval_deriv_flux(psip=fluxes, theta=thetas, zeta=zetas, t=ts)
+
+        mode.eval_deriv_theta(psi=flux, theta=theta, zeta=zeta, t=t)
+        mode.eval_deriv_theta(psi=fluxes, theta=thetas, zeta=zetas, t=ts)
+        mode.eval_deriv_theta(psip=flux, theta=theta, zeta=zeta, t=t)
+        mode.eval_deriv_theta(psip=fluxes, theta=thetas, zeta=zetas, t=ts)
+
+        mode.eval_deriv_zeta(psi=flux, theta=theta, zeta=zeta, t=t)
+        mode.eval_deriv_zeta(psi=fluxes, theta=thetas, zeta=zetas, t=ts)
+        mode.eval_deriv_zeta(psip=flux, theta=theta, zeta=zeta, t=t)
+        mode.eval_deriv_zeta(psip=fluxes, theta=thetas, zeta=zetas, t=ts)
+
+        mode.eval_deriv_t(psi=flux, theta=theta, zeta=zeta, t=t)
+        mode.eval_deriv_t(psi=fluxes, theta=thetas, zeta=zetas, t=ts)
+        mode.eval_deriv_t(psip=flux, theta=theta, zeta=zeta, t=t)
+        mode.eval_deriv_t(psip=fluxes, theta=thetas, zeta=zetas, t=ts)
 
     except Exception as e:
         if not "[D] EvalError" in str(e):

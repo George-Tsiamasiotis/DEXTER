@@ -40,9 +40,6 @@ pub(crate) struct Evolution {
     /// The total steps taken. Depending on the routine, this number might not be equal to the
     /// number of elements in the time arrays.
     pub(crate) steps_taken: usize,
-
-    /// Variance of the energy array.
-    energy_var: Option<f64>,
 }
 
 impl Evolution {
@@ -54,8 +51,8 @@ impl Evolution {
     /// Pushes the calculated quantities of an *evaluated* [`GCState`] in the time series.
     pub(crate) fn push_state(&mut self, state: &GCState) {
         self.t.push(state.t);
-        self.psi.push(state.psi);
-        self.psip.push(state.psip);
+        self.psi.push(state.psi.value());
+        self.psip.push(state.psip.value());
         self.theta.push(state.theta);
         self.zeta.push(state.zeta);
         self.rho.push(state.rho);
@@ -77,12 +74,6 @@ impl Evolution {
         self.ptheta.shrink_to_fit();
         self.pzeta.shrink_to_fit();
         self.energy.shrink_to_fit();
-
-        self.energy_var = self
-            .energy
-            .len()
-            .ge(&2)
-            .then(|| self.energy_array().var(1.0));
     }
 
     /// Discards the vecs, keeping all the other fields.
@@ -126,11 +117,6 @@ impl Evolution {
     /// Returns the number of steps stored in the time series.
     pub(crate) fn steps_stored(&self) -> usize {
         self.t.len()
-    }
-
-    /// Returns the variance of the Energy time series.
-    pub(crate) fn energy_var(&self) -> Option<f64> {
-        self.energy_var
     }
 }
 

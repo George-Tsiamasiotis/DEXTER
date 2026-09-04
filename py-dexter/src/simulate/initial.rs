@@ -7,37 +7,6 @@ use pyo3::{prelude::*, types::PyType};
 
 // ===============================================================================================
 
-#[pyclass(name = "_PyInitialFlux", frozen, immutable_type)]
-pub struct PyInitialFlux(InitialFlux);
-
-#[pymethods]
-impl PyInitialFlux {
-    #[classmethod]
-    pub fn toroidal(_: &Bound<'_, PyType>, value: f64) -> PyResult<Self> {
-        Ok(Self(InitialFlux::Toroidal(value)))
-    }
-
-    #[classmethod]
-    pub fn poloidal(_: &Bound<'_, PyType>, value: f64) -> PyResult<Self> {
-        Ok(Self(InitialFlux::Poloidal(value)))
-    }
-
-    #[getter]
-    pub fn value(&self) -> f64 {
-        self.0.value()
-    }
-
-    #[getter]
-    pub fn kind(&self) -> String {
-        match self.0 {
-            InitialFlux::Toroidal(_) => "Toroidal".into(),
-            InitialFlux::Poloidal(_) => "Poloidal".into(),
-        }
-    }
-}
-
-// ===============================================================================================
-
 #[pyclass(name = "_PyInitialConditions", frozen, immutable_type)]
 pub struct PyInitialConditions(pub(crate) InitialConditions);
 
@@ -47,7 +16,7 @@ impl PyInitialConditions {
     pub fn boozer(
         _: &Bound<'_, PyType>,
         t0: f64,
-        flux0: &PyInitialFlux,
+        flux0: &PyMagneticFlux,
         theta0: f64,
         zeta0: f64,
         rho0: f64,
@@ -62,7 +31,7 @@ impl PyInitialConditions {
     pub fn mixed(
         _: &Bound<'_, PyType>,
         t0: f64,
-        flux0: &PyInitialFlux,
+        flux0: &PyMagneticFlux,
         theta0: f64,
         zeta0: f64,
         pzeta0: f64,
@@ -79,8 +48,8 @@ impl PyInitialConditions {
     }
 
     #[getter]
-    pub fn flux0(&self) -> PyInitialFlux {
-        PyInitialFlux(self.0.flux0())
+    pub fn flux0(&self) -> PyMagneticFlux {
+        self.0.flux0().into()
     }
 
     #[getter]
@@ -116,15 +85,7 @@ impl PyInitialConditions {
 
 // ===============================================================================================
 
-wrapper_debug_export!(PyInitialFlux);
 wrapper_debug_export!(PyInitialConditions);
-
-#[pymethods]
-impl PyInitialFlux {
-    pub fn __repr__(&self) -> String {
-        format!("{:#?}", self)
-    }
-}
 
 #[pymethods]
 impl PyInitialConditions {

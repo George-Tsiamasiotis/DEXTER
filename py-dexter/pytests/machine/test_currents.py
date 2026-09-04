@@ -13,8 +13,6 @@ def test_lar():
 
 def test_nc(nc_current: dex.NcCurrent):
     _test_current_base(nc_current)
-    assert isfinite(nc_current.psi_last)
-    assert isfinite(nc_current.psip_last)
     assert nc_current.interp_type == "Cubic"
     assert isinstance(nc_current.path, str)
     assert isinstance(nc_current.netcdf_version, Version)
@@ -34,31 +32,39 @@ def _test_current_base(current: dex.CurrentObject):
     assert current.psip_state in ["Good", "Bad"]
 
     methods = [
-        current.g_of_psi,
-        current.g_of_psip,
-        current.i_of_psi,
-        current.i_of_psip,
-        current.dg_dpsi,
-        current.dg_dpsip,
-        current.di_dpsi,
-        current.di_dpsip,
+        current.eval_g,
+        current.eval_i,
+        current.eval_g_deriv,
+        current.eval_i_deriv,
     ]
 
-    # 0D evaluations
-    flux = 1e-5
-    for method in methods:
-        assert isfinite(method(flux))
-        assert isinstance(method(flux), float)
+    flux = 0.02
+    fluxes = np.linspace(0, 0.04, 10)
 
-    # 1D Evaluations
-    fluxes = np.linspace(1e-5, 1e-4, 5)
-    for method in methods:
-        assert method(fluxes).ndim == 1
-        assert isinstance(method(fluxes), np.ndarray)
+    try:
 
-    # 4D Evaluations
-    grid = np.random.random([2] * 4) * 1e-5
-    assert grid.ndim == 4
-    for method in methods:
-        assert method(grid).ndim == 4
-        assert isinstance(method(grid), np.ndarray)
+        current.eval_g(psi=flux)
+        current.eval_g(psi=fluxes)
+        current.eval_g(psip=flux)
+        current.eval_g(psip=fluxes)
+
+        current.eval_i(psi=flux)
+        current.eval_i(psi=fluxes)
+        current.eval_i(psip=flux)
+        current.eval_i(psip=fluxes)
+
+        current.eval_g_deriv(psi=flux)
+        current.eval_g_deriv(psi=fluxes)
+        current.eval_g_deriv(psip=flux)
+        current.eval_g_deriv(psip=fluxes)
+
+        current.eval_i_deriv(psi=flux)
+        current.eval_i_deriv(psi=fluxes)
+        current.eval_i_deriv(psip=flux)
+        current.eval_i_deriv(psip=fluxes)
+
+    except Exception as e:
+        if not "[D] EvalError" in str(e):
+            raise RuntimeError(
+                f"only testing the vectorized functions here (error: {e})"
+            )

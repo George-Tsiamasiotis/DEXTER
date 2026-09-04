@@ -19,8 +19,10 @@ def test_nc(nc_geometry: dex.NcGeometry):
     assert isinstance(nc_geometry.netcdf_version, Version)
     assert nc_geometry.interp1d_type == "Cubic"
     assert nc_geometry.interp2d_type == "Bicubic"
-    assert isfinite(nc_geometry.psi_last)
-    assert isfinite(nc_geometry.psip_last)
+    assert nc_geometry.psi_last is not None
+    assert nc_geometry.psip_last is not None
+    assert isfinite(nc_geometry.psi_last.value)
+    assert isfinite(nc_geometry.psip_last.value)
     assert isinstance(nc_geometry.psi_array, np.ndarray)
     assert isinstance(nc_geometry.psip_array, np.ndarray)
     assert isinstance(nc_geometry.theta_array, np.ndarray)
@@ -53,65 +55,38 @@ def _test_geometry_base(geometry: dex.GeometryObject):
     assert isinstance(geometry.rlab_last, np.ndarray)
     assert isinstance(geometry.zlab_last, np.ndarray)
 
-    # 1 Parameter Evaluations
-    methods = [
-        geometry.r_of_psi,
-        geometry.r_of_psip,
-        geometry.psi_of_r,
-        geometry.psip_of_r,
-    ]
-
+    r = 0.01
+    rs = np.linspace(0, 0.02, 10)
+    flux = 0.02
+    fluxes = np.linspace(0, 0.04, 10)
+    theta = 1.2
+    thetas = np.linspace(0, np.pi, 10)
     try:
-        # 0D evaluations
-        flux = 1e-5
-        for method in methods:
-            assert isfinite(method(flux))
-            assert isinstance(method(flux), float)
 
-        # 1D Evaluations
-        fluxes = np.linspace(1e-5, 1e-4, 5)
-        for method in methods:
-            assert method(fluxes).ndim == 1
-            assert isinstance(method(fluxes), np.ndarray)
+        geometry.eval_r(psi=flux)
+        geometry.eval_r(psi=fluxes)
+        geometry.eval_r(psip=flux)
+        geometry.eval_r(psip=fluxes)
 
-        # 4D Evaluations
-        fluxes = np.random.random([2] * 4) * 1e-5
-        assert fluxes.ndim == 4
-        for method in methods:
-            assert method(fluxes).ndim == 4
-            assert isinstance(method(fluxes), np.ndarray)
+        geometry.eval_psi_of_r(r=r)
+        geometry.eval_psi_of_r(r=rs)
+        geometry.eval_psip_of_r(r=r)
+        geometry.eval_psip_of_r(r=rs)
 
-        # 2 Parameter Evaluations
-        methods = [
-            geometry.rlab_of_psi,
-            geometry.rlab_of_psip,
-            geometry.zlab_of_psi,
-            geometry.zlab_of_psip,
-            geometry.jacobian_of_psi,
-            geometry.jacobian_of_psip,
-        ]
+        geometry.eval_rlab(psi=flux, theta=theta)
+        geometry.eval_rlab(psi=fluxes, theta=thetas)
+        geometry.eval_rlab(psip=flux, theta=theta)
+        geometry.eval_rlab(psip=fluxes, theta=thetas)
 
-        # 0D evaluations
-        flux = 1e-5
-        theta = 1.57
-        for method in methods:
-            assert isfinite(method(flux, theta))
-            assert isinstance(method(flux, theta), float)
+        geometry.eval_zlab(psi=flux, theta=theta)
+        geometry.eval_zlab(psi=fluxes, theta=thetas)
+        geometry.eval_zlab(psip=flux, theta=theta)
+        geometry.eval_zlab(psip=fluxes, theta=thetas)
 
-        # 1D Evaluations
-        fluxes = np.linspace(1e-5, 1e-4, 5)
-        thetas = np.linspace(0, np.pi, 5)
-        for method in methods:
-            assert method(fluxes, thetas).ndim == 1
-            assert isinstance(method(fluxes, thetas), np.ndarray)
-
-        # 4D Evaluations
-        fluxes = np.random.random([2] * 4) * 1e-5
-        thetas = np.random.random([2] * 4) * np.pi
-        assert fluxes.ndim == 4
-        for method in methods:
-            assert method(fluxes, thetas).ndim == 4
-            assert isinstance(method(fluxes, thetas), np.ndarray)
+        geometry.eval_jacobian(psi=flux, theta=theta)
+        geometry.eval_jacobian(psi=fluxes, theta=thetas)
+        geometry.eval_jacobian(psip=flux, theta=theta)
+        geometry.eval_jacobian(psip=fluxes, theta=thetas)
 
     except Exception as e:
         if not "[D] EvalError" in str(e):

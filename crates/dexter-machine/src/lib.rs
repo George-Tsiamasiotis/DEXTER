@@ -1,11 +1,12 @@
 #![doc = include_str!("../README.md")]
 //!
-//! # Machine
+//! # Machine objects
 //!
 //! + [`Machine`]: Contains all information about the magnetic field, geometry and perturbations of a
 //!   device.
+//! + [`MagneticFlux`]: Representation of the toroidal or poloidal magnetic flux.
 //!
-//! # Machine objects
+//! ---
 //!
 //! + Representations of a machine's general geometry. Provides interpolation methods between `ψ`, `ψp`, `r`, `R`, `Z`, `J`.
 //!     - [`LarGeometry`]: Analytical Large Aspect Ratio Geometry of a circular device.
@@ -35,7 +36,6 @@
 //! ## Evaluation Traits:
 //!
 //! + [`Geometry`]: Conversions to and from laboratory quantities.
-//! + [`FluxCommute`]: Conversion between the two flux coordinates `ψ` and `ψp`
 //! + [`Qfactor`]: Evaluation of q-factor related quantities.
 //! + [`Current`]: Evaluation of plasma current related quantities.
 //! + [`Bfield`]: Evaluation of magnetic field related quantities.
@@ -73,6 +73,7 @@
 
 mod error;
 mod eval;
+mod flux;
 mod machine;
 mod objects;
 
@@ -85,6 +86,7 @@ pub use rsl_interpolation::{Accelerator, Accelerator2d};
 
 pub mod extract;
 
+pub use flux::MagneticFlux;
 pub use machine::{Machine, MachineBuilder};
 
 pub use error::{EvalError, MachineError, NcError};
@@ -94,7 +96,7 @@ pub use objects::{LastClosedFluxSurface, MachineType};
 pub use objects::nc_flux::FluxCoordinateState;
 
 pub use eval::ModeCache;
-pub use eval::{Bfield, Current, FluxCommute, Geometry, MachineObject, Mode, Qfactor};
+pub use eval::{Bfield, Current, Geometry, MachineObject, Mode, Qfactor};
 pub use eval::{DynMode, DynModeCache};
 
 pub use objects::geometries::LarGeometry;

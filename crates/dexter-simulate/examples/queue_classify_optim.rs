@@ -7,7 +7,6 @@ use dexter_simulate::*;
 use ndarray::Array1;
 
 fn main() -> Result<(), SimulationError> {
-    // Equilibrium setup
     let lcfs = LastClosedFluxSurface::Toroidal(0.45);
     let qfactor = ParabolicQfactor::new(1.1, 3.9, lcfs);
     let current = LarCurrent::new();
@@ -16,8 +15,9 @@ fn main() -> Result<(), SimulationError> {
 
     // Initial Conditions setup
     let particle_count = 1_000_000;
-    let pzetas = machine.qfactor().psip_last() * Array1::linspace(-1.4, 0.2, particle_count);
-    let psis = machine.qfactor().psi_last() * Array1::linspace(0.001, 0.5, particle_count);
+    let pzetas =
+        machine.qfactor().psip_last().value() * Array1::linspace(-1.4, 0.2, particle_count);
+    let psis = machine.qfactor().psi_last().value() * Array1::linspace(0.001, 0.5, particle_count);
     let psis = toroidal_fluxes(&psis.to_vec());
     let initial_conditions = QueueInitialConditions::mixed(
         Array1::zeros(particle_count).as_slice().unwrap(),

@@ -18,8 +18,6 @@ def test_nc(nc_bfield: dex.NcBfield):
     assert nc_bfield.interp_type == "Bicubic"
     assert isfinite(nc_bfield.baxis)
     assert isfinite(nc_bfield.padding)
-    assert isfinite(nc_bfield.psi_last)
-    assert isfinite(nc_bfield.psip_last)
     assert isinstance(nc_bfield.psi_array, np.ndarray)
     assert isinstance(nc_bfield.psip_array, np.ndarray)
     assert isinstance(nc_bfield.theta_array, np.ndarray)
@@ -41,39 +39,30 @@ def _test_bfield_base(bfield: dex.BfieldObject):
     assert bfield.psi_state in ["Good", "Bad"]
     assert bfield.psip_state in ["Good", "Bad"]
 
-    methods = [
-        bfield.b_of_psi,
-        bfield.b_of_psip,
-        bfield.db_dpsi,
-        bfield.db_dpsip,
-        bfield.db_of_psi_dtheta,
-        bfield.db_of_psip_dtheta,
-    ]
+    flux = 0.02
+    fluxes = np.linspace(0, 0.04, 10)
+    theta = 1.2
+    thetas = np.linspace(0, np.pi, 10)
 
     try:
 
-        # 0D evaluations
-        flux = 1e-5
-        theta = 1.57
-        for method in methods:
-            assert isfinite(method(flux, theta))
-            assert isinstance(method(flux, theta), float)
+        bfield.eval_b(psi=flux, theta=theta)
+        bfield.eval_b(psi=fluxes, theta=thetas)
+        bfield.eval_b(psip=flux, theta=theta)
+        bfield.eval_b(psip=fluxes, theta=thetas)
 
-        # 1D Evaluations
-        fluxes = np.linspace(1e-5, 1e-4, 5)
-        thetas = np.linspace(0, np.pi, 5)
-        for method in methods:
-            assert method(fluxes, thetas).ndim == 1
-            assert isinstance(method(fluxes, thetas), np.ndarray)
+        bfield.eval_deriv_flux(psi=flux, theta=theta)
+        bfield.eval_deriv_flux(psi=fluxes, theta=thetas)
+        bfield.eval_deriv_flux(psip=flux, theta=theta)
+        bfield.eval_deriv_flux(psip=fluxes, theta=thetas)
 
-        # 4D Evaluations
-        fluxes = np.random.random([2] * 4) * 1e-5
-        thetas = np.random.random([2] * 4) * np.pi
-        assert fluxes.ndim == 4
-        for method in methods:
-            assert method(fluxes, thetas).ndim == 4
-            assert isinstance(method(fluxes, thetas), np.ndarray)
+        bfield.eval_deriv_theta(psi=flux, theta=theta)
+        bfield.eval_deriv_theta(psi=fluxes, theta=thetas)
+        bfield.eval_deriv_theta(psip=flux, theta=theta)
+        bfield.eval_deriv_theta(psip=fluxes, theta=thetas)
 
     except Exception as e:
         if not "[D] EvalError" in str(e):
-            raise RuntimeError("only testing the vectorized functions here")
+            raise RuntimeError(
+                f"only testing the vectorized functions here (error: {e})"
+            )

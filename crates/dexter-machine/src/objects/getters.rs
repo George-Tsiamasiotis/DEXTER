@@ -44,26 +44,6 @@ macro_rules! fluxes_values_array_getter_impl {
     };
 }
 
-/// Generates getters for the last closed flux surfaces, for `Nc` types that do not
-/// implement `Qfactor`.
-#[doc(hidden)]
-#[macro_export]
-macro_rules! lcfs_getter_impl {
-    () => {
-        /// Returns the value of the last closed toroidal flux `ψ_last`.
-        #[must_use]
-        pub fn psi_last(&self) -> Option<f64> {
-            self.psi.last_value()
-        }
-
-        /// Returns the value of the last closed poloidal flux `ψp_last`.
-        #[must_use]
-        pub fn psip_last(&self) -> Option<f64> {
-            self.psip.last_value()
-        }
-    };
-}
-
 /// Generates getters for a [`crate::ModeCache`] implementor's hits and misses
 #[doc(hidden)]
 #[macro_export]

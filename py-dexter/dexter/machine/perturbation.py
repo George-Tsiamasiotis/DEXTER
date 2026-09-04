@@ -5,6 +5,7 @@ from collections.abc import Collection
 from typing import TypeAlias
 
 from .modes import FluteMode, NcFluteMode
+from .base import _flux_eval_wrap4d
 from dexter._utils import _ReprStrImpl
 from dexter._core import _PyPerturbation
 from dexter.types import ArrayLike, Array
@@ -25,7 +26,7 @@ class Perturbation(_ReprStrImpl):
     Example
     -------
     ``` py title="Perturbation consisting of analytical flute modes"
-    >>> LCFS = dex.LastClosedFluxSurface.Toroidal(0.05)
+    >>> LCFS = dex.MagneticFlux.Toroidal(0.05)
     >>> per = dex.Perturbation(
     ...     [
     ...         dex.FluteMode(1e-4, LCFS, 3, 2, 0),
@@ -39,11 +40,11 @@ class Perturbation(_ReprStrImpl):
     Example
     -------
     ``` py title="Perturbation consisting of flute modes from a netCDF file"
-    >>> LCFS = dex.LastClosedFluxSurface.Toroidal(0.05)
+    >>> LCFS = dex.MagneticFlux.Toroidal(0.05)
     >>> per = dex.Perturbation(
     ...     [
-    ...         dex.NcFluteMode("./netcdf.nc", "Cubic", 2, 1),
-    ...         dex.NcFluteMode("./netcdf.nc", "Cubic", 3, 2),
+    ...         dex.NcFluteMode(path, "Cubic", 2, 1),
+    ...         dex.NcFluteMode(path, "Cubic", 3, 2),
     ...     ]
     ... )
 
@@ -52,12 +53,12 @@ class Perturbation(_ReprStrImpl):
     Example
     -------
     ``` py title="Perturbation consisting of mixed types of flute modes"
-    >>> LCFS = dex.LastClosedFluxSurface.Toroidal(0.05)
+    >>> LCFS = dex.MagneticFlux.Toroidal(0.05)
     >>> per = dex.Perturbation(
     ...     [
     ...         dex.FluteMode(1e-4, LCFS, 3, 2, 0),
     ...         dex.FluteMode(2e-4, LCFS, 5, 2, 0),
-    ...         dex.NcFluteMode("./netcdf.nc", "Cubic", 3, 2),
+    ...         dex.NcFluteMode(path, "Cubic", 3, 2),
     ...     ]
     ... )
 
@@ -73,116 +74,66 @@ class Perturbation(_ReprStrImpl):
         else:
             _modes = []
         self._r = _PyPerturbation(_modes)
-        self._p_of_psi = np.vectorize(self._r.p_of_psi)
-        self._p_of_psip = np.vectorize(self._r.p_of_psip)
-        self._dp_dpsi = np.vectorize(self._r.dp_dpsi)
-        self._dp_dpsip = np.vectorize(self._r.dp_dpsip)
-        self._dp_of_psi_dtheta = np.vectorize(self._r.dp_of_psi_dtheta)
-        self._dp_of_psip_dtheta = np.vectorize(self._r.dp_of_psip_dtheta)
-        self._dp_of_psi_dzeta = np.vectorize(self._r.dp_of_psi_dzeta)
-        self._dp_of_psip_dzeta = np.vectorize(self._r.dp_of_psip_dzeta)
-        self._dp_of_psi_dt = np.vectorize(self._r.dp_of_psi_dt)
-        self._dp_of_psip_dt = np.vectorize(self._r.dp_of_psip_dt)
+        self._eval_p = _flux_eval_wrap4d(self._r.eval_p)
+        self._eval_deriv_flux = _flux_eval_wrap4d(self._r.eval_deriv_flux)
+        self._eval_deriv_theta = _flux_eval_wrap4d(self._r.eval_deriv_theta)
+        self._eval_deriv_zeta = _flux_eval_wrap4d(self._r.eval_deriv_zeta)
+        self._eval_deriv_t = _flux_eval_wrap4d(self._r.eval_deriv_t)
 
-    def p_of_psi(
+    def eval_p(
         self,
-        psi: ArrayLike,
         theta: ArrayLike,
         zeta: ArrayLike,
         t: ArrayLike,
+        psi: ArrayLike | None = None,
+        psip: ArrayLike | None = None,
     ) -> Array:
-        r"""Calculates the perturbation's value $p(\psi, \theta, \zeta, t)$, in Normalized Units."""
-        return self._p_of_psi(psi, theta, zeta, t)[()]
+        r"""Calculates the perturbation's value $p(\psi/\psi_p, \theta, \zeta, t)$, in Normalized Units."""
+        return self._eval_p(theta, zeta, t, psi=psi, psip=psip)[()]
 
-    def p_of_psip(
+    def eval_deriv_flux(
         self,
-        psip: ArrayLike,
         theta: ArrayLike,
         zeta: ArrayLike,
         t: ArrayLike,
+        psi: ArrayLike | None = None,
+        psip: ArrayLike | None = None,
     ) -> Array:
-        r"""Calculates the perturbation's value $p(\psi_p, \theta, \zeta, t)$, in Normalized Units."""
-        return self._p_of_psip(psip, theta, zeta, t)[()]
+        r"""Calculates the perturbation's derivative $dp(\psi/\psi_p, \theta, \zeta, t)/d(\psi/\psi_p)$, in Normalized Units."""
+        return self._eval_deriv_flux(theta, zeta, t, psi=psi, psip=psip)[()]
 
-    def dp_dpsi(
+    def eval_deriv_theta(
         self,
-        psi: ArrayLike,
         theta: ArrayLike,
         zeta: ArrayLike,
         t: ArrayLike,
+        psi: ArrayLike | None = None,
+        psip: ArrayLike | None = None,
     ) -> Array:
-        r"""Calculates the perturbation's derivative $dp(\psi, \theta, \zeta, t)/d\psi$, in Normalized Units."""
-        return self._dp_dpsi(psi, theta, zeta, t)[()]
+        r"""Calculates the perturbation's derivative $dp(\psi/\psi_p, \theta, \zeta, t)/d\theta$, in Normalized Units."""
+        return self._eval_deriv_theta(theta, zeta, t, psi=psi, psip=psip)[()]
 
-    def dp_dpsip(
+    def eval_deriv_zeta(
         self,
-        psip: ArrayLike,
         theta: ArrayLike,
         zeta: ArrayLike,
         t: ArrayLike,
+        psi: ArrayLike | None = None,
+        psip: ArrayLike | None = None,
     ) -> Array:
-        r"""Calculates the perturbation's derivative $dp(\psi_p, \theta, \zeta, t)/d\psi_p$, in Normalized Units."""
-        return self._dp_dpsip(psip, theta, zeta, t)[()]
+        r"""Calculates the perturbation's derivative $dp(\psi/\psi_p, \theta, \zeta, t)/d\zeta$, in Normalized Units."""
+        return self._eval_deriv_zeta(theta, zeta, t, psi=psi, psip=psip)[()]
 
-    def dp_of_psi_dtheta(
+    def eval_deriv_t(
         self,
-        psi: ArrayLike,
         theta: ArrayLike,
         zeta: ArrayLike,
         t: ArrayLike,
+        psi: ArrayLike | None = None,
+        psip: ArrayLike | None = None,
     ) -> Array:
-        r"""Calculates the perturbation's derivative $dp(\psi, \theta, \zeta, t)/d\theta$, in Normalized Units."""
-        return self._dp_of_psi_dtheta(psi, theta, zeta, t)[()]
-
-    def dp_of_psip_dtheta(
-        self,
-        psip: ArrayLike,
-        theta: ArrayLike,
-        zeta: ArrayLike,
-        t: ArrayLike,
-    ) -> Array:
-        r"""Calculates the perturbation's derivative $dp(\psi_p, \theta, \zeta, t)/d\theta$, in Normalized Units."""
-        return self._dp_of_psip_dtheta(psip, theta, zeta, t)[()]
-
-    def dp_of_psi_dzeta(
-        self,
-        psi: ArrayLike,
-        theta: ArrayLike,
-        zeta: ArrayLike,
-        t: ArrayLike,
-    ) -> Array:
-        r"""Calculates the perturbation's derivative $dp(\psi, \theta, \zeta, t)/d\zeta$, in Normalized Units."""
-        return self._dp_of_psi_dzeta(psi, theta, zeta, t)[()]
-
-    def dp_of_psip_dzeta(
-        self,
-        psip: ArrayLike,
-        theta: ArrayLike,
-        zeta: ArrayLike,
-        t: ArrayLike,
-    ) -> Array:
-        r"""Calculates the perturbation's derivative $dp(\psi_p, \theta, \zeta, t)/d\zeta$, in Normalized Units."""
-        return self._dp_of_psip_dzeta(psip, theta, zeta, t)[()]
-
-    def dp_of_psi_dt(
-        self,
-        psi: ArrayLike,
-        theta: ArrayLike,
-        zeta: ArrayLike,
-        t: ArrayLike,
-    ) -> Array:
-        r"""Calculates the perturbation's derivative $dp(\psi, \theta, \zeta, t)/dt$, in Normalized Units."""
-        return self._dp_of_psi_dt(psi, theta, zeta, t)[()]
-
-    def dp_of_psip_dt(
-        self,
-        psip: ArrayLike,
-        theta: ArrayLike,
-        zeta: ArrayLike,
-        t: ArrayLike,
-    ) -> Array:
-        r"""Calculates the perturbation's derivative $dp(\psi_p, \theta, \zeta, t)/dt$, in Normalized Units."""
-        return self._dp_of_psip_dt(psip, theta, zeta, t)[()]
+        r"""Calculates the perturbation's derivative $dp(\psi/\psi_p, \theta, \zeta, t)/dt$, in Normalized Units."""
+        return self._eval_deriv_t(theta, zeta, t, psi=psi, psip=psip)[()]
 
     def __len__(self) -> int:
         """Returns the total number of modes."""

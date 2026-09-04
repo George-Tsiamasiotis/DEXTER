@@ -62,7 +62,7 @@ impl Queue {
     /// Initial conditions in Boozer coordinates.
     /// ```
     /// # use dexter_simulate::*;
-    /// use InitialFlux::*;
+    /// use MagneticFlux::*;
     /// let initial_conditions = QueueInitialConditions::boozer(
     ///     &[0.0, 0.1],
     ///     &[Toroidal(0.15), Toroidal(0.3)],
@@ -80,7 +80,7 @@ impl Queue {
     /// Initial conditions in Mixed coordinates.
     /// ```
     /// # use dexter_simulate::*;
-    /// use InitialFlux::*;
+    /// use MagneticFlux::*;
     /// let initial_conditions = QueueInitialConditions::mixed(
     ///     &[0.0, 0.1],
     ///     &[Toroidal(0.15), Toroidal(0.3)],
@@ -116,7 +116,7 @@ impl Queue {
     /// Initial conditions in Mixed coordinates.
     /// ```
     /// # use dexter_simulate::*;
-    /// let psi0 = InitialFlux::Toroidal(0.02);
+    /// let psi0 = MagneticFlux::Toroidal(0.02);
     /// let initial1 = InitialConditions::mixed(0.0, psi0, 1.0, 0.0, 0.0, 0.0);
     /// let initial2 = InitialConditions::mixed(0.0, psi0, 2.0, 0.0, 0.1, 0.0);
     /// let particle1 = Particle::new(&initial1);
@@ -152,7 +152,7 @@ impl Queue {
     /// #
     /// let path = PathBuf::from("./netcdf.nc");
     /// let qfactor = NcQfactorBuilder::new(&path, Akima).build()?;
-    /// let lcfs = LastClosedFluxSurface::Toroidal(qfactor.psi_last());
+    /// let lcfs = qfactor.psi_last();
     /// let current = NcCurrentBuilder::new(&path, Akima).build()?;
     /// let bfield = NcBfieldBuilder::new(&path, Bicubic).build()?;
     /// let perturbation = Perturbation::new(vec![
@@ -164,7 +164,7 @@ impl Queue {
     ///     .with_perturbation(&perturbation)
     ///     .build();
     ///
-    /// use InitialFlux::*;
+    /// use MagneticFlux::*;
     /// let initial_conditions = QueueInitialConditions::boozer(
     ///     &[0.0, 0.1],
     ///     &[Toroidal(0.15), Toroidal(0.3)],
@@ -217,7 +217,7 @@ impl Queue {
     ///     .with_perturbation(&perturbation)
     ///     .build();
     ///
-    /// use InitialFlux::*;
+    /// use MagneticFlux::*;
     /// let initial_conditions = QueueInitialConditions::boozer(
     ///     &[0.0, 0.1],
     ///     &[Toroidal(0.15), Toroidal(0.3)],
@@ -267,7 +267,7 @@ impl Queue {
     /// let bfield = LarBfield::new();
     /// let machine = MachineBuilder::new(&qfactor, &current, &bfield).build();
     ///
-    /// use InitialFlux::*;
+    /// use MagneticFlux::*;
     /// let initial_conditions = QueueInitialConditions::boozer(
     ///     &[0.0, 0.1],
     ///     &[Toroidal(0.1), Toroidal(0.2)],
@@ -317,7 +317,7 @@ impl Queue {
     /// let bfield = LarBfield::new();
     /// let machine = MachineBuilder::new(&qfactor, &current, &bfield).build();
     ///
-    /// use InitialFlux::*;
+    /// use MagneticFlux::*;
     /// let initial_conditions = QueueInitialConditions::boozer(
     ///     &[0.0, 0.1],
     ///     &[Toroidal(0.15), Toroidal(0.3)],
@@ -374,7 +374,7 @@ impl Queue {
     /// let bfield = LarBfield::new();
     /// let machine = MachineBuilder::new(&qfactor, &current, &bfield).build();
     ///
-    /// use InitialFlux::*;
+    /// use MagneticFlux::*;
     /// let initial_conditions = QueueInitialConditions::boozer(
     ///     &[0.0, 0.1],
     ///     &[Toroidal(0.15), Toroidal(0.3)],

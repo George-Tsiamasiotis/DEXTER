@@ -34,7 +34,7 @@ impl PyMode {
     pub fn build_flute<'py>(
         _: Bound<'py, PyType>,
         epsilon: f64,
-        lcfs: &PyLastClosedFluxSurface,
+        lcfs: &PyMagneticFlux,
         m: i64,
         n: i64,
         phase: f64,
@@ -106,7 +106,7 @@ impl PyMode {
 
 // ===============================================================================================
 
-#[pymethods] // EquilibriumObject Trait
+#[pymethods] // MachineObject Trait
 impl PyMode {
     #[getter]
     pub fn machine_type(&self) -> String {
@@ -125,24 +125,7 @@ impl PyMode {
 }
 
 #[pymethods] // Mode Trait
-#[rustfmt::skip]
 impl PyMode {
-    #[getter]
-    pub fn psi_last(&self) -> Result<f64> {
-        self.inner().psi_last().ok_or(DexterError::AttributeError {
-            obj: "Mode".into(),
-            attr: "psi_last".into(),
-        })
-    }
-
-    #[getter]
-    pub fn psip_last(&self) -> Result<f64> {
-        self.inner().psip_last().ok_or(DexterError::AttributeError {
-            obj: "Mode".into(),
-            attr: "psip_last".into(),
-        })
-    }
-
     #[getter]
     pub fn m(&self) -> Result<i64> {
         Ok(self.inner().m())
@@ -153,60 +136,93 @@ impl PyMode {
         Ok(self.inner().n())
     }
 
-    pub fn ampl_of_psi(&self, psi: f64, theta: f64, zeta: f64, t: f64) -> Result<f64> {
-        Ok(self.inner().ampl_of_psi(psi, theta, zeta, t, &mut self.inner().generate_cache())?)
+    pub fn eval_amplitude(
+        &self,
+        theta: f64,
+        zeta: f64,
+        t: f64,
+        psi: f64,
+        psip: f64,
+    ) -> Result<f64> {
+        let flux = flux_from_params(psi, psip);
+        Ok(self
+            .inner()
+            .eval_amplitude(flux, theta, zeta, t, &mut self.inner().generate_cache())?)
     }
 
-    pub fn ampl_of_psip(&self, psip: f64, theta: f64, zeta: f64, t: f64) -> Result<f64> {
-        Ok(self.inner().ampl_of_psip(psip, theta, zeta, t, &mut self.inner().generate_cache())?)
+    pub fn eval_phase(&self, theta: f64, zeta: f64, t: f64, psi: f64, psip: f64) -> Result<f64> {
+        let flux = flux_from_params(psi, psip);
+        Ok(self
+            .inner()
+            .eval_phase(flux, theta, zeta, t, &mut self.inner().generate_cache())?)
     }
 
-    pub fn phase_of_psi(&self, psi: f64, theta: f64, zeta: f64, t: f64) -> Result<f64> {
-        Ok(self.inner().phase_of_psi(psi, theta, zeta, t, &mut self.inner().generate_cache())?)
+    pub fn eval_m(&self, theta: f64, zeta: f64, t: f64, psi: f64, psip: f64) -> Result<f64> {
+        let flux = flux_from_params(psi, psip);
+        Ok(self
+            .inner()
+            .eval_m(flux, theta, zeta, t, &mut self.inner().generate_cache())?)
     }
 
-    pub fn phase_of_psip(&self, psip: f64, theta: f64, zeta: f64, t: f64) -> Result<f64> {
-        Ok(self.inner().phase_of_psip(psip, theta, zeta, t, &mut self.inner().generate_cache())?)
+    pub fn eval_deriv_flux(
+        &self,
+        theta: f64,
+        zeta: f64,
+        t: f64,
+        psi: f64,
+        psip: f64,
+    ) -> Result<f64> {
+        let flux = flux_from_params(psi, psip);
+        Ok(self.inner().eval_deriv_flux(
+            flux,
+            theta,
+            zeta,
+            t,
+            &mut self.inner().generate_cache(),
+        )?)
     }
 
-    pub fn m_of_psi(&self, psi: f64, theta: f64, zeta: f64, t: f64) -> Result<f64> {
-        Ok(self.inner().m_of_psi(psi, theta, zeta, t, &mut self.inner().generate_cache())?)
+    pub fn eval_deriv_theta(
+        &self,
+        theta: f64,
+        zeta: f64,
+        t: f64,
+        psi: f64,
+        psip: f64,
+    ) -> Result<f64> {
+        let flux = flux_from_params(psi, psip);
+        Ok(self.inner().eval_deriv_theta(
+            flux,
+            theta,
+            zeta,
+            t,
+            &mut self.inner().generate_cache(),
+        )?)
     }
 
-    pub fn m_of_psip(&self, psip: f64, theta: f64, zeta: f64, t: f64) -> Result<f64> {
-        Ok(self.inner().m_of_psip(psip, theta, zeta, t, &mut self.inner().generate_cache())?)
+    pub fn eval_deriv_zeta(
+        &self,
+        theta: f64,
+        zeta: f64,
+        t: f64,
+        psi: f64,
+        psip: f64,
+    ) -> Result<f64> {
+        let flux = flux_from_params(psi, psip);
+        Ok(self.inner().eval_deriv_zeta(
+            flux,
+            theta,
+            zeta,
+            t,
+            &mut self.inner().generate_cache(),
+        )?)
     }
 
-    pub fn dm_dpsi(&self, psi: f64, theta: f64, zeta: f64, t: f64) -> Result<f64> {
-        Ok(self.inner().dm_dpsi(psi, theta, zeta, t, &mut self.inner().generate_cache())?)
-    }
-
-    pub fn dm_dpsip(&self, psip: f64, theta: f64, zeta: f64, t: f64) -> Result<f64> {
-        Ok(self.inner().dm_dpsip(psip, theta, zeta, t, &mut self.inner().generate_cache())?)
-    }
-
-    pub fn dm_of_psi_dtheta(&self, psi: f64, theta: f64, zeta: f64, t: f64) -> Result<f64> {
-        Ok(self.inner().dm_of_psi_dtheta(psi, theta, zeta, t, &mut self.inner().generate_cache())?)
-    }
-
-    pub fn dm_of_psip_dtheta(&self, psip: f64, theta: f64, zeta: f64, t: f64) -> Result<f64> {
-        Ok(self.inner().dm_of_psip_dtheta(psip, theta, zeta, t, &mut self.inner().generate_cache())?)
-    }
-
-    pub fn dm_of_psi_dzeta(&self, psi: f64, theta: f64, zeta: f64, t: f64) -> Result<f64> {
-        Ok(self.inner().dm_of_psi_dzeta(psi, theta, zeta, t, &mut self.inner().generate_cache())?)
-    }
-
-    pub fn dm_of_psip_dzeta(&self, psip: f64, theta: f64, zeta: f64, t: f64) -> Result<f64> {
-        Ok(self.inner().dm_of_psip_dzeta(psip, theta, zeta, t, &mut self.inner().generate_cache())?)
-    }
-
-    pub fn dm_of_psi_dt(&self, psi: f64, theta: f64, zeta: f64, t: f64) -> Result<f64> {
-        Ok(self.inner().dm_of_psi_dt(psi, theta, zeta, t, &mut self.inner().generate_cache())?)
-    }
-
-    pub fn dm_of_psip_dt(&self, psip: f64, theta: f64, zeta: f64, t: f64) -> Result<f64> {
-        Ok(self.inner().dm_of_psip_dt(psip, theta, zeta, t, &mut self.inner().generate_cache())?)
+    pub fn eval_deriv_t(&self, theta: f64, zeta: f64, t: f64, psi: f64, psip: f64) -> Result<f64> {
+        let flux = flux_from_params(psi, psip);
+        Ok(self
+            .inner()
+            .eval_deriv_t(flux, theta, zeta, t, &mut self.inner().generate_cache())?)
     }
 }
 
@@ -215,8 +231,8 @@ impl PyMode {
 #[pymethods] // Flute
 impl PyMode {
     #[getter]
-    pub fn lcfs(&self) -> Result<PyLastClosedFluxSurface> {
-        Ok(PyLastClosedFluxSurface(self.flute()?.lcfs()))
+    pub fn lcfs(&self) -> Result<PyMagneticFlux> {
+        Ok(self.flute()?.lcfs().into())
     }
 
     #[getter]
@@ -258,34 +274,32 @@ impl PyMode {
     }
 
     #[getter]
-    pub fn phase_average(&self) -> Result<f64> {
-        self.nc()?
-            .phase_average()
-            .ok_or(DexterError::AttributeError {
-                obj: "NcFluteMode".into(),
-                attr: "phase_average".into(),
-            })
+    pub fn phase_average(&self) -> Result<Option<f64>> {
+        Ok(self.nc()?.phase_average())
     }
 
-    pub fn get_array<'py>(&self, py: Python<'py>, name: &str) -> Result<Bound<'py, PyArray1<f64>>> {
+    pub fn get_array<'py>(
+        &self,
+        py: Python<'py>,
+        name: &str,
+    ) -> Result<Option<Bound<'py, PyArray1<f64>>>> {
         let mode = self.nc()?;
         match name {
-            "alpha_array" => return Ok(mode.alpha_array().into_pyarray(py)),
-            "phase_array" => return Ok(mode.phase_array().into_pyarray(py)),
+            "alpha_array" => return Ok(Some(mode.alpha_array().into_pyarray(py))),
+            "phase_array" => return Ok(Some(mode.phase_array().into_pyarray(py))),
             "psi_array" => match mode.psi_array() {
-                Some(array) => return Ok(array.into_pyarray(py)),
-                None => (),
+                Some(array) => return Ok(Some(array.into_pyarray(py))),
+                None => return Ok(None),
             },
             "psip_array" => match mode.psip_array() {
-                Some(array) => return Ok(array.into_pyarray(py)),
-                None => (),
+                Some(array) => return Ok(Some(array.into_pyarray(py))),
+                None => return Ok(None),
             },
-            _ => (),
+            _ => Err(DexterError::AttributeError {
+                obj: "NcBfield".into(),
+                attr: name.into(),
+            }),
         }
-        Err(DexterError::AttributeError {
-            obj: "NcBfield".into(),
-            attr: name.into(),
-        })
     }
 }
 

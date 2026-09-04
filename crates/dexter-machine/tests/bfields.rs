@@ -15,24 +15,24 @@ fn lar_bfield() {
     assert_eq!(bfield.psip_state(), FluxCoordinateState::Bad);
 
     let acc = &mut Accelerator2d::new();
-    let psi = 0.01;
-    let psip = 0.015;
+    let psi = MagneticFlux::Toroidal(0.01);
+    let psip = MagneticFlux::Poloidal(0.015);
     let theta = 3.14;
 
-    let _: f64 = bfield.b_of_psi(psi, theta, acc).unwrap();
-    let _: f64 = bfield.db_dpsi(psi, theta, acc).unwrap();
-    let _: f64 = bfield.db_of_psi_dtheta(psi, theta, acc).unwrap();
+    let _: f64 = bfield.eval_b(psi, theta, acc).unwrap();
+    let _: f64 = bfield.eval_deriv_flux(psi, theta, acc).unwrap();
+    let _: f64 = bfield.eval_deriv_theta(psi, theta, acc).unwrap();
 
     assert!(matches!(
-        bfield.b_of_psip(psip, theta, acc),
+        bfield.eval_b(psip, theta, acc),
         Err(EvalError::UndefinedEvaluation(..))
     ));
     assert!(matches!(
-        bfield.db_dpsip(psip, theta, acc),
+        bfield.eval_deriv_flux(psip, theta, acc),
         Err(EvalError::UndefinedEvaluation(..))
     ));
     assert!(matches!(
-        bfield.db_of_psip_dtheta(psip, theta, acc),
+        bfield.eval_deriv_theta(psip, theta, acc),
         Err(EvalError::UndefinedEvaluation(..))
     ));
 }
@@ -54,8 +54,6 @@ fn nc_bfield_no_pad() {
     let shape: (usize, usize) = bfield.shape();
     let psi_state: FluxCoordinateState = bfield.psi_state();
     let psip_state: FluxCoordinateState = bfield.psip_state();
-    let psi_last: f64 = bfield.psi_last().unwrap();
-    let psip_last: f64 = bfield.psip_last().unwrap();
     let psi_array: Array1<f64> = bfield.psi_array().unwrap();
     let psip_array: Array1<f64> = bfield.psip_array().unwrap();
     let theta_array: Array1<f64> = bfield.theta_array();
@@ -67,17 +65,16 @@ fn nc_bfield_no_pad() {
     assert_eq!(b_array, b_array_padded);
 
     let acc = &mut Accelerator2d::new();
-    let r = 0.2;
-    let psi = 0.01;
-    let psip = 0.015;
+    let psi = MagneticFlux::Toroidal(0.01);
+    let psip = MagneticFlux::Poloidal(0.015);
     let theta = 3.14;
 
-    let _: f64 = bfield.b_of_psi(psi, theta, acc).unwrap();
-    let _: f64 = bfield.b_of_psip(psip, theta, acc).unwrap();
-    let _: f64 = bfield.db_dpsi(psi, theta, acc).unwrap();
-    let _: f64 = bfield.db_dpsip(psip, theta, acc).unwrap();
-    let _: f64 = bfield.db_of_psi_dtheta(psi, theta, acc).unwrap();
-    let _: f64 = bfield.db_of_psip_dtheta(psip, theta, acc).unwrap();
+    let _: f64 = bfield.eval_b(psi, theta, acc).unwrap();
+    let _: f64 = bfield.eval_b(psip, theta, acc).unwrap();
+    let _: f64 = bfield.eval_deriv_flux(psi, theta, acc).unwrap();
+    let _: f64 = bfield.eval_deriv_flux(psip, theta, acc).unwrap();
+    let _: f64 = bfield.eval_deriv_theta(psi, theta, acc).unwrap();
+    let _: f64 = bfield.eval_deriv_theta(psip, theta, acc).unwrap();
 }
 
 #[test]

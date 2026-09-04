@@ -18,45 +18,44 @@ fn lar_geometry() {
     let baxis: f64 = geometry.baxis();
     let raxis: f64 = geometry.raxis();
     let rlast: f64 = geometry.rlast();
-    let psi_last: f64 = geometry.psi_last().unwrap();
-    assert!(geometry.psip_last().is_none());
+    let psi_last: MagneticFlux = geometry.psi_last();
     let rlab_last: Array1<f64> = geometry.rlab_last();
     let zlab_last: Array1<f64> = geometry.zlab_last();
 
     let acc1 = &mut Accelerator::new();
     let acc2 = &mut Accelerator2d::new();
     let r = 0.2;
-    let psi = 0.01;
-    let psip = 0.015;
+    let psi = MagneticFlux::Toroidal(0.01);
+    let psip = MagneticFlux::Poloidal(0.015);
     let theta = 3.14;
 
-    let _: f64 = geometry.r_of_psi(psi, acc1).unwrap();
-    let _: f64 = geometry.psi_of_r(r, acc1).unwrap();
-    let _: f64 = geometry.rlab_of_psi(psi, theta, acc2).unwrap();
-    let _: f64 = geometry.zlab_of_psi(psi, theta, acc2).unwrap();
+    let _: f64 = geometry.eval_r(psi, acc1).unwrap();
+    let _: MagneticFlux = geometry.eval_psi_of_r(r, acc1).unwrap();
+    let _: f64 = geometry.eval_rlab(psi, theta, acc2).unwrap();
+    let _: f64 = geometry.eval_zlab(psi, theta, acc2).unwrap();
 
     assert!(matches!(
-        geometry.r_of_psip(psip, acc1),
+        geometry.eval_r(psip, acc1),
         Err(EvalError::UndefinedEvaluation(..))
     ));
     assert!(matches!(
-        geometry.psip_of_r(r, acc1),
+        geometry.eval_psip_of_r(r, acc1),
         Err(EvalError::UndefinedEvaluation(..))
     ));
     assert!(matches!(
-        geometry.rlab_of_psip(psip, theta, acc2),
+        geometry.eval_rlab(psip, theta, acc2),
         Err(EvalError::UndefinedEvaluation(..))
     ));
     assert!(matches!(
-        geometry.zlab_of_psip(psip, theta, acc2),
+        geometry.eval_zlab(psip, theta, acc2),
         Err(EvalError::UndefinedEvaluation(..))
     ));
     assert!(matches!(
-        geometry.jacobian_of_psi(psi, theta, acc2),
+        geometry.eval_jacobian(psi, theta, acc2),
         Err(EvalError::UndefinedEvaluation(..))
     ));
     assert!(matches!(
-        geometry.jacobian_of_psip(psip, theta, acc2),
+        geometry.eval_jacobian(psip, theta, acc2),
         Err(EvalError::UndefinedEvaluation(..))
     ));
 }
@@ -85,8 +84,8 @@ fn nc_geometry() {
     let shape: (usize, usize) = geometry.shape();
     let psi_state: FluxCoordinateState = geometry.psi_state();
     let psip_state: FluxCoordinateState = geometry.psip_state();
-    let psi_last: f64 = geometry.psi_last().unwrap();
-    let psip_last: f64 = geometry.psip_last().unwrap();
+    let psi_last: MagneticFlux = geometry.psi_last().unwrap();
+    let psip_last: MagneticFlux = geometry.psip_last().unwrap();
     let psi_array: Array1<f64> = geometry.psi_array().unwrap();
     let psip_array: Array1<f64> = geometry.psip_array().unwrap();
     let theta_array: Array1<f64> = geometry.theta_array();
@@ -100,20 +99,18 @@ fn nc_geometry() {
     let acc1 = &mut Accelerator::new();
     let acc2 = &mut Accelerator2d::new();
     let r = 0.2;
-    let psi = 0.01;
-    let psip = 0.015;
+    let psi = MagneticFlux::Toroidal(0.01);
+    let psip = MagneticFlux::Poloidal(0.015);
     let theta = 3.14;
 
-    let _: f64 = geometry.psip_of_psi(psi, acc1).unwrap();
-    let _: f64 = geometry.psi_of_psip(psip, acc1).unwrap();
-    let _: f64 = geometry.r_of_psi(psi, acc1).unwrap();
-    let _: f64 = geometry.r_of_psip(psip, acc1).unwrap();
-    let _: f64 = geometry.psi_of_r(r, acc1).unwrap();
-    let _: f64 = geometry.psip_of_r(r, acc1).unwrap();
-    let _: f64 = geometry.rlab_of_psi(psi, theta, acc2).unwrap();
-    let _: f64 = geometry.rlab_of_psip(psip, theta, acc2).unwrap();
-    let _: f64 = geometry.zlab_of_psi(psi, theta, acc2).unwrap();
-    let _: f64 = geometry.zlab_of_psip(psip, theta, acc2).unwrap();
-    let _: f64 = geometry.jacobian_of_psi(psi, theta, acc2).unwrap();
-    let _: f64 = geometry.jacobian_of_psip(psip, theta, acc2).unwrap();
+    let _: f64 = geometry.eval_r(psi, acc1).unwrap();
+    let _: f64 = geometry.eval_r(psip, acc1).unwrap();
+    let _: MagneticFlux = geometry.eval_psi_of_r(r, acc1).unwrap();
+    let _: MagneticFlux = geometry.eval_psip_of_r(r, acc1).unwrap();
+    let _: f64 = geometry.eval_rlab(psi, theta, acc2).unwrap();
+    let _: f64 = geometry.eval_rlab(psip, theta, acc2).unwrap();
+    let _: f64 = geometry.eval_zlab(psi, theta, acc2).unwrap();
+    let _: f64 = geometry.eval_zlab(psip, theta, acc2).unwrap();
+    let _: f64 = geometry.eval_jacobian(psi, theta, acc2).unwrap();
+    let _: f64 = geometry.eval_jacobian(psip, theta, acc2).unwrap();
 }

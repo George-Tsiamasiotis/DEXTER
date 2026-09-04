@@ -66,15 +66,6 @@ impl PyGeometry {
         }
     }
 
-    pub fn fluxcommute(&self) -> Result<&dyn FluxCommute> {
-        match self {
-            PyGeometry::Lar(_) => Err(DexterError::EvalError(
-                "LarGeometry does not support flux commutation".into(),
-            )),
-            PyGeometry::Nc(geometry) => Ok(geometry.0.as_ref()),
-        }
-    }
-
     pub fn lar(&self) -> Result<&LarGeometry> {
         match self {
             Self::Lar(geometry) => Ok(&geometry.0),
@@ -98,7 +89,7 @@ impl PyGeometry {
 
 // ===============================================================================================
 
-#[pymethods] // EquilibriumObject Trait
+#[pymethods] // MachineObject Trait
 impl PyGeometry {
     #[getter]
     pub fn machine_type(&self) -> String {
@@ -113,21 +104,6 @@ impl PyGeometry {
     #[getter]
     pub fn psip_state(&self) -> String {
         format!("{:?}", self.inner().psip_state())
-    }
-}
-
-#[pymethods] // FluxCommute Trait
-impl PyGeometry {
-    pub fn psip_of_psi(&self, psi: f64) -> Result<f64> {
-        Ok(self
-            .fluxcommute()?
-            .psip_of_psi(psi, &mut Accelerator::new())?)
-    }
-
-    pub fn psi_of_psip(&self, psip: f64) -> Result<f64> {
-        Ok(self
-            .fluxcommute()?
-            .psi_of_psip(psip, &mut Accelerator::new())?)
     }
 }
 
@@ -159,60 +135,32 @@ impl PyGeometry {
         self.inner().rlast()
     }
 
-    #[getter]
-    pub fn psi_last(&self) -> Result<f64> {
-        self.inner().psi_last().ok_or(DexterError::AttributeError {
-            obj: "Geometry".into(),
-            attr: "psi_last".into(),
-        })
+    pub fn eval_r(&self, psi: f64, psip: f64) -> Result<f64> {
+        let flux = flux_from_params(psi, psip);
+        Ok(self.inner().eval_r(flux, &mut Accelerator::new())?)
     }
 
-    #[getter]
-    pub fn psip_last(&self) -> Result<f64> {
-        self.inner().psip_last().ok_or(DexterError::AttributeError {
-            obj: "Geometry".into(),
-            attr: "psip_last".into(),
-        })
+    pub fn eval_psi_of_r(&self, r: f64) -> Result<f64> {
+        Ok(self.inner().eval_psi_of_r(r, &mut Accelerator::new())?.value())
     }
 
-    pub fn r_of_psi(&self, psi: f64) -> Result<f64> {
-        Ok(self.inner().r_of_psi(psi, &mut Accelerator::new())?)
+    pub fn eval_psip_of_r(&self, r: f64) -> Result<f64> {
+        Ok(self.inner().eval_psip_of_r(r, &mut Accelerator::new())?.value())
     }
 
-    pub fn r_of_psip(&self, psip: f64) -> Result<f64> {
-        Ok(self.inner().r_of_psip(psip, &mut Accelerator::new())?)
+    pub fn eval_rlab(&self, theta: f64, psi: f64, psip: f64) -> Result<f64> {
+        let flux = flux_from_params(psi, psip);
+        Ok(self.inner().eval_rlab(flux, theta, &mut Accelerator2d::new())?)
     }
 
-    pub fn psi_of_r(&self, r: f64) -> Result<f64> {
-        Ok(self.inner().psi_of_r(r, &mut Accelerator::new())?)
+    pub fn eval_zlab(&self, theta: f64, psi: f64, psip: f64) -> Result<f64> {
+        let flux = flux_from_params(psi, psip);
+        Ok(self.inner().eval_zlab(flux, theta, &mut Accelerator2d::new())?)
     }
 
-    pub fn psip_of_r(&self, r: f64) -> Result<f64> {
-        Ok(self.inner().psip_of_r(r, &mut Accelerator::new())?)
-    }
-
-    pub fn rlab_of_psi(&self, psi: f64, theta: f64) -> Result<f64> {
-        Ok(self.inner().rlab_of_psi(psi, theta, &mut Accelerator2d::new())?)
-    }
-
-    pub fn rlab_of_psip(&self, psip: f64, theta: f64) -> Result<f64> {
-        Ok(self.inner().rlab_of_psip(psip, theta, &mut Accelerator2d::new())?)
-    }
-
-    pub fn zlab_of_psi(&self, psi: f64, theta: f64) -> Result<f64> {
-        Ok(self.inner().zlab_of_psi(psi, theta, &mut Accelerator2d::new())?)
-    }
-
-    pub fn zlab_of_psip(&self, psip: f64, theta: f64) -> Result<f64> {
-        Ok(self.inner().zlab_of_psip(psip, theta, &mut Accelerator2d::new())?)
-    }
-
-    pub fn jacobian_of_psi(&self, psi: f64, theta: f64) -> Result<f64> {
-        Ok(self.inner().jacobian_of_psi(psi, theta, &mut Accelerator2d::new())?)
-    }
-
-    pub fn jacobian_of_psip(&self, psip: f64, theta: f64) -> Result<f64> {
-        Ok(self.inner().jacobian_of_psip(psip, theta, &mut Accelerator2d::new())?)
+    pub fn eval_jacobian(&self, theta: f64, psi: f64, psip: f64) -> Result<f64> {
+        let flux = flux_from_params(psi, psip);
+        Ok(self.inner().eval_jacobian(flux, theta, &mut Accelerator2d::new())?)
     }
 
     #[getter]
@@ -228,8 +176,27 @@ impl PyGeometry {
 
 // ===============================================================================================
 
-// #[pymethods] // Lar
-// impl PyGeometry {}
+#[pymethods] // "Common" but not provided by the `Geometry` trait
+impl PyGeometry {
+    #[getter]
+    pub fn psi_last(&self) -> Option<PyMagneticFlux> {
+        match self {
+            Self::Lar(inner) => Some(inner.0.psi_last().into()), // guaranteed to exist
+            Self::Nc(inner) => inner.0.psi_last().map(Into::into),
+        }
+    }
+
+    #[getter]
+    pub fn psip_last(&self) -> Option<PyMagneticFlux> {
+        match self {
+            Self::Lar(_) => None, // guaranteed to **not** exist
+            Self::Nc(inner) => inner.0.psip_last().map(Into::into),
+        }
+    }
+}
+
+#[pymethods] // Lar
+impl PyGeometry {}
 
 #[pymethods] // Nc
 impl PyGeometry {
@@ -258,18 +225,22 @@ impl PyGeometry {
         Ok(self.nc()?.shape())
     }
 
-    pub fn get_array<'py>(&self, py: Python<'py>, name: &str) -> Result<Bound<'py, PyArray1<f64>>> {
+    pub fn get_array<'py>(
+        &self,
+        py: Python<'py>,
+        name: &str,
+    ) -> Result<Option<Bound<'py, PyArray1<f64>>>> {
         let geometry = self.nc()?;
         match name {
-            "theta_array" => return Ok(geometry.theta_array().into_pyarray(py)),
-            "r_array" => return Ok(geometry.r_array().into_pyarray(py)),
+            "theta_array" => return Ok(Some(geometry.theta_array().into_pyarray(py))),
+            "r_array" => return Ok(Some(geometry.r_array().into_pyarray(py))),
             "psi_array" => match geometry.psi_array() {
-                Some(array) => return Ok(array.into_pyarray(py)),
-                None => (),
+                Some(array) => return Ok(Some(array.into_pyarray(py))),
+                None => return Ok(None),
             },
             "psip_array" => match geometry.psip_array() {
-                Some(array) => return Ok(array.into_pyarray(py)),
-                None => (),
+                Some(array) => return Ok(Some(array.into_pyarray(py))),
+                None => return Ok(None),
             },
             _ => (),
         }
@@ -286,15 +257,14 @@ impl PyGeometry {
     ) -> Result<Bound<'py, PyArray2<f64>>> {
         let geometry = self.nc()?;
         match name {
-            "rlab_array" => return Ok(geometry.rlab_array().into_pyarray(py)),
-            "zlab_array" => return Ok(geometry.zlab_array().into_pyarray(py)),
-            "jacobian_array" => return Ok(geometry.jacobian_array().into_pyarray(py)),
-            _ => (),
+            "rlab_array" => Ok(geometry.rlab_array().into_pyarray(py)),
+            "zlab_array" => Ok(geometry.zlab_array().into_pyarray(py)),
+            "jacobian_array" => Ok(geometry.jacobian_array().into_pyarray(py)),
+            _ => Err(DexterError::AttributeError {
+                obj: "NcGeometry".into(),
+                attr: name.into(),
+            }),
         }
-        Err(DexterError::AttributeError {
-            obj: "NcGeometry".into(),
-            attr: name.into(),
-        })
     }
 }
 

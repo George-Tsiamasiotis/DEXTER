@@ -1,21 +1,23 @@
 //! Representation of a machine's general geometry.
 
 use crate::{
-    debug_assert_is_finite, debug_assert_non_negative_psi, debug_assert_non_negative_psip,
-    debug_assert_non_negative_r, fluxes_values_array_getter_impl, fortran_vec_to_carray2d_impl,
-    lcfs_getter_impl, netcdf_path_getter_impl, netcdf_version_getter_impl,
+    debug_assert_is_finite, debug_assert_non_negative_flux, debug_assert_non_negative_r,
+    fluxes_values_array_getter_impl, fortran_vec_to_carray2d_impl, netcdf_path_getter_impl,
+    netcdf_version_getter_impl,
 };
 use core::f64::consts::PI;
 use dexter_common::array1D_getter_impl;
 use ndarray::{Array1, Array2, Order::ColumnMajor};
 use rsl_interpolation::{Accelerator, Accelerator2d};
+use std::hint::cold_path;
 use std::path::{Path, PathBuf};
 
 use super::debug_assert_all_finite_values;
 use crate::objects::nc_flux::{FluxCoordinateState, NcFlux};
 use crate::{EvalError, MachineError};
-use crate::{FluxCommute, Geometry, MachineObject, MachineType};
+use crate::{Geometry, MachineObject, MachineType};
 use crate::{Interpolation1dType, Interpolation2dType};
+use crate::{MagneticFlux, MagneticFlux::*};
 use dexter_common::{DynInterpolator, DynInterpolator2d, make_interp, make_interp2d};
 
 // ===============================================================================================
@@ -63,6 +65,12 @@ impl LarGeometry {
             psi_last,
         }
     }
+
+    /// Returns the last closed toroidal flux surface.
+    #[must_use]
+    pub fn psi_last(&self) -> MagneticFlux {
+        Toroidal(self.psi_last)
+    }
 }
 
 impl MachineObject for LarGeometry {
@@ -100,90 +108,92 @@ impl Geometry for LarGeometry {
         self.raxis
     }
 
-    fn psi_last(&self) -> Option<f64> {
-        Some(self.psi_last)
+    fn eval_r(&self, flux: MagneticFlux, _: &mut Accelerator) -> Result<f64, EvalError> {
+        debug_assert_non_negative_flux!(flux);
+        match flux {
+            Toroidal(psi) => Ok(debug_assert_is_finite!((2.0 * psi).sqrt())),
+            Poloidal(_) => Err(EvalError::UndefinedEvaluation(
+                "r(ψp) (defined through q)".into(),
+            )),
+        }
     }
 
-    fn psip_last(&self) -> Option<f64> {
-        None
-    }
-
-    fn r_of_psi(&self, psi: f64, _: &mut Accelerator) -> Result<f64, EvalError> {
-        debug_assert_non_negative_psi!(psi);
-        Ok(debug_assert_is_finite!((2.0 * psi).sqrt()))
-    }
-
-    fn r_of_psip(&self, _: f64, _: &mut Accelerator) -> Result<f64, EvalError> {
-        Err(EvalError::UndefinedEvaluation(
-            "r(ψp) (defined through q)".into(),
-        ))
-    }
-
-    fn psi_of_r(&self, r: f64, _: &mut Accelerator) -> Result<f64, EvalError> {
+    fn eval_psi_of_r(&self, r: f64, _: &mut Accelerator) -> Result<MagneticFlux, EvalError> {
         debug_assert_non_negative_r!(r);
-        Ok(debug_assert_is_finite!(r.powi(2) / 2.0))
+        Ok(Toroidal(debug_assert_is_finite!(r.powi(2) / 2.0)))
     }
 
-    fn psip_of_r(&self, _: f64, _: &mut Accelerator) -> Result<f64, EvalError> {
+    fn eval_psip_of_r(&self, _: f64, _: &mut Accelerator) -> Result<MagneticFlux, EvalError> {
         Err(EvalError::UndefinedEvaluation(
             "ψp(r) (defined through q)".into(),
         ))
     }
 
-    fn rlab_of_psi(&self, psi: f64, theta: f64, _: &mut Accelerator2d) -> Result<f64, EvalError> {
-        debug_assert_non_negative_psi!(psi);
-        Ok(debug_assert_is_finite!(
-            self.raxis + self.raxis * (2.0 * psi).sqrt() * theta.cos()
-        ))
+    fn eval_rlab(
+        &self,
+        flux: MagneticFlux,
+        theta: f64,
+        _: &mut Accelerator2d,
+    ) -> Result<f64, EvalError> {
+        debug_assert_non_negative_flux!(flux);
+        match flux {
+            Toroidal(psi) => Ok(debug_assert_is_finite!(
+                self.raxis + self.raxis * (2.0 * psi).sqrt() * theta.cos()
+            )),
+            Poloidal(_) => Err(EvalError::UndefinedEvaluation(
+                "R(ψp, θ) (defined through q)".into(),
+            )),
+        }
     }
 
-    fn rlab_of_psip(&self, _: f64, _: f64, _: &mut Accelerator2d) -> Result<f64, EvalError> {
-        Err(EvalError::UndefinedEvaluation(
-            "R(ψp, θ) (defined through q)".into(),
-        ))
+    fn eval_zlab(
+        &self,
+        flux: MagneticFlux,
+        theta: f64,
+        _: &mut Accelerator2d,
+    ) -> Result<f64, EvalError> {
+        debug_assert_non_negative_flux!(flux);
+        match flux {
+            Toroidal(psi) => Ok(debug_assert_is_finite!(
+                self.raxis * (2.0 * psi).sqrt() * theta.sin()
+            )),
+            Poloidal(_) => Err(EvalError::UndefinedEvaluation(
+                "Z(ψp, θ) (defined through q)".into(),
+            )),
+        }
     }
 
-    fn zlab_of_psi(&self, psi: f64, theta: f64, _: &mut Accelerator2d) -> Result<f64, EvalError> {
-        debug_assert_non_negative_psi!(psi);
-        Ok(debug_assert_is_finite!(
-            self.raxis * (2.0 * psi).sqrt() * theta.sin()
-        ))
-    }
-
-    fn zlab_of_psip(&self, _: f64, _: f64, _: &mut Accelerator2d) -> Result<f64, EvalError> {
-        Err(EvalError::UndefinedEvaluation(
-            "Z(ψp, θ) (defined through q)".into(),
-        ))
-    }
-
-    fn jacobian_of_psi(&self, _: f64, _: f64, _: &mut Accelerator2d) -> Result<f64, EvalError> {
-        Err(EvalError::UndefinedEvaluation(
-            "J(ψ, θ) (defined through q, g, I and B)".into(),
-        ))
-    }
-
-    fn jacobian_of_psip(&self, _: f64, _: f64, _: &mut Accelerator2d) -> Result<f64, EvalError> {
-        Err(EvalError::UndefinedEvaluation(
-            "J(ψp, θ) (defined through q, g, I and B)".into(),
-        ))
+    fn eval_jacobian(
+        &self,
+        flux: MagneticFlux,
+        _: f64,
+        _: &mut Accelerator2d,
+    ) -> Result<f64, EvalError> {
+        debug_assert_non_negative_flux!(flux);
+        let msg = format!("J({}, θ) (defined through q, g, I and B)", flux.symbol());
+        Err(EvalError::UndefinedEvaluation(msg))
     }
 
     fn rlab_last(&self) -> Array1<f64> {
         let arr = Array1::linspace(0.0, 2.0 * PI, 1000);
         let acc = &mut Accelerator2d::new();
-        arr.mapv(|theta| match self.rlab_of_psi(self.psi_last, theta, acc) {
-            Ok(rlab_lcfs_value) => rlab_lcfs_value,
-            Err(_) => unreachable!("Expression is analytical, cannot fail"),
-        })
+        arr.mapv(
+            |theta| match self.eval_rlab(Toroidal(self.psi_last), theta, acc) {
+                Ok(rlab_lcfs_value) => rlab_lcfs_value,
+                Err(_) => unreachable!("Expression is analytical, cannot fail"),
+            },
+        )
     }
 
     fn zlab_last(&self) -> Array1<f64> {
         let arr = Array1::linspace(0.0, 2.0 * PI, 1000);
         let acc = &mut Accelerator2d::new();
-        arr.mapv(|theta| match self.zlab_of_psi(self.psi_last, theta, acc) {
-            Ok(zlab_lcfs_value) => zlab_lcfs_value,
-            Err(_) => unreachable!("Expression is analytical, cannot fail"),
-        })
+        arr.mapv(
+            |theta| match self.eval_zlab(Toroidal(self.psi_last), theta, acc) {
+                Ok(zlab_lcfs_value) => zlab_lcfs_value,
+                Err(_) => unreachable!("Expression is analytical, cannot fail"),
+            },
+        )
     }
 }
 
@@ -285,11 +295,6 @@ pub struct NcGeometry {
     /// The poloidal flux coordinate.
     psip: NcFlux,
 
-    /// The `ψp(ψ)` interpolator.
-    psip_of_psi_interp: Option<DynInterpolator>,
-    /// The `ψ(ψp)` interpolator.
-    psi_of_psip_interp: Option<DynInterpolator>,
-
     /// The radial coordinate r in [m].
     r_values: Vec<f64>,
     /// The `r(ψ)` interpolator.
@@ -367,27 +372,6 @@ impl NcGeometry {
 
         // Create interpolators, if possible
         use FluxCoordinateState::Good;
-        let psip_of_psi_interp =
-            if (psi.state() == Good) & (psip.state() != FluxCoordinateState::NoValues) {
-                Some(make_interp(
-                    builder.interp1d_type,
-                    psi.uvalues(),
-                    psip.uvalues(),
-                )?)
-            } else {
-                None
-            };
-        let psi_of_psip_interp =
-            if (psip.state() == Good) & (psi.state() != FluxCoordinateState::NoValues) {
-                Some(make_interp(
-                    builder.interp1d_type,
-                    psip.uvalues(),
-                    psi.uvalues(),
-                )?)
-            } else {
-                None
-            };
-
         let r_of_psi_interp = match psi.state() {
             Good => make_interp(builder.interp1d_type, psi.uvalues(), &r_values).ok(),
             _ => None,
@@ -479,8 +463,6 @@ impl NcGeometry {
             theta_values,
             psi,
             psip,
-            psi_of_psip_interp,
-            psip_of_psi_interp,
             baxis,
             raxis,
             zaxis,
@@ -517,34 +499,6 @@ impl MachineObject for NcGeometry {
     }
 }
 
-impl FluxCommute for NcGeometry {
-    fn psip_of_psi(&self, psi: f64, acc: &mut Accelerator) -> Result<f64, EvalError> {
-        debug_assert_non_negative_psi!(psi);
-        match self.psip_of_psi_interp.as_ref() {
-            Some(interp) => Ok(debug_assert_is_finite!(interp.eval(
-                self.psi.uvalues(),
-                self.psip.uvalues(),
-                psi,
-                acc
-            )?)),
-            None => Err(EvalError::UndefinedEvaluation("ψp(ψ)".into())),
-        }
-    }
-
-    fn psi_of_psip(&self, psip: f64, acc: &mut Accelerator) -> Result<f64, EvalError> {
-        debug_assert_non_negative_psip!(psip);
-        match self.psi_of_psip_interp.as_ref() {
-            Some(interp) => Ok(debug_assert_is_finite!(interp.eval(
-                self.psip.uvalues(),
-                self.psi.uvalues(),
-                psip,
-                acc
-            )?)),
-            None => Err(EvalError::UndefinedEvaluation("ψ(ψp)".into())),
-        }
-    }
-}
-
 impl Geometry for NcGeometry {
     fn baxis(&self) -> f64 {
         self.baxis
@@ -569,174 +523,134 @@ impl Geometry for NcGeometry {
         }
     }
 
-    fn psi_last(&self) -> Option<f64> {
-        self.psi.last_value()
+    fn eval_r(&self, flux: MagneticFlux, acc: &mut Accelerator) -> Result<f64, EvalError> {
+        debug_assert_non_negative_flux!(flux);
+        let interp_opt = match flux {
+            Toroidal(_) => self.r_of_psi_interp.as_ref(),
+            Poloidal(_) => self.r_of_psip_interp.as_ref(),
+        };
+        let Some(interp) = interp_opt else {
+            cold_path();
+            let msg = format!("r({})", flux.symbol());
+            return Err(EvalError::UndefinedEvaluation(msg));
+        };
+        // This cannot panic. If `interp` is `Some` then the corresponding values exist.
+        let (val, xa) = match flux {
+            Toroidal(val) => (val, self.psi.uvalues()),
+            Poloidal(val) => (val, self.psip.uvalues()),
+        };
+        let ya = &self.theta_values;
+        Ok(debug_assert_is_finite!(interp.eval(xa, ya, val, acc)?))
     }
 
-    fn psip_last(&self) -> Option<f64> {
-        self.psip.last_value()
-    }
-
-    fn r_of_psi(&self, psi: f64, acc: &mut Accelerator) -> Result<f64, EvalError> {
-        debug_assert_non_negative_psi!(psi);
-        match self.r_of_psi_interp.as_ref() {
-            Some(interp) => Ok(debug_assert_is_finite!(interp.eval(
-                self.psi.uvalues(),
-                &self.r_values,
-                psi,
-                acc
-            )?)),
-            None => Err(EvalError::UndefinedEvaluation("r(ψ)".into())),
-        }
-    }
-
-    fn r_of_psip(&self, psip: f64, acc: &mut Accelerator) -> Result<f64, EvalError> {
-        debug_assert_non_negative_psip!(psip);
-        match self.r_of_psip_interp.as_ref() {
-            Some(interp) => Ok(debug_assert_is_finite!(interp.eval(
-                self.psip.uvalues(),
-                &self.r_values,
-                psip,
-                acc
-            )?)),
-            None => Err(EvalError::UndefinedEvaluation("r(ψp)".into())),
-        }
-    }
-
-    fn psi_of_r(&self, r: f64, acc: &mut Accelerator) -> Result<f64, EvalError> {
+    fn eval_psi_of_r(&self, r: f64, acc: &mut Accelerator) -> Result<MagneticFlux, EvalError> {
         debug_assert_non_negative_r!(r);
         match self.psi_of_r_interp.as_ref() {
-            Some(interp) => Ok(debug_assert_is_finite!(interp.eval(
+            Some(interp) => Ok(Toroidal(debug_assert_is_finite!(interp.eval(
                 &self.r_values,
                 self.psi.uvalues(),
                 r,
                 acc
-            )?)),
+            )?))),
             None => Err(EvalError::UndefinedEvaluation("ψ(r)".into())),
         }
     }
 
-    fn psip_of_r(&self, r: f64, acc: &mut Accelerator) -> Result<f64, EvalError> {
+    fn eval_psip_of_r(&self, r: f64, acc: &mut Accelerator) -> Result<MagneticFlux, EvalError> {
         debug_assert_non_negative_r!(r);
         match self.psip_of_r_interp.as_ref() {
-            Some(interp) => Ok(debug_assert_is_finite!(interp.eval(
+            Some(interp) => Ok(Poloidal(debug_assert_is_finite!(interp.eval(
                 &self.r_values,
                 self.psip.uvalues(),
                 r,
                 acc
-            )?)),
+            )?))),
             None => Err(EvalError::UndefinedEvaluation("ψp(r)".into())),
         }
     }
 
-    fn rlab_of_psi(&self, psi: f64, theta: f64, acc: &mut Accelerator2d) -> Result<f64, EvalError> {
-        debug_assert_non_negative_psi!(psi);
-        match self.rlab_of_psi_interp.as_ref() {
-            Some(interp) => Ok(debug_assert_is_finite!(interp.eval(
-                self.psi.uvalues(),
-                &self.theta_values,
-                &self.rlab_values_fortran_flat,
-                psi,
-                theta,
-                acc,
-            )?)),
-            None => Err(EvalError::UndefinedEvaluation("R(ψ, θ)".into())),
-        }
-    }
-
-    fn rlab_of_psip(
+    fn eval_rlab(
         &self,
-        psip: f64,
+        flux: MagneticFlux,
         theta: f64,
         acc: &mut Accelerator2d,
     ) -> Result<f64, EvalError> {
-        debug_assert_non_negative_psip!(psip);
-        match self.rlab_of_psip_interp.as_ref() {
-            Some(interp) => Ok(debug_assert_is_finite!(interp.eval(
-                self.psip.uvalues(),
-                &self.theta_values,
-                &self.rlab_values_fortran_flat,
-                psip,
-                theta,
-                acc,
-            )?)),
-            None => Err(EvalError::UndefinedEvaluation("R(ψp, θ)".into())),
-        }
+        debug_assert_non_negative_flux!(flux);
+        let interp_opt = match flux {
+            Toroidal(_) => self.rlab_of_psi_interp.as_ref(),
+            Poloidal(_) => self.rlab_of_psip_interp.as_ref(),
+        };
+        let Some(interp) = interp_opt else {
+            cold_path();
+            let msg = format!("R({}, θ)", flux.symbol());
+            return Err(EvalError::UndefinedEvaluation(msg));
+        };
+        // This cannot panic. If `interp` is `Some` then the corresponding values exist.
+        let (val, xa) = match flux {
+            Toroidal(val) => (val, self.psi.uvalues()),
+            Poloidal(val) => (val, self.psip.uvalues()),
+        };
+        let ya = &self.theta_values;
+        let za = &self.rlab_values_fortran_flat;
+        Ok(debug_assert_is_finite!(
+            interp.eval(xa, ya, za, val, theta, acc)?
+        ))
     }
 
-    fn zlab_of_psi(&self, psi: f64, theta: f64, acc: &mut Accelerator2d) -> Result<f64, EvalError> {
-        debug_assert_non_negative_psi!(psi);
-        match self.zlab_of_psi_interp.as_ref() {
-            Some(interp) => Ok(debug_assert_is_finite!(interp.eval(
-                self.psi.uvalues(),
-                &self.theta_values,
-                &self.zlab_values_fortran_flat,
-                psi,
-                theta,
-                acc,
-            )?)),
-            None => Err(EvalError::UndefinedEvaluation("Z(ψ, θ)".into())),
-        }
-    }
-
-    fn zlab_of_psip(
+    fn eval_zlab(
         &self,
-        psip: f64,
+        flux: MagneticFlux,
         theta: f64,
         acc: &mut Accelerator2d,
     ) -> Result<f64, EvalError> {
-        debug_assert_non_negative_psip!(psip);
-        match self.zlab_of_psip_interp.as_ref() {
-            Some(interp) => Ok(debug_assert_is_finite!(interp.eval(
-                self.psip.uvalues(),
-                &self.theta_values,
-                &self.zlab_values_fortran_flat,
-                psip,
-                theta,
-                acc,
-            )?)),
-            None => Err(EvalError::UndefinedEvaluation("Z(ψp, θ)".into())),
-        }
+        debug_assert_non_negative_flux!(flux);
+        let interp_opt = match flux {
+            Toroidal(_) => self.zlab_of_psi_interp.as_ref(),
+            Poloidal(_) => self.zlab_of_psip_interp.as_ref(),
+        };
+        let Some(interp) = interp_opt else {
+            cold_path();
+            let msg = format!("Z({}, θ)", flux.symbol());
+            return Err(EvalError::UndefinedEvaluation(msg));
+        };
+        // This cannot panic. If `interp` is `Some` then the corresponding values exist.
+        let (val, xa) = match flux {
+            Toroidal(val) => (val, self.psi.uvalues()),
+            Poloidal(val) => (val, self.psip.uvalues()),
+        };
+        let ya = &self.theta_values;
+        let za = &self.zlab_values_fortran_flat;
+        Ok(debug_assert_is_finite!(
+            interp.eval(xa, ya, za, val, theta, acc)?
+        ))
     }
 
-    fn jacobian_of_psi(
+    fn eval_jacobian(
         &self,
-        psi: f64,
+        flux: MagneticFlux,
         theta: f64,
         acc: &mut Accelerator2d,
     ) -> Result<f64, EvalError> {
-        debug_assert_non_negative_psi!(psi);
-        match self.jacobian_of_psi_interp.as_ref() {
-            Some(interp) => Ok(debug_assert_is_finite!(interp.eval(
-                self.psi.uvalues(),
-                &self.theta_values,
-                &self.jacobian_values_fortran_flat,
-                psi,
-                theta,
-                acc,
-            )?)),
-            None => Err(EvalError::UndefinedEvaluation("J(ψ, θ)".into())),
-        }
-    }
-
-    fn jacobian_of_psip(
-        &self,
-        psip: f64,
-        theta: f64,
-        acc: &mut Accelerator2d,
-    ) -> Result<f64, EvalError> {
-        debug_assert_non_negative_psip!(psip);
-        match self.jacobian_of_psip_interp.as_ref() {
-            Some(interp) => Ok(debug_assert_is_finite!(interp.eval(
-                self.psip.uvalues(),
-                &self.theta_values,
-                &self.jacobian_values_fortran_flat,
-                psip,
-                theta,
-                acc,
-            )?)),
-            None => Err(EvalError::UndefinedEvaluation("J(ψp, θ)".into())),
-        }
+        debug_assert_non_negative_flux!(flux);
+        let interp_opt = match flux {
+            Toroidal(_) => self.jacobian_of_psi_interp.as_ref(),
+            Poloidal(_) => self.jacobian_of_psip_interp.as_ref(),
+        };
+        let Some(interp) = interp_opt else {
+            cold_path();
+            let msg = format!("J({}, θ)", flux.symbol());
+            return Err(EvalError::UndefinedEvaluation(msg));
+        };
+        // This cannot panic. If `interp` is `Some` then the corresponding values exist.
+        let (val, xa) = match flux {
+            Toroidal(val) => (val, self.psi.uvalues()),
+            Poloidal(val) => (val, self.psip.uvalues()),
+        };
+        let ya = &self.theta_values;
+        let za = &self.jacobian_values_fortran_flat;
+        Ok(debug_assert_is_finite!(
+            interp.eval(xa, ya, za, val, theta, acc)?
+        ))
     }
 
     fn rlab_last(&self) -> Array1<f64> {
@@ -782,7 +696,18 @@ impl NcGeometry {
         (xlen, self.theta_values.len())
     }
 
-    lcfs_getter_impl!();
+    /// Returns the last closed toroidal flux surface.
+    #[must_use]
+    pub fn psi_last(&self) -> Option<MagneticFlux> {
+        self.psi.last_value().map(Toroidal)
+    }
+
+    /// Returns the last closed poloidal flux surface.
+    #[must_use]
+    pub fn psip_last(&self) -> Option<MagneticFlux> {
+        self.psip.last_value().map(Poloidal)
+    }
+
     fluxes_values_array_getter_impl!();
     array1D_getter_impl!(theta_array, theta_values, theta);
     array1D_getter_impl!(r_array, r_values, r);
@@ -840,13 +765,11 @@ mod test_toroidal_nc_evals {
 
         assert_eq!(geometry.psi.state(), FluxCoordinateState::Good);
         assert_eq!(geometry.psip.state(), FluxCoordinateState::Bad);
-        assert!(geometry.psip_of_psi_interp.is_some());
         assert!(geometry.r_of_psi_interp.is_some());
         assert!(geometry.rlab_of_psi_interp.is_some());
         assert!(geometry.zlab_of_psi_interp.is_some());
         assert!(geometry.jacobian_of_psi_interp.is_some());
 
-        assert!(geometry.psi_of_psip_interp.is_none());
         assert!(geometry.r_of_psip_interp.is_none());
         assert!(geometry.rlab_of_psip_interp.is_none());
         assert!(geometry.zlab_of_psip_interp.is_none());
@@ -865,13 +788,12 @@ mod test_toroidal_nc_evals {
         let g = create_nc_geometry(TOROIDAL_TEST_NETCDF_PATH);
         let acc1 = &mut Accelerator::new();
         let acc2 = &mut Accelerator2d::new();
-        let p = 0.01;
         let t = 3.14;
-        assert!(g.psip_of_psi(p, acc1).unwrap().is_finite());
-        assert!(g.r_of_psi(p, acc1).unwrap().is_finite());
-        assert!(g.rlab_of_psi(p, t, acc2).unwrap().is_finite());
-        assert!(g.zlab_of_psi(p, t, acc2).unwrap().is_finite());
-        assert!(g.jacobian_of_psi(p, t, acc2).unwrap().is_finite());
+        let flux = Toroidal(0.01);
+        assert!(g.eval_r(flux, acc1).unwrap().is_finite());
+        assert!(g.eval_rlab(flux, t, acc2).unwrap().is_finite());
+        assert!(g.eval_zlab(flux, t, acc2).unwrap().is_finite());
+        assert!(g.eval_jacobian(flux, t, acc2).unwrap().is_finite());
     }
 
     #[test]
@@ -879,14 +801,13 @@ mod test_toroidal_nc_evals {
         let g = create_nc_geometry(TOROIDAL_TEST_NETCDF_PATH);
         let acc1 = &mut Accelerator::new();
         let acc2 = &mut Accelerator2d::new();
-        let p = 0.01;
         let t = 3.14;
+        let flux = Poloidal(0.01);
         use EvalError::UndefinedEvaluation as err;
-        matches!(g.psi_of_psip(p, acc1), Err(err(..)));
-        matches!(g.r_of_psip(p, acc1), Err(err(..)));
-        matches!(g.rlab_of_psip(p, t, acc2), Err(err(..)));
-        matches!(g.zlab_of_psip(p, t, acc2), Err(err(..)));
-        matches!(g.jacobian_of_psip(p, t, acc2), Err(err(..)));
+        matches!(g.eval_r(flux, acc1), Err(err(..)));
+        matches!(g.eval_rlab(flux, t, acc2), Err(err(..)));
+        matches!(g.eval_zlab(flux, t, acc2), Err(err(..)));
+        matches!(g.eval_jacobian(flux, t, acc2), Err(err(..)));
     }
 }
 
@@ -905,13 +826,11 @@ mod test_poloidal_nc_evals {
 
         assert_eq!(geometry.psi.state(), FluxCoordinateState::Bad);
         assert_eq!(geometry.psip.state(), FluxCoordinateState::Good);
-        assert!(geometry.psip_of_psi_interp.is_none());
         assert!(geometry.r_of_psi_interp.is_none());
         assert!(geometry.rlab_of_psi_interp.is_none());
         assert!(geometry.zlab_of_psi_interp.is_none());
         assert!(geometry.jacobian_of_psi_interp.is_none());
 
-        assert!(geometry.psi_of_psip_interp.is_some());
         assert!(geometry.r_of_psip_interp.is_some());
         assert!(geometry.rlab_of_psip_interp.is_some());
         assert!(geometry.zlab_of_psip_interp.is_some());
@@ -930,13 +849,12 @@ mod test_poloidal_nc_evals {
         let g = create_nc_geometry(POLOIDAL_TEST_NETCDF_PATH);
         let acc1 = &mut Accelerator::new();
         let acc2 = &mut Accelerator2d::new();
-        let p = 0.01;
         let t = 3.14;
-        assert!(g.psi_of_psip(p, acc1).unwrap().is_finite());
-        assert!(g.r_of_psip(p, acc1).unwrap().is_finite());
-        assert!(g.rlab_of_psip(p, t, acc2).unwrap().is_finite());
-        assert!(g.zlab_of_psip(p, t, acc2).unwrap().is_finite());
-        assert!(g.jacobian_of_psip(p, t, acc2).unwrap().is_finite());
+        let flux = Poloidal(0.01);
+        assert!(g.eval_r(flux, acc1).unwrap().is_finite());
+        assert!(g.eval_rlab(flux, t, acc2).unwrap().is_finite());
+        assert!(g.eval_zlab(flux, t, acc2).unwrap().is_finite());
+        assert!(g.eval_jacobian(flux, t, acc2).unwrap().is_finite());
     }
 
     #[test]
@@ -944,13 +862,12 @@ mod test_poloidal_nc_evals {
         let g = create_nc_geometry(POLOIDAL_TEST_NETCDF_PATH);
         let acc1 = &mut Accelerator::new();
         let acc2 = &mut Accelerator2d::new();
-        let p = 0.01;
         let t = 3.14;
+        let flux = Toroidal(0.01);
         use EvalError::UndefinedEvaluation as err;
-        matches!(g.psip_of_psi(p, acc1), Err(err(..)));
-        matches!(g.r_of_psi(p, acc1), Err(err(..)));
-        matches!(g.rlab_of_psi(p, t, acc2), Err(err(..)));
-        matches!(g.zlab_of_psi(p, t, acc2), Err(err(..)));
-        matches!(g.jacobian_of_psi(p, t, acc2), Err(err(..)));
+        matches!(g.eval_r(flux, acc1), Err(err(..)));
+        matches!(g.eval_rlab(flux, t, acc2), Err(err(..)));
+        matches!(g.eval_zlab(flux, t, acc2), Err(err(..)));
+        matches!(g.eval_jacobian(flux, t, acc2), Err(err(..)));
     }
 }
