@@ -24,35 +24,6 @@ use crate::SolverParams;
 use crate::coms::EnergyPzetaPlane;
 use evolution::Evolution;
 
-/// Helper enum to define an [`InitialConditions`] set with respect to one of the flux
-/// coordinates.
-#[derive(Clone, Copy)]
-pub enum InitialFlux {
-    /// Initial flux `ψ0`.
-    Toroidal(f64),
-    /// Initial flux `ψp0`.
-    Poloidal(f64),
-}
-
-impl InitialFlux {
-    /// Returns the contained value, regardless of which variant.
-    #[must_use]
-    pub fn value(&self) -> f64 {
-        match *self {
-            Self::Toroidal(value) | Self::Poloidal(value) => value,
-        }
-    }
-}
-
-impl std::fmt::Debug for InitialFlux {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match *self {
-            Self::Toroidal(psi0) => write!(f, "ψ0: {psi0}"),
-            Self::Poloidal(psip0) => write!(f, "ψp0: {psip0}"),
-        }
-    }
-}
-
 // ===============================================================================================
 
 /// Container for the caching objects needed for the evaluations.
@@ -234,7 +205,7 @@ impl Particle {
     ///
     /// ```
     /// # use dexter_simulate::*;
-    /// let psip0 = InitialFlux::Poloidal(0.05);
+    /// let psip0 = MagneticFlux::Poloidal(0.05);
     /// let initial = InitialConditions::boozer(0.0, psip0, 0.0, 3.14, 1e-5, 1e-6);
     /// let mut particle = Particle::new(&initial);
     /// # Ok::<_, SimulationError>(())
@@ -284,7 +255,7 @@ impl Particle {
     ///     .with_perturbation(&perturbation)
     ///     .build();
     ///
-    /// let psi0 = InitialFlux::Toroidal(0.015);
+    /// let psi0 = MagneticFlux::Toroidal(0.015);
     /// let initial = InitialConditions::boozer(0.0, psi0, 0.0, 3.14, 1e-5, 1e-6);
     /// let mut particle = Particle::new(&initial);
     /// particle.integrate(machine, (0.0, 1e2), &SolverParams::default());
@@ -325,7 +296,7 @@ impl Particle {
     ///     .with_perturbation(&perturbation)
     ///     .build();
     ///
-    /// let psi0 = InitialFlux::Toroidal(0.02);
+    /// let psi0 = MagneticFlux::Toroidal(0.02);
     /// let initial = InitialConditions::boozer(0.0, psi0, 3.14, 0.0, 1e-4, 1e-6);
     /// let mut particle = Particle::new(&initial);
     ///
@@ -375,7 +346,7 @@ impl Particle {
     ///     .with_perturbation(&perturbation)
     ///     .build();
     ///
-    /// let psi0 = InitialFlux::Toroidal(0.015);
+    /// let psi0 = MagneticFlux::Toroidal(0.015);
     /// let initial = InitialConditions::boozer(0.0, psi0, 0.0, 3.14, 1e-5, 1e-6);
     /// let mut particle = Particle::new(&initial);
     ///
@@ -411,8 +382,8 @@ impl Particle {
     /// ]);
     /// let machine = MachineBuilder::new(&qfactor, &current, &bfield).build();
     ///
-    /// let psi0 = InitialFlux::Toroidal(0.001);
-    /// let pzeta0 = -0.8 * machine.qfactor().psip_last();
+    /// let psi0 = MagneticFlux::Toroidal(0.001);
+    /// let pzeta0 = -0.8 * machine.qfactor().psip_last().value();
     /// let initial = InitialConditions::mixed(0.0, psi0, 1.0, 0.0, pzeta0, 6e-5);
     ///
     /// let mut particle = Particle::new(&initial);
@@ -482,10 +453,15 @@ impl Particle {
         self.final_energy
     }
 
-    /// Returns the variance of the energy array.
+    /// Calculates the variance of the energy array.
     #[must_use]
-    pub fn energy_var(&self) -> Option<f64> {
-        self.evolution.energy_var()
+    pub fn energy_var(&self) -> f64 {
+        self.evolution
+            .energy
+            .len()
+            .ge(&2) // panics otherwise
+            .then(|| self.energy_array().var(1.0))
+            .unwrap_or(f64::NAN)
     }
 
     /// Returns the particle's [`EnergyPzetaPosition`].
@@ -644,7 +620,7 @@ impl std::fmt::Debug for Particle {
             .field("frequencies", &self.frequencies)
             .field("initial energy", &self.initial_energy.unwrap_or(f64::NAN))
             .field("final energy  ", &self.final_energy.unwrap_or(f64::NAN))
-            .field("energy variance", &self.energy_var().unwrap_or(f64::NAN))
+            .field("energy variance", &self.energy_var())
             .finish()
     }
 }

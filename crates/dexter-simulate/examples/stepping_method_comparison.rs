@@ -4,7 +4,7 @@ use dexter_machine::*;
 use dexter_simulate::*;
 
 fn main() {
-    use InitialFlux::*;
+    use MagneticFlux::*;
     let lcfs = LastClosedFluxSurface::Toroidal(0.45);
     let qfactor = UnityQfactor::new(lcfs);
     let current = LarCurrent::new();
@@ -57,6 +57,6 @@ fn main() {
 
 fn print_results(particle: &Particle) {
     println!("\tSteps taken: {}", particle.steps_taken());
-    println!("\tEnergy variance: {:?}", particle.energy_var().unwrap());
+    println!("\tEnergy variance: {:?}", particle.energy_var());
     println!("\tDuration: {:?}", particle.duration());
 }

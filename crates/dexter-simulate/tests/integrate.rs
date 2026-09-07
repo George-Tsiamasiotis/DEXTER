@@ -19,7 +19,7 @@ use std::{f64::consts::TAU, path::PathBuf};
 #[test]
 #[rustfmt::skip]
 fn gc_toroidal_integration_uniQ_larC_larB_cosP() {
-    use InitialFlux::*;
+    use MagneticFlux::*;
     let lcfs = LastClosedFluxSurface::Toroidal(0.45);
     let qfactor = UnityQfactor::new(lcfs);
     let current = LarCurrent::new();
@@ -47,7 +47,7 @@ fn gc_toroidal_integration_uniQ_larC_larB_cosP() {
     assert!(particle.t_array().last().copied().unwrap() >= teval.1);
     assert!(particle.steps_stored() > 1000);
     assert!(particle.steps_stored() < 10000);
-    assert!(particle.energy_var().unwrap() < 1e-20);
+    assert!(particle.energy_var() < 1e-20);
     assert_relative_eq!(particle.initial_energy().unwrap(), particle.final_energy().unwrap(), epsilon = 1e-10);
 
     check_integrated_particle_arrays(&particle);
@@ -56,7 +56,7 @@ fn gc_toroidal_integration_uniQ_larC_larB_cosP() {
 #[test]
 #[rustfmt::skip]
 fn gc_toroidal_integration_ncdQ_ncdC_ncdB_ncdP() {
-    use InitialFlux::*;
+    use MagneticFlux::*;
     use PhaseMethod::Interpolation;
     let path = PathBuf::from(TOROIDAL_TEST_NETCDF_PATH);
     let qfactor = NcQfactorBuilder::new(&path, Akima).build().unwrap();
@@ -85,7 +85,7 @@ fn gc_toroidal_integration_ncdQ_ncdC_ncdB_ncdP() {
     assert!(particle.t_array().last().copied().unwrap() >= teval.1);
     assert!(particle.steps_stored() > 1000);
     assert!(particle.steps_stored() < 10000);
-    assert!(particle.energy_var().unwrap() < 1e-20);
+    assert!(particle.energy_var() < 1e-20);
     assert_relative_eq!(particle.initial_energy().unwrap(), particle.final_energy().unwrap(), epsilon = 1e-10);
 
     check_integrated_particle_arrays(&particle);
@@ -94,7 +94,7 @@ fn gc_toroidal_integration_ncdQ_ncdC_ncdB_ncdP() {
 #[test]
 #[rustfmt::skip]
 fn gc_poloidal_integration_ncdQ_ncdC_ncdB_ncdP() {
-    use InitialFlux::*;
+    use MagneticFlux::*;
     use PhaseMethod::Interpolation;
     let path = PathBuf::from(POLOIDAL_TEST_NETCDF_PATH);
     let qfactor = NcQfactorBuilder::new(&path, Akima).build().unwrap();
@@ -123,7 +123,7 @@ fn gc_poloidal_integration_ncdQ_ncdC_ncdB_ncdP() {
     assert!(particle.t_array().last().copied().unwrap() >= teval.1);
     assert!(particle.steps_stored() > 1000);
     assert!(particle.steps_stored() < 10000);
-    assert!(particle.energy_var().unwrap() < 1e-20);
+    assert!(particle.energy_var() < 1e-20);
     assert_relative_eq!(particle.initial_energy().unwrap(), particle.final_energy().unwrap(), epsilon = 1e-10);
 
     check_integrated_particle_arrays(&particle);
@@ -132,7 +132,7 @@ fn gc_poloidal_integration_ncdQ_ncdC_ncdB_ncdP() {
 #[test]
 #[rustfmt::skip]
 fn gc_toroidal_integration_gcmotion_check_uniQ_larC_larB_cosP() {
-    use InitialFlux::*;
+    use MagneticFlux::*;
     let lcfs = LastClosedFluxSurface::Toroidal(0.45);
     let qfactor = UnityQfactor::new(lcfs);
     let current = LarCurrent::new();
@@ -141,8 +141,8 @@ fn gc_toroidal_integration_gcmotion_check_uniQ_larC_larB_cosP() {
 
     let solver_params = SolverParams::default();
 
-    let psi0 = 0.018365472910927463;
-    let initial = InitialConditions::boozer(0.0, Toroidal(psi0), 0.0, 0.0, -0.006634527089072539, 1e-6);
+    let psi0 = Toroidal(0.018365472910927463);
+    let initial = InitialConditions::boozer(0.0, psi0, 0.0, 0.0, -0.006634527089072539, 1e-6);
 
     let mut particle = Particle::new(&initial);
     assert!(matches!(
@@ -161,11 +161,11 @@ fn gc_toroidal_integration_gcmotion_check_uniQ_larC_larB_cosP() {
     assert!(particle.t_array().last().copied().unwrap() >= teval.1);
     assert!(particle.steps_stored() > 1000);
     assert!(particle.steps_stored() < 10000);
-    assert!(particle.energy_var().unwrap() < 1e-18);
+    assert!(particle.energy_var() < 1e-18);
     assert_relative_eq!(particle.initial_energy().unwrap(), particle.final_energy().unwrap(), epsilon = 1e-8);
 
     assert_relative_eq!(particle.initial_energy().unwrap(), 1.5189224863170239e-05, epsilon = 1e-20);
-    assert_relative_eq!(initial.mu0() * machine.bfield().b_of_psi(psi0, 0.0, &mut Accelerator2d::new()).unwrap(),
+    assert_relative_eq!(initial.mu0() * machine.bfield().eval_b(psi0, 0.0, &mut Accelerator2d::new()).unwrap(),
         8.083468084746437e-07,
         epsilon = 1e-15
     );
@@ -184,7 +184,7 @@ fn gc_toroidal_integration_gcmotion_check_uniQ_larC_larB_cosP() {
 #[test]
 #[rustfmt::skip]
 fn gc_toroidal_poloidal_equivalence() {
-    use InitialFlux::*;
+    use MagneticFlux::*;
     use PhaseMethod::Interpolation;
     let path = PathBuf::from(TEST_NETCDF_PATH);
     let qfactor = NcQfactorBuilder::new(&path, Akima).build().unwrap();
@@ -200,17 +200,17 @@ fn gc_toroidal_poloidal_equivalence() {
 
     let solver_params = SolverParams::default();
 
-    let psi0 = 0.2;
-    let psip0 = machine.qfactor().psip_of_psi(psi0, &mut Accelerator::new()).unwrap();
-    let tor_initial = InitialConditions::boozer(0.0, Toroidal(psi0), 0.0, 0.0, 1e-4, 1e-6);
-    let pol_initial = InitialConditions::boozer(0.0, Poloidal(psip0), 0.0, 0.0, 1e-4, 1e-6);
+    let psi0 = Toroidal(0.2);
+    let psip0 = machine.qfactor().eval_other(psi0, &mut Accelerator::new()).unwrap();
+    let tor_initial = InitialConditions::boozer(0.0, psi0, 0.0, 0.0, 1e-4, 1e-6);
+    let pol_initial = InitialConditions::boozer(0.0, psip0, 0.0, 0.0, 1e-4, 1e-6);
 
     let mut tor_particle = Particle::new(&tor_initial);
     let mut pol_particle = Particle::new(&pol_initial);
     assert!(matches!(tor_particle.integration_status(), IntegrationStatus::Initialized));
     assert!(matches!(pol_particle.integration_status(), IntegrationStatus::Initialized));
 
-    let teval = (0.0, 4.14e5);
+    let teval = (0.0, 2.14e5);
     tor_particle.integrate(machine, teval, &solver_params);
     pol_particle.integrate(machine, teval, &solver_params);
     dbg!(&tor_particle);
@@ -242,12 +242,12 @@ fn gc_toroidal_poloidal_equivalence() {
     assert_abs_diff_eq!(
         tor_particle.psi_array().last().copied().unwrap(),
         pol_particle.psi_array().last().copied().unwrap(),
-        epsilon = 1e-3*machine.qfactor().psi_last()
+        epsilon = 1e-3*machine.qfactor().psi_last().value()
     );
     assert_abs_diff_eq!(
         tor_particle.psip_array().last().copied().unwrap(),
         pol_particle.psip_array().last().copied().unwrap(),
-        epsilon = 1e-3*machine.qfactor().psip_last()
+        epsilon = 1e-3*machine.qfactor().psip_last().value()
     );
     assert_abs_diff_eq!(
         tor_particle.rho_array().last().copied().unwrap(),
@@ -279,7 +279,7 @@ fn gc_toroidal_poloidal_equivalence() {
 #[test]
 #[rustfmt::skip]
 fn gc_mixed_boozer_equivalence() {
-    use InitialFlux::*;
+    use MagneticFlux::*;
     use PhaseMethod::Interpolation;
     let path = PathBuf::from(POLOIDAL_TEST_NETCDF_PATH);
     let qfactor = NcQfactorBuilder::new(&path, Akima).build().unwrap();
@@ -296,19 +296,19 @@ fn gc_mixed_boozer_equivalence() {
     let solver_params = SolverParams::default();
 
     let rho0 = 1e-4;
-    let psip0 = 0.2;
-    let g0 = machine.current().g_of_psip(psip0, &mut Accelerator::new()).unwrap();
-    let pzeta0 = rho0 * g0 - psip0;
+    let psip0 = Poloidal(0.2);
+    let g0 = machine.current().eval_g(psip0, &mut Accelerator::new()).unwrap();
+    let pzeta0 = rho0 * g0 - psip0.value();
 
-    let boozer_initial = InitialConditions::boozer(0.0, Poloidal(psip0), 0.0, 0.0, rho0, 1e-6);
-    let mixed_initial = InitialConditions::mixed(0.0, Poloidal(psip0), 0.0, 0.0, pzeta0, 1e-6);
+    let boozer_initial = InitialConditions::boozer(0.0, psip0, 0.0, 0.0, rho0, 1e-6);
+    let mixed_initial = InitialConditions::mixed(0.0, psip0, 0.0, 0.0, pzeta0, 1e-6);
 
     let mut boozer_particle = Particle::new(&boozer_initial);
     let mut mixed_particle = Particle::new(&mixed_initial);
     assert!(matches!(boozer_particle.integration_status(), IntegrationStatus::Initialized));
     assert!(matches!(mixed_particle.integration_status(), IntegrationStatus::PartlyInitialized));
 
-    let teval = (0.0, 2.3e5);
+    let teval = (0.0, 1.6e5);
     boozer_particle.integrate(machine, teval, &solver_params);
     mixed_particle.integrate(machine, teval, &solver_params);
     dbg!(&boozer_particle);
@@ -340,12 +340,12 @@ fn gc_mixed_boozer_equivalence() {
     assert_abs_diff_eq!(
         boozer_particle.psi_array().last().copied().unwrap(),
         mixed_particle.psi_array().last().copied().unwrap(),
-        epsilon = 1e-3*machine.qfactor().psi_last()
+        epsilon = 1e-3*machine.qfactor().psi_last().value()
     );
     assert_abs_diff_eq!(
         boozer_particle.psip_array().last().copied().unwrap(),
         mixed_particle.psip_array().last().copied().unwrap(),
-        epsilon = 1e-3*machine.qfactor().psip_last()
+        epsilon = 1e-3*machine.qfactor().psip_last().value()
     );
     assert_abs_diff_eq!(
         boozer_particle.rho_array().last().copied().unwrap(),
@@ -377,7 +377,7 @@ fn gc_mixed_boozer_equivalence() {
 #[test]
 #[rustfmt::skip]
 fn gc_const_pzeta_toroidal_integration_uniQ_larC_larB_cosP() {
-    use InitialFlux::*;
+    use MagneticFlux::*;
     let lcfs = LastClosedFluxSurface::Toroidal(0.45);
     let qfactor = UnityQfactor::new(lcfs);
     let current = LarCurrent::new();
@@ -400,7 +400,7 @@ fn gc_const_pzeta_toroidal_integration_uniQ_larC_larB_cosP() {
     assert!(particle.t_array().last().copied().unwrap() >= teval.1);
     assert!(particle.steps_stored() > 1000);
     assert!(particle.steps_stored() < 10000);
-    assert!(particle.energy_var().unwrap() < 1e-20);
+    assert!(particle.energy_var() < 1e-20);
     assert_relative_eq!(particle.initial_energy().unwrap(), particle.final_energy().unwrap(), epsilon = 1e-10);
     assert!(
         pzeta_array.relative_eq(

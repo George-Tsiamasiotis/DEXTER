@@ -10,7 +10,7 @@ use crate::constants::ANGLE_INTERSECTION_THRESHOLD;
 use crate::particle::{Evolution, IntegrationCaches, Particle};
 use crate::solve::{SolverParams, Stepper};
 use crate::state::GCState;
-use crate::{FluxCoordinate, IntegrationStatus, SimulationError};
+use crate::{IntegrationStatus, SimulationError};
 
 /// Defines the surface of the Poincare section.
 #[derive(Debug, Clone, Copy)]
@@ -270,14 +270,7 @@ pub(crate) fn calculate_mod_state2(
     mod_stepper.start(dtau, objects, mod_caches)?;
     // NOTE: This is equivalent to adjusting the step-size for the modified system.
     {
-        mod_stepper.weights[0] = match mod_state1.coordinate {
-            FluxCoordinate::Toroidal => mod_state1.psi_dot,
-            FluxCoordinate::Poloidal => mod_state1.psip_dot,
-        };
-        mod_stepper.weights[1] = mod_state1.theta_dot;
-        mod_stepper.weights[2] = mod_state1.zeta_dot;
-        mod_stepper.weights[3] = mod_state1.rho_dot;
-        mod_stepper.weights[4] = mod_state1.mu_dot;
+        mod_stepper.weights = mod_state1.dots();
     }
     mod_stepper.next_state(dtau, objects, mod_caches)
 }
