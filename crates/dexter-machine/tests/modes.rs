@@ -110,8 +110,6 @@ fn nc_flute_mode() {
     let interp_type: Interpolation1dType = mode.interp_type();
     let psi_state: FluxCoordinateState = mode.psi_state();
     let psip_state: FluxCoordinateState = mode.psip_state();
-    let psi_last: f64 = mode.psi_last().unwrap();
-    let psip_last: f64 = mode.psip_last().unwrap();
     let psi_array: Array1<f64> = mode.psi_array().unwrap();
     let psip_array: Array1<f64> = mode.psip_array().unwrap();
     let alpha_array: Array1<f64> = mode.alpha_array();

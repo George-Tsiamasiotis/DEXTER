@@ -331,14 +331,6 @@ impl ModeCache for NcFluteModeCache {
 
 // Perform psi/psip debug assertions here since he have the extra information about the flux.
 impl Mode for NcFluteMode {
-    fn psi_last(&self) -> Option<f64> {
-        self.psi_single.flux.last_value()
-    }
-
-    fn psip_last(&self) -> Option<f64> {
-        self.psip_single.flux.last_value()
-    }
-
     fn m(&self) -> i64 {
         self.m
     }

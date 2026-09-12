@@ -42,8 +42,6 @@ fn nc_current() {
     let interp_type: Interpolation1dType = current.interp_type();
     let psi_state: FluxCoordinateState = current.psi_state();
     let psip_state: FluxCoordinateState = current.psip_state();
-    let psi_last: f64 = current.psi_last().unwrap();
-    let psip_last: f64 = current.psip_last().unwrap();
     let psi_array: Array1<f64> = current.psi_array().unwrap();
     let psip_array: Array1<f64> = current.psip_array().unwrap();
     let g_array: Array1<f64> = current.g_array();

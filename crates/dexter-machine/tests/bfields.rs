@@ -54,8 +54,6 @@ fn nc_bfield_no_pad() {
     let shape: (usize, usize) = bfield.shape();
     let psi_state: FluxCoordinateState = bfield.psi_state();
     let psip_state: FluxCoordinateState = bfield.psip_state();
-    let psi_last: f64 = bfield.psi_last().unwrap();
-    let psip_last: f64 = bfield.psip_last().unwrap();
     let psi_array: Array1<f64> = bfield.psi_array().unwrap();
     let psip_array: Array1<f64> = bfield.psip_array().unwrap();
     let theta_array: Array1<f64> = bfield.theta_array();

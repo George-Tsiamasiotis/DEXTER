@@ -160,7 +160,7 @@ pub enum OrbitType {
     /// magnetic axis due to its drift. In the `(E, Pζ)` plane, those lie inside the intersection
     /// of the trapped-passing boundary and the magnetic axis parabola.
     Potato,
-    /// A Potato particle.
+    /// A Stagnated particle.
     ///
     /// # Definition
     ///

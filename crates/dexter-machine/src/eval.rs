@@ -45,12 +45,6 @@ pub trait Geometry: MachineObject + Debug + Send + Sync {
     /// Returns the `r` coordinate's value at the last closed flux surface **in \[m\]**.
     fn rlast(&self) -> f64;
 
-    /// Returns the value of the last closed toroidal flux surface `ψ_last`.
-    fn psi_last(&self) -> Option<MagneticFlux>;
-
-    /// Returns the value of the last closed poloidal flux surface `ψp_last`.
-    fn psip_last(&self) -> Option<MagneticFlux>;
-
     /// Calculates the radial coordinate `r(ψ/ψp)` in **\[m\]**.
     ///
     /// # Example
@@ -709,12 +703,6 @@ pub trait ModeCache: DynModeCacheClone + Debug {
     reason = "only used internally for creating Perturbation"
 )]
 pub trait Mode: MachineObject + DynModeClone + Debug + Send + Sync {
-    /// Returns the value of the last closed toroidal flux surface `ψ_last`.
-    fn psi_last(&self) -> Option<f64>;
-
-    /// Returns the value of the last closed poloidal flux surface `ψp_last`.
-    fn psip_last(&self) -> Option<f64>;
-
     /// Returns the poloidal mode number `m`.
     fn m(&self) -> i64;
 

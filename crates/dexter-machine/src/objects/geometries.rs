@@ -2,8 +2,8 @@
 
 use crate::{
     debug_assert_is_finite, debug_assert_non_negative_flux, debug_assert_non_negative_r,
-    fluxes_values_array_getter_impl, fortran_vec_to_carray2d_impl, lcfs_getter_impl,
-    netcdf_path_getter_impl, netcdf_version_getter_impl,
+    fluxes_values_array_getter_impl, fortran_vec_to_carray2d_impl, netcdf_path_getter_impl,
+    netcdf_version_getter_impl,
 };
 use core::f64::consts::PI;
 use dexter_common::array1D_getter_impl;
@@ -64,6 +64,12 @@ impl LarGeometry {
             psi_last,
         }
     }
+
+    /// Returns the last closed toroidal flux surface.
+    #[must_use]
+    pub fn psi_last(&self) -> MagneticFlux {
+        Toroidal(self.psi_last)
+    }
 }
 
 impl MachineObject for LarGeometry {
@@ -99,14 +105,6 @@ impl Geometry for LarGeometry {
 
     fn rgeo(&self) -> f64 {
         self.raxis
-    }
-
-    fn psi_last(&self) -> Option<MagneticFlux> {
-        Some(Toroidal(self.psi_last))
-    }
-
-    fn psip_last(&self) -> Option<MagneticFlux> {
-        None
     }
 
     fn eval_r(&self, flux: MagneticFlux, _: &mut Accelerator) -> Result<f64, EvalError> {
@@ -171,14 +169,8 @@ impl Geometry for LarGeometry {
         _: &mut Accelerator2d,
     ) -> Result<f64, EvalError> {
         debug_assert_non_negative_flux!(flux);
-        match flux {
-            Toroidal(_) => Err(EvalError::UndefinedEvaluation(
-                "J(ψ, θ) (defined through q, g, I and B)".into(),
-            )),
-            Poloidal(_) => Err(EvalError::UndefinedEvaluation(
-                "J(ψp, θ) (defined through q, g, I and B)".into(),
-            )),
-        }
+        let msg = format!("J({}, θ) (defined through q, g, I and B)", flux.symbol());
+        Err(EvalError::UndefinedEvaluation(msg.into()))
     }
 
     fn rlab_last(&self) -> Array1<f64> {
@@ -530,14 +522,6 @@ impl Geometry for NcGeometry {
         }
     }
 
-    fn psi_last(&self) -> Option<MagneticFlux> {
-        self.psi.last_value().map(Toroidal)
-    }
-
-    fn psip_last(&self) -> Option<MagneticFlux> {
-        self.psip.last_value().map(Poloidal)
-    }
-
     fn eval_r(&self, flux: MagneticFlux, acc: &mut Accelerator) -> Result<f64, EvalError> {
         debug_assert_non_negative_flux!(flux);
         let (val, xa, interp) = match flux {
@@ -548,7 +532,7 @@ impl Geometry for NcGeometry {
         if let Some(interp) = interp {
             Ok(debug_assert_is_finite!(interp.eval(xa, ya, val, acc)?))
         } else {
-            let msg = format!("r({})", flux.kind());
+            let msg = format!("r({})", flux.symbol());
             Err(EvalError::UndefinedEvaluation(msg))
         }
     }
@@ -597,7 +581,7 @@ impl Geometry for NcGeometry {
                 interp.eval(xa, ya, za, val, theta, acc)?
             ))
         } else {
-            let msg = format!("R({}, θ)", flux.kind());
+            let msg = format!("R({}, θ)", flux.symbol());
             Err(EvalError::UndefinedEvaluation(msg))
         }
     }
@@ -620,7 +604,7 @@ impl Geometry for NcGeometry {
                 interp.eval(xa, ya, za, val, theta, acc)?
             ))
         } else {
-            let msg = format!("Z({}, θ)", flux.kind());
+            let msg = format!("Z({}, θ)", flux.symbol());
             Err(EvalError::UndefinedEvaluation(msg))
         }
     }
@@ -644,7 +628,7 @@ impl Geometry for NcGeometry {
                 interp.eval(xa, ya, za, val, theta, acc)?
             ))
         } else {
-            let msg = format!("J({}, θ)", flux.kind());
+            let msg = format!("J({}, θ)", flux.symbol());
             Err(EvalError::UndefinedEvaluation(msg))
         }
     }
@@ -692,7 +676,18 @@ impl NcGeometry {
         (xlen, self.theta_values.len())
     }
 
-    lcfs_getter_impl!();
+    /// Returns the last closed toroidal flux surface.
+    #[must_use]
+    pub fn psi_last(&self) -> Option<MagneticFlux> {
+        self.psi.last_value().map(Toroidal)
+    }
+
+    /// Returns the last closed poloidal flux surface.
+    #[must_use]
+    pub fn psip_last(&self) -> Option<MagneticFlux> {
+        self.psip.last_value().map(Poloidal)
+    }
+
     fluxes_values_array_getter_impl!();
     array1D_getter_impl!(theta_array, theta_values, theta);
     array1D_getter_impl!(r_array, r_values, r);

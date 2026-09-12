@@ -204,14 +204,6 @@ impl ModeCache for FluteModeCache {
 }
 
 impl Mode for FluteMode {
-    fn psi_last(&self) -> Option<f64> {
-        self.psi_last
-    }
-
-    fn psip_last(&self) -> Option<f64> {
-        self.psip_last
-    }
-
     fn m(&self) -> i64 {
         self.m
     }
@@ -265,7 +257,7 @@ impl Mode for FluteMode {
                 ))
             }
             _ => {
-                let msg = format!("α({})", flux.kind());
+                let msg = format!("α({})", flux.symbol());
                 Err(EvalError::UndefinedEvaluation(msg))
             }
         }
@@ -311,7 +303,7 @@ impl Mode for FluteMode {
             }
             _ => {
                 cold_path();
-                let msg = format!("m({})", flux.kind());
+                let msg = format!("m({})", flux.symbol());
                 Err(EvalError::UndefinedEvaluation(msg))
             }
         }
@@ -347,7 +339,7 @@ impl Mode for FluteMode {
             }
             _ => {
                 cold_path();
-                let msg = format!("dm({}, θ, ζ, t)/d{}", flux.kind(), flux.kind());
+                let msg = format!("dm({}, θ, ζ, t)/d{}", flux.symbol(), flux.symbol());
                 Err(EvalError::UndefinedEvaluation(msg))
             }
         }
@@ -383,7 +375,7 @@ impl Mode for FluteMode {
             }
             _ => {
                 cold_path();
-                let msg = format!("dm({}, θ, ζ, t)/dθ", flux.kind());
+                let msg = format!("dm({}, θ, ζ, t)/dθ", flux.symbol());
                 Err(EvalError::UndefinedEvaluation(msg))
             }
         }
@@ -419,7 +411,7 @@ impl Mode for FluteMode {
             }
             _ => {
                 cold_path();
-                let msg = format!("dm({}, θ, ζ, t)/dζ", flux.kind());
+                let msg = format!("dm({}, θ, ζ, t)/dζ", flux.symbol());
                 Err(EvalError::UndefinedEvaluation(msg))
             }
         }

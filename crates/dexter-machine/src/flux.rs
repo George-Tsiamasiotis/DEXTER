@@ -28,12 +28,21 @@ impl MagneticFlux {
         }
     }
 
-    /// Returns the kind of `self` as a `Box<str>`.
+    /// Returns the symbol of `self` ("ψ" or "ψp") as a `Box<str>`.
     #[must_use]
-    pub fn kind(&self) -> Box<str> {
+    pub fn symbol(&self) -> Box<str> {
         match *self {
             Self::Toroidal(_) => "ψ".into(),
             Self::Poloidal(_) => "ψp".into(),
+        }
+    }
+
+    /// Returns the kind of `self` ("Toroidal", "Poloidal") as a `Box<str>`.
+    #[must_use]
+    pub fn kind(&self) -> Box<str> {
+        match *self {
+            Self::Toroidal(_) => "Toroidal".into(),
+            Self::Poloidal(_) => "Poloidal".into(),
         }
     }
 

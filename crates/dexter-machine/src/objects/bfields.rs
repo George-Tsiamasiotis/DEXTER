@@ -2,8 +2,8 @@
 
 use crate::{
     debug_assert_is_2pi_modulo, debug_assert_is_finite, debug_assert_non_negative_flux,
-    fluxes_values_array_getter_impl, interp_type_getter_impl, lcfs_getter_impl,
-    netcdf_path_getter_impl, netcdf_version_getter_impl,
+    fluxes_values_array_getter_impl, interp_type_getter_impl, netcdf_path_getter_impl,
+    netcdf_version_getter_impl,
 };
 use core::hint::cold_path;
 use ndarray::{Array1, Array2, Axis, Order::ColumnMajor};
@@ -391,7 +391,7 @@ impl Bfield for NcBfield {
             ))
         } else {
             cold_path();
-            let msg = format!("B({}, θ)", flux.kind());
+            let msg = format!("B({}, θ)", flux.symbol());
             Err(EvalError::UndefinedEvaluation(msg))
         }
     }
@@ -416,7 +416,7 @@ impl Bfield for NcBfield {
             ))
         } else {
             cold_path();
-            let msg = format!("dB({}, θ)/d{}", flux.kind(), flux.kind());
+            let msg = format!("dB({}, θ)/d{}", flux.symbol(), flux.symbol());
             Err(EvalError::UndefinedEvaluation(msg))
         }
     }
@@ -441,7 +441,7 @@ impl Bfield for NcBfield {
             ))
         } else {
             cold_path();
-            let msg = format!("dB({}, θ)/dθ", flux.kind());
+            let msg = format!("dB({}, θ)/dθ", flux.symbol());
             Err(EvalError::UndefinedEvaluation(msg))
         }
     }
@@ -520,7 +520,6 @@ impl NcBfield {
         (xlen, self.theta_values.len())
     }
 
-    lcfs_getter_impl!();
     fluxes_values_array_getter_impl!();
 }
 

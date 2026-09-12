@@ -18,8 +18,7 @@ fn lar_geometry() {
     let baxis: f64 = geometry.baxis();
     let raxis: f64 = geometry.raxis();
     let rlast: f64 = geometry.rlast();
-    let psi_last: MagneticFlux = geometry.psi_last().unwrap();
-    assert!(geometry.psip_last().is_none());
+    let psi_last: MagneticFlux = geometry.psi_last();
     let rlab_last: Array1<f64> = geometry.rlab_last();
     let zlab_last: Array1<f64> = geometry.zlab_last();
 
@@ -85,8 +84,8 @@ fn nc_geometry() {
     let shape: (usize, usize) = geometry.shape();
     let psi_state: FluxCoordinateState = geometry.psi_state();
     let psip_state: FluxCoordinateState = geometry.psip_state();
-    let psi_last: f64 = geometry.psi_last().unwrap();
-    let psip_last: f64 = geometry.psip_last().unwrap();
+    let psi_last: MagneticFlux = geometry.psi_last().unwrap();
+    let psip_last: MagneticFlux = geometry.psip_last().unwrap();
     let psi_array: Array1<f64> = geometry.psi_array().unwrap();
     let psip_array: Array1<f64> = geometry.psip_array().unwrap();
     let theta_array: Array1<f64> = geometry.theta_array();

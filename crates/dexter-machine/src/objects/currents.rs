@@ -2,7 +2,7 @@
 
 use crate::{
     debug_assert_is_finite, debug_assert_non_negative_flux, fluxes_values_array_getter_impl,
-    interp_type_getter_impl, lcfs_getter_impl, netcdf_path_getter_impl, netcdf_version_getter_impl,
+    interp_type_getter_impl, netcdf_path_getter_impl, netcdf_version_getter_impl,
 };
 use core::hint::cold_path;
 use ndarray::Array1;
@@ -255,7 +255,7 @@ impl Current for NcCurrent {
             Ok(debug_assert_is_finite!(interp.eval(xa, ya, val, acc)?))
         } else {
             cold_path();
-            let msg = format!("g({})", flux.kind());
+            let msg = format!("g({})", flux.symbol());
             Err(EvalError::UndefinedEvaluation(msg))
         }
     }
@@ -271,7 +271,7 @@ impl Current for NcCurrent {
             Ok(debug_assert_is_finite!(interp.eval(xa, ya, val, acc)?))
         } else {
             cold_path();
-            let msg = format!("I({})", flux.kind());
+            let msg = format!("I({})", flux.symbol());
             Err(EvalError::UndefinedEvaluation(msg))
         }
     }
@@ -289,7 +289,7 @@ impl Current for NcCurrent {
             ))
         } else {
             cold_path();
-            let msg = format!("dg({})/d{}", flux.kind(), flux.kind());
+            let msg = format!("dg({})/d{}", flux.symbol(), flux.symbol());
             Err(EvalError::UndefinedEvaluation(msg))
         }
     }
@@ -307,7 +307,7 @@ impl Current for NcCurrent {
             ))
         } else {
             cold_path();
-            let msg = format!("dI({})/d{}", flux.kind(), flux.kind());
+            let msg = format!("dI({})/d{}", flux.symbol(), flux.symbol());
             Err(EvalError::UndefinedEvaluation(msg))
         }
     }
@@ -318,7 +318,6 @@ impl NcCurrent {
     netcdf_path_getter_impl!();
     netcdf_version_getter_impl!();
     interp_type_getter_impl!(1);
-    lcfs_getter_impl!();
     fluxes_values_array_getter_impl!();
     array1D_getter_impl!(g_array, g_values, g);
     array1D_getter_impl!(i_array, i_values, I);

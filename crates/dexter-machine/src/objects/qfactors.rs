@@ -672,7 +672,7 @@ impl Qfactor for NcQfactor {
             Ok(debug_assert_is_finite!(interp.eval(xa, ya, val, acc)?))
         } else {
             cold_path();
-            let msg = format!("q({})", flux.kind());
+            let msg = format!("q({})", flux.symbol());
             Err(EvalError::UndefinedEvaluation(msg))
         }
     }
