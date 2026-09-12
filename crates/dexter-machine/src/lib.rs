@@ -36,7 +36,6 @@
 //! ## Evaluation Traits:
 //!
 //! + [`Geometry`]: Conversions to and from laboratory quantities.
-//! + [`FluxCommute`]: Conversion between the two flux coordinates `ψ` and `ψp`
 //! + [`Qfactor`]: Evaluation of q-factor related quantities.
 //! + [`Current`]: Evaluation of plasma current related quantities.
 //! + [`Bfield`]: Evaluation of magnetic field related quantities.
@@ -97,7 +96,7 @@ pub use objects::{LastClosedFluxSurface, MachineType};
 pub use objects::nc_flux::FluxCoordinateState;
 
 pub use eval::ModeCache;
-pub use eval::{Bfield, Current, FluxCommute, Geometry, MachineObject, Mode, Qfactor};
+pub use eval::{Bfield, Current, Geometry, MachineObject, Mode, Qfactor};
 pub use eval::{DynMode, DynModeCache};
 
 pub use objects::geometries::LarGeometry;

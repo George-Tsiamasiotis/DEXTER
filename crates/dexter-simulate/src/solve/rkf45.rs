@@ -339,7 +339,7 @@ impl Stepper {
     }
 
     pub(crate) fn next_state(
-        &mut self,
+        &self,
         dt: f64,
         machine: Machine,
         caches: &mut IntegrationCaches,

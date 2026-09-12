@@ -104,8 +104,6 @@ fn nc_geometry() {
     let psip = MagneticFlux::Poloidal(0.015);
     let theta = 3.14;
 
-    let _: MagneticFlux = geometry.eval_other(psi, acc1).unwrap();
-    let _: MagneticFlux = geometry.eval_other(psip, acc1).unwrap();
     let _: f64 = geometry.eval_r(psi, acc1).unwrap();
     let _: f64 = geometry.eval_r(psip, acc1).unwrap();
     let _: MagneticFlux = geometry.eval_psi_of_r(r, acc1).unwrap();

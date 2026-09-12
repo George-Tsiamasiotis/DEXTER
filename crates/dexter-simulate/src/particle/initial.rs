@@ -126,6 +126,7 @@ impl InitialConditions {
     /// Returns a [`SimulationError`] if the missing coordinates cannot be calculated. This can
     /// occur if the [`Current`] object specifically does not define g(ψ) (`MixedToroidal` case) or
     /// g(ψp) (`MixedPoloidal` case), which are necessary for calculating the fluxes.
+    #[expect(clippy::min_ident_chars, reason = "poloidal current")]
     pub(crate) fn finalize(&mut self, machine: Machine) -> Result<(), SimulationError> {
         let acc = &mut Accelerator::new();
         match self.coordinate_set {

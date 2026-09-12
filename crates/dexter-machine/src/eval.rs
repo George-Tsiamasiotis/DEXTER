@@ -232,41 +232,8 @@ pub trait Geometry: MachineObject + Debug + Send + Sync {
     fn zlab_last(&self) -> Array1<f64>;
 }
 
-/// Conversion between the two flux coordinates `ψ` and `ψp`.
-pub trait FluxCommute: Debug + Send + Sync {
-    /// Converts a [`MagneticFlux`] to one of the other variant.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// # use dexter_machine::*;
-    /// # use std::path::PathBuf;
-    /// # use rsl_interpolation::Accelerator;
-    /// #
-    /// # let lcfs = LastClosedFluxSurface::Toroidal(0.45);
-    /// # let qfactor = ParabolicQfactor::new(1.1, 3.8, lcfs);
-    /// #
-    /// let acc = &mut Accelerator::new();
-    /// let psi = MagneticFlux::Toroidal(0.01);
-    /// let psip = MagneticFlux::Toroidal(0.015);
-    ///
-    /// let psip_of_psi: MagneticFlux = qfactor.eval_other(psi, acc)?;
-    /// let psi_of_psip: MagneticFlux = qfactor.eval_other(psip, acc)?;
-    /// # Ok::<_, MachineError>(())
-    /// ```
-    ///
-    /// # Errors
-    ///
-    /// Returns an [`EvalError`] if the conversion fails for any reason.
-    fn eval_other(
-        &self,
-        flux: MagneticFlux,
-        acc: &mut Accelerator,
-    ) -> Result<MagneticFlux, EvalError>;
-}
-
 /// q-factor related quantities computation.
-pub trait Qfactor: MachineObject + FluxCommute + Debug + Send + Sync {
+pub trait Qfactor: MachineObject + Debug + Send + Sync {
     /// Returns the value of the last closed toroidal flux `ψ_last`.
     fn psi_last(&self) -> MagneticFlux;
 
@@ -304,6 +271,36 @@ pub trait Qfactor: MachineObject + FluxCommute + Debug + Send + Sync {
     ///
     /// Returns an [`EvalError`] if the evaluation fails for any reason.
     fn eval_q(&self, flux: MagneticFlux, acc: &mut Accelerator) -> Result<f64, EvalError>;
+
+    /// Converts a [`MagneticFlux`] to one of the other variant.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use dexter_machine::*;
+    /// # use std::path::PathBuf;
+    /// # use rsl_interpolation::Accelerator;
+    /// #
+    /// # let lcfs = LastClosedFluxSurface::Toroidal(0.45);
+    /// # let qfactor = ParabolicQfactor::new(1.1, 3.8, lcfs);
+    /// #
+    /// let acc = &mut Accelerator::new();
+    /// let psi = MagneticFlux::Toroidal(0.01);
+    /// let psip = MagneticFlux::Toroidal(0.015);
+    ///
+    /// let psip_of_psi: MagneticFlux = qfactor.eval_other(psi, acc)?;
+    /// let psi_of_psip: MagneticFlux = qfactor.eval_other(psip, acc)?;
+    /// # Ok::<_, MachineError>(())
+    /// ```
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the conversion fails for any reason.
+    fn eval_other(
+        &self,
+        flux: MagneticFlux,
+        acc: &mut Accelerator,
+    ) -> Result<MagneticFlux, EvalError>;
 
     /// Calculates `ψ(q)`.
     ///

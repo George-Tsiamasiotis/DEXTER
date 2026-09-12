@@ -134,7 +134,7 @@ impl GCState {
         machine: Machine,
         caches: &mut IntegrationCaches,
     ) -> Result<(), SimulationError> {
-        debug_assert!(self.flux_value().is_finite());
+        debug_assert!(self.flux_value().is_finite(), "NaN flux value encountered");
         // First do all the interpolations
         self.calculate_modulos();
         self.calculate_other_flux(machine, caches)?;

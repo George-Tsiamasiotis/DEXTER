@@ -14,7 +14,7 @@ use std::path::{Path, PathBuf};
 use super::debug_assert_all_finite_values;
 use crate::objects::nc_flux::{FluxCoordinateState, NcFlux};
 use crate::{EvalError, MachineError};
-use crate::{FluxCommute, Geometry, MachineObject, MachineType};
+use crate::{Geometry, MachineObject, MachineType};
 use crate::{Interpolation1dType, Interpolation2dType};
 use crate::{MagneticFlux, MagneticFlux::*};
 use dexter_common::{DynInterpolator, DynInterpolator2d, make_interp, make_interp2d};
@@ -302,11 +302,6 @@ pub struct NcGeometry {
     /// The poloidal flux coordinate.
     psip: NcFlux,
 
-    /// The `ψp(ψ)` interpolator.
-    psip_of_psi_interp: Option<DynInterpolator>,
-    /// The `ψ(ψp)` interpolator.
-    psi_of_psip_interp: Option<DynInterpolator>,
-
     /// The radial coordinate r in [m].
     r_values: Vec<f64>,
     /// The `r(ψ)` interpolator.
@@ -384,27 +379,6 @@ impl NcGeometry {
 
         // Create interpolators, if possible
         use FluxCoordinateState::Good;
-        let psip_of_psi_interp =
-            if (psi.state() == Good) & (psip.state() != FluxCoordinateState::NoValues) {
-                Some(make_interp(
-                    builder.interp1d_type,
-                    psi.uvalues(),
-                    psip.uvalues(),
-                )?)
-            } else {
-                None
-            };
-        let psi_of_psip_interp =
-            if (psip.state() == Good) & (psi.state() != FluxCoordinateState::NoValues) {
-                Some(make_interp(
-                    builder.interp1d_type,
-                    psip.uvalues(),
-                    psi.uvalues(),
-                )?)
-            } else {
-                None
-            };
-
         let r_of_psi_interp = match psi.state() {
             Good => make_interp(builder.interp1d_type, psi.uvalues(), &r_values).ok(),
             _ => None,
@@ -496,8 +470,6 @@ impl NcGeometry {
             theta_values,
             psi,
             psip,
-            psi_of_psip_interp,
-            psip_of_psi_interp,
             baxis,
             raxis,
             zaxis,
@@ -534,44 +506,6 @@ impl MachineObject for NcGeometry {
     }
 }
 
-impl FluxCommute for NcGeometry {
-    fn eval_other(
-        &self,
-        flux: MagneticFlux,
-        acc: &mut Accelerator,
-    ) -> Result<MagneticFlux, EvalError> {
-        debug_assert_non_negative_flux!(flux);
-        match flux {
-            Toroidal(_) if self.psi.state() == FluxCoordinateState::NoValues => {
-                return Err(EvalError::UndefinedEvaluation("ψp(ψ)".into()));
-            }
-            Poloidal(_) if self.psip.state() == FluxCoordinateState::NoValues => {
-                return Err(EvalError::UndefinedEvaluation("ψ(ψp)".into()));
-            }
-            _ => (),
-        }
-        // SAFETY: the above check ensures the flux values exist.
-        #[rustfmt::skip]
-        let (x, xa, ya, interp) = match flux {
-            Toroidal(v) => (v, self.psi.uvalues(), self.psip.uvalues(), self.psip_of_psi_interp.as_ref()),
-            Poloidal(v) => (v, self.psip.uvalues(), self.psi.uvalues(), self.psi_of_psip_interp.as_ref()),
-        };
-        let value = if let Some(interp) = interp {
-            debug_assert_is_finite!(interp.eval(xa, ya, x, acc)?)
-        } else {
-            let msg = match flux {
-                Toroidal(_) => "ψp(ψ)",
-                Poloidal(_) => "ψ(ψp)",
-            };
-            return Err(EvalError::UndefinedEvaluation(msg.into()));
-        };
-        match flux {
-            Toroidal(_) => Ok(Poloidal(value)),
-            Poloidal(_) => Ok(Toroidal(value)),
-        }
-    }
-}
-
 impl Geometry for NcGeometry {
     fn baxis(&self) -> f64 {
         self.baxis
@@ -597,22 +531,22 @@ impl Geometry for NcGeometry {
     }
 
     fn psi_last(&self) -> Option<MagneticFlux> {
-        self.psi.last_value().map(|psi_last| Toroidal(psi_last))
+        self.psi.last_value().map(Toroidal)
     }
 
     fn psip_last(&self) -> Option<MagneticFlux> {
-        self.psip.last_value().map(|psip_last| Poloidal(psip_last))
+        self.psip.last_value().map(Poloidal)
     }
 
     fn eval_r(&self, flux: MagneticFlux, acc: &mut Accelerator) -> Result<f64, EvalError> {
         debug_assert_non_negative_flux!(flux);
-        let (x, xa, interp) = match flux {
-            Toroidal(v) => (v, self.psi.uvalues(), self.r_of_psi_interp.as_ref()),
-            Poloidal(v) => (v, self.psip.uvalues(), self.r_of_psip_interp.as_ref()),
+        let (val, xa, interp) = match flux {
+            Toroidal(val) => (val, self.psi.uvalues(), self.r_of_psi_interp.as_ref()),
+            Poloidal(val) => (val, self.psip.uvalues(), self.r_of_psip_interp.as_ref()),
         };
         let ya = &self.r_values;
         if let Some(interp) = interp {
-            Ok(debug_assert_is_finite!(interp.eval(xa, ya, x, acc)?))
+            Ok(debug_assert_is_finite!(interp.eval(xa, ya, val, acc)?))
         } else {
             let msg = format!("r({})", flux.kind());
             Err(EvalError::UndefinedEvaluation(msg))
@@ -652,15 +586,15 @@ impl Geometry for NcGeometry {
         acc: &mut Accelerator2d,
     ) -> Result<f64, EvalError> {
         debug_assert_non_negative_flux!(flux);
-        let (x, xa, interp) = match flux {
-            Toroidal(v) => (v, self.psi.uvalues(), self.rlab_of_psi_interp.as_ref()),
-            Poloidal(v) => (v, self.psip.uvalues(), self.rlab_of_psip_interp.as_ref()),
+        let (val, xa, interp) = match flux {
+            Toroidal(val) => (val, self.psi.uvalues(), self.rlab_of_psi_interp.as_ref()),
+            Poloidal(val) => (val, self.psip.uvalues(), self.rlab_of_psip_interp.as_ref()),
         };
         let ya = &self.theta_values;
         let za = &self.rlab_values_fortran_flat;
         if let Some(interp) = interp {
             Ok(debug_assert_is_finite!(
-                interp.eval(xa, ya, za, x, theta, acc)?
+                interp.eval(xa, ya, za, val, theta, acc)?
             ))
         } else {
             let msg = format!("R({}, θ)", flux.kind());
@@ -675,15 +609,15 @@ impl Geometry for NcGeometry {
         acc: &mut Accelerator2d,
     ) -> Result<f64, EvalError> {
         debug_assert_non_negative_flux!(flux);
-        let (x, xa, interp) = match flux {
-            Toroidal(v) => (v, self.psi.uvalues(), self.zlab_of_psi_interp.as_ref()),
-            Poloidal(v) => (v, self.psip.uvalues(), self.zlab_of_psip_interp.as_ref()),
+        let (val, xa, interp) = match flux {
+            Toroidal(val) => (val, self.psi.uvalues(), self.zlab_of_psi_interp.as_ref()),
+            Poloidal(val) => (val, self.psip.uvalues(), self.zlab_of_psip_interp.as_ref()),
         };
         let ya = &self.theta_values;
         let za = &self.zlab_values_fortran_flat;
         if let Some(interp) = interp {
             Ok(debug_assert_is_finite!(
-                interp.eval(xa, ya, za, x, theta, acc)?
+                interp.eval(xa, ya, za, val, theta, acc)?
             ))
         } else {
             let msg = format!("Z({}, θ)", flux.kind());
@@ -699,15 +633,15 @@ impl Geometry for NcGeometry {
     ) -> Result<f64, EvalError> {
         debug_assert_non_negative_flux!(flux);
         #[rustfmt::skip]
-        let (x, xa, interp) = match flux {
-            Toroidal(v) => (v, self.psi.uvalues(), self.jacobian_of_psi_interp.as_ref()),
-            Poloidal(v) => (v, self.psip.uvalues(), self.jacobian_of_psip_interp.as_ref()),
+        let (val, xa, interp) = match flux {
+            Toroidal(val) => (val, self.psi.uvalues(), self.jacobian_of_psi_interp.as_ref()),
+            Poloidal(val) => (val, self.psip.uvalues(), self.jacobian_of_psip_interp.as_ref()),
         };
         let ya = &self.theta_values;
         let za = &self.jacobian_values_fortran_flat;
         if let Some(interp) = interp {
             Ok(debug_assert_is_finite!(
-                interp.eval(xa, ya, za, x, theta, acc)?
+                interp.eval(xa, ya, za, val, theta, acc)?
             ))
         } else {
             let msg = format!("J({}, θ)", flux.kind());
@@ -816,13 +750,11 @@ mod test_toroidal_nc_evals {
 
         assert_eq!(geometry.psi.state(), FluxCoordinateState::Good);
         assert_eq!(geometry.psip.state(), FluxCoordinateState::Bad);
-        assert!(geometry.psip_of_psi_interp.is_some());
         assert!(geometry.r_of_psi_interp.is_some());
         assert!(geometry.rlab_of_psi_interp.is_some());
         assert!(geometry.zlab_of_psi_interp.is_some());
         assert!(geometry.jacobian_of_psi_interp.is_some());
 
-        assert!(geometry.psi_of_psip_interp.is_none());
         assert!(geometry.r_of_psip_interp.is_none());
         assert!(geometry.rlab_of_psip_interp.is_none());
         assert!(geometry.zlab_of_psip_interp.is_none());
@@ -843,7 +775,6 @@ mod test_toroidal_nc_evals {
         let acc2 = &mut Accelerator2d::new();
         let t = 3.14;
         let flux = Toroidal(0.01);
-        assert!(g.eval_other(flux, acc1).unwrap().value().is_finite());
         assert!(g.eval_r(flux, acc1).unwrap().is_finite());
         assert!(g.eval_rlab(flux, t, acc2).unwrap().is_finite());
         assert!(g.eval_zlab(flux, t, acc2).unwrap().is_finite());
@@ -858,7 +789,6 @@ mod test_toroidal_nc_evals {
         let t = 3.14;
         let flux = Poloidal(0.01);
         use EvalError::UndefinedEvaluation as err;
-        matches!(g.eval_other(flux, acc1), Err(err(..)));
         matches!(g.eval_r(flux, acc1), Err(err(..)));
         matches!(g.eval_rlab(flux, t, acc2), Err(err(..)));
         matches!(g.eval_zlab(flux, t, acc2), Err(err(..)));
@@ -881,13 +811,11 @@ mod test_poloidal_nc_evals {
 
         assert_eq!(geometry.psi.state(), FluxCoordinateState::Bad);
         assert_eq!(geometry.psip.state(), FluxCoordinateState::Good);
-        assert!(geometry.psip_of_psi_interp.is_none());
         assert!(geometry.r_of_psi_interp.is_none());
         assert!(geometry.rlab_of_psi_interp.is_none());
         assert!(geometry.zlab_of_psi_interp.is_none());
         assert!(geometry.jacobian_of_psi_interp.is_none());
 
-        assert!(geometry.psi_of_psip_interp.is_some());
         assert!(geometry.r_of_psip_interp.is_some());
         assert!(geometry.rlab_of_psip_interp.is_some());
         assert!(geometry.zlab_of_psip_interp.is_some());
@@ -908,7 +836,6 @@ mod test_poloidal_nc_evals {
         let acc2 = &mut Accelerator2d::new();
         let t = 3.14;
         let flux = Poloidal(0.01);
-        assert!(g.eval_other(flux, acc1).unwrap().value().is_finite());
         assert!(g.eval_r(flux, acc1).unwrap().is_finite());
         assert!(g.eval_rlab(flux, t, acc2).unwrap().is_finite());
         assert!(g.eval_zlab(flux, t, acc2).unwrap().is_finite());
@@ -923,7 +850,6 @@ mod test_poloidal_nc_evals {
         let t = 3.14;
         let flux = Toroidal(0.01);
         use EvalError::UndefinedEvaluation as err;
-        matches!(g.eval_other(flux, acc1), Err(err(..)));
         matches!(g.eval_r(flux, acc1), Err(err(..)));
         matches!(g.eval_rlab(flux, t, acc2), Err(err(..)));
         matches!(g.eval_zlab(flux, t, acc2), Err(err(..)));

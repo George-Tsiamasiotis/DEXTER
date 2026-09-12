@@ -379,15 +379,15 @@ impl Bfield for NcBfield {
     ) -> Result<f64, EvalError> {
         debug_assert_non_negative_flux!(flux);
         debug_assert_is_2pi_modulo!(theta);
-        let (x, xa, interp) = match flux {
-            Toroidal(v) => (v, self.psi.uvalues(), self.b_of_psi_interp.as_ref()),
-            Poloidal(v) => (v, self.psip.uvalues(), self.b_of_psip_interp.as_ref()),
+        let (val, xa, interp) = match flux {
+            Toroidal(val) => (val, self.psi.uvalues(), self.b_of_psi_interp.as_ref()),
+            Poloidal(val) => (val, self.psip.uvalues(), self.b_of_psip_interp.as_ref()),
         };
         let ya = &self.theta_values;
         let za = &self.b_values_fortran_flat_padded;
         if let Some(interp) = interp {
             Ok(debug_assert_is_finite!(
-                interp.eval(xa, ya, za, x, theta, acc)?
+                interp.eval(xa, ya, za, val, theta, acc)?
             ))
         } else {
             cold_path();
@@ -404,15 +404,15 @@ impl Bfield for NcBfield {
     ) -> Result<f64, EvalError> {
         debug_assert_non_negative_flux!(flux);
         debug_assert_is_2pi_modulo!(theta);
-        let (x, xa, interp) = match flux {
-            Toroidal(v) => (v, self.psi.uvalues(), self.b_of_psi_interp.as_ref()),
-            Poloidal(v) => (v, self.psip.uvalues(), self.b_of_psip_interp.as_ref()),
+        let (val, xa, interp) = match flux {
+            Toroidal(val) => (val, self.psi.uvalues(), self.b_of_psi_interp.as_ref()),
+            Poloidal(val) => (val, self.psip.uvalues(), self.b_of_psip_interp.as_ref()),
         };
         let ya = &self.theta_values;
         let za = &self.b_values_fortran_flat_padded;
         if let Some(interp) = interp {
             Ok(debug_assert_is_finite!(
-                interp.eval_deriv_x(xa, ya, za, x, theta, acc)?
+                interp.eval_deriv_x(xa, ya, za, val, theta, acc)?
             ))
         } else {
             cold_path();
@@ -429,15 +429,15 @@ impl Bfield for NcBfield {
     ) -> Result<f64, EvalError> {
         debug_assert_non_negative_flux!(flux);
         debug_assert_is_2pi_modulo!(theta);
-        let (x, xa, interp) = match flux {
-            Toroidal(v) => (v, self.psi.uvalues(), self.b_of_psi_interp.as_ref()),
-            Poloidal(v) => (v, self.psip.uvalues(), self.b_of_psip_interp.as_ref()),
+        let (val, xa, interp) = match flux {
+            Toroidal(val) => (val, self.psi.uvalues(), self.b_of_psi_interp.as_ref()),
+            Poloidal(val) => (val, self.psip.uvalues(), self.b_of_psip_interp.as_ref()),
         };
         let ya = &self.theta_values;
         let za = &self.b_values_fortran_flat_padded;
         if let Some(interp) = interp {
             Ok(debug_assert_is_finite!(
-                interp.eval_deriv_y(xa, ya, za, x, theta, acc)?
+                interp.eval_deriv_y(xa, ya, za, val, theta, acc)?
             ))
         } else {
             cold_path();

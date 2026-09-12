@@ -246,13 +246,13 @@ impl MachineObject for NcCurrent {
 impl Current for NcCurrent {
     fn eval_g(&self, flux: MagneticFlux, acc: &mut Accelerator) -> Result<f64, EvalError> {
         debug_assert_non_negative_flux!(flux);
-        let (x, xa, interp) = match flux {
-            Toroidal(v) => (v, self.psi.uvalues(), self.g_of_psi_interp.as_ref()),
-            Poloidal(v) => (v, self.psip.uvalues(), self.g_of_psip_interp.as_ref()),
+        let (val, xa, interp) = match flux {
+            Toroidal(val) => (val, self.psi.uvalues(), self.g_of_psi_interp.as_ref()),
+            Poloidal(val) => (val, self.psip.uvalues(), self.g_of_psip_interp.as_ref()),
         };
         let ya = &self.g_values;
         if let Some(interp) = interp {
-            Ok(debug_assert_is_finite!(interp.eval(xa, ya, x, acc)?))
+            Ok(debug_assert_is_finite!(interp.eval(xa, ya, val, acc)?))
         } else {
             cold_path();
             let msg = format!("g({})", flux.kind());
@@ -262,13 +262,13 @@ impl Current for NcCurrent {
 
     fn eval_i(&self, flux: MagneticFlux, acc: &mut Accelerator) -> Result<f64, EvalError> {
         debug_assert_non_negative_flux!(flux);
-        let (x, xa, interp) = match flux {
-            Toroidal(v) => (v, self.psi.uvalues(), self.i_of_psi_interp.as_ref()),
-            Poloidal(v) => (v, self.psip.uvalues(), self.i_of_psip_interp.as_ref()),
+        let (val, xa, interp) = match flux {
+            Toroidal(val) => (val, self.psi.uvalues(), self.i_of_psi_interp.as_ref()),
+            Poloidal(val) => (val, self.psip.uvalues(), self.i_of_psip_interp.as_ref()),
         };
         let ya = &self.i_values;
         if let Some(interp) = interp {
-            Ok(debug_assert_is_finite!(interp.eval(xa, ya, x, acc)?))
+            Ok(debug_assert_is_finite!(interp.eval(xa, ya, val, acc)?))
         } else {
             cold_path();
             let msg = format!("I({})", flux.kind());
@@ -278,13 +278,15 @@ impl Current for NcCurrent {
 
     fn eval_g_deriv(&self, flux: MagneticFlux, acc: &mut Accelerator) -> Result<f64, EvalError> {
         debug_assert_non_negative_flux!(flux);
-        let (x, xa, interp) = match flux {
-            Toroidal(v) => (v, self.psi.uvalues(), self.g_of_psi_interp.as_ref()),
-            Poloidal(v) => (v, self.psip.uvalues(), self.g_of_psip_interp.as_ref()),
+        let (val, xa, interp) = match flux {
+            Toroidal(val) => (val, self.psi.uvalues(), self.g_of_psi_interp.as_ref()),
+            Poloidal(val) => (val, self.psip.uvalues(), self.g_of_psip_interp.as_ref()),
         };
         let ya = &self.g_values;
         if let Some(interp) = interp {
-            Ok(debug_assert_is_finite!(interp.eval_deriv(xa, ya, x, acc)?))
+            Ok(debug_assert_is_finite!(
+                interp.eval_deriv(xa, ya, val, acc)?
+            ))
         } else {
             cold_path();
             let msg = format!("dg({})/d{}", flux.kind(), flux.kind());
@@ -294,13 +296,15 @@ impl Current for NcCurrent {
 
     fn eval_i_deriv(&self, flux: MagneticFlux, acc: &mut Accelerator) -> Result<f64, EvalError> {
         debug_assert_non_negative_flux!(flux);
-        let (x, xa, interp) = match flux {
-            Toroidal(v) => (v, self.psi.uvalues(), self.i_of_psi_interp.as_ref()),
-            Poloidal(v) => (v, self.psip.uvalues(), self.i_of_psip_interp.as_ref()),
+        let (val, xa, interp) = match flux {
+            Toroidal(val) => (val, self.psi.uvalues(), self.i_of_psi_interp.as_ref()),
+            Poloidal(val) => (val, self.psip.uvalues(), self.i_of_psip_interp.as_ref()),
         };
         let ya = &self.i_values;
         if let Some(interp) = interp {
-            Ok(debug_assert_is_finite!(interp.eval_deriv(xa, ya, x, acc)?))
+            Ok(debug_assert_is_finite!(
+                interp.eval_deriv(xa, ya, val, acc)?
+            ))
         } else {
             cold_path();
             let msg = format!("dI({})/d{}", flux.kind(), flux.kind());

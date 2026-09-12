@@ -13,6 +13,7 @@ pub enum MagneticFlux {
 
 impl MagneticFlux {
     /// Returns the value of `self`, regardless the kind.
+    #[must_use]
     pub fn value(&self) -> f64 {
         match *self {
             Self::Toroidal(value) | Self::Poloidal(value) => value,
@@ -20,6 +21,7 @@ impl MagneticFlux {
     }
 
     /// Returns a mutable reference to the value of `self`, regardless the kind.
+    #[must_use]
     pub fn value_mut(&mut self) -> &mut f64 {
         match *self {
             Self::Toroidal(ref mut value) | Self::Poloidal(ref mut value) => value,
@@ -27,8 +29,9 @@ impl MagneticFlux {
     }
 
     /// Returns the kind of `self` as a `Box<str>`.
+    #[must_use]
     pub fn kind(&self) -> Box<str> {
-        match self {
+        match *self {
             Self::Toroidal(_) => "ψ".into(),
             Self::Poloidal(_) => "ψp".into(),
         }
@@ -40,8 +43,8 @@ impl MagneticFlux {
     ///
     /// Returns an [`EvalError`] if `self` is a [`MagneticFlux::Poloidal`] variant.
     pub fn psi(&self) -> Result<f64, EvalError> {
-        match self {
-            Self::Toroidal(psi) => Ok(*psi),
+        match *self {
+            Self::Toroidal(psi) => Ok(psi),
             Self::Poloidal(_) => Err(EvalError::InvalidMagneticFlux),
         }
     }
@@ -52,9 +55,9 @@ impl MagneticFlux {
     ///
     /// Returns an [`EvalError`] if `self` is a [`MagneticFlux::Toroidal`] variant.
     pub fn psip(&self) -> Result<f64, EvalError> {
-        match self {
+        match *self {
             Self::Toroidal(_) => Err(EvalError::InvalidMagneticFlux),
-            Self::Poloidal(psip) => Ok(*psip),
+            Self::Poloidal(psip) => Ok(psip),
         }
     }
 }

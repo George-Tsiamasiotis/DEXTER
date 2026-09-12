@@ -456,12 +456,12 @@ impl Particle {
     /// Calculates the variance of the energy array.
     #[must_use]
     pub fn energy_var(&self) -> f64 {
-        self.evolution
-            .energy
-            .len()
-            .ge(&2) // panics otherwise
-            .then(|| self.energy_array().var(1.0))
-            .unwrap_or(f64::NAN)
+        // panics otherwise
+        if self.evolution.energy.len() > 2 {
+            self.energy_array().var(1.0)
+        } else {
+            f64::NAN
+        }
     }
 
     /// Returns the particle's [`EnergyPzetaPosition`].
