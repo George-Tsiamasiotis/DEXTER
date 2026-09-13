@@ -64,3 +64,17 @@ pub fn resolve_stepping_method<'py>(arg: Bound<'py, PyAny>) -> PyResult<Stepping
         _ => Err(PyErr::from(DexterError::InvalidSteppingMethod)),
     }
 }
+
+pub(crate) fn flux_from_params(psi: f64, psip: f64) -> MagneticFlux {
+    if !(psi.is_nan() ^ psip.is_nan()) {
+        // This is guaranteed to be unreachable as the python decorator would have already raised an
+        // exception.
+        unreachable!("Only one of `psi` or `psip` must be finite")
+    }
+    // The above check ensures that at only one of them will be finite.
+    if psi.is_finite() {
+        MagneticFlux::Toroidal(psi)
+    } else {
+        MagneticFlux::Poloidal(psip)
+    }
+}

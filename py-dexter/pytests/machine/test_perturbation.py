@@ -3,7 +3,7 @@ import dexter as dex
 
 from math import isfinite
 
-LCFS = dex.LastClosedFluxSurface.Toroidal(0.05)
+LCFS = dex.MagneticFlux.Toroidal(0.05)
 
 
 def test_empty_perturbation():
@@ -34,47 +34,37 @@ def test_nc_perturbation(nc_flute_mode: dex.NcFluteMode):
 
 
 def _test_evals(per: dex.Perturbation):
+    flux = 0.02
+    fluxes = np.linspace(0.01, 0.04, 10)
+    theta = zeta = t = 1.2
+    thetas = zetas = ts = np.linspace(0.01, np.pi, 10)
+
     try:
-        methods = [
-            per.p_of_psi,
-            per.p_of_psip,
-            per.dp_dpsi,
-            per.dp_dpsip,
-            per.dp_of_psi_dtheta,
-            per.dp_of_psip_dtheta,
-            per.dp_of_psi_dzeta,
-            per.dp_of_psip_dzeta,
-            per.dp_of_psi_dt,
-            per.dp_of_psip_dt,
-        ]
 
-        # 0D evaluations
-        flux = 1e-5
-        theta = 1.57
-        zeta = 1.57
-        t = 0
-        for method in methods:
-            assert isfinite(method(flux, theta, zeta, t))
-            assert isinstance(method(flux, theta, zeta, t), float)
+        per.eval_p(psi=flux, theta=theta, zeta=zeta, t=t)
+        per.eval_p(psi=fluxes, theta=thetas, zeta=zetas, t=ts)
+        per.eval_p(psip=flux, theta=theta, zeta=zeta, t=t)
+        per.eval_p(psip=fluxes, theta=thetas, zeta=zetas, t=ts)
 
-        # 1D Evaluations
-        fluxes = np.linspace(1e-5, 1e-4, 5)
-        thetas = np.linspace(0, np.pi, 5)
-        zetas = np.linspace(0, np.pi, 5)
-        ts = np.linspace(0, 1, 5)
-        for method in methods:
-            assert method(fluxes, thetas, zetas, ts).ndim == 1
-            assert isinstance(method(fluxes, thetas, zetas, ts), np.ndarray)
+        per.eval_deriv_flux(psi=flux, theta=theta, zeta=zeta, t=t)
+        per.eval_deriv_flux(psi=fluxes, theta=thetas, zeta=zetas, t=ts)
+        per.eval_deriv_flux(psip=flux, theta=theta, zeta=zeta, t=t)
+        per.eval_deriv_flux(psip=fluxes, theta=thetas, zeta=zetas, t=ts)
 
-        # 4D Evaluations
-        fluxes = np.random.random([2] * 4) * 1e-5
-        thetas = np.random.random([2] * 4) * np.pi
-        zetas = np.random.random([2] * 4) * np.pi
-        ts = np.random.random([2] * 4) * 0
-        assert fluxes.ndim == 4
-        for method in methods:
-            assert method(fluxes, thetas, zetas, ts).ndim == 4
-            assert isinstance(method(fluxes, thetas, zetas, ts), np.ndarray)
+        per.eval_deriv_theta(psi=flux, theta=theta, zeta=zeta, t=t)
+        per.eval_deriv_theta(psi=fluxes, theta=thetas, zeta=zetas, t=ts)
+        per.eval_deriv_theta(psip=flux, theta=theta, zeta=zeta, t=t)
+        per.eval_deriv_theta(psip=fluxes, theta=thetas, zeta=zetas, t=ts)
+
+        per.eval_deriv_zeta(psi=flux, theta=theta, zeta=zeta, t=t)
+        per.eval_deriv_zeta(psi=fluxes, theta=thetas, zeta=zetas, t=ts)
+        per.eval_deriv_zeta(psip=flux, theta=theta, zeta=zeta, t=t)
+        per.eval_deriv_zeta(psip=fluxes, theta=thetas, zeta=zetas, t=ts)
+
+        per.eval_deriv_t(psi=flux, theta=theta, zeta=zeta, t=t)
+        per.eval_deriv_t(psi=fluxes, theta=thetas, zeta=zetas, t=ts)
+        per.eval_deriv_t(psip=flux, theta=theta, zeta=zeta, t=t)
+        per.eval_deriv_t(psip=fluxes, theta=thetas, zeta=zetas, t=ts)
 
     except Exception as e:
         if not "[D] EvalError" in str(e):

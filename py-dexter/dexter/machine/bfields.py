@@ -6,7 +6,7 @@ from typing import TypeAlias
 
 from dexter._core import _PyBfield
 
-from .utils import LastClosedFluxSurface
+from .utils import MagneticFlux
 from .base import MachineObject, Bfield
 from dexter.types import (
     Array1,
@@ -23,6 +23,8 @@ class LarBfield(MachineObject, Bfield):
     r"""Analytical Large Aspect Ratio magnetic field with
     $B(\psi,\theta) = 1-\sqrt{2\psi}\cos\theta$.
 
+    No $\psi/\psi_p$ bounds checks are performed in evaluations.
+
     Example
     -------
     ``` py
@@ -35,8 +37,8 @@ class LarBfield(MachineObject, Bfield):
 
     def __init__(self) -> None:
         self._r = _PyBfield.build_lar()
-        super(MachineObject, self).__init__()
-        super(Bfield, self).__init__()
+        MachineObject.__init__(self)
+        Bfield.__init__(self)
 
 
 class NcBfield(MachineObject, Bfield):
@@ -67,6 +69,35 @@ class NcBfield(MachineObject, Bfield):
             $r^{|i-j|}$, where $r=\sqrt{3}-2 \approx -0.26$. Therefore, with a padding of 10, the
             effect at the $\theta=0$ boundary would be of the order of $10^{-6}$.
 
+    Attributes
+    ----------
+    path
+        The path to the netCDF file.
+    netcdf_version
+        The netCDF file's version (SemVer).
+    interp_type
+        The 2D interpolation type.
+    baxis
+        The magnetic field strength on the axis $B_0$ in $[T]$.
+    padding
+        The number of $\theta$ padding columns (per side).
+    shape
+        Returns the $(\psi/\psi_p,\theta)$ shape of the initial 1D arrays (before the padding).
+    shape_padded
+        Returns the $(\psi/\psi_p,\theta)$ shape of the **padded** arrays that were used to create the interpolator.
+    psi_array
+        The toroidal flux' values.
+    psip_array
+        The poloidal flux' values.
+    theta_array
+        The poloidal angle $\theta$ values.
+    theta_array_padded
+        The **padded** $\theta$ values.
+    b_array
+        The magnetic field $B$ values.
+    b_array_padded
+        The **padded** $B$ values.
+
     Example
     -------
     ``` py
@@ -76,6 +107,13 @@ class NcBfield(MachineObject, Bfield):
     """
 
     _r: _PyBfield
+    path: str
+    netcdf_version: NetCDFVersion
+    interp_type: Interpolation2dType
+    baxis: float
+    padding: float
+    shape: ArrayShape
+    shape_padded: ArrayShape
 
     def __init__(
         self,
@@ -84,82 +122,43 @@ class NcBfield(MachineObject, Bfield):
         padding: int = 15,
     ) -> None:
         self._r = _PyBfield.build_nc(path, interp_type, padding)
-        super(MachineObject, self).__init__()
-        super(Bfield, self).__init__()
+        MachineObject.__init__(self)
+        Bfield.__init__(self)
+
+        self.path = self._r.path
+        self.netcdf_version = Version.parse(self._r.netcdf_version)
+        self.interp_type = self._r.interp_type
+        self.baxis = self._r.baxis
+        self.padding = self._r.padding
+        self.shape = self._r.shape
+        self.shape_padded = self._r.shape_padded
 
     @property
-    def path(self) -> str:
-        """The path to the NetCDF file."""
-        return self._r.path
-
-    @property
-    def netcdf_version(self) -> NetCDFVersion:
-        """The path to the NetCDF file."""
-        return Version.parse(self._r.netcdf_version)
-
-    @property
-    def interp_type(self) -> Interpolation2dType:
-        """The 1D interpolation type."""
-        return self._r.interp_type
-
-    @property
-    def baxis(self) -> float:
-        """The magnetic field strength on the axis $B_0$ in $[T]$"""
-        return self._r.baxis
-
-    @property
-    def padding(self) -> int:
-        """The magnetic field strength on the axis $B_0$ in $[T]$"""
-        return self._r.padding
-
-    @property
-    def shape(self) -> ArrayShape:
-        r"""Returns the $(\psi/\psi_p,\theta)$ shape of the initial 1D arrays (before the padding)."""
-        return self._r.shape
-
-    @property
-    def shape_padded(self) -> ArrayShape:
-        r"""Returns the $(\psi/\psi_p,\theta)$ shape of the **padded** arrays that were used to create the interpolator."""
-        return self._r.shape_padded
-
-    @property
-    def psi_last(self) -> float:
-        r"""The value of the last closed toroidal flux $\psi_{LCFS}$."""
-        return self._r.psi_last
-
-    @property
-    def psip_last(self) -> float:
-        r"""The value of the last closed toroidal flux $\psi_{p,LCFS}$."""
-        return self._r.psip_last
-
-    @property
-    def psi_array(self) -> Array1:
-        """The toroidal flux's values."""
+    def psi_array(self) -> Array1 | None:
         return self._r.get_array("psi_array")
 
     @property
-    def psip_array(self) -> Array1:
-        """The poloidal flux's values."""
+    def psip_array(self) -> Array1 | None:
         return self._r.get_array("psip_array")
 
     @property
     def theta_array(self) -> Array1:
-        r"""The poloidal angle $\theta$ values."""
-        return self._r.get_array("theta_array")
+        array = self._r.get_array("theta_array")
+        assert array is not None, "theta_array always exists"
+        return array
 
     @property
     def theta_array_padded(self) -> Array1:
-        r"""The **padded** $\theta$ values."""
-        return self._r.get_array("theta_array_padded")
+        array = self._r.get_array("theta_array_padded")
+        assert array is not None, "theta_array_padded always exists"
+        return array
 
     @property
     def b_array(self) -> Array2:
-        r"""The magnetic field $B$ values."""
         return self._r.get_array2d("b_array")
 
     @property
     def b_array_padded(self) -> Array2:
-        r"""The **padded** $B$ values."""
         return self._r.get_array2d("b_array_padded")
 
 

@@ -47,7 +47,7 @@ fn gc_toroidal_integration_uniQ_larC_larB_cosP() {
     assert!(particle.t_array().last().copied().unwrap() >= teval.1);
     assert!(particle.steps_stored() > 1000);
     assert!(particle.steps_stored() < 10000);
-    assert!(particle.energy_var() < 1e-20);
+    assert!(particle.energy_var().unwrap() < 1e-20);
     assert_relative_eq!(particle.initial_energy().unwrap(), particle.final_energy().unwrap(), epsilon = 1e-10);
 
     check_integrated_particle_arrays(&particle);
@@ -85,7 +85,7 @@ fn gc_toroidal_integration_ncdQ_ncdC_ncdB_ncdP() {
     assert!(particle.t_array().last().copied().unwrap() >= teval.1);
     assert!(particle.steps_stored() > 1000);
     assert!(particle.steps_stored() < 10000);
-    assert!(particle.energy_var() < 1e-20);
+    assert!(particle.energy_var().unwrap() < 1e-20);
     assert_relative_eq!(particle.initial_energy().unwrap(), particle.final_energy().unwrap(), epsilon = 1e-10);
 
     check_integrated_particle_arrays(&particle);
@@ -123,7 +123,7 @@ fn gc_poloidal_integration_ncdQ_ncdC_ncdB_ncdP() {
     assert!(particle.t_array().last().copied().unwrap() >= teval.1);
     assert!(particle.steps_stored() > 1000);
     assert!(particle.steps_stored() < 10000);
-    assert!(particle.energy_var() < 1e-20);
+    assert!(particle.energy_var().unwrap() < 1e-20);
     assert_relative_eq!(particle.initial_energy().unwrap(), particle.final_energy().unwrap(), epsilon = 1e-10);
 
     check_integrated_particle_arrays(&particle);
@@ -161,7 +161,7 @@ fn gc_toroidal_integration_gcmotion_check_uniQ_larC_larB_cosP() {
     assert!(particle.t_array().last().copied().unwrap() >= teval.1);
     assert!(particle.steps_stored() > 1000);
     assert!(particle.steps_stored() < 10000);
-    assert!(particle.energy_var() < 1e-18);
+    assert!(particle.energy_var().unwrap() < 1e-18);
     assert_relative_eq!(particle.initial_energy().unwrap(), particle.final_energy().unwrap(), epsilon = 1e-8);
 
     assert_relative_eq!(particle.initial_energy().unwrap(), 1.5189224863170239e-05, epsilon = 1e-20);
@@ -400,7 +400,7 @@ fn gc_const_pzeta_toroidal_integration_uniQ_larC_larB_cosP() {
     assert!(particle.t_array().last().copied().unwrap() >= teval.1);
     assert!(particle.steps_stored() > 1000);
     assert!(particle.steps_stored() < 10000);
-    assert!(particle.energy_var() < 1e-20);
+    assert!(particle.energy_var().unwrap() < 1e-20);
     assert_relative_eq!(particle.initial_energy().unwrap(), particle.final_energy().unwrap(), epsilon = 1e-10);
     assert!(
         pzeta_array.relative_eq(

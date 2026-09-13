@@ -12,7 +12,6 @@ use dexter_simulate::{InitialConditions, IntegrationStatus, MagneticFlux, Partic
 use std::path::Path;
 
 fn main() {
-    // Equilibrium setup
     let path = Path::new("crates/dexter-simulate").join(TOROIDAL_TEST_NETCDF_PATH);
     let qfactor = NcQfactorBuilder::new(&path, Steffen).build().unwrap();
     let current = NcCurrentBuilder::new(&path, Steffen).build().unwrap();

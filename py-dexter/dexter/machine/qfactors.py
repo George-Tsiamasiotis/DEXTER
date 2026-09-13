@@ -6,23 +6,28 @@ from typing import TypeAlias
 
 from dexter._core import _PyQfactor
 
-from .utils import LastClosedFluxSurface
-from .base import MachineObject, FluxCommute, Qfactor
-from dexter.types import Array1, FluxCoordinateState, Interpolation1dType, NetCDFVersion
+from .utils import MagneticFlux
+from .base import MachineObject, Qfactor
+from dexter.types import (
+    Array1,
+    FluxCoordinateState,
+    Interpolation1dType,
+    NetCDFVersion,
+)
 
 
-class UnityQfactor(MachineObject, FluxCommute, Qfactor):
+class UnityQfactor(MachineObject, Qfactor):
     r"""Analytical q-factor profile of $q=1$ and $\psi=\psi_p$.
 
     Parameters
     ----------
     lcfs
-        The Last Closed Flux Surface. Only used for bounds checking.
+        The last closed flux surface. Only used for bounds checking.
 
     Example
     -------
     ``` py
-    >>> lcfs = dex.LastClosedFluxSurface.Toroidal(0.05)
+    >>> lcfs = dex.MagneticFlux.Toroidal(0.05)
     >>> qfactor = dex.UnityQfactor(lcfs)
 
     ```
@@ -30,27 +35,26 @@ class UnityQfactor(MachineObject, FluxCommute, Qfactor):
 
     _r: _PyQfactor
 
-    def __init__(self, lcfs: LastClosedFluxSurface) -> None:
+    def __init__(self, lcfs: MagneticFlux) -> None:
         self._r = _PyQfactor.build_unity(lcfs._r)
-        super(MachineObject, self).__init__()
-        super(FluxCommute, self).__init__()
-        super(Qfactor, self).__init__()
+        MachineObject.__init__(self)
+        Qfactor.__init__(self)
 
 
-class ParabolicQfactor(MachineObject, FluxCommute, Qfactor):
+class ParabolicQfactor(MachineObject, Qfactor):
     r"""Analytical parabolic q-factor profile.
 
     Parameters
     ----------
     qaxis
         The q-factor's value at the magnetic axis, $q_{axis}$.
-    qwall
+    qlast
         The q-factor's value at the last closed flux surface, $q_{LCFS}$.
 
     Example
     -------
     ``` py
-    >>> lcfs = dex.LastClosedFluxSurface.Toroidal(0.05)
+    >>> lcfs = dex.MagneticFlux.Toroidal(0.05)
     >>> qfactor = dex.ParabolicQfactor(1.1, 3.9, lcfs)
 
     ```
@@ -58,14 +62,13 @@ class ParabolicQfactor(MachineObject, FluxCommute, Qfactor):
 
     _r: _PyQfactor
 
-    def __init__(self, qaxis: float, qlast: float, lcfs: LastClosedFluxSurface) -> None:
+    def __init__(self, qaxis: float, qlast: float, lcfs: MagneticFlux) -> None:
         self._r = _PyQfactor.build_parabolic(qaxis, qlast, lcfs._r)
-        super(MachineObject, self).__init__()
-        super(FluxCommute, self).__init__()
-        super(Qfactor, self).__init__()
+        MachineObject.__init__(self)
+        Qfactor.__init__(self)
 
 
-class NcQfactor(MachineObject, FluxCommute, Qfactor):
+class NcQfactor(MachineObject, Qfactor):
     r"""Numerical q-factor profile reconstructed from a netCDF file.
 
     Related quantities are computed by interpolating over the data arrays.
@@ -77,9 +80,24 @@ class NcQfactor(MachineObject, FluxCommute, Qfactor):
     Parameters
     ----------
     path
-        The path to the NetCDF file.
+        The path to the netCDF file.
     interp_type
         The 1D interpolation type.
+
+    Attributes
+    ----------
+    path
+        The path to the netCDF file.
+    netcdf_version
+        The netCDF file's version (SemVer).
+    interp_type
+        The 1D interpolation type.
+    psi_array
+        The toroidal flux' values.
+    psip_array
+        The poloidal flux' values.
+    q_array
+        The q-factor's values.
 
     Example
     -------
@@ -90,41 +108,29 @@ class NcQfactor(MachineObject, FluxCommute, Qfactor):
     """
 
     _r: _PyQfactor
+    path: str
+    netcdf_version: NetCDFVersion
+    interp_type: Interpolation1dType
 
     def __init__(self, path: str, interp_type: Interpolation1dType) -> None:
         self._r = _PyQfactor.build_nc(path, interp_type)
-        super(MachineObject, self).__init__()
-        super(FluxCommute, self).__init__()
-        super(Qfactor, self).__init__()
+        MachineObject.__init__(self)
+        Qfactor.__init__(self)
 
-    @property
-    def path(self) -> str:
-        """The path to the NetCDF file."""
-        return self._r.path
-
-    @property
-    def netcdf_version(self) -> NetCDFVersion:
-        """The path to the NetCDF file."""
-        return Version.parse(self._r.netcdf_version)
-
-    @property
-    def interp_type(self) -> Interpolation1dType:
-        """The 1D interpolation type."""
-        return self._r.interp_type
+        self.path = self._r.path
+        self.netcdf_version = Version.parse(self._r.netcdf_version)
+        self.interp_type = self._r.interp_type
 
     @property
     def psi_array(self) -> Array1:
-        """The toroidal flux's values."""
         return self._r.get_array("psi_array")
 
     @property
     def psip_array(self) -> Array1:
-        """The poloidal flux's values."""
         return self._r.get_array("psip_array")
 
     @property
     def q_array(self) -> Array1:
-        """The q-factor's values."""
         return self._r.get_array("q_array")
 
 

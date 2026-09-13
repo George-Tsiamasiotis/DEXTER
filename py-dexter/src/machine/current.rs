@@ -76,7 +76,7 @@ impl PyCurrent {
 
 // ===============================================================================================
 
-#[pymethods] // EquilibriumObject Trait
+#[pymethods] // MachineObject Trait
 impl PyCurrent {
     #[getter]
     pub fn machine_type(&self) -> String {
@@ -96,36 +96,24 @@ impl PyCurrent {
 
 #[pymethods] // Current Trait
 impl PyCurrent {
-    pub fn g_of_psi(&self, psi: f64) -> Result<f64> {
-        Ok(self.inner().g_of_psi(psi, &mut Accelerator::new())?)
+    pub fn eval_g(&self, psi: f64, psip: f64) -> Result<f64> {
+        let flux = flux_from_params(psi, psip);
+        Ok(self.inner().eval_g(flux, &mut Accelerator::new())?)
     }
 
-    pub fn g_of_psip(&self, psip: f64) -> Result<f64> {
-        Ok(self.inner().g_of_psip(psip, &mut Accelerator::new())?)
+    pub fn eval_i(&self, psi: f64, psip: f64) -> Result<f64> {
+        let flux = flux_from_params(psi, psip);
+        Ok(self.inner().eval_i(flux, &mut Accelerator::new())?)
     }
 
-    pub fn i_of_psi(&self, psi: f64) -> Result<f64> {
-        Ok(self.inner().i_of_psi(psi, &mut Accelerator::new())?)
+    pub fn eval_g_deriv(&self, psi: f64, psip: f64) -> Result<f64> {
+        let flux = flux_from_params(psi, psip);
+        Ok(self.inner().eval_g_deriv(flux, &mut Accelerator::new())?)
     }
 
-    pub fn i_of_psip(&self, psip: f64) -> Result<f64> {
-        Ok(self.inner().i_of_psip(psip, &mut Accelerator::new())?)
-    }
-
-    pub fn dg_dpsi(&self, q: f64) -> Result<f64> {
-        Ok(self.inner().dg_dpsi(q, &mut Accelerator::new())?)
-    }
-
-    pub fn dg_dpsip(&self, q: f64) -> Result<f64> {
-        Ok(self.inner().dg_dpsip(q, &mut Accelerator::new())?)
-    }
-
-    pub fn di_dpsi(&self, psi: f64) -> Result<f64> {
-        Ok(self.inner().di_dpsi(psi, &mut Accelerator::new())?)
-    }
-
-    pub fn di_dpsip(&self, psip: f64) -> Result<f64> {
-        Ok(self.inner().di_dpsip(psip, &mut Accelerator::new())?)
+    pub fn eval_i_deriv(&self, psi: f64, psip: f64) -> Result<f64> {
+        let flux = flux_from_params(psi, psip);
+        Ok(self.inner().eval_i_deriv(flux, &mut Accelerator::new())?)
     }
 }
 
@@ -151,41 +139,28 @@ impl PyCurrent {
         Ok(format!("{:?}", self.nc()?.interp_type()))
     }
 
-    #[getter]
-    pub fn psi_last(&self) -> Result<f64> {
-        self.nc()?.psi_last().ok_or(DexterError::AttributeError {
-            obj: "NcCurrent".into(),
-            attr: "psi_last".into(),
-        })
-    }
-
-    #[getter]
-    pub fn psip_last(&self) -> Result<f64> {
-        self.nc()?.psip_last().ok_or(DexterError::AttributeError {
-            obj: "NcCurrent".into(),
-            attr: "psip_last".into(),
-        })
-    }
-
-    pub fn get_array<'py>(&self, py: Python<'py>, name: &str) -> Result<Bound<'py, PyArray1<f64>>> {
+    pub fn get_array<'py>(
+        &self,
+        py: Python<'py>,
+        name: &str,
+    ) -> Result<Option<Bound<'py, PyArray1<f64>>>> {
         let current = self.nc()?;
         match name {
-            "g_array" => return Ok(current.g_array().into_pyarray(py)),
-            "i_array" => return Ok(current.i_array().into_pyarray(py)),
+            "g_array" => Ok(Some(current.g_array().into_pyarray(py))),
+            "i_array" => Ok(Some(current.i_array().into_pyarray(py))),
             "psi_array" => match current.psi_array() {
-                Some(array) => return Ok(array.into_pyarray(py)),
-                None => (),
+                Some(array) => Ok(Some(array.into_pyarray(py))),
+                None => Ok(None),
             },
             "psip_array" => match current.psip_array() {
-                Some(array) => return Ok(array.into_pyarray(py)),
-                None => (),
+                Some(array) => Ok(Some(array.into_pyarray(py))),
+                None => Ok(None),
             },
-            _ => (),
+            _ => Err(DexterError::AttributeError {
+                obj: "NcCurrent".into(),
+                attr: name.into(),
+            }),
         }
-        Err(DexterError::AttributeError {
-            obj: "NcCurrent".into(),
-            attr: name.into(),
-        })
     }
 }
 

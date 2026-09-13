@@ -1,72 +1,10 @@
 """Defines types associated with Particle and Queue initialization."""
 
-from dexter.types import FluxCoordinate, CoordinateSet
+from dexter.machine.utils import MagneticFlux
+from dexter.types import CoordinateSet
 
 from dexter._utils import _ReprStrImpl, _RustTypeWrapper
-from dexter._core import _PyInitialFlux, _PyInitialConditions
-
-
-class InitialFlux(_ReprStrImpl):
-    """Defines the flux coordinate initial value.
-
-    This type is instantiated through the [`Toroidal`][dexter.InitialFlux.Toroidal] and
-    [`Poloidal`][dexter.InitialFlux.Poloidal] class methods.
-    """
-
-    _r: _PyInitialFlux
-
-    def __init__(self) -> None:
-        raise RuntimeError("Cannot instantiate class")
-
-    @classmethod
-    def Toroidal(cls, value: float) -> InitialFlux:
-        r"""Defines the initial value with respect to $\psi$.
-
-        Parameters
-        ----------
-        value
-            The value of the toroidal magnetic flux at the last closed flux surface.
-
-        Example
-        -------
-        ```python title="InitialFlux creation"
-        >>> flux0 = dex.InitialFlux.Toroidal(0.05)
-
-        ```
-        """
-        obj = InitialFlux.__new__(InitialFlux)
-        obj._r = _PyInitialFlux.toroidal(value)
-        return obj
-
-    @classmethod
-    def Poloidal(cls, value: float) -> InitialFlux:
-        r"""Defines the initial value with respect to $\psi_p$.
-
-        Parameters
-        ----------
-        value
-            The value of the poloidal magnetic flux at the last closed flux surface.
-
-        Example
-        -------
-        ```python title="InitialFlux creation"
-        >>> flux0 = dex.InitialFlux.Poloidal(0.05)
-
-        ```
-        """
-        obj = InitialFlux.__new__(InitialFlux)
-        obj._r = _PyInitialFlux.poloidal(value)
-        return obj
-
-    @property
-    def value(self) -> float:
-        """The value of the magnetic flux."""
-        return self._r.value
-
-    @property
-    def kind(self) -> FluxCoordinate:
-        """The kind of the magnetic flux."""
-        return self._r.kind
+from dexter._core import _PyInitialConditions
 
 
 class InitialConditions(_ReprStrImpl, _RustTypeWrapper):
@@ -74,9 +12,34 @@ class InitialConditions(_ReprStrImpl, _RustTypeWrapper):
 
     This type is instantiated through the [`Boozer`][dexter.InitialConditions.Boozer] and
     [`Mixed`][dexter.InitialConditions.Mixed] class methods.
+
+    Attributes
+    ----------
+    t0
+        The initial time $t_0$.
+    flux0
+        The initial magnetic flux $\psi_0$ or $\psi_{p,0}$.
+    theta0
+        The initial $\theta$ angle.
+    theta0
+        The initial $\zeta$ angle.
+    rho0
+        The initial $\rho_{||,0}$. If the set was initialized from [`Mixed`][dexter.InitialConditions.Mixed]
+        and no particle routines have run, then `rho0` is `None`.
+    pzeta0
+        The initial $P_{\zeta,0}$. If the set was initialized from [`Boozer`][dexter.InitialConditions.Boozer]
+        and no particle routines have run, then `pzeta0` is `None`.
+    coordinate_set
+        The kind of initial conditions set.
     """
 
     _r: _PyInitialConditions
+    t0: float
+    flux0: MagneticFlux
+    theta0: float
+    zeta0: float
+    mu0: float
+    coordinate_set: CoordinateSet
 
     def __init__(self) -> None:
         raise RuntimeError("Cannot instantiate class")
@@ -85,7 +48,7 @@ class InitialConditions(_ReprStrImpl, _RustTypeWrapper):
     def Boozer(
         cls,
         t0: float,
-        flux0: InitialFlux,
+        flux0: MagneticFlux,
         theta0: float,
         zeta0: float,
         rho0: float,
@@ -118,7 +81,7 @@ class InitialConditions(_ReprStrImpl, _RustTypeWrapper):
         ```python title="InitialConditions definition in Boozer-Toroidal coordinates"
         >>> initial_conditions = dex.InitialConditions.Boozer(
         ...     t0=0,
-        ...     flux0=dex.InitialFlux.Toroidal(0.01),  # ψ0 = 0.01
+        ...     flux0=dex.MagneticFlux.Toroidal(0.01),  # ψ0 = 0.01
         ...     theta0=3.14,
         ...     zeta0=0,
         ...     rho0=1e-4,
@@ -129,13 +92,20 @@ class InitialConditions(_ReprStrImpl, _RustTypeWrapper):
         """
         obj = InitialConditions.__new__(InitialConditions)
         obj._r = _PyInitialConditions.boozer(t0, flux0._r, theta0, zeta0, rho0, mu0)
+        obj.t0 = obj._r.t0
+        obj.flux0 = MagneticFlux._wrap(obj._r.flux0)
+        obj.theta0 = obj._r.theta0
+        obj.zeta0 = obj._r.zeta0
+        obj.mu0 = obj._r.mu0
+        obj.coordinate_set = obj._r.coordinate_set
+
         return obj
 
     @classmethod
     def Mixed(
         cls,
         t0: float,
-        flux0: InitialFlux,
+        flux0: MagneticFlux,
         theta0: float,
         zeta0: float,
         pzeta0: float,
@@ -166,7 +136,7 @@ class InitialConditions(_ReprStrImpl, _RustTypeWrapper):
         Example
         -------
         ```python title="InitialConditions definition in Mixed-Poloidal coordinates"
-        >>> flux0=dex.InitialFlux.Poloidal(0.02)  # ψ0 = 0.02
+        >>> flux0=dex.MagneticFlux.Poloidal(0.02)  # ψ0 = 0.02
         >>> initial_conditions = dex.InitialConditions.Mixed(
         ...     t0=0,
         ...     flux0=flux0,
@@ -180,29 +150,14 @@ class InitialConditions(_ReprStrImpl, _RustTypeWrapper):
         """
         obj = InitialConditions.__new__(InitialConditions)
         obj._r = _PyInitialConditions.mixed(t0, flux0._r, theta0, zeta0, pzeta0, mu0)
+        obj.t0 = obj._r.t0
+        obj.flux0 = MagneticFlux._wrap(obj._r.flux0)
+        obj.theta0 = obj._r.theta0
+        obj.zeta0 = obj._r.zeta0
+        obj.mu0 = obj._r.mu0
+        obj.coordinate_set = obj._r.coordinate_set
+
         return obj
-
-    @property
-    def t0(self) -> float:
-        """The initial time, in Normalized Units."""
-        return self._r.t0
-
-    @property
-    def flux0(self) -> InitialFlux:
-        r"""The initial $\psi / \psi_p$, in Normalized Units."""
-        initial_flux = InitialFlux.__new__(InitialFlux)
-        initial_flux._r = self._r.flux0
-        return initial_flux
-
-    @property
-    def theta0(self) -> float:
-        r"""The initial $\theta$ angle, in Normalized Units."""
-        return self._r.theta0
-
-    @property
-    def zeta0(self) -> float:
-        r"""The initial $\zeta$ angle, in Normalized Units."""
-        return self._r.zeta0
 
     @property
     def rho0(self) -> float:
@@ -219,13 +174,3 @@ class InitialConditions(_ReprStrImpl, _RustTypeWrapper):
             raise AttributeError("'pzeta0' has not been defined")
         else:
             return self._r.pzeta0
-
-    @property
-    def mu0(self) -> float:
-        r"""The initial magnetic moment $\mu$, in Normalized Units."""
-        return self._r.mu0
-
-    @property
-    def coordinate_set(self) -> CoordinateSet:
-        """The kind of InitialConditions set."""
-        return self._r.coordinate_set

@@ -6,7 +6,7 @@ from typing import TypeAlias
 
 from dexter._core import _PyGeometry
 
-from .utils import LastClosedFluxSurface
+from .utils import MagneticFlux
 from .base import MachineObject, Geometry
 from dexter.types import (
     Array1,
@@ -30,6 +30,11 @@ class LarGeometry(MachineObject, Geometry):
         The horizontal position of the magnetic axis $R_0$ in $[m]$.
     rlast
         The $r$ coordinate's value at the last closed flux surface in $[m]$.
+
+    Attributes
+    ----------
+    psi_last
+        The value of the toroidal flux at the last closed flux surface, in Normalized units.
 
     Notes
     -----
@@ -57,11 +62,15 @@ class LarGeometry(MachineObject, Geometry):
     """
 
     _r: _PyGeometry
+    psi_last: MagneticFlux
 
     def __init__(self, baxis: float, raxis: float, rlast: float) -> None:
         self._r = _PyGeometry.build_lar(baxis, raxis, rlast)
-        super(MachineObject, self).__init__()
-        super(Geometry, self).__init__()
+        MachineObject.__init__(self)
+        Geometry.__init__(self)
+
+        assert self._r.psi_last is not None, "always defined"
+        self.psi_last = MagneticFlux._wrap(self._r.psi_last)
 
 
 class NcGeometry(MachineObject, Geometry):
@@ -78,6 +87,37 @@ class NcGeometry(MachineObject, Geometry):
     interp2d_type
         The 2D interpolation type for the 2D quantities.
 
+    Attributes
+    ----------
+    path
+        The path to the netCDF file.
+    netcdf_version
+        The netCDF file's version (SemVer).
+    interp1d_type
+        The 1D interpolation type.
+    interp2d_type
+        The 2D interpolation type.
+    shape
+        The $(\psi/\psi_p,\theta)$ shape of the 2D arrays.
+    psi_last
+        The value of the last closed toroidal flux $\psi_{LCFS}$.
+    psip_last
+        The value of the last closed toroidal flux $\psi_{LCFS}$.
+    psi_array
+        The toroidal flux' values.
+    psip_array
+        The poloidal flux' values.
+    theta_array
+        The poloidal angle $\theta$ values.
+    r_array
+        The radial coordinate $r$ values, in $[m]$.
+    rlab_array
+        The $R$ values, in $[m]$.
+    zlab_array
+        The $Z$ values, in $[m]$.
+    jacobian_array
+        The Jacobian $J$ values, in $[m]$.
+
     Example
     -------
     ``` py
@@ -87,6 +127,13 @@ class NcGeometry(MachineObject, Geometry):
     """
 
     _r: _PyGeometry
+    path: str
+    netcdf_version: NetCDFVersion
+    interp1d_type: Interpolation1dType
+    interp2d_type: Interpolation2dType
+    shape: ArrayShape
+    psi_last: MagneticFlux | None
+    psip_last: MagneticFlux | None
 
     def __init__(
         self,
@@ -95,67 +142,54 @@ class NcGeometry(MachineObject, Geometry):
         interp2d_type: Interpolation2dType,
     ) -> None:
         self._r = _PyGeometry.build_nc(path, interp1d_type, interp2d_type)
-        super(MachineObject, self).__init__()
-        super(Geometry, self).__init__()
+        MachineObject.__init__(self)
+        Geometry.__init__(self)
+
+        self.path = self._r.path
+        self.netcdf_version = Version.parse(self._r.netcdf_version)
+        self.interp1d_type = self._r.interp1d_type
+        self.interp2d_type = self._r.interp2d_type
+        self.shape = self._r.shape
+
+        last = self._r.psi_last
+        self.psi_last = MagneticFlux._wrap(last) if last is not None else None
+        last = self._r.psip_last
+        self.psip_last = MagneticFlux._wrap(last) if last is not None else None
 
     @property
-    def path(self) -> str:
-        """The path to the NetCDF file."""
-        return self._r.path
-
-    @property
-    def netcdf_version(self) -> NetCDFVersion:
-        """The path to the NetCDF file."""
-        return Version.parse(self._r.netcdf_version)
-
-    @property
-    def interp1d_type(self) -> Interpolation1dType:
-        """The 1D interpolation type."""
-        return self._r.interp1d_type
-
-    @property
-    def interp2d_type(self) -> Interpolation2dType:
-        """The 2D interpolation type."""
-        return self._r.interp2d_type
-
-    @property
-    def shape(self) -> ArrayShape:
-        r"""Returns the $(\psi/\psi_p,\theta)$ shape of the 2D arrays."""
-        return self._r.shape
-
-    @property
-    def psi_array(self) -> Array1:
-        """The toroidal flux's values."""
+    def psi_array(self) -> Array1 | None:
         return self._r.get_array("psi_array")
 
     @property
-    def psip_array(self) -> Array1:
-        """The poloidal flux's values."""
+    def psip_array(self) -> Array1 | None:
         return self._r.get_array("psip_array")
 
     @property
     def theta_array(self) -> Array1:
-        r"""The poloidal angle $\theta$ values."""
-        return self._r.get_array("theta_array")
+        array = self._r.get_array("theta_array")
+        assert array is not None, "theta_array always exists"
+        return array
 
     @property
     def r_array(self) -> Array1:
-        r"""The radial coordinate $r$ values, in $[m]$."""
-        return self._r.get_array("r_array")
+        array = self._r.get_array("r_array")
+        assert array is not None, "r_array always exists"
+        return array
 
     @property
     def rlab_array(self) -> Array2:
-        r"""The $R$ values, in $[m]$."""
-        return self._r.get_array2d("rlab_array")
+        array = self._r.get_array2d("rlab_array")
+        assert array is not None, "rlab_array always exists"
+        return array
 
     @property
     def zlab_array(self) -> Array2:
-        r"""The $Z$ values, in $[m]$."""
-        return self._r.get_array2d("zlab_array")
+        array = self._r.get_array2d("zlab_array")
+        assert array is not None, "zlab_array always exists"
+        return array
 
     @property
-    def jacobian_array(self) -> Array2:
-        r"""The Jacobian $J$ values, in $[m]$."""
+    def jacobian_array(self) -> Array2 | None:
         return self._r.get_array2d("jacobian_array")
 
 

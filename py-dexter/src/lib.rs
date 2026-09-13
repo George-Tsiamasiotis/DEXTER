@@ -15,14 +15,13 @@ use pyo3::prelude::*;
 
 #[pymodule]
 fn _core(m: &Bound<'_, PyModule>) -> PyResult<()> {
-    m.add_class::<machine::PyLastClosedFluxSurface>()?;
+    m.add_class::<machine::PyMagneticFlux>()?;
     m.add_class::<machine::PyGeometry>()?;
     m.add_class::<machine::PyQfactor>()?;
     m.add_class::<machine::PyCurrent>()?;
     m.add_class::<machine::PyBfield>()?;
     m.add_class::<machine::PyMode>()?;
     m.add_class::<machine::PyPerturbation>()?;
-    m.add_class::<simulate::PyInitialFlux>()?;
     m.add_class::<simulate::PyInitialConditions>()?;
     m.add_class::<simulate::PySolverParams>()?;
     m.add_class::<simulate::PyIntersectParams>()?;

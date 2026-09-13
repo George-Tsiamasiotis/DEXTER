@@ -9,7 +9,6 @@ use dexter_simulate::{
 };
 
 fn main() {
-    // Equilibrium setup
     let lcfs = LastClosedFluxSurface::Toroidal(0.45);
     let qfactor = ParabolicQfactor::new(1.1, 3.9, lcfs);
     let current = LarCurrent::new();

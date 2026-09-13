@@ -454,14 +454,14 @@ impl Particle {
     }
 
     /// Calculates the variance of the energy array.
+    ///
+    /// The variance is lazily calculated when this method is called. If the particle has not been
+    /// integrated, it returns `None`.
     #[must_use]
-    pub fn energy_var(&self) -> f64 {
-        // panics otherwise
-        if self.evolution.energy.len() > 2 {
-            self.energy_array().var(1.0)
-        } else {
-            f64::NAN
-        }
+    pub fn energy_var(&self) -> Option<f64> {
+        // `len()` must be larger than 2, panics otherwise
+        // call `energy_array()` since we need an `Array1`
+        (self.evolution.energy.len() > 2).then(|| self.energy_array().var(1.0))
     }
 
     /// Returns the particle's [`EnergyPzetaPosition`].

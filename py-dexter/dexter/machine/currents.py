@@ -6,7 +6,7 @@ from typing import TypeAlias
 
 from dexter._core import _PyCurrent
 
-from .utils import LastClosedFluxSurface
+from .utils import MagneticFlux
 from .base import MachineObject, Current
 from dexter.types import Array1, FluxCoordinateState, Interpolation1dType, NetCDFVersion
 
@@ -30,8 +30,8 @@ class LarCurrent(MachineObject, Current):
 
     def __init__(self) -> None:
         self._r = _PyCurrent.build_lar()
-        super(MachineObject, self).__init__()
-        super(Current, self).__init__()
+        MachineObject.__init__(self)
+        Current.__init__(self)
 
 
 class NcCurrent(MachineObject, Current):
@@ -46,6 +46,23 @@ class NcCurrent(MachineObject, Current):
     interp_type
         The 1D interpolation type.
 
+    Attributes
+    ----------
+    path
+        The path to the netCDF file.
+    netcdf_version
+        The netCDF file's version (SemVer).
+    interp_type
+        The 1D interpolation type.
+    psi_array
+        The toroidal flux' values.
+    psip_array
+        The poloidal flux' values.
+    g_array
+        The poloidal current's $g$ values.
+    i_array
+        The poloidal current's $I$ values.
+
     Example
     -------
     ``` py
@@ -55,56 +72,38 @@ class NcCurrent(MachineObject, Current):
     """
 
     _r: _PyCurrent
+    path: str
+    netcdf_version: NetCDFVersion
+    interp_type: Interpolation1dType
 
     def __init__(self, path: str, interp_type: Interpolation1dType) -> None:
         self._r = _PyCurrent.build_nc(path, interp_type)
-        super(MachineObject, self).__init__()
-        super(Current, self).__init__()
+        MachineObject.__init__(self)
+        Current.__init__(self)
+
+        self.path = self._r.path
+        self.netcdf_version = Version.parse(self._r.netcdf_version)
+        self.interp_type = self._r.interp_type
 
     @property
-    def path(self) -> str:
-        """The path to the NetCDF file."""
-        return self._r.path
-
-    @property
-    def netcdf_version(self) -> NetCDFVersion:
-        """The path to the NetCDF file."""
-        return Version.parse(self._r.netcdf_version)
-
-    @property
-    def interp_type(self) -> Interpolation1dType:
-        """The 1D interpolation type."""
-        return self._r.interp_type
-
-    @property
-    def psi_last(self) -> float:
-        r"""The value of the last closed toroidal flux $\psi_{LCFS}$."""
-        return self._r.psi_last
-
-    @property
-    def psip_last(self) -> float:
-        r"""The value of the last closed toroidal flux $\psi_{p,LCFS}$."""
-        return self._r.psip_last
-
-    @property
-    def psi_array(self) -> Array1:
-        """The toroidal flux's values."""
+    def psi_array(self) -> Array1 | None:
         return self._r.get_array("psi_array")
 
     @property
-    def psip_array(self) -> Array1:
-        """The poloidal flux's values."""
+    def psip_array(self) -> Array1 | None:
         return self._r.get_array("psip_array")
 
     @property
     def g_array(self) -> Array1:
-        """The poloidal plasma current $g$ values."""
-        return self._r.get_array("g_array")
+        array = self._r.get_array("g_array")
+        assert array is not None, "g_array always exists"
+        return array
 
     @property
     def i_array(self) -> Array1:
-        """The toroidal plasma current $I$ values."""
-        return self._r.get_array("i_array")
+        array = self._r.get_array("i_array")
+        assert array is not None, "i_array always exists"
+        return array
 
 
 CurrentObject: TypeAlias = LarCurrent | NcCurrent

@@ -1,73 +1,91 @@
-from dexter._core import _PyLastClosedFluxSurface
+import numpy as np
 
-from dexter.types import FluxCoordinate
-from dexter._utils import _ReprStrImpl
+from dexter._core import _PyMagneticFlux
+
+from dexter.types import MagneticFluxKind, Array1
+from dexter._utils import _ReprStrImpl, _RustTypeWrapper
 
 
-class LastClosedFluxSurface(_ReprStrImpl):
-    """Helper type to define the Last Closed Flux Surface (LCFS) with respect to one of the two fluxes.
+class MagneticFlux(_ReprStrImpl, _RustTypeWrapper):
+    r"""Helper type to define the magnetic flux $\psi$ or $\psi_p$.
 
-    This type is instantiated through the [`Toroidal`][dexter.LastClosedFluxSurface.Toroidal] and
-    [`Poloidal`][dexter.LastClosedFluxSurface.Poloidal] class methods.
+    This type is instantiated through the [`Toroidal`][dexter.MagneticFlux.Toroidal] and
+    [`Poloidal`][dexter.MagneticFlux.Poloidal] class methods.
+
+    Attributes
+    ----------
+    value
+        The MagneticFlux' value, regardless of its kind.
+    kind
+        The MagneticFlux' kind.
     """
 
-    _r: _PyLastClosedFluxSurface
+    _r: _PyMagneticFlux
+    value: float
+    kind: MagneticFluxKind
 
     def __init__(self) -> None:
         raise RuntimeError("Cannot instantiate class")
 
     @classmethod
-    def Toroidal(cls, value: float) -> LastClosedFluxSurface:
-        r"""Defines the Last Closed Flux Surface with respect to $\psi$.
+    def Toroidal(cls, value: float) -> MagneticFlux:
+        r"""Defines a toroidal `MagneticFlux` $\psi$.
 
         Parameters
         ----------
         value
-            The value of the toroidal magnetic flux at the last closed flux surface.
+            The value of the toroidal magnetic flux.
 
         Example
         -------
-        ```python title="LastClosedFluxSurface creation"
-        >>> LCFS = dex.LastClosedFluxSurface.Toroidal(0.05)
+        ```python title="Toroidal MagneticFlux creation"
+        >>> flux = dex.MagneticFlux.Toroidal(0.05)
 
         ```
         """
-        obj = LastClosedFluxSurface.__new__(LastClosedFluxSurface)
-        obj._r = _PyLastClosedFluxSurface.toroidal(value)
+        obj = MagneticFlux.__new__(MagneticFlux)
+        obj._r = _PyMagneticFlux.toroidal(value)
+        obj.value = obj._r.value
+        obj.kind = obj._r.kind
+
         return obj
 
     @classmethod
-    def Poloidal(cls, value: float) -> LastClosedFluxSurface:
-        r"""Defines the Last Closed Flux Surface with respect to $\psi$.
+    def Poloidal(cls, value: float) -> MagneticFlux:
+        r"""Defines a poloidal `MagneticFlux` $\psi_p$.
 
         Parameters
         ----------
         value
-            The value of the toroidal magnetic flux at the last closed flux surface.
+            The value of the poloidal magnetic flux.
 
         Example
         -------
-        ```python title="LastClosedFluxSurface creation"
-        >>> LCFS = dex.LastClosedFluxSurface.Toroidal(0.05)
+        ```python title="Poloidal MagneticFlux creation"
+        >>> flux = dex.MagneticFlux.Poloidal(0.04)
 
         ```
         """
-        obj = LastClosedFluxSurface.__new__(LastClosedFluxSurface)
-        obj._r = _PyLastClosedFluxSurface.poloidal(value)
+        obj = MagneticFlux.__new__(MagneticFlux)
+        obj._r = _PyMagneticFlux.poloidal(value)
+        obj.value = obj._r.value
+        obj.kind = obj._r.kind
+
         return obj
 
-    @property
-    def value(self) -> float:
-        """The value of the magnetic flux."""
-        return self._r.value
-
-    @property
-    def kind(self) -> FluxCoordinate:
-        """The kind of the magnetic flux."""
-        return self._r.kind
+    def __eq__(self, other: object) -> bool:
+        """Returns `true` if both `kind` and `value` of `other` are equal to `self`."""
+        if isinstance(other, MagneticFlux):
+            if self.value == other.value and self.kind == other.kind:
+                return True
+        return False
 
     @classmethod
-    def _wrap(cls, _r: _PyLastClosedFluxSurface) -> LastClosedFluxSurface:
-        new = _PyLastClosedFluxSurface.__new__(cls)
-        new._r = _r
-        return new
+    def _wrap(cls, _r: _PyMagneticFlux) -> MagneticFlux:
+        """Wraps the `_r` type to a `MagneticFlux`."""
+        if _r.kind == "Toroidal":
+            return MagneticFlux.Toroidal(_r.value)
+        elif _r.kind == "Poloidal":
+            return MagneticFlux.Poloidal(_r.value)
+        else:
+            raise RuntimeError("unreachable")

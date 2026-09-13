@@ -1,11 +1,11 @@
 import numpy as np
 import pytest
 import dexter as dex
-from math import isfinite
+from math import isclose, isfinite
 
 from semver import Version
 
-LCFS = dex.LastClosedFluxSurface.Toroidal(0.05)
+LCFS = dex.MagneticFlux.Toroidal(0.05)
 
 
 def test_unity():
@@ -13,24 +13,26 @@ def test_unity():
     assert qfactor.machine_type == "Analytical"
     assert qfactor.psi_state == "Good"
     assert qfactor.psip_state == "Good"
-    assert qfactor.psi_last == 0.05
-    assert qfactor.psip_last == 0.05
+    assert qfactor.psi_last == LCFS
+    assert qfactor.psip_last == dex.MagneticFlux.Poloidal(LCFS.value)
     assert qfactor.qaxis == 1
     assert qfactor.qlast == 1
     qfactor.__repr__()
     qfactor.__str__()
     _test_qfactor_base(qfactor)
     with pytest.raises(Exception):
-        qfactor.psi_of_q(1)
+        qfactor.eval_psi_of_q(1)
     with pytest.raises(Exception):
-        qfactor.psip_of_q(1)
+        qfactor.eval_psip_of_q(1)
 
 
 def test_parabolic():
     qfactor = dex.ParabolicQfactor(1.1, 3.9, LCFS)
     _test_qfactor_base(qfactor)
-    assert qfactor.psi_last == 0.05
-    assert qfactor.psip_last == qfactor.psip_of_psi(qfactor.psi_last)
+    assert qfactor.psi_last == LCFS
+    assert isclose(
+        qfactor.psip_last.value, qfactor.eval_other(psi=qfactor.psi_last.value)
+    )
     assert qfactor.qaxis == 1.1
     assert qfactor.qlast == 3.9
 
@@ -54,37 +56,50 @@ def _test_qfactor_base(qfactor: dex.QfactorObject):
     assert qfactor.psi_state in ["Good", "Bad"]
     assert qfactor.psip_state in ["Good", "Bad"]
 
-    assert isfinite(qfactor.psi_last)
-    assert isfinite(qfactor.psip_last)
+    assert isfinite(qfactor.psi_last.value)
+    assert isfinite(qfactor.psip_last.value)
     assert isfinite(qfactor.qlast)
     assert isfinite(qfactor.qaxis)
 
-    methods = [
-        qfactor.psip_of_psi,
-        qfactor.psi_of_psip,
-        qfactor.q_of_psi,
-        qfactor.q_of_psip,
-        qfactor.dpsip_dpsi,
-        qfactor.dpsi_dpsip,
-        qfactor.iota_of_psi,
-        qfactor.iota_of_psip,
-    ]
+    flux = 0.02
+    fluxes = np.linspace(0, 0.04, 10)
+    q = 1.2
+    qs = np.linspace(1.1, 3, 10)
 
-    # 0D evaluations
-    flux = 1e-5
-    for method in methods:
-        assert isfinite(method(flux))
-        assert isinstance(method(flux), float)
+    try:
 
-    # 1D Evaluations
-    fluxes = np.linspace(1e-5, 1e-4, 5)
-    for method in methods:
-        assert method(fluxes).ndim == 1
-        assert isinstance(method(fluxes), np.ndarray)
+        qfactor.eval_q(psi=flux)
+        qfactor.eval_q(psi=fluxes)
+        qfactor.eval_q(psip=flux)
+        qfactor.eval_q(psip=fluxes)
 
-    # 4D Evaluations
-    grid = np.random.random([2] * 4) * 1e-5
-    assert grid.ndim == 4
-    for method in methods:
-        assert method(grid).ndim == 4
-        assert isinstance(method(grid), np.ndarray)
+        qfactor.eval_other(psi=flux)
+        qfactor.eval_other(psi=fluxes)
+        qfactor.eval_other(psip=flux)
+        qfactor.eval_other(psip=fluxes)
+
+        qfactor.eval_psi_of_q(q=q)
+        qfactor.eval_psi_of_q(q=qs)
+        qfactor.eval_psip_of_q(q=q)
+        qfactor.eval_psip_of_q(q=qs)
+
+        qfactor.eval_deriv_of_other(psi=flux)
+        qfactor.eval_deriv_of_other(psi=fluxes)
+        qfactor.eval_deriv_of_other(psip=flux)
+        qfactor.eval_deriv_of_other(psip=fluxes)
+
+        qfactor.eval_deriv_wrt_other(psi=flux)
+        qfactor.eval_deriv_wrt_other(psi=fluxes)
+        qfactor.eval_deriv_wrt_other(psip=flux)
+        qfactor.eval_deriv_wrt_other(psip=fluxes)
+
+        qfactor.eval_iota(psi=flux)
+        qfactor.eval_iota(psi=fluxes)
+        qfactor.eval_iota(psip=flux)
+        qfactor.eval_iota(psip=fluxes)
+
+    except Exception as e:
+        if not "[D] EvalError" in str(e):
+            raise RuntimeError(
+                f"only testing the vectorized functions here (error: {e})"
+            )

@@ -48,7 +48,6 @@ pub(crate) struct GCState {
     pub(crate) pzeta: f64,
     pub(crate) energy: f64,
 
-    // Equilibrium quantities
     b: f64,
     q: f64,
     g: f64,

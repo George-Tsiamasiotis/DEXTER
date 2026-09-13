@@ -5,7 +5,7 @@ from math import isclose, isfinite
 
 
 def test_integrate_analytical(lar_machine_perturbed: dex.Machine):
-    flux0 = dex.InitialFlux.Toroidal(0.01)
+    flux0 = dex.MagneticFlux.Toroidal(0.01)
     initial = dex.InitialConditions.Boozer(0, flux0, 1, 2, 1e-4, 1e-6)
     particle = dex.Particle(initial)
     particle.integrate(lar_machine_perturbed, (0, 1e3))
@@ -13,7 +13,7 @@ def test_integrate_analytical(lar_machine_perturbed: dex.Machine):
 
 
 def test_intersect_analytical(lar_machine_perturbed: dex.Machine):
-    flux0 = dex.InitialFlux.Toroidal(0.025)
+    flux0 = dex.MagneticFlux.Toroidal(0.025)
     initial = dex.InitialConditions.Boozer(0, flux0, 1, 2, 1e-6, 1e-7)
     particle = dex.Particle(initial)
     particle.intersect(lar_machine_perturbed, "ConstZeta", angle=0, turns=2)
@@ -21,7 +21,7 @@ def test_intersect_analytical(lar_machine_perturbed: dex.Machine):
 
 
 def test_close_analytical(lar_machine: dex.Machine):
-    flux0 = dex.InitialFlux.Toroidal(0.01)
+    flux0 = dex.MagneticFlux.Toroidal(0.01)
     initial = dex.InitialConditions.Boozer(0, flux0, 1, 2, 1e-4, 1e-6)
     particle = dex.Particle(initial)
     particle.close(lar_machine)
@@ -29,14 +29,14 @@ def test_close_analytical(lar_machine: dex.Machine):
 
 
 def test_classify_analytical(lar_machine: dex.Machine):
-    flux0 = dex.InitialFlux.Toroidal(0.01)
+    flux0 = dex.MagneticFlux.Toroidal(0.01)
     initial = dex.InitialConditions.Boozer(0, flux0, 1, 2, 1e-4, 1e-6)
     particle = dex.Particle(initial)
     particle.classify(lar_machine)
 
 
 def test_getters(lar_machine: dex.Machine):
-    flux0 = dex.InitialFlux.Toroidal(0.01)
+    flux0 = dex.MagneticFlux.Toroidal(0.01)
     initial = dex.InitialConditions.Boozer(0, flux0, 1, 2, 1e-4, 1e-6)
     particle = dex.Particle(initial)
     particle.close(lar_machine)

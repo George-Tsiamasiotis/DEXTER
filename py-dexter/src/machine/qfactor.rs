@@ -35,7 +35,7 @@ pub enum PyQfactor {
 #[pymethods] // Builders
 impl PyQfactor {
     #[classmethod]
-    pub fn build_unity<'py>(_: Bound<'py, PyType>, lcfs: &PyLastClosedFluxSurface) -> Result<Self> {
+    pub fn build_unity<'py>(_: Bound<'py, PyType>, lcfs: &PyMagneticFlux) -> Result<Self> {
         let inner = PyUnityQfactor(Arc::new(UnityQfactor::new(lcfs.0)));
         Ok(Self::Unity(inner))
     }
@@ -45,7 +45,7 @@ impl PyQfactor {
         _: Bound<'py, PyType>,
         qaxis: f64,
         qlast: f64,
-        lcfs: &PyLastClosedFluxSurface,
+        lcfs: &PyMagneticFlux,
     ) -> Result<Self> {
         let inner = PyParabolicQfactor(Arc::new(ParabolicQfactor::new(qaxis, qlast, lcfs.0)));
         Ok(Self::Parabolic(inner))
@@ -105,7 +105,7 @@ impl PyQfactor {
 
 // ===============================================================================================
 
-#[pymethods] // EquilibriumObject Trait
+#[pymethods] // MachineObject Trait
 impl PyQfactor {
     #[getter]
     pub fn machine_type(&self) -> String {
@@ -123,27 +123,16 @@ impl PyQfactor {
     }
 }
 
-#[pymethods] // FluxCommute Trait
-impl PyQfactor {
-    pub fn psip_of_psi(&self, psi: f64) -> Result<f64> {
-        Ok(self.inner().psip_of_psi(psi, &mut Accelerator::new())?)
-    }
-
-    pub fn psi_of_psip(&self, psip: f64) -> Result<f64> {
-        Ok(self.inner().psi_of_psip(psip, &mut Accelerator::new())?)
-    }
-}
-
 #[pymethods] // Qfactor Trait
 impl PyQfactor {
     #[getter]
-    pub fn psi_last(&self) -> f64 {
-        self.inner().psi_last()
+    pub fn psi_last(&self) -> PyMagneticFlux {
+        self.inner().psi_last().into()
     }
 
     #[getter]
-    pub fn psip_last(&self) -> f64 {
-        self.inner().psip_last()
+    pub fn psip_last(&self) -> PyMagneticFlux {
+        self.inner().psip_last().into()
     }
 
     #[getter]
@@ -156,46 +145,60 @@ impl PyQfactor {
         self.inner().qaxis()
     }
 
-    pub fn q_of_psi(&self, psi: f64) -> Result<f64> {
-        Ok(self.inner().q_of_psi(psi, &mut Accelerator::new())?)
+    pub fn eval_q(&self, psi: f64, psip: f64) -> Result<f64> {
+        let flux = flux_from_params(psi, psip);
+        Ok(self.inner().eval_q(flux, &mut Accelerator::new())?)
     }
 
-    pub fn q_of_psip(&self, psip: f64) -> Result<f64> {
-        Ok(self.inner().q_of_psip(psip, &mut Accelerator::new())?)
+    pub fn eval_other(&self, psi: f64, psip: f64) -> Result<f64> {
+        let flux = flux_from_params(psi, psip);
+        Ok(self
+            .inner()
+            .eval_other(flux, &mut Accelerator::new())?
+            .value())
     }
 
-    pub fn dpsip_dpsi(&self, psi: f64) -> Result<f64> {
-        Ok(self.inner().dpsip_dpsi(psi, &mut Accelerator::new())?)
+    pub fn eval_psi_of_q(&self, q: f64) -> Result<f64> {
+        Ok(self
+            .inner()
+            .eval_psi_of_q(q, &mut Accelerator::new())?
+            .value())
     }
 
-    pub fn dpsi_dpsip(&self, psip: f64) -> Result<f64> {
-        Ok(self.inner().dpsi_dpsip(psip, &mut Accelerator::new())?)
+    pub fn eval_psip_of_q(&self, q: f64) -> Result<f64> {
+        Ok(self
+            .inner()
+            .eval_psip_of_q(q, &mut Accelerator::new())?
+            .value())
     }
 
-    pub fn psi_of_q(&self, q: f64) -> Result<f64> {
-        Ok(self.inner().psi_of_q(q, &mut Accelerator::new())?)
+    pub fn eval_deriv_of_other(&self, psi: f64, psip: f64) -> Result<f64> {
+        let flux = flux_from_params(psi, psip);
+        Ok(self
+            .inner()
+            .eval_deriv_of_other(flux, &mut Accelerator::new())?)
     }
 
-    pub fn psip_of_q(&self, q: f64) -> Result<f64> {
-        Ok(self.inner().psip_of_q(q, &mut Accelerator::new())?)
+    pub fn eval_deriv_wrt_other(&self, psi: f64, psip: f64) -> Result<f64> {
+        let flux = flux_from_params(psi, psip);
+        Ok(self
+            .inner()
+            .eval_deriv_wrt_other(flux, &mut Accelerator::new())?)
     }
 
-    pub fn iota_of_psi(&self, psi: f64) -> Result<f64> {
-        Ok(self.inner().iota_of_psi(psi, &mut Accelerator::new())?)
-    }
-
-    pub fn iota_of_psip(&self, psip: f64) -> Result<f64> {
-        Ok(self.inner().iota_of_psip(psip, &mut Accelerator::new())?)
+    pub fn eval_iota(&self, psi: f64, psip: f64) -> Result<f64> {
+        let flux = flux_from_params(psi, psip);
+        Ok(self.inner().eval_iota(flux, &mut Accelerator::new())?)
     }
 }
 
 // ===============================================================================================
 
-// #[pymethods] // Unity
-// impl PyQfactor {}
-//
-// #[pymethods] // Parabolic
-// impl PyQfactor {}
+#[pymethods] // Unity
+impl PyQfactor {}
+
+#[pymethods] // Parabolic
+impl PyQfactor {}
 
 #[pymethods] // Nc
 impl PyQfactor {
@@ -216,22 +219,18 @@ impl PyQfactor {
 
     pub fn get_array<'py>(&self, py: Python<'py>, name: &str) -> Result<Bound<'py, PyArray1<f64>>> {
         let qfactor = self.nc()?;
-        match name {
-            "q_array" => return Ok(qfactor.q_array().into_pyarray(py)),
-            "psi_array" => match qfactor.psi_array() {
-                Some(array) => return Ok(array.into_pyarray(py)),
-                None => (),
-            },
-            "psip_array" => match qfactor.psip_array() {
-                Some(array) => return Ok(array.into_pyarray(py)),
-                None => (),
-            },
-            _ => (),
-        }
-        Err(DexterError::AttributeError {
-            obj: "NcQfactor".into(),
-            attr: name.into(),
-        })
+        let array = match name {
+            "q_array" => qfactor.q_array(),
+            "psi_array" => qfactor.psi_array(),
+            "psip_array" => qfactor.psip_array(),
+            _ => {
+                return Err(DexterError::AttributeError {
+                    obj: "NcQfactor".into(),
+                    attr: name.into(),
+                });
+            }
+        };
+        Ok(array.into_pyarray(py))
     }
 }
 

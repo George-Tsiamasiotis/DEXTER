@@ -51,7 +51,7 @@ def nc_flute_mode() -> dex.NcFluteMode:
 @pytest.fixture(scope="session")
 def lar_machine() -> dex.Machine:
     """Creates a typical LAR configuration."""
-    LCFS = dex.LastClosedFluxSurface.Toroidal(0.03)
+    LCFS = dex.MagneticFlux.Toroidal(0.03)
     raxis = 1.75
     rlast = sqrt(2 * LCFS.value) * raxis  # [m]
     return dex.Machine(
@@ -63,9 +63,9 @@ def lar_machine() -> dex.Machine:
 
 
 @pytest.fixture(scope="session")
-def lar_machine_perturbed(lar_machine: dex.Machine) -> dex.Machine:
+def lar_machine_perturbed() -> dex.Machine:
     """Creates a typical LAR configuration with two flute modes."""
-    LCFS = dex.LastClosedFluxSurface.Toroidal(0.03)
+    LCFS = dex.MagneticFlux.Toroidal(0.03)
     raxis = 1.75
     rlast = sqrt(2 * LCFS.value) * raxis  # [m]
     return dex.Machine(
@@ -79,4 +79,24 @@ def lar_machine_perturbed(lar_machine: dex.Machine) -> dex.Machine:
                 dex.FluteMode(1e-4, LCFS, 3, 2, 0),
             ]
         ),
+    )
+
+
+@pytest.fixture(scope="session")
+def nc_machine_perturbed(
+    nc_geometry: dex.NcGeometry,
+    nc_qfactor: dex.NcQfactor,
+    nc_current: dex.NcCurrent,
+    nc_bfield: dex.NcBfield,
+    nc_flute_mode: dex.NcFluteMode,
+) -> dex.Machine:
+    """Creates a typical Nc configuration with one flute mode."""
+    LCFS = nc_geometry.psi_last
+    assert LCFS is not None
+    return dex.Machine(
+        geometry=nc_geometry,
+        qfactor=nc_qfactor,
+        current=nc_current,
+        bfield=nc_bfield,
+        perturbation=dex.Perturbation([nc_flute_mode]),
     )

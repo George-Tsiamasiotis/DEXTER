@@ -170,7 +170,7 @@ impl Geometry for LarGeometry {
     ) -> Result<f64, EvalError> {
         debug_assert_non_negative_flux!(flux);
         let msg = format!("J({}, θ) (defined through q, g, I and B)", flux.symbol());
-        Err(EvalError::UndefinedEvaluation(msg.into()))
+        Err(EvalError::UndefinedEvaluation(msg))
     }
 
     fn rlab_last(&self) -> Array1<f64> {

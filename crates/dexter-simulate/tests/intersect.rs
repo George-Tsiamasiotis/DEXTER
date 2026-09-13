@@ -36,7 +36,7 @@ fn gc_toroidal_intersect_uniQ_larC_larB_noP() {
     assert!(matches!(particle.integration_status(), IntegrationStatus::Intersected));
     assert_eq!(particle.steps_stored(), 10);
     assert!(particle.steps_taken() > 10);
-    assert!(particle.energy_var() < 1e-20);
+    assert!(particle.energy_var().unwrap() < 1e-20);
     assert_relative_eq!(particle.initial_energy().unwrap(), particle.final_energy().unwrap(), epsilon = 1e-8);
 
     check_integrated_particle_arrays(&particle);
@@ -52,7 +52,7 @@ fn gc_toroidal_intersect_uniQ_larC_larB_noP() {
     assert!(matches!(particle.integration_status(), IntegrationStatus::Intersected));
     assert_eq!(particle.steps_stored(), 10);
     assert!(particle.steps_taken() > 10);
-    assert!(particle.energy_var() < 1e-20);
+    assert!(particle.energy_var().unwrap() < 1e-20);
     assert_relative_eq!(particle.initial_energy().unwrap(), particle.final_energy().unwrap(), epsilon = 1e-8);
 
     check_integrated_particle_arrays(&particle);
@@ -83,7 +83,7 @@ fn gc_poloidal_intersect_ncdQ_ncdC_ncdB_noP() {
     assert!(matches!(particle.integration_status(), IntegrationStatus::Intersected));
     assert!(particle.steps_stored() == 3);
     assert!(particle.steps_taken() > 3);
-    assert!(particle.energy_var() < 1e-20);
+    assert!(particle.energy_var().unwrap() < 1e-20);
     assert_relative_eq!(particle.initial_energy().unwrap(), particle.final_energy().unwrap(), epsilon = 1e-8);
 
     check_integrated_particle_arrays(&particle);
@@ -100,7 +100,7 @@ fn gc_poloidal_intersect_ncdQ_ncdC_ncdB_noP() {
     assert!(matches!(particle.integration_status(), IntegrationStatus::Intersected));
     assert!(particle.steps_stored() == 3);
     assert!(particle.steps_taken() > 3);
-    assert!(particle.energy_var() < 1e-20);
+    assert!(particle.energy_var().unwrap() < 1e-20);
     assert_relative_eq!(particle.initial_energy().unwrap(), particle.final_energy().unwrap(), epsilon = 1e-8);
 
     check_integrated_particle_arrays(&particle);

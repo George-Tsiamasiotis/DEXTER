@@ -2,8 +2,8 @@
 
 use crate::{
     debug_assert_is_finite, debug_assert_non_negative_flux, debug_assert_non_negative_psi,
-    debug_assert_non_negative_psip, fluxes_values_array_getter_impl, interp_type_getter_impl,
-    netcdf_path_getter_impl, netcdf_version_getter_impl,
+    debug_assert_non_negative_psip, interp_type_getter_impl, netcdf_path_getter_impl,
+    netcdf_version_getter_impl,
 };
 use core::hint::cold_path;
 use ndarray::Array1;
@@ -648,14 +648,14 @@ impl Qfactor for NcQfactor {
     }
 
     fn qlast(&self) -> f64 {
-        self.q_array()
+        self.q_values
             .last()
             .copied()
             .expect("'q' array is non-empty")
     }
 
     fn qaxis(&self) -> f64 {
-        self.q_array()
+        self.q_values
             .first()
             .copied()
             .expect("'q' array is non-empty")
@@ -787,10 +787,33 @@ impl Qfactor for NcQfactor {
 
 /// Getters.
 impl NcQfactor {
+    /// Returns the toroidal flux's values as a 1D array.
+    #[must_use]
+    #[expect(clippy::missing_panics_doc, reason = "expect")]
+    pub fn psi_array(&self) -> Array1<f64> {
+        Array1::from(
+            self.psi
+                .values()
+                .expect("both flux values are guaranteed to exist by construction")
+                .to_vec(),
+        )
+    }
+
+    /// Returns the poloidal flux's values as a 1D array.
+    #[must_use]
+    #[expect(clippy::missing_panics_doc, reason = "expect")]
+    pub fn psip_array(&self) -> Array1<f64> {
+        Array1::from(
+            self.psip
+                .values()
+                .expect("both flux values are guaranteed to exist by construction")
+                .to_vec(),
+        )
+    }
+
     netcdf_path_getter_impl!();
     netcdf_version_getter_impl!();
     interp_type_getter_impl!(1);
-    fluxes_values_array_getter_impl!();
     array1D_getter_impl!(q_array, q_values, q);
 }
 
@@ -1041,8 +1064,8 @@ mod test_toroidal_nc_evals {
         assert!(qfactor.psip_of_psi_interp.is_some());
         assert!(qfactor.psi_of_psip_interp.is_none());
 
-        assert!(qfactor.psi_array().is_some());
-        assert!(qfactor.psip_array().is_some());
+        let _ = qfactor.psi_array();
+        let _ = qfactor.psip_array();
     }
 
     #[test]
@@ -1106,8 +1129,8 @@ mod test_poloidal_nc_evals {
         assert!(qfactor.psip_of_psi_interp.is_none());
         assert!(qfactor.psi_of_psip_interp.is_some());
 
-        assert!(qfactor.psi_array().is_some());
-        assert!(qfactor.psip_array().is_some());
+        let _ = qfactor.psi_array();
+        let _ = qfactor.psip_array();
     }
 
     #[test]

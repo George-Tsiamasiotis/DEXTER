@@ -85,8 +85,8 @@ fn nc_qfactor() {
     let qlast: f64 = qfactor.qlast();
     let psi_last: MagneticFlux = qfactor.psi_last();
     let psip_last: MagneticFlux = qfactor.psip_last();
-    let psi_array: Array1<f64> = qfactor.psi_array().unwrap();
-    let psip_array: Array1<f64> = qfactor.psip_array().unwrap();
+    let psi_array: Array1<f64> = qfactor.psi_array();
+    let psip_array: Array1<f64> = qfactor.psip_array();
     let q_array: Array1<f64> = qfactor.q_array();
 
     let mut acc = Accelerator::new();

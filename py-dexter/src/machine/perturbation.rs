@@ -44,65 +44,31 @@ impl PyPerturbation {
 // ===============================================================================================
 
 #[pymethods] // Evaluations
+#[rustfmt::skip]
 impl PyPerturbation {
-    pub fn p_of_psi(&self, psi: f64, theta: f64, zeta: f64, t: f64) -> Result<f64> {
-        Ok(self
-            .0
-            .p_of_psi(psi, theta, zeta, t, &mut self.0.generate_caches())?)
+    pub fn eval_p(&self, theta: f64, zeta: f64, t: f64, psi:f64, psip: f64) -> Result<f64> {
+        let flux = flux_from_params(psi, psip);
+        Ok(self.0.eval_p(flux, theta, zeta, t, &mut self.0.generate_caches())?)
     }
 
-    pub fn p_of_psip(&self, psip: f64, theta: f64, zeta: f64, t: f64) -> Result<f64> {
-        Ok(self
-            .0
-            .p_of_psip(psip, theta, zeta, t, &mut self.0.generate_caches())?)
+    pub fn eval_deriv_flux(&self, theta: f64, zeta: f64, t: f64, psi:f64, psip: f64) -> Result<f64> {
+        let flux = flux_from_params(psi, psip);
+        Ok(self.0.eval_deriv_flux(flux, theta, zeta, t, &mut self.0.generate_caches())?)
     }
 
-    pub fn dp_dpsi(&self, psi: f64, theta: f64, zeta: f64, t: f64) -> Result<f64> {
-        Ok(self
-            .0
-            .dp_dpsi(psi, theta, zeta, t, &mut self.0.generate_caches())?)
+    pub fn eval_deriv_theta(&self, theta: f64, zeta: f64, t: f64, psi:f64, psip: f64) -> Result<f64> {
+        let flux = flux_from_params(psi, psip);
+        Ok(self.0.eval_deriv_theta(flux, theta, zeta, t, &mut self.0.generate_caches())?)
     }
 
-    pub fn dp_dpsip(&self, psip: f64, theta: f64, zeta: f64, t: f64) -> Result<f64> {
-        Ok(self
-            .0
-            .dp_dpsip(psip, theta, zeta, t, &mut self.0.generate_caches())?)
+    pub fn eval_deriv_zeta(&self, theta: f64, zeta: f64, t: f64, psi:f64, psip: f64) -> Result<f64> {
+        let flux = flux_from_params(psi, psip);
+        Ok(self.0.eval_deriv_zeta(flux, theta, zeta, t, &mut self.0.generate_caches())?)
     }
 
-    pub fn dp_of_psi_dtheta(&self, psi: f64, theta: f64, zeta: f64, t: f64) -> Result<f64> {
-        Ok(self
-            .0
-            .dp_of_psi_dtheta(psi, theta, zeta, t, &mut self.0.generate_caches())?)
-    }
-
-    pub fn dp_of_psip_dtheta(&self, psip: f64, theta: f64, zeta: f64, t: f64) -> Result<f64> {
-        Ok(self
-            .0
-            .dp_of_psip_dtheta(psip, theta, zeta, t, &mut self.0.generate_caches())?)
-    }
-
-    pub fn dp_of_psi_dzeta(&self, psi: f64, theta: f64, zeta: f64, t: f64) -> Result<f64> {
-        Ok(self
-            .0
-            .dp_of_psi_dzeta(psi, theta, zeta, t, &mut self.0.generate_caches())?)
-    }
-
-    pub fn dp_of_psip_dzeta(&self, psip: f64, theta: f64, zeta: f64, t: f64) -> Result<f64> {
-        Ok(self
-            .0
-            .dp_of_psip_dzeta(psip, theta, zeta, t, &mut self.0.generate_caches())?)
-    }
-
-    pub fn dp_of_psi_dt(&self, psi: f64, theta: f64, zeta: f64, t: f64) -> Result<f64> {
-        Ok(self
-            .0
-            .dp_of_psi_dt(psi, theta, zeta, t, &mut self.0.generate_caches())?)
-    }
-
-    pub fn dp_of_psip_dt(&self, psip: f64, theta: f64, zeta: f64, t: f64) -> Result<f64> {
-        Ok(self
-            .0
-            .dp_of_psip_dt(psip, theta, zeta, t, &mut self.0.generate_caches())?)
+    pub fn eval_deriv_t(&self, theta: f64, zeta: f64, t: f64, psi:f64, psip: f64) -> Result<f64> {
+        let flux = flux_from_params(psi, psip);
+        Ok(self.0.eval_deriv_t(flux, theta, zeta, t, &mut self.0.generate_caches())?)
     }
 }
 

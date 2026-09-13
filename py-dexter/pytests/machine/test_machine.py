@@ -4,7 +4,7 @@ from math import isclose
 
 
 def test_analytical():
-    lcfs = dex.LastClosedFluxSurface.Toroidal(0.05)
+    lcfs = dex.MagneticFlux.Toroidal(0.05)
     machine = dex.Machine(
         geometry=dex.LarGeometry(2, 1.75, 0.5),
         qfactor=dex.UnityQfactor(lcfs),
@@ -22,8 +22,8 @@ def test_analytical():
     assert machine.rlast == 0.5
     assert machine.zaxis == 0
     assert machine.rgeo == machine.raxis
-    assert isinstance(machine.psi_last, float)
-    assert isinstance(machine.psip_last, float)
+    assert isinstance(machine.psi_last, dex.MagneticFlux)
+    assert isinstance(machine.psip_last, dex.MagneticFlux)
     assert isinstance(machine.geometry, dex.GeometryObject)
     assert isinstance(machine.qfactor, dex.QfactorObject)
     assert isinstance(machine.current, dex.CurrentObject)
@@ -34,7 +34,7 @@ def test_analytical():
 
 
 def test_analytical_no_geometry():
-    lcfs = dex.LastClosedFluxSurface.Toroidal(0.05)
+    lcfs = dex.MagneticFlux.Toroidal(0.05)
     machine = dex.Machine(
         qfactor=dex.UnityQfactor(lcfs),
         current=dex.LarCurrent(),
@@ -46,10 +46,9 @@ def test_analytical_no_geometry():
             ]
         ),
     )
-    assert isinstance(machine.psi_last, float)
-    assert isinstance(machine.psip_last, float)
-    with pytest.raises(AttributeError):
-        machine.geometry
+    assert isinstance(machine.psi_last, dex.MagneticFlux)
+    assert isinstance(machine.psip_last, dex.MagneticFlux)
+    assert machine.geometry is None
     with pytest.raises(AttributeError):
         machine.baxis
     with pytest.raises(AttributeError):
@@ -67,7 +66,7 @@ def test_analytical_no_geometry():
 
 
 def test_normalizations():
-    lcfs = dex.LastClosedFluxSurface.Toroidal(0.05)
+    lcfs = dex.MagneticFlux.Toroidal(0.05)
     machine = dex.Machine(
         geometry=dex.LarGeometry(2, 1.75, 0.5),
         qfactor=dex.UnityQfactor(lcfs),
@@ -84,7 +83,7 @@ def test_normalizations():
 
 def test_gcmotion_units():
     geometry = dex.LarGeometry(3.5, 1.75, 0.5)
-    LCFS = dex.LastClosedFluxSurface.Toroidal(geometry.psi_last)
+    LCFS = dex.MagneticFlux.Toroidal(geometry.psi_last.value)
     machine = dex.Machine(
         geometry=geometry,
         qfactor=dex.UnityQfactor(LCFS),

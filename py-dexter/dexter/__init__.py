@@ -8,7 +8,7 @@ from dexter.types import (
     ArrayShape,
     MachineType,
     NetCDFVersion,
-    FluxCoordinate,
+    MagneticFluxKind,
     FluxCoordinateState,
     Interpolation1dType,
     Interpolation2dType,
@@ -22,7 +22,7 @@ from dexter.types import (
 )
 
 
-from dexter.machine.utils import LastClosedFluxSurface
+from dexter.machine.utils import MagneticFlux
 
 from dexter.machine.geometries import GeometryObject, LarGeometry, NcGeometry
 from dexter.machine.qfactors import (
@@ -37,7 +37,7 @@ from dexter.machine.modes import ModeObject, FluteMode, NcFluteMode
 from dexter.machine.perturbation import Perturbation
 from dexter.machine.machine import Machine
 
-from dexter.simulate.initial import InitialFlux, InitialConditions
+from dexter.simulate.initial import InitialConditions
 from dexter.simulate.particle import Particle
 
 __all__ = [
@@ -49,7 +49,7 @@ __all__ = [
     "ArrayShape",
     "MachineType",
     "NetCDFVersion",
-    "FluxCoordinate",
+    "MagneticFluxKind",
     "FluxCoordinateState",
     "Interpolation1dType",
     "Interpolation2dType",
@@ -66,7 +66,7 @@ __all__ = [
     "CurrentObject",
     "BfieldObject",
     "ModeObject",
-    "LastClosedFluxSurface",
+    "MagneticFlux",
     "LarGeometry",
     "NcGeometry",
     "UnityQfactor",
@@ -81,7 +81,6 @@ __all__ = [
     "Perturbation",
     "Machine",
     # Simulate
-    "InitialFlux",
     "InitialConditions",
     "Particle",
 ]

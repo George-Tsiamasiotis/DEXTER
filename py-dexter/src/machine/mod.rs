@@ -14,23 +14,26 @@ pub use mode::*;
 pub use perturbation::*;
 pub use qfactor::*;
 
-use crate::*;
+use crate::{impl_py_repr, wrapper_debug_export};
 use dexter::dexter_machine::*;
 use pyo3::{prelude::*, types::PyType};
 
-#[pyclass(name = "_PyLastClosedFluxSurface", frozen, immutable_type)]
-pub struct PyLastClosedFluxSurface(pub LastClosedFluxSurface);
+// ===============================================================================================
+
+#[pyclass(name = "_PyMagneticFlux", frozen, immutable_type)]
+#[derive(PartialEq)]
+pub struct PyMagneticFlux(pub(crate) MagneticFlux);
 
 #[pymethods]
-impl PyLastClosedFluxSurface {
+impl PyMagneticFlux {
     #[classmethod]
     pub fn toroidal(_: &Bound<'_, PyType>, value: f64) -> PyResult<Self> {
-        Ok(Self(LastClosedFluxSurface::Toroidal(value)))
+        Ok(Self(MagneticFlux::Toroidal(value)))
     }
 
     #[classmethod]
     pub fn poloidal(_: &Bound<'_, PyType>, value: f64) -> PyResult<Self> {
-        Ok(Self(LastClosedFluxSurface::Poloidal(value)))
+        Ok(Self(MagneticFlux::Poloidal(value)))
     }
 
     #[getter]
@@ -40,11 +43,15 @@ impl PyLastClosedFluxSurface {
 
     #[getter]
     pub fn kind(&self) -> String {
-        match self.0 {
-            LastClosedFluxSurface::Toroidal(_) => "Toroidal".into(),
-            LastClosedFluxSurface::Poloidal(_) => "Poloidal".into(),
-        }
+        self.0.kind().into()
     }
 }
 
-impl_py_repr!(PyLastClosedFluxSurface, simple);
+impl From<MagneticFlux> for PyMagneticFlux {
+    fn from(value: MagneticFlux) -> Self {
+        Self(value)
+    }
+}
+
+wrapper_debug_export!(PyMagneticFlux);
+impl_py_repr!(PyMagneticFlux, simple);

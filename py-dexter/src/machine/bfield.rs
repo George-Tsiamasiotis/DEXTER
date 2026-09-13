@@ -83,7 +83,7 @@ impl PyBfield {
 
 // ===============================================================================================
 
-#[pymethods] // EquilibriumObject Trait
+#[pymethods] // MachineObject Trait
 impl PyBfield {
     #[getter]
     pub fn machine_type(&self) -> String {
@@ -102,37 +102,33 @@ impl PyBfield {
 }
 
 #[pymethods] // Bfield Trait
-#[rustfmt::skip]
 impl PyBfield {
-    pub fn b_of_psi(&self, psi: f64, theta: f64) -> Result<f64> {
-        Ok(self.inner().b_of_psi(psi, theta, &mut Accelerator2d::new())?)
+    pub fn eval_b(&self, theta: f64, psi: f64, psip: f64) -> Result<f64> {
+        let flux = flux_from_params(psi, psip);
+        Ok(self
+            .inner()
+            .eval_b(flux, theta, &mut Accelerator2d::new())?)
     }
 
-    pub fn b_of_psip(&self, psip: f64, theta: f64) -> Result<f64> {
-        Ok(self.inner().b_of_psip(psip, theta, &mut Accelerator2d::new())?)
+    pub fn eval_deriv_flux(&self, theta: f64, psi: f64, psip: f64) -> Result<f64> {
+        let flux = flux_from_params(psi, psip);
+        Ok(self
+            .inner()
+            .eval_deriv_flux(flux, theta, &mut Accelerator2d::new())?)
     }
 
-    pub fn db_dpsi(&self, psi: f64, theta: f64) -> Result<f64> {
-        Ok(self.inner().db_dpsi(psi, theta, &mut Accelerator2d::new())?)
-    }
-
-    pub fn db_dpsip(&self, psip: f64, theta: f64) -> Result<f64> {
-        Ok(self.inner().db_dpsip(psip, theta, &mut Accelerator2d::new())?)
-    }
-
-    pub fn db_of_psi_dtheta(&self, psi: f64, theta: f64) -> Result<f64> {
-        Ok(self.inner().db_of_psi_dtheta(psi, theta, &mut Accelerator2d::new())?)
-    }
-
-    pub fn db_of_psip_dtheta(&self, psip: f64, theta: f64) -> Result<f64> {
-        Ok(self.inner().db_of_psip_dtheta(psip, theta, &mut Accelerator2d::new())?)
+    pub fn eval_deriv_theta(&self, theta: f64, psi: f64, psip: f64) -> Result<f64> {
+        let flux = flux_from_params(psi, psip);
+        Ok(self
+            .inner()
+            .eval_deriv_theta(flux, theta, &mut Accelerator2d::new())?)
     }
 }
 
 // ===============================================================================================
 
-// #[pymethods] // Lar
-// impl PyBfield {}
+#[pymethods] // Lar
+impl PyBfield {}
 
 #[pymethods] // Nc
 impl PyBfield {
@@ -171,41 +167,28 @@ impl PyBfield {
         Ok(self.nc()?.shape_padded())
     }
 
-    #[getter]
-    pub fn psi_last(&self) -> Result<f64> {
-        self.nc()?.psi_last().ok_or(DexterError::AttributeError {
-            obj: "NcBfield".into(),
-            attr: "psi_last".into(),
-        })
-    }
-
-    #[getter]
-    pub fn psip_last(&self) -> Result<f64> {
-        self.nc()?.psip_last().ok_or(DexterError::AttributeError {
-            obj: "NcBfield".into(),
-            attr: "psip_last".into(),
-        })
-    }
-
-    pub fn get_array<'py>(&self, py: Python<'py>, name: &str) -> Result<Bound<'py, PyArray1<f64>>> {
+    pub fn get_array<'py>(
+        &self,
+        py: Python<'py>,
+        name: &str,
+    ) -> Result<Option<Bound<'py, PyArray1<f64>>>> {
         let bfield = self.nc()?;
         match name {
-            "theta_array" => return Ok(bfield.theta_array().into_pyarray(py)),
-            "theta_array_padded" => return Ok(bfield.theta_array_padded().into_pyarray(py)),
+            "theta_array" => return Ok(Some(bfield.theta_array().into_pyarray(py))),
+            "theta_array_padded" => return Ok(Some(bfield.theta_array_padded().into_pyarray(py))),
             "psi_array" => match bfield.psi_array() {
-                Some(array) => return Ok(array.into_pyarray(py)),
-                None => (),
+                Some(array) => return Ok(Some(array.into_pyarray(py))),
+                None => return Ok(None),
             },
             "psip_array" => match bfield.psip_array() {
-                Some(array) => return Ok(array.into_pyarray(py)),
-                None => (),
+                Some(array) => return Ok(Some(array.into_pyarray(py))),
+                None => return Ok(None),
             },
-            _ => (),
+            _ => Err(DexterError::AttributeError {
+                obj: "NcBfield".into(),
+                attr: name.into(),
+            }),
         }
-        Err(DexterError::AttributeError {
-            obj: "NcBfield".into(),
-            attr: name.into(),
-        })
     }
 
     pub fn get_array2d<'py>(

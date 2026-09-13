@@ -1,6 +1,6 @@
 """Machine objects' base classes.
 
-Equilibrium objects define evaluations over machine quantities, provide information about the
+Machine objects define evaluations over machine quantities, provide information about the
 [`state`][dexter.types.FluxCoordinateState] of each magnetic flux coordinate, as well as useful
 scalar quantities and data arrays.
 
@@ -10,8 +10,6 @@ Classes
 -------
 MachineObject
     Common attributes in all machine objects.
-FluxCommute
-    Methods for converting from one magnetic flux to the other.
 Qfactor
     q-factor related quantities and evaluation methods.
 Current
@@ -26,118 +24,294 @@ Mode
 """
 
 import numpy as np
-from typing import Any
+from numpy import nan as NAN
+from functools import wraps
+from typing import TypeAlias, Any, Callable
 
 from dexter._core import _PyQfactor, _PyCurrent, _PyBfield, _PyGeometry, _PyMode
 from dexter._utils import _ReprStrImpl
+from dexter.machine.utils import MagneticFlux
 from dexter.types import ArrayLike, Array, Array1, FluxCoordinateState, MachineType
+
+# Evaluation method signatures as defined in `_core.pyi`
+_FluxEval1dMethod: TypeAlias = Callable[[float, float], float]
+_FluxEval2dMethod: TypeAlias = Callable[[float, float, float], float]
+_FluxEval4dMethod: TypeAlias = Callable[[float, float, float, float, float], float]
+
+
+def _flux_eval_wrap1d(method: _FluxEval1dMethod) -> np.vectorize:
+    """Wraps and vectorizes methods with signature `func(psi, psip)`."""
+
+    @wraps(method)
+    def new_func(psi: float, psip: float) -> float:
+        if psi is not None and psip is None:
+            return method(psi=psi, psip=NAN)
+        elif psip is not None and psi is None:
+            return method(psi=NAN, psip=psip)
+        else:
+            raise TypeError("One of `psi` or `psip` must be passed")
+
+    return np.vectorize(new_func)
+
+
+def _flux_eval_wrap2d(method: _FluxEval2dMethod) -> np.vectorize:
+    """Wraps and vectorizes methods with signature `func(theta, psi, psip)`."""
+
+    @wraps(method)
+    def new_func(theta: float, psi: float, psip: float) -> float:
+        if psi is not None and psip is None:
+            return method(theta=theta, psi=psi, psip=NAN)
+        elif psip is not None and psi is None:
+            return method(theta=theta, psi=NAN, psip=psip)
+        else:
+            raise TypeError("One of `psi` or `psip` must be passed")
+
+    return np.vectorize(new_func)
+
+
+def _flux_eval_wrap4d(method: _FluxEval4dMethod) -> np.vectorize:
+    """Wraps and vectorizes methods with signature `func(theta, zeta, t, psi, psip)`."""
+
+    @wraps(method)
+    def new_func(
+        theta: float,
+        zeta: float,
+        t: float,
+        psi: float,
+        psip: float,
+    ) -> float:
+        if psi is not None and psip is None:
+            return method(theta=theta, zeta=zeta, t=t, psi=psi, psip=NAN)
+        elif psip is not None and psi is None:
+            return method(theta=theta, zeta=zeta, t=t, psi=NAN, psip=psip)
+        else:
+            raise TypeError("One of `psi` or `psip` must be passed")
+
+    return np.vectorize(new_func)
 
 
 class MachineObject(_ReprStrImpl):
-    """Common attributes in all machine objects."""
+    r"""Common attributes in all machine objects.
+
+    Attributes
+    ----------
+    machine_type
+        The type of the machine.
+    psi_state
+        The state of the toroidal flux coordinate $\psi$.
+    psip_state
+        The state of the toroidal flux coordinate $\psi_p$.
+
+    """
 
     _r: Any
-
-    @property
-    def machine_type(self) -> MachineType:
-        """The type of the machine."""
-        return self._r.machine_type
-
-    @property
-    def psi_state(self) -> FluxCoordinateState:
-        r"""The state of the toroidal flux coordinate $\psi$."""
-        return self._r.psi_state
-
-    @property
-    def psip_state(self) -> FluxCoordinateState:
-        r"""The state of the toroidal flux coordinate $\psi_p$."""
-        return self._r.psip_state
-
-
-class FluxCommute(_ReprStrImpl):
-    """Methods for converting from one magnetic flux to the other."""
-
-    _r: _PyQfactor
+    machine_type: MachineType
+    psi_state: FluxCoordinateState
+    psip_state: FluxCoordinateState
 
     def __init__(self) -> None:
-        self._psi_of_psip = np.vectorize(self._r.psi_of_psip)
-        self._psip_of_psi = np.vectorize(self._r.psip_of_psi)
+        self.machine_type = self._r.machine_type
+        self.psi_state = self._r.psi_state
+        self.psip_state = self._r.psip_state
 
-    def psip_of_psi(self, psi: ArrayLike) -> Array:
-        r"""Calculates $\psi_p(\psi)$, in Normalized Units."""
-        return self._psip_of_psi(psi)[()]
 
-    def psi_of_psip(self, psip: ArrayLike) -> Array:
-        r"""Calculates $\psi(\psi_p)$, in Normalized Units."""
-        return self._psi_of_psip(psip)[()]
+class Geometry(_ReprStrImpl):
+    r"""Geometry related evaluation methods.
+
+    Attributes
+    ----------
+    baxis
+        The magnetic field strength on the axis $B_0$ in $[T]$.
+    raxis
+        The horizontal position of the magnetic axis $R_0$ in $[m]$.
+    zaxis
+        The vertical position of the magnetic axis in $[m]$.
+    rgeo
+        The horizontal position of the geometric axis (device major radius) in $[m]$.
+    rlast
+        The $r$ coordinate's value at the last closed flux surface in $[m]$.
+    rlab_last
+        The last $R$ values that correspond to the device's last closed flux surface, in $[m]$.
+    zlab_last
+        The last $Z$ values that correspond to the device's last closed flux surface, in $[m]$.
+    """
+
+    _r: _PyGeometry
+    baxis: float
+    raxis: float
+    zaxis: float
+    rgeo: float
+    rlast: float
+    # `psi_last` and `psip_last` must be defined on the children classes
+
+    def __init__(self) -> None:
+        self.baxis = self._r.baxis
+        self.raxis = self._r.raxis
+        self.zaxis = self._r.zaxis
+        self.rgeo = self._r.rgeo
+        self.rlast = self._r.rlast
+        self._eval_r = _flux_eval_wrap1d(self._r.eval_r)
+        self._eval_psi_of_r = np.vectorize(self._r.eval_psi_of_r)
+        self._eval_psip_of_r = np.vectorize(self._r.eval_psip_of_r)
+        self._eval_rlab = _flux_eval_wrap2d(self._r.eval_rlab)
+        self._eval_zlab = _flux_eval_wrap2d(self._r.eval_zlab)
+        self._eval_jacobian = _flux_eval_wrap2d(self._r.eval_jacobian)
+
+    @property
+    def rlab_last(self) -> Array1:
+        return self._r.rlab_last
+
+    @property
+    def zlab_last(self) -> Array1:
+        return self._r.zlab_last
+
+    def eval_r(
+        self,
+        psi: ArrayLike | None = None,
+        psip: ArrayLike | None = None,
+    ) -> Array:
+        r"""Calculates $r(\psi/\psi_p)$, where $r$ in $[m]$."""
+        return self._eval_r(psi, psip)[()]
+
+    def eval_psi_of_r(self, r: ArrayLike) -> Array:
+        r"""Calculates $\psi(r)$, where $r$ in $[m]$."""
+        return self._eval_psi_of_r(r)[()]
+
+    def eval_psip_of_r(self, r: ArrayLike) -> Array:
+        r"""Calculates $\psi_p(r)$, where $r$ in $[m]$."""
+        return self._eval_psip_of_r(r)[()]
+
+    def eval_rlab(
+        self,
+        theta: ArrayLike,
+        psi: ArrayLike | None = None,
+        psip: ArrayLike | None = None,
+    ) -> Array:
+        r"""Calculates $R(\psi/\psi_p, \theta)$, where $R$ in $[m]$."""
+        return self._eval_rlab(theta, psi, psip)[()]
+
+    def eval_zlab(
+        self,
+        theta: ArrayLike,
+        psi: ArrayLike | None = None,
+        psip: ArrayLike | None = None,
+    ) -> Array:
+        r"""Calculates $Z(\psi/\psi_p, \theta)$, where $Z$ in $[m]$."""
+        return self._eval_zlab(theta, psi, psip)[()]
+
+    def eval_jacobian(
+        self,
+        theta: ArrayLike,
+        psi: ArrayLike | None = None,
+        psip: ArrayLike | None = None,
+    ) -> Array:
+        r"""Calculates the Jacobian $J(\psi/\psi_p, \theta)$."""
+        return self._eval_jacobian(theta, psi, psip)[()]
 
 
 class Qfactor(_ReprStrImpl):
-    """q-factor related quantities and evaluation methods."""
+    r"""q-factor related quantities and evaluation methods.
+
+    Attributes
+    ----------
+    psi_last
+        The value of the last closed toroidal flux $\psi_{LCFS}$.
+    psip_last
+        The value of the last closed toroidal flux $\psi_{LCFS}$.
+    qlast
+        The q-factor's value at the last closed flux surface, $q_{LCFS}$.
+    qaxis
+        The q-factor's value at the magnetic axis, $q_{axis}$.
+    """
 
     _r: _PyQfactor
+    qlast: float
+    qaxis: float
+    psi_last: MagneticFlux
+    psip_last: MagneticFlux
 
     def __init__(self) -> None:
-        self._q_of_psi = np.vectorize(self._r.q_of_psi)
-        self._q_of_psip = np.vectorize(self._r.q_of_psip)
-        self._dpsip_dpsi = np.vectorize(self._r.dpsip_dpsi)
-        self._dpsi_dpsip = np.vectorize(self._r.dpsi_dpsip)
-        self._psi_of_q = np.vectorize(self._r.psi_of_q)
-        self._psip_of_q = np.vectorize(self._r.psip_of_q)
-        self._iota_of_psi = np.vectorize(self._r.iota_of_psi)
-        self._iota_of_psip = np.vectorize(self._r.iota_of_psip)
+        self.qlast = self._r.qlast
+        self.qaxis = self._r.qaxis
+        self.psi_last = MagneticFlux._wrap(self._r.psi_last)
+        self.psip_last = MagneticFlux._wrap(self._r.psip_last)
+        self._eval_q = _flux_eval_wrap1d(self._r.eval_q)
+        self._eval_other = _flux_eval_wrap1d(self._r.eval_other)
+        self._eval_psi_of_q = np.vectorize(self._r.eval_psi_of_q)
+        self._eval_psip_of_q = np.vectorize(self._r.eval_psip_of_q)
+        self._eval_deriv_of_other = _flux_eval_wrap1d(self._r.eval_deriv_of_other)
+        self._eval_deriv_wrt_other = _flux_eval_wrap1d(self._r.eval_deriv_wrt_other)
+        self._eval_iota = _flux_eval_wrap1d(self._r.eval_iota)
 
-    @property
-    def psi_last(self) -> float:
-        r"""The value of the last closed toroidal flux $\psi_{LCFS}$."""
-        return self._r.psi_last
+    def eval_q(
+        self,
+        psi: ArrayLike | None = None,
+        psip: ArrayLike | None = None,
+    ) -> Array:
+        r"""Calculates $q(\psi/\psi_p)$."""
+        return self._eval_q(psi, psip)[()]
 
-    @property
-    def psip_last(self) -> float:
-        r"""The value of the last closed toroidal flux $\psi_{p,LCFS}$."""
-        return self._r.psip_last
+    def eval_other(
+        self,
+        psi: ArrayLike | None = None,
+        psip: ArrayLike | None = None,
+    ) -> Array:
+        r"""Converts a [`MagneticFlux`][dexter.MagneticFlux] to the other variant."""
+        return self._eval_other(psi, psip)[()]
 
-    @property
-    def qlast(self) -> float:
-        r"""The q-factor's value at the last closed flux surface, $q_{LCFS}$."""
-        return self._r.qlast
+    def eval_psi_of_q(self, q: ArrayLike) -> Array:
+        r"""Calculates $\psi(q)$."""
+        return self._eval_psi_of_q(q)[()]
 
-    @property
-    def qaxis(self) -> float:
-        r"""The q-factor's value at the magnetic axis, $q_{axis}$."""
-        return self._r.qaxis
+    def eval_psip_of_q(self, q: ArrayLike) -> Array:
+        r"""Calculates $\psi_p(q)$."""
+        return self._eval_psip_of_q(q)[()]
 
-    def q_of_psi(self, psi: ArrayLike) -> Array:
-        r"""Calculates $q(\psi)$, in Normalized Units."""
-        return self._q_of_psi(psi)[()]
+    def eval_deriv_of_other(
+        self,
+        psi: ArrayLike | None = None,
+        psip: ArrayLike | None = None,
+    ) -> Array:
+        r"""Calculates the derivative of the other magnetic flux with respect to the passed flux.
 
-    def q_of_psip(self, psip: ArrayLike) -> Array:
-        r"""Calculates $q(\psi_p)$, in Normalized Units."""
-        return self._q_of_psi(psip)[()]
+        + If `psi` is passed, then $d\psi_p/d\psi$ is calculated.
+        + If `psip` is passed, then $d\psi\d/psi_p$ is calculated.
 
-    def dpsip_dpsi(self, psi: ArrayLike) -> Array:
-        r"""Calculates $d\psi_p/d\psi$, in Normalized Units."""
-        return self._dpsip_dpsi(psi)[()]
+        In contrast to `Qfactor.eval_deriv_wrt_other()`, this method only requires one of the
+        fluxes to be in a “good” state (the one corresponding to the passed flux argument).
 
-    def dpsi_dpsip(self, psip: ArrayLike) -> Array:
-        r"""Calculates $d\psi/d\psi_p$, in Normalized Units."""
-        return self._dpsi_dpsip(psip)[()]
+        This method is useful for ensuring that $d\psi/d\psi_p = q$ and $d\psi_p/d\psi = \iota$.
+        The corresponding methods `Qfactor.eval_q` and `Qfactor.eval_iota` should be used in
+        calculations as they are faster and more accurate.
+        """
+        return self._eval_deriv_of_other(psi, psip)[()]
 
-    def psi_of_q(self, q: ArrayLike) -> Array:
-        r"""Calculates $\psi(q)$, in Normalized Units."""
-        return self._psi_of_q(q)[()]
+    def eval_deriv_wrt_other(
+        self,
+        psi: ArrayLike | None = None,
+        psip: ArrayLike | None = None,
+    ) -> Array:
+        r"""Calculates the derivative of the magnetic flux with respect to the other.
 
-    def psip_of_q(self, q: ArrayLike) -> Array:
-        r"""Calculates $\psi_p(q)$, in Normalized Units."""
-        return self._psip_of_q(q)[()]
+        + If `psi` is passed, then $d\psi\d/psi_p$ is calculated.
+        + If `psip` is passed, then $d\psi_p/d\psi$ is calculated.
 
-    def iota_of_psi(self, psi: ArrayLike) -> Array:
-        r"""Calculates $\iota(\psi)$, in Normalized Units."""
-        return self._iota_of_psi(psi)[()]
+        This method requires both fluxes to be in a “good” state. If this is not true,
+        `Qfactor.eval_deriv_of_other` should be used.
 
-    def iota_of_psip(self, psip: ArrayLike) -> Array:
-        r"""Calculates $\iota(\psi_p)$, in Normalized Units."""
-        return self._iota_of_psip(psip)[()]
+        This method is useful for ensuring that $d\psi/d\psi_p = q$ and $d\psi_p/d\psi = \iota$.
+        The corresponding methods `Qfactor.eval_q` and `Qfactor.eval_iota` should be used in
+        calculations as they are faster and more accurate.
+        """
+        return self._eval_deriv_wrt_other(psi, psip)[()]
+
+    def eval_iota(
+        self,
+        psi: ArrayLike | None = None,
+        psip: ArrayLike | None = None,
+    ) -> Array:
+        r"""Calculates $\iota(\psi/\psi_p)$."""
+        return self._eval_iota(psi, psip)[()]
 
 
 class Current(_ReprStrImpl):
@@ -146,46 +320,42 @@ class Current(_ReprStrImpl):
     _r: _PyCurrent
 
     def __init__(self) -> None:
-        self._g_of_psi = np.vectorize(self._r.g_of_psi)
-        self._g_of_psip = np.vectorize(self._r.g_of_psip)
-        self._i_of_psi = np.vectorize(self._r.i_of_psi)
-        self._i_of_psip = np.vectorize(self._r.i_of_psip)
-        self._dg_dpsi = np.vectorize(self._r.dg_dpsi)
-        self._dg_dpsip = np.vectorize(self._r.dg_dpsip)
-        self._di_dpsi = np.vectorize(self._r.di_dpsi)
-        self._di_dpsip = np.vectorize(self._r.di_dpsip)
+        self._eval_g = _flux_eval_wrap1d(self._r.eval_g)
+        self._eval_i = _flux_eval_wrap1d(self._r.eval_i)
+        self._eval_g_deriv = _flux_eval_wrap1d(self._r.eval_g_deriv)
+        self._eval_i_deriv = _flux_eval_wrap1d(self._r.eval_i_deriv)
 
-    def g_of_psi(self, psi: ArrayLike) -> Array:
-        r"""Calculates $g(\psi)$, in Normalized Units."""
-        return self._g_of_psi(psi)[()]
+    def eval_g(
+        self,
+        psi: ArrayLike | None = None,
+        psip: ArrayLike | None = None,
+    ) -> Array:
+        r"""Calculates $g(\psi/\psi_p)$."""
+        return self._eval_g(psi, psip)[()]
 
-    def g_of_psip(self, psip: ArrayLike) -> Array:
-        r"""Calculates $g(\psi_p)$, in Normalized Units."""
-        return self._g_of_psip(psip)[()]
+    def eval_i(
+        self,
+        psi: ArrayLike | None = None,
+        psip: ArrayLike | None = None,
+    ) -> Array:
+        r"""Calculates $I(\psi/\psi_p)$."""
+        return self._eval_i(psi, psip)[()]
 
-    def i_of_psi(self, psi: ArrayLike) -> Array:
-        r"""Calculates $I(\psi)$, in Normalized Units."""
-        return self._i_of_psi(psi)[()]
+    def eval_g_deriv(
+        self,
+        psi: ArrayLike | None = None,
+        psip: ArrayLike | None = None,
+    ) -> Array:
+        r"""Calculates $dg(\psi/\psi_p)/d(\psi/\psi_p)$."""
+        return self._eval_g_deriv(psi, psip)[()]
 
-    def i_of_psip(self, psip: ArrayLike) -> Array:
-        r"""Calculates $I(\psi_p)$, in Normalized Units."""
-        return self._i_of_psip(psip)[()]
-
-    def dg_dpsi(self, psi: ArrayLike) -> Array:
-        r"""Calculates $dg/d\psi$, in Normalized Units."""
-        return self._dg_dpsi(psi)[()]
-
-    def dg_dpsip(self, psip: ArrayLike) -> Array:
-        r"""Calculates $dg/d\psi_p$, in Normalized Units."""
-        return self._dg_dpsip(psip)[()]
-
-    def di_dpsi(self, psi: ArrayLike) -> Array:
-        r"""Calculates $dI/d\psi$, in Normalized Units."""
-        return self._di_dpsi(psi)[()]
-
-    def di_dpsip(self, psip: ArrayLike) -> Array:
-        r"""Calculates $dI/d\psi_p$, in Normalized Units."""
-        return self._di_dpsip(psip)[()]
+    def eval_i_deriv(
+        self,
+        psi: ArrayLike | None = None,
+        psip: ArrayLike | None = None,
+    ) -> Array:
+        r"""Calculates $dI(\psi/\psi_p)/d(\psi/\psi_p)$."""
+        return self._eval_i_deriv(psi, psip)[()]
 
 
 class Bfield(_ReprStrImpl):
@@ -194,318 +364,138 @@ class Bfield(_ReprStrImpl):
     _r: _PyBfield
 
     def __init__(self) -> None:
-        self._b_of_psi = np.vectorize(self._r.b_of_psi)
-        self._b_of_psip = np.vectorize(self._r.b_of_psip)
-        self._db_dpsi = np.vectorize(self._r.db_dpsi)
-        self._db_dpsip = np.vectorize(self._r.db_dpsip)
-        self._db_of_psi_dtheta = np.vectorize(self._r.db_of_psi_dtheta)
-        self._db_of_psip_dtheta = np.vectorize(self._r.db_of_psip_dtheta)
+        self._eval_b = _flux_eval_wrap2d(self._r.eval_b)
+        self._eval_deriv_flux = _flux_eval_wrap2d(self._r.eval_deriv_flux)
+        self._eval_deriv_theta = _flux_eval_wrap2d(self._r.eval_deriv_theta)
 
-    def b_of_psi(self, psi: ArrayLike, theta: ArrayLike) -> Array:
-        r"""Calculates $B(\psi, \theta)$, in Normalized Units."""
-        return self._b_of_psi(psi, theta)[()]
+    def eval_b(
+        self,
+        theta: ArrayLike,
+        psi: ArrayLike | None = None,
+        psip: ArrayLike | None = None,
+    ) -> Array:
+        r"""Calculates $B(\psi/\psi_p, \theta)$."""
+        return self._eval_b(theta, psi, psip)[()]
 
-    def b_of_psip(self, psip: ArrayLike, theta: ArrayLike) -> Array:
-        r"""Calculates $B(\psi_p, \theta)$, in Normalized Units."""
-        return self._b_of_psip(psip, theta)[()]
+    def eval_deriv_flux(
+        self,
+        theta: ArrayLike,
+        psi: ArrayLike | None = None,
+        psip: ArrayLike | None = None,
+    ) -> Array:
+        r"""Calculates $dB(\psi/\psi_p, \theta)/d(\psi/\psi_p)$."""
+        return self._eval_deriv_flux(theta, psi, psip)[()]
 
-    def db_dpsi(self, psi: ArrayLike, theta: ArrayLike) -> Array:
-        r"""Calculates $dB(\psi, \theta)/d\psi$, in Normalized Units."""
-        return self._db_dpsi(psi, theta)[()]
-
-    def db_dpsip(self, psip: ArrayLike, theta: ArrayLike) -> Array:
-        r"""Calculates $dB(\psi_p, \theta)/d\psi_p$, in Normalized Units."""
-        return self._db_dpsip(psip, theta)[()]
-
-    def db_of_psi_dtheta(self, psi: ArrayLike, theta: ArrayLike) -> Array:
-        r"""Calculates $dB(\psi, \theta)/d\theta$, in Normalized Units."""
-        return self._db_of_psi_dtheta(psi, theta)[()]
-
-    def db_of_psip_dtheta(self, psip: ArrayLike, theta: ArrayLike) -> Array:
-        r"""Calculates $dB(\psi_p, \theta)/d\theta$, in Normalized Units."""
-        return self._db_of_psip_dtheta(psip, theta)[()]
-
-
-class Geometry(_ReprStrImpl):
-    """Geometry related evaluation methods."""
-
-    _r: _PyGeometry
-
-    def __init__(self) -> None:
-        self._r_of_psi = np.vectorize(self._r.r_of_psi)
-        self._r_of_psip = np.vectorize(self._r.r_of_psip)
-        self._psi_of_r = np.vectorize(self._r.psi_of_r)
-        self._psip_of_r = np.vectorize(self._r.psip_of_r)
-        self._rlab_of_psi = np.vectorize(self._r.rlab_of_psi)
-        self._rlab_of_psip = np.vectorize(self._r.rlab_of_psip)
-        self._zlab_of_psi = np.vectorize(self._r.rlab_of_psi)
-        self._zlab_of_psip = np.vectorize(self._r.rlab_of_psip)
-        self._jacobian_of_psi = np.vectorize(self._r.rlab_of_psi)
-        self._jacobian_of_psip = np.vectorize(self._r.rlab_of_psip)
-
-    @property
-    def baxis(self) -> float:
-        r"""The magnetic field strength on the axis $B_0$ in $[T]$."""
-        return self._r.baxis
-
-    @property
-    def raxis(self) -> float:
-        r"""The horizontal position of the magnetic axis $R_0$ in $[m]$."""
-        return self._r.raxis
-
-    @property
-    def zaxis(self) -> float:
-        r"""The vertical position of the magnetic axis in $[m]$."""
-        return self._r.zaxis
-
-    @property
-    def rgeo(self) -> float:
-        r"""The horizontal position of the geometric axis (device major radius) in $[m]$."""
-        return self._r.rgeo
-
-    @property
-    def rlast(self) -> float:
-        r"""The $r$ coordinate's value at the last closed flux surface in $[m]$."""
-        return self._r.rlast
-
-    @property
-    def psi_last(self) -> float:
-        r"""The value of the last closed toroidal flux $\psi_{LCFS}$."""
-        return self._r.psi_last
-
-    @property
-    def psip_last(self) -> float:
-        r"""The value of the last closed toroidal flux $\psi_{p,LCFS}$."""
-        return self._r.psip_last
-
-    @property
-    def rlab_last(self) -> Array1:
-        r"""The last $R$ values that correspond to the device's last closed flux surface, in $[m]$."""
-        return self._r.rlab_last
-
-    @property
-    def zlab_last(self) -> Array1:
-        r"""The last $Z$ values that correspond to the device's last closed flux surface, in $[m]$."""
-        return self._r.zlab_last
-
-    def r_of_psi(self, psi: ArrayLike) -> Array:
-        r"""Calculates $r(\psi)$, where $\psi$ in Normalized Units and $r$ in $[m]$."""
-        return self._r_of_psi(psi)[()]
-
-    def r_of_psip(self, psip: ArrayLike) -> Array:
-        r"""Calculates $r(\psi_p)$, where $\psi_p$ in Normalized Units and $r$ in $[m]$."""
-        return self._r_of_psip(psip)[()]
-
-    def psi_of_r(self, r: ArrayLike) -> Array:
-        r"""Calculates $\psi(r)$, where $\psi$ in Normalized Units and $r$ in $[m]$."""
-        return self._psi_of_r(r)[()]
-
-    def psip_of_r(self, r: ArrayLike) -> Array:
-        r"""Calculates $\psi_p(r)$, where $\psi_p$ in Normalized Units and $r$ in $[m]$."""
-        return self._psip_of_r(r)[()]
-
-    def rlab_of_psi(self, psi: ArrayLike, theta: ArrayLike) -> Array:
-        r"""Calculates $R(\psi, \theta)$, where $\psi$ in Normalized Units and $R$ in $[m]$."""
-        return self._rlab_of_psi(psi, theta)[()]
-
-    def rlab_of_psip(self, psip: ArrayLike, theta: ArrayLike) -> Array:
-        r"""Calculates $R(\psi_p, \theta)$, where $\psi_p$ in Normalized Units and $R$ in $[m]$."""
-        return self._rlab_of_psip(psip, theta)[()]
-
-    def zlab_of_psi(self, psi: ArrayLike, theta: ArrayLike) -> Array:
-        r"""Calculates $Z(\psi, \theta)$, where $\psi$ in Normalized Units and $R$ in $[m]$."""
-        return self._zlab_of_psi(psi, theta)[()]
-
-    def zlab_of_psip(self, psip: ArrayLike, theta: ArrayLike) -> Array:
-        r"""Calculates $Z(\psi_p, \theta)$, where $\psi_p$ in Normalized Units and $R$ in $[m]$."""
-        return self._zlab_of_psip(psip, theta)[()]
-
-    def jacobian_of_psi(self, psi: ArrayLike, theta: ArrayLike) -> Array:
-        r"""Calculates the Jacobian $J(\psi, \theta)$, where $\psi$ in Normalized Units and $R$ in $[m]$."""
-        return self._jacobian_of_psi(psi, theta)[()]
-
-    def jacobian_of_psip(self, psip: ArrayLike, theta: ArrayLike) -> Array:
-        r"""Calculates the Jacobian $R(\psi_p, \theta)$, where $\psi_p$ in Normalized Units and $R$ in $[m]$."""
-        return self._jacobian_of_psip(psip, theta)[()]
+    def eval_deriv_theta(
+        self,
+        theta: ArrayLike,
+        psi: ArrayLike | None = None,
+        psip: ArrayLike | None = None,
+    ) -> Array:
+        r"""Calculates $dB(\psi/\psi_p, \theta)/d\theta$."""
+        return self._eval_deriv_theta(theta, psi, psip)[()]
 
 
 class Mode(_ReprStrImpl):
-    r"""Single perturbation mode related evaluation methods."""
+    r"""Single perturbation mode related evaluation methods.
+
+    Attributes
+    ----------
+    m
+        The poloidal number $m$.
+    n
+        The toroidal number $n$.
+    """
 
     _r: _PyMode
+    m: int
+    n: int
 
     def __init__(self) -> None:
-        self._ampl_of_psi = np.vectorize(self._r.ampl_of_psi)
-        self._ampl_of_psip = np.vectorize(self._r.ampl_of_psip)
-        self._phase_of_psi = np.vectorize(self._r.phase_of_psi)
-        self._phase_of_psip = np.vectorize(self._r.phase_of_psip)
-        self._m_of_psi = np.vectorize(self._r.m_of_psi)
-        self._m_of_psip = np.vectorize(self._r.m_of_psi)
-        self._dm_dpsi = np.vectorize(self._r.dm_dpsi)
-        self._dm_dpsip = np.vectorize(self._r.dm_dpsip)
-        self._dm_of_psi_dtheta = np.vectorize(self._r.dm_of_psi_dtheta)
-        self._dm_of_psip_dtheta = np.vectorize(self._r.dm_of_psip_dtheta)
-        self._dm_of_psi_dzeta = np.vectorize(self._r.dm_of_psi_dzeta)
-        self._dm_of_psip_dzeta = np.vectorize(self._r.dm_of_psip_dzeta)
-        self._dm_of_psi_dt = np.vectorize(self._r.dm_of_psi_dt)
-        self._dm_of_psip_dt = np.vectorize(self._r.dm_of_psip_dt)
+        self.m = self._r.m
+        self.n = self._r.n
 
-    @property
-    def psi_last(self) -> float:
-        r"""The value of the last closed toroidal flux $\psi_{LCFS}$."""
-        return self._r.psi_last
+        self._eval_amplitude = _flux_eval_wrap4d(self._r.eval_amplitude)
+        self._eval_phase = _flux_eval_wrap4d(self._r.eval_phase)
+        self._eval_m = _flux_eval_wrap4d(self._r.eval_m)
+        self._eval_deriv_flux = _flux_eval_wrap4d(self._r.eval_deriv_flux)
+        self._eval_deriv_theta = _flux_eval_wrap4d(self._r.eval_deriv_theta)
+        self._eval_deriv_zeta = _flux_eval_wrap4d(self._r.eval_deriv_zeta)
+        self._eval_deriv_t = _flux_eval_wrap4d(self._r.eval_deriv_t)
 
-    @property
-    def psip_last(self) -> float:
-        r"""The value of the last closed toroidal flux $\psi_{p,LCFS}$."""
-        return self._r.psip_last
-
-    @property
-    def m(self) -> int:
-        r"""The poloidal mode number $m$."""
-        return self._r.m
-
-    @property
-    def n(self) -> int:
-        r"""The toroidal mode number $n$."""
-        return self._r.n
-
-    def ampl_of_psi(
+    def eval_amplitude(
         self,
-        psi: ArrayLike,
         theta: ArrayLike,
         zeta: ArrayLike,
         t: ArrayLike,
+        psi: ArrayLike | None = None,
+        psip: ArrayLike | None = None,
     ) -> Array:
-        r"""Calculates **the amplitude** $\alpha(\psi, \theta, \zeta, t)$, in Normalized Units."""
-        return self._ampl_of_psi(psi, theta, zeta, t)[()]
+        r"""Calculates **the amplitude** $\alpha_{m,n}(\psi/\psi_p), \theta, \zeta, t)$, in Normalized Units."""
+        return self._eval_amplitude(theta, zeta, t, psi=psi, psip=psip)[()]
 
-    def ampl_of_psip(
+    def eval_phase(
         self,
-        psip: ArrayLike,
         theta: ArrayLike,
         zeta: ArrayLike,
         t: ArrayLike,
+        psi: ArrayLike | None = None,
+        psip: ArrayLike | None = None,
     ) -> Array:
-        r"""Calculates **the amplitude** $\alpha(\psi_p, \theta, \zeta, t)$, in Normalized Units."""
-        return self._ampl_of_psip(psip, theta, zeta, t)[()]
+        r"""Calculates **the phase** $\phi(\psi/\psi_p), \theta, \zeta, t)$."""
+        return self._eval_phase(theta, zeta, t, psi=psi, psip=psip)[()]
 
-    def phase_of_psi(
+    def eval_m(
         self,
-        psi: ArrayLike,
         theta: ArrayLike,
         zeta: ArrayLike,
         t: ArrayLike,
+        psi: ArrayLike | None = None,
+        psip: ArrayLike | None = None,
     ) -> Array:
-        r"""Calculates $\phi(\psi, \theta, \zeta, t)$, in Normalized Units."""
-        return self._phase_of_psi(psi, theta, zeta, t)[()]
+        r"""Calculates the mode's value $m(\psi/\psi_p, \theta, \zeta, t)$, in Normalized Units."""
+        return self._eval_m(theta, zeta, t, psi=psi, psip=psip)[()]
 
-    def phase_of_psip(
+    def eval_deriv_flux(
         self,
-        psip: ArrayLike,
         theta: ArrayLike,
         zeta: ArrayLike,
         t: ArrayLike,
+        psi: ArrayLike | None = None,
+        psip: ArrayLike | None = None,
     ) -> Array:
-        r"""Calculates $\phi(\psi_p, \theta, \zeta, t)$, in Normalized Units."""
-        return self._phase_of_psip(psip, theta, zeta, t)[()]
+        r"""Calculates the mode's derivative $dm(\psi/\psi_p, \theta, \zeta, t)/d(\psi/\psi_p)$, in Normalized Units."""
+        return self._eval_deriv_flux(theta, zeta, t, psi=psi, psip=psip)[()]
 
-    def m_of_psi(
+    def eval_deriv_theta(
         self,
-        psi: ArrayLike,
         theta: ArrayLike,
         zeta: ArrayLike,
         t: ArrayLike,
+        psi: ArrayLike | None = None,
+        psip: ArrayLike | None = None,
     ) -> Array:
-        r"""Calculates the mode's value $m(\psi, \theta, \zeta, t)$, in Normalized Units."""
-        return self._m_of_psi(psi, theta, zeta, t)[()]
+        r"""Calculates the mode's derivative $dm(\psi/\psi_p, \theta, \zeta, t)/d\theta$, in Normalized Units."""
+        return self._eval_deriv_theta(theta, zeta, t, psi=psi, psip=psip)[()]
 
-    def m_of_psip(
+    def eval_deriv_zeta(
         self,
-        psip: ArrayLike,
         theta: ArrayLike,
         zeta: ArrayLike,
         t: ArrayLike,
+        psi: ArrayLike | None = None,
+        psip: ArrayLike | None = None,
     ) -> Array:
-        r"""Calculates the mode's value $m(\psi_p, \theta, \zeta, t)$, in Normalized Units."""
-        return self._m_of_psip(psip, theta, zeta, t)[()]
+        r"""Calculates the mode's derivative $dm(\psi/\psi_p, \theta, \zeta, t)/d\zeta$, in Normalized Units."""
+        return self._eval_deriv_zeta(theta, zeta, t, psi=psi, psip=psip)[()]
 
-    def dm_dpsi(
+    def eval_deriv_t(
         self,
-        psi: ArrayLike,
         theta: ArrayLike,
         zeta: ArrayLike,
         t: ArrayLike,
+        psi: ArrayLike | None = None,
+        psip: ArrayLike | None = None,
     ) -> Array:
-        r"""Calculates the mode's derivative $dm(\psi, \theta, \zeta, t)/d\psi$, in Normalized Units."""
-        return self._dm_dpsi(psi, theta, zeta, t)[()]
-
-    def dm_dpsip(
-        self,
-        psip: ArrayLike,
-        theta: ArrayLike,
-        zeta: ArrayLike,
-        t: ArrayLike,
-    ) -> Array:
-        r"""Calculates the mode's derivative $dm(\psi_p, \theta, \zeta, t)/d\psi_p$, in Normalized Units."""
-        return self._dm_dpsip(psip, theta, zeta, t)[()]
-
-    def dm_of_psi_dtheta(
-        self,
-        psi: ArrayLike,
-        theta: ArrayLike,
-        zeta: ArrayLike,
-        t: ArrayLike,
-    ) -> Array:
-        r"""Calculates the mode's derivative $dm(\psi, \theta, \zeta, t)/d\theta$, in Normalized Units."""
-        return self._dm_of_psi_dtheta(psi, theta, zeta, t)[()]
-
-    def dm_of_psip_dtheta(
-        self,
-        psip: ArrayLike,
-        theta: ArrayLike,
-        zeta: ArrayLike,
-        t: ArrayLike,
-    ) -> Array:
-        r"""Calculates the mode's derivative $dm(\psi_p, \theta, \zeta, t)/d\theta$, in Normalized Units."""
-        return self._dm_of_psip_dtheta(psip, theta, zeta, t)[()]
-
-    def dm_of_psi_dzeta(
-        self,
-        psi: ArrayLike,
-        theta: ArrayLike,
-        zeta: ArrayLike,
-        t: ArrayLike,
-    ) -> Array:
-        r"""Calculates the mode's derivative $dm(\psi, \theta, \zeta, t)/d\zeta$, in Normalized Units."""
-        return self._dm_of_psi_dzeta(psi, theta, zeta, t)[()]
-
-    def dm_of_psip_dzeta(
-        self,
-        psip: ArrayLike,
-        theta: ArrayLike,
-        zeta: ArrayLike,
-        t: ArrayLike,
-    ) -> Array:
-        r"""Calculates the mode's derivative $dm(\psi_p, \theta, \zeta, t)/d\zeta$, in Normalized Units."""
-        return self._dm_of_psip_dzeta(psip, theta, zeta, t)[()]
-
-    def dm_of_psi_dt(
-        self,
-        psi: ArrayLike,
-        theta: ArrayLike,
-        zeta: ArrayLike,
-        t: ArrayLike,
-    ) -> Array:
-        r"""Calculates the mode's derivative $dm(\psi, \theta, \zeta, t)/dt$, in Normalized Units."""
-        return self._dm_of_psi_dt(psi, theta, zeta, t)[()]
-
-    def dm_of_psip_dt(
-        self,
-        psip: ArrayLike,
-        theta: ArrayLike,
-        zeta: ArrayLike,
-        t: ArrayLike,
-    ) -> Array:
-        r"""Calculates the mode's derivative $dm(\psi_p, \theta, \zeta, t)/dt$, in Normalized Units."""
-        return self._dm_of_psip_dt(psip, theta, zeta, t)[()]
+        r"""Calculates the mode's derivative $dm(\psi/\psi_p, \theta, \zeta, t)/dt$, in Normalized Units."""
+        return self._eval_deriv_t(theta, zeta, t, psi=psi, psip=psip)[()]

@@ -1,6 +1,6 @@
 # Helper types
 
-::: dexter.LastClosedFluxSurface
+::: dexter.MagneticFlux
     options:
       members_order: source
       group_by_category: false

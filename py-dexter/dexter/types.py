@@ -62,7 +62,7 @@ the formulas.
 NetCDFVersion: TypeAlias = Version
 """The netCDF convention version (SemVer)."""
 
-FluxCoordinate: TypeAlias = Literal["Toroidal", "Poloidal"]
+MagneticFluxKind: TypeAlias = Literal["Toroidal", "Poloidal"]
 r"""Magnetic flux coordinates $\psi$ and $\psi_p$."""
 
 FluxCoordinateState: TypeAlias = Literal["Good", "Bad", "None"]
@@ -273,7 +273,7 @@ r"""A particle's orbit type, calculated through the [`dexter.Particle.close()`] 
 - `Potato`: A Potato particle. A particle’s orbit is called a potato orbit if it is trapped
     but still circles the magnetic axis due to its drift. In the $(E, P_\zeta)$ plane, those
     lie inside the intersection of the trapped-passing boundary and the magnetic axis parabola.
-- `Stagnated`: A Potato particle. A particle is called stagnated if it always has positive
+- `Stagnated`: A Stagnated particle. A particle is called stagnated if it always has positive
     parallel velocity but does not circle the magnetic axis. In the $(E, P_\zeta)$ plane,
     those lie to the right of the trapped-passing boundary and above the magnetic axis parabola.
 - `Unclassified`: Not falling under any of the other categories.

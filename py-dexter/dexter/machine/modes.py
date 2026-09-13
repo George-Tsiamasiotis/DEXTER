@@ -6,7 +6,7 @@ from typing import TypeAlias
 
 from dexter._core import _PyMode
 
-from .utils import LastClosedFluxSurface
+from .utils import MagneticFlux
 from .base import MachineObject, Mode
 from dexter.types import (
     Array1,
@@ -34,45 +34,48 @@ class FluteMode(MachineObject, Mode):
         closed flux surface.
     lcfs
         The Last Closed Flux Surface, with respect to which the mode is defined.
-    m
-        The poloidal mode number.
-    n
-        The toroidal mode number.
+    phase
+        The mode's constant phase $\phi$.
+
+    Attributes
+    ----------
+    epsilon
+        The modes's "amplitude" $\epsilon$. Corresponds the value of the amplitude at the last
+        closed flux surface.
+    lcfs
+        The Last Closed Flux Surface, with respect to which the mode is defined.
     phase
         The mode's constant phase $\phi$.
 
     Example
     -------
     ``` py
-    >>> lcfs = dex.LastClosedFluxSurface.Toroidal(0.05)
+    >>> lcfs = dex.MagneticFlux.Toroidal(0.05)
     >>> mode = dex.FluteMode(1e-4, lcfs, 3, 4, 0)
 
     ```
     """
 
     _r: _PyMode
+    lcfs: MagneticFlux
+    epsilon: float
+    phase: float
 
     def __init__(
-        self, epsilon: float, lcfs: LastClosedFluxSurface, m: int, n: int, phase: float
+        self,
+        epsilon: float,
+        lcfs: MagneticFlux,
+        m: int,
+        n: int,
+        phase: float,
     ) -> None:
         self._r = _PyMode.build_flute(epsilon, lcfs._r, m, n, phase)
-        super(MachineObject, self).__init__()
-        super(Mode, self).__init__()
+        MachineObject.__init__(self)
+        Mode.__init__(self)
 
-    @property
-    def lcfs(self) -> LastClosedFluxSurface:
-        r"""The mode's Last Closed Flux Surface."""
-        return LastClosedFluxSurface._wrap(self._r.lcfs)
-
-    @property
-    def epsilon(self) -> float:
-        r"""The mode's constant 'amplitude' $\epsilon$."""
-        return self._r.epsilon
-
-    @property
-    def phase(self) -> float:
-        r"""The mode's constant phase $\phi$."""
-        return self._r.phase
+        self.lcfs = MagneticFlux._wrap(self._r.lcfs)
+        self.epsilon = self._r.epsilon
+        self.phase = self._r.phase
 
 
 class NcFluteMode(MachineObject, Mode):
@@ -83,7 +86,7 @@ class NcFluteMode(MachineObject, Mode):
     A numerical flute mode is defined as:
 
     $$
-    m(\psi, \theta, \zeta) = \sum_{m,n} \alpha(\psi, \theta, \zeta)\cos\big(m\theta-n\zeta+\phi(\psi)\big)
+    m(\psi, \theta, \zeta) = \sum_{m,n} \alpha_{m,n}(\psi, \theta, \zeta)\cos\big(m\theta-n\zeta+\phi(\psi)\big)
     $$
 
     Parameters
@@ -123,6 +126,29 @@ class NcFluteMode(MachineObject, Mode):
             negligible compared to the possible non-continuity of $\alpha$’s higher derivatives
             and/or its deviation from the actual data.
 
+    Attributes
+    ----------
+    path
+        The path to the netCDF file.
+    netcdf_version
+        The netCDF file's version (SemVer).
+    interp_type
+        The 1D interpolation type.
+    phase_method
+        The phase $\phi$ calculation method.
+    analytical_threshold_index
+        The analytical threshold index.
+    phase_average
+        The average value of the phase array, if `PhaseMethod == 'Average'`.
+    psi_array
+        The toroidal flux' values.
+    psip_array
+        The poloidal flux' values.
+    alpha_array
+        The amplitude $\alpha$ values.
+    phase_array
+        The phase $\phi$ values.
+
     Example
     -------
     ``` py
@@ -140,6 +166,12 @@ class NcFluteMode(MachineObject, Mode):
     """
 
     _r: _PyMode
+    path: str
+    netcdf_version: NetCDFVersion
+    interp_type: Interpolation1dType
+    phase_method: PhaseMethod
+    analytical_threshold_index: int
+    phase_average: float | None
 
     def __init__(
         self,
@@ -153,58 +185,37 @@ class NcFluteMode(MachineObject, Mode):
         self._r = _PyMode.build_nc(
             path, interp_type, m, n, phase_method, analytical_threshold_index
         )
-        super(MachineObject, self).__init__()
-        super(Mode, self).__init__()
+        MachineObject.__init__(self)
+        Mode.__init__(self)
+
+        self.path = self._r.path
+        self.netcdf_version = Version.parse(self._r.netcdf_version)
+        self.interp_type = self._r.interp_type
+        self.phase_method = self._r.phase_method
+        self.analytical_threshold_index = self._r.analytical_threshold_index
+        self.phase_average = (
+            self._r.phase_average if self._r.phase_method == "Average" else None
+        )
 
     @property
-    def path(self) -> str:
-        """The path to the NetCDF file."""
-        return self._r.path
-
-    @property
-    def netcdf_version(self) -> NetCDFVersion:
-        """The path to the NetCDF file."""
-        return Version.parse(self._r.netcdf_version)
-
-    @property
-    def interp_type(self) -> Interpolation1dType:
-        """The 1D interpolation type."""
-        return self._r.interp_type
-
-    @property
-    def phase_method(self) -> PhaseMethod:
-        r"""The phase $\phi$ calculation method."""
-        return self._r.phase_method
-
-    @property
-    def analytical_threshold_index(self) -> int:
-        r"""The analytical threshold index."""
-        return self._r.analytical_threshold_index
-
-    @property
-    def phase_average(self) -> float | None:
-        r"""The average value of the phase array, if `PhaseMethod == 'Average'`."""
-        return self._r.phase_average if self.phase_method == "Average" else None
-
-    @property
-    def psi_array(self) -> Array1:
-        """The toroidal flux's values."""
+    def psi_array(self) -> Array1 | None:
         return self._r.get_array("psi_array")
 
     @property
-    def psip_array(self) -> Array1:
-        """The poloidal flux's values."""
+    def psip_array(self) -> Array1 | None:
         return self._r.get_array("psip_array")
 
     @property
     def alpha_array(self) -> Array1:
-        r"""The $\alpha$ values."""
-        return self._r.get_array("alpha_array")
+        array = self._r.get_array("alpha_array")
+        assert array is not None, "alpha_array always exists"
+        return array
 
     @property
     def phase_array(self) -> Array1:
-        r"""The $\phase$ values."""
-        return self._r.get_array("phase_array")
+        array = self._r.get_array("phase_array")
+        assert array is not None, "phase_array always exists"
+        return array
 
 
 ModeObject: TypeAlias = FluteMode | NcFluteMode
