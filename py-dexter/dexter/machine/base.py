@@ -275,7 +275,7 @@ class Qfactor(_ReprStrImpl):
         r"""Calculates the derivative of the other magnetic flux with respect to the passed flux.
 
         + If `psi` is passed, then $d\psi_p/d\psi$ is calculated.
-        + If `psip` is passed, then $d\psi\d/psi_p$ is calculated.
+        + If `psip` is passed, then $d\psi/d\psi_p$ is calculated.
 
         In contrast to `Qfactor.eval_deriv_wrt_other()`, this method only requires one of the
         fluxes to be in a “good” state (the one corresponding to the passed flux argument).
@@ -293,7 +293,7 @@ class Qfactor(_ReprStrImpl):
     ) -> Array:
         r"""Calculates the derivative of the magnetic flux with respect to the other.
 
-        + If `psi` is passed, then $d\psi\d/psi_p$ is calculated.
+        + If `psi` is passed, then $d\psi/d\psi_p$ is calculated.
         + If `psip` is passed, then $d\psi_p/d\psi$ is calculated.
 
         This method requires both fluxes to be in a “good” state. If this is not true,

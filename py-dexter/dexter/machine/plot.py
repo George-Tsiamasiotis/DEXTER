@@ -1,3 +1,16 @@
+r"""Plotting functions for machine objects.
+
+Methods are also available as command line project scripts.
+
+Functions
+---------
+plot_qfactor
+    Plots a [`QfactorObject`][dexter.QfactorObject]'s $q(\psi)$, $q(\psi_p)$, $\psi_p(\psi)$ and $\psi(\psi_p)$.
+plot_current
+    Plots a [`CurrentObject`][dexter.CurrentObject]'s $g$, $I$ and their derivatives, with respect to
+    $\psi$ and $\psi_p$.
+"""
+
 from typing import assert_never
 
 from dexter.machine.base import MachineObject
@@ -16,6 +29,239 @@ plt.rcParams["figure.autolayout"] = False
 plt.rcParams["figure.constrained_layout.use"] = True
 
 
+def plot_qfactor(
+    machine: Machine,
+    points: int = 1000,
+    data: bool = False,
+    show: bool = True,
+) -> tuple[Figure, tuple[Axes, Axes, Axes]]:
+    r"""Plots a [`QfactorObject`][dexter.QfactorObject]'s $q(\psi)$, $q(\psi_p)$, $\psi_p(\psi)$ and $\psi(\psi_p)$.
+
+    The derivatives $d\psi_p/d\psi$ and $(d\psi/d\psi_p)^{-1}$ are calculated independently from
+    $q(\psi)$ and $q(\psi_p)$. It is a good sanity check to ensure the two curves coincide.
+
+    Parameters
+    ----------
+    machine
+        The machine containing the current object.
+
+    Other parameters
+    ----------------
+    points
+        The number of points on which to evaluate the flux in each plot.
+    data
+        Whether or not to plot the data points, if `#!python machine.current.machine_type == "Numerical"`.
+    show
+        Whether or not to call `plt.show()`.
+
+    Example
+    -------
+
+    ``` py title="Qfactor plot"
+    >>> machine = dex.Machine.FromNetcdf(path, "Akima", "Bicubic")
+    >>> fig, ax = dex.plot_qfactor(machine, data=True)
+
+    ```
+
+    ``` sh title="From command line"
+    dexter-plot-qfactor ./netcdf.nc -i Cubic
+
+    ```
+
+    """
+    qfactor = machine.qfactor
+
+    fig = plt.figure(figsize=(5, 4))
+    axes = fig.subplots(2, 2)
+    axqt: Axes = axes[0, 0]
+    axqp: Axes = axes[0, 1]
+    axpt: Axes = axes[1, 0]
+    axtp: Axes = axes[1, 1]
+
+    EMPTY_PLOT_COLOR = "#9E9E9E"
+    QFACTOR_COLOR = "r"
+    DERIV_COLOR = "b"
+    DERIV_STYLE = (0, (3, 2))
+    MARGINS = (0, 0.01)
+
+    DATA_COLOR = "k"
+    DATA_MARKER = "+"
+    DATA_SIZE = 15
+    DATA_LABEL = r"$data\ points$"
+    DATA_ZORDER = 10
+
+    # ======================================================= q(ψ)
+    axqt.set_xlabel(r"$\psi/\psi_{LCFS}$")
+    axqt.set_ylabel(r"$q(\psi)$")
+    if qfactor.psi_state == "Good":
+        psis = np.linspace(0, qfactor.psi_last.value, points) * 0.99999
+        psis_norm = psis / qfactor.psi_last.value
+        q_values = qfactor.eval_q(psi=psis)
+        axqt.plot(
+            psis_norm,
+            q_values,
+            c=QFACTOR_COLOR,
+            label=rf"$q(\psi)$",
+        )
+        if qfactor.psip_state == "Good":
+            psips = qfactor.eval_other(psi=psis)
+            d_values = qfactor.eval_deriv_of_other(psip=psips)
+            axqt.plot(
+                psis_norm,
+                d_values,
+                c=DERIV_COLOR,
+                linestyle=DERIV_STYLE,
+                label=rf"$d\psi/d\psi_p$",
+            )
+        if data and qfactor.machine_type == "Numerical":
+            # Arrays always exist if `machine_type == "Numerical"`
+            q_data = qfactor.q_array  # pyright: ignore
+            psi_data = qfactor.psi_array  # pyright: ignore
+            psi_data_norm = psi_data / qfactor.psi_last.value
+            axqt.scatter(
+                psi_data_norm,
+                q_data,
+                c=DATA_COLOR,
+                marker=DATA_MARKER,
+                s=DATA_SIZE,
+                zorder=DATA_ZORDER,
+                label=DATA_LABEL,
+            )
+        axqt.margins(*MARGINS)
+        axqt.legend()
+        axqt.grid()
+    else:
+        axqt.set_facecolor(EMPTY_PLOT_COLOR)
+        axqt.text(0.5, 0.5, ha="center", va="center", s=r"$q(\psi)\ is\ not\ defined$")
+
+    # ======================================================= q(ψp)
+    axqp.set_xlabel(r"$\psi_p/\psi_{p,LCFS}$")
+    axqp.set_ylabel(r"$q(\psi_p)$")
+    if qfactor.psip_state == "Good":
+        psips = np.linspace(0, qfactor.psip_last.value, points) * 0.99999
+        psips_norm = psips / qfactor.psip_last.value
+        q_values = qfactor.eval_q(psip=psips)
+        axqp.plot(
+            psips_norm,
+            q_values,
+            c=QFACTOR_COLOR,
+            label=rf"$q(\psi_p)$",
+        )
+        if qfactor.psi_state == "Good":
+            psis = qfactor.eval_other(psip=psips)
+            d_values = 1 / qfactor.eval_deriv_of_other(psi=psis)
+            axqp.plot(
+                psips_norm,
+                d_values,
+                c=DERIV_COLOR,
+                linestyle=DERIV_STYLE,
+                label=r"$(d\psi_p/d\psi)^{-1}$",
+            )
+        if data and qfactor.machine_type == "Numerical":
+            # Arrays always exist if `machine_type == "Numerical"`
+            q_data = qfactor.q_array  # pyright: ignore
+            psip_data = qfactor.psip_array  # pyright: ignore
+            psip_data_norm = psip_data / qfactor.psip_last.value
+            axqp.scatter(
+                psip_data_norm,
+                q_data,
+                c=DATA_COLOR,
+                marker=DATA_MARKER,
+                s=DATA_SIZE,
+                zorder=DATA_ZORDER,
+                label=DATA_LABEL,
+            )
+        axqp.margins(*MARGINS)
+        axqp.legend()
+        axqp.grid()
+    else:
+        axqp.set_facecolor(EMPTY_PLOT_COLOR)
+        axqp.text(
+            0.5, 0.5, ha="center", va="center", s=r"$q(\psi_p)\ is\ not\ defined$"
+        )
+
+    # ======================================================= ψp(ψ)
+    axpt.set_xlabel(r"$\psi/\psi_{LCFS}$")
+    axpt.set_ylabel(r"$\psi_p(\psi)/\psi_{p,LCFS}$")
+    if qfactor.psi_state == "Good":
+        fluxes = np.linspace(0, qfactor.psi_last.value, points) * 0.99999
+        fluxes_norm = fluxes / qfactor.psi_last.value
+        other_values = qfactor.eval_other(psi=fluxes)
+        other_values_norm = other_values / qfactor.psip_last.value
+        axpt.plot(
+            fluxes_norm,
+            other_values_norm,
+            c=QFACTOR_COLOR,
+            label=rf"$\psi_p(\psi)$",
+        )
+        if data and qfactor.machine_type == "Numerical":
+            # Arrays always exist if `machine_type == "Numerical"`
+            psi_data = qfactor.psi_array  # pyright: ignore
+            psip_data = qfactor.psip_array  # pyright: ignore
+            psi_data_norm = psi_data / qfactor.psi_last.value
+            psip_data_norm = psip_data / qfactor.psip_last.value
+            axpt.scatter(
+                psi_data_norm,
+                psip_data_norm,
+                c=DATA_COLOR,
+                marker=DATA_MARKER,
+                s=DATA_SIZE,
+                zorder=DATA_ZORDER,
+                label=DATA_LABEL,
+            )
+        axpt.margins(*MARGINS)
+        axpt.legend()
+        axpt.grid()
+    else:
+        axpt.set_facecolor(EMPTY_PLOT_COLOR)
+        axpt.text(
+            0.5, 0.5, ha="center", va="center", s=r"$\psi_p(\psi)\ is\ not\ defined$"
+        )
+
+    # ======================================================= ψ(ψp)
+    axtp.set_xlabel(r"$\psi_p/\psi_{p,LCFS}$")
+    axtp.set_ylabel(r"$\psi(\psi_p)/\psi_{LCFS}$")
+    if qfactor.psip_state == "Good":
+        fluxes = np.linspace(0, qfactor.psip_last.value, points) * 0.99999
+        fluxes_norm = fluxes / qfactor.psip_last.value
+        other_values = qfactor.eval_other(psip=fluxes)
+        other_values_norm = other_values / qfactor.psi_last.value
+        axtp.plot(
+            fluxes_norm,
+            other_values_norm,
+            c=QFACTOR_COLOR,
+            label=rf"$\psi(\psi_p)$",
+        )
+        if data and qfactor.machine_type == "Numerical":
+            # Arrays always exist if `machine_type == "Numerical"`
+            psi_data = qfactor.psi_array  # pyright: ignore
+            psip_data = qfactor.psip_array  # pyright: ignore
+            psi_data_norm = psi_data / qfactor.psi_last.value
+            psip_data_norm = psip_data / qfactor.psip_last.value
+            axtp.scatter(
+                psip_data_norm,
+                psi_data_norm,
+                c=DATA_COLOR,
+                marker=DATA_MARKER,
+                s=DATA_SIZE,
+                zorder=DATA_ZORDER,
+                label=DATA_LABEL,
+            )
+        axtp.margins(*MARGINS)
+        axtp.legend()
+        axtp.grid()
+    else:
+        axtp.set_facecolor(EMPTY_PLOT_COLOR)
+        axtp.text(
+            0.5, 0.5, ha="center", va="center", s=r"$\psi(\psi_p)\ is\ not\ defined$"
+        )
+
+    if show:
+        plt.show()
+
+    return fig, axes
+
+
 def plot_current(
     machine: Machine,
     flux: MagneticFluxKind = "Toroidal",
@@ -23,7 +269,8 @@ def plot_current(
     data: bool = False,
     show: bool = True,
 ) -> tuple[Figure, tuple[Axes, Axes]]:
-    r"""Plots a CurrentObject's `g`, `I` and its derivatives with respect to `ψ` or `ψp`.
+    r"""Plots a [`CurrentObject`][dexter.CurrentObject]'s $g$, $I$ and their derivatives, with respect to
+    $\psi$ and $\psi_p$.
 
     Parameters
     ----------
@@ -38,7 +285,7 @@ def plot_current(
     points
         The number of points on which to evaluate the flux in each plot.
     data
-        Whether or not to plot the data points, if `machine.current.machine_type == "Numerical".
+        Whether or not to plot the data points, if `#!python machine.current.machine_type == "Numerical"`.
     show
         Whether or not to call `plt.show()`.
 
@@ -79,7 +326,7 @@ def plot_current(
         flux_tex = r"\psi_p"
         flux_last_tex = r"\psi_{p,LCFS}"
 
-    fluxes = np.linspace(0, lcfs.value, points)
+    fluxes = np.linspace(0, lcfs.value, points) * 0.99999
     fluxes_norm = fluxes / lcfs.value
     values = {values_key: fluxes}
 
@@ -100,7 +347,7 @@ def plot_current(
             flux_data_norm = flux_data / machine.psip_last.value
         DATA_COLOR = "k"
         DATA_MARKER = "+"
-        DATA_SIZE = 20
+        DATA_SIZE = 15
         DATA_LABEL = r"$data\ points$"
         DATA_ZORDER = 10
         axg.scatter(

@@ -83,6 +83,24 @@ def lar_machine_perturbed() -> dex.Machine:
 
 
 @pytest.fixture(scope="session")
+def nc_machine(
+    nc_geometry: dex.NcGeometry,
+    nc_qfactor: dex.NcQfactor,
+    nc_current: dex.NcCurrent,
+    nc_bfield: dex.NcBfield,
+) -> dex.Machine:
+    """Creates a typical Nc configuration."""
+    LCFS = nc_geometry.psi_last
+    assert LCFS is not None
+    return dex.Machine(
+        geometry=nc_geometry,
+        qfactor=nc_qfactor,
+        current=nc_current,
+        bfield=nc_bfield,
+    )
+
+
+@pytest.fixture(scope="session")
 def nc_machine_perturbed(
     nc_geometry: dex.NcGeometry,
     nc_qfactor: dex.NcQfactor,
