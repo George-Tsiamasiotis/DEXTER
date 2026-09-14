@@ -9,24 +9,26 @@ plot_qfactor
 plot_current
     Plots a [`CurrentObject`][dexter.CurrentObject]'s $g$, $I$ and their derivatives, with respect to
     $\psi$ and $\psi_p$.
+plot_bfield
+    Plots a [`BfieldObject`][dexter.BfieldObject]'s $B$ and its derivatives on the $R-Z$ plane.
 """
 
-from typing import assert_never
-
-from dexter.machine.base import MachineObject
-from dexter.types import MagneticFluxKind
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 from matplotlib.axes import Axes
 
 from dexter.machine.machine import Machine
-from dexter.types import Interpolation1dType, Array
+from dexter.machine.base import MachineObject
+from dexter.types import MagneticFluxKind, Interpolation1dType, Array
 
 plt.rcParams["figure.dpi"] = 180
 plt.rcParams["savefig.dpi"] = 300
 plt.rcParams["figure.autolayout"] = False
 plt.rcParams["figure.constrained_layout.use"] = True
+
+TAU = 2 * np.pi
+PI = np.pi
 
 
 def plot_qfactor(
@@ -317,23 +319,23 @@ def plot_current(
 
     if flux == "Toroidal":
         lcfs = machine.psi_last
-        values_key = "psi"
+        flux_arg_name = "psi"
         flux_tex = r"\psi"
         flux_last_tex = r"\psi_{LCFS}"
     else:
         lcfs = machine.psip_last
-        values_key = "psip"
+        flux_arg_name = "psip"
         flux_tex = r"\psi_p"
         flux_last_tex = r"\psi_{p,LCFS}"
 
     fluxes = np.linspace(0, lcfs.value, points) * 0.99999
     fluxes_norm = fluxes / lcfs.value
-    values = {values_key: fluxes}
+    eval_arg = {flux_arg_name: fluxes}
 
-    g_values = current.eval_g(**values)
-    i_values = current.eval_i(**values)
-    g_deriv_values = current.eval_g_deriv(**values)
-    i_deriv_values = current.eval_i_deriv(**values)
+    g_values = current.eval_g(**eval_arg)
+    i_values = current.eval_i(**eval_arg)
+    g_deriv_values = current.eval_g_deriv(**eval_arg)
+    i_deriv_values = current.eval_i_deriv(**eval_arg)
 
     if data and current.machine_type == "Numerical":
         # Arrays always exist if `machine_type == "Numerical"`
@@ -454,6 +456,131 @@ def plot_current(
         plt.show()
 
     return fig, (axg, axi)
+
+
+def plot_bfield(
+    machine: Machine,
+    levels: int = 15,
+    show: bool = True,
+) -> tuple[Figure, tuple[Axes, Axes, Axes]]:
+    """Plots a [`BfieldObject`][dexter.BfieldObject]'s $B$ and its derivatives on the $R-Z$ plane.
+
+    Parameters
+    ----------
+    machine
+        The machine containing the current object.
+
+    Other parameters
+    ----------------
+    levels
+        The number of contour levels.
+    show
+        Whether or not to call `plt.show()`.
+
+    Example
+    -------
+
+    ``` py title="Bfield plot"
+    >>> machine = dex.Machine.FromNetcdf(path, "Akima", "Bicubic")
+    >>> fig, ax = dex.plot_bfield(machine, levels=20)
+
+    ```
+
+    ``` sh title="From command line"
+    dexter-plot-bfield ./netcdf.nc -l 30
+
+    ```
+
+    """
+    bfield = machine.bfield
+    geometry = machine.geometry
+    if geometry is None:
+        raise RuntimeError("'Geometry' must be defined")
+
+    fig = plt.figure(figsize=(6.1, 4))
+    axes = fig.subplots(2, 2)
+    axbb: Axes = axes[0, 0]
+    axbf: Axes = axes[0, 1]
+    axbt: Axes = axes[1, 0]
+    axsc: Axes = axes[1, 1]
+
+    flux_points, theta_points = getattr(
+        bfield, "shape", (300, 300)
+    )  # for analytical bfields
+    thetas = np.linspace(0, TAU, theta_points)
+    if bfield.psi_state == "Good":
+        psi_last = machine.psi_last.value
+        fluxes = np.linspace(1e-10, psi_last, flux_points) * 0.99999
+        flux_arg_name = "psi"
+        flux_tex = "psi"
+    else:
+        psip_last = machine.psip_last.value
+        fluxes = np.linspace(1e-10, psip_last, flux_points) * 0.99999
+        flux_arg_name = "psip"
+        flux_tex = "psi_p"
+
+    flux_grid, theta_grid = np.meshgrid(fluxes, thetas)
+    lab_eval_args = {flux_arg_name: flux_grid, "theta": theta_grid}
+    rlabs = geometry.eval_rlab(**lab_eval_args)
+    zlabs = geometry.eval_zlab(**lab_eval_args)
+
+    # The B arrays must be "rotated" to account for θ padding
+    theta_offset = abs(getattr(bfield, "padding_theta", 0))
+    bfield_eval_args = lab_eval_args | {"theta": (theta_grid + theta_offset) % TAU}
+    bb = bfield.eval_b(**bfield_eval_args)
+    bf = bfield.eval_deriv_flux(**bfield_eval_args)
+    bt = bfield.eval_deriv_theta(**bfield_eval_args)
+    bb = machine.quantity(bb, "NormTesla").to("Tesla")
+
+    CMAP = "plasma"
+    LEVEL_LINE_COLOR = "k"
+    LEVEL_LINE_WIDTH = 0.5
+    SC_COLOR = "xkcd:bright blue"
+    LAST_COLOR = "k"
+    MARGINS = (0.01, 0.01)
+
+    csbb = axbb.contourf(rlabs, zlabs, bb.m, cmap=CMAP, levels=levels)
+    csbf = axbf.contourf(rlabs, zlabs, bf, cmap=CMAP, levels=levels)
+    csbt = axbt.contourf(rlabs, zlabs, bt, cmap=CMAP, levels=levels)
+    cssc = axsc.contourf(rlabs, zlabs, bt, cmap=CMAP, levels=levels)
+    axbb.contour(csbb, colors="k", linewidths=LEVEL_LINE_WIDTH)
+    axbf.contour(csbf, colors="k", linewidths=LEVEL_LINE_WIDTH)
+    axbt.contour(csbt, colors="k", linewidths=LEVEL_LINE_WIDTH)
+    axsc.contour(csbt, colors="k", linewidths=LEVEL_LINE_WIDTH)
+
+    axsc.contour(
+        cssc,
+        levels=[0],
+        colors=SC_COLOR,
+        linewidths=2 * LEVEL_LINE_WIDTH,
+        linestyle="solid",
+        negative_linestyles="solid",
+    )
+    axsc.plot([], [], color=SC_COLOR, label=r"$dB(R,Z)/d\theta$")
+    axsc.legend(loc="upper right", prop={"size": 7})
+
+    plt.colorbar(csbb, label=r"$B(R, Z)\ [Tesla]$")
+    plt.colorbar(csbf, label=rf"$dB(R, Z)/d\{flux_tex}$")
+    plt.colorbar(csbt, label=rf"$dB(R, Z)/d\theta$")
+    plt.colorbar(cssc, label=rf"$dB(R, Z)/d\theta$")
+
+    axis_point = (geometry.raxis, geometry.zaxis)
+
+    for ax in [axbb, axbf, axbt, axsc]:
+        ax.plot(geometry.rlab_last, geometry.zlab_last, color=LAST_COLOR)
+        ax.scatter(*axis_point, marker="+", c="k", s=40, zorder=10)
+        ax.set_aspect("equal")
+        ax.margins(*MARGINS)
+
+    for lower_ax in axes[1, :]:
+        lower_ax.set_xlabel(r"$R\ [m]$")
+    for left_ax in axes[:, 0]:
+        left_ax.set_ylabel(r"$Z\ [m]$")
+
+    if show:
+        plt.show()
+
+    return fig, axes
 
 
 def _resolve_magnetic_flux_kind(

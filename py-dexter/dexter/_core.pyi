@@ -140,6 +140,7 @@ class _PyBfield:  # Trait and all possible getters
     interp_type: Interpolation2dType
     baxis: float
     padding: int
+    padding_theta: float
     shape: ArrayShape
     shape_padded: ArrayShape
 

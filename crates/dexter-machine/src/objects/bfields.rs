@@ -477,6 +477,19 @@ impl NcBfield {
         self.padding
     }
 
+    /// Returns the angle `θ` of the padding.
+    ///
+    /// This corresponds to the **absolute value** of the first element of the padded `θ` array,
+    /// e.g the extends of the padding.
+    #[must_use]
+    #[expect(clippy::missing_panics_doc, reason = "cannot fail")]
+    pub fn padding_theta(&self) -> f64 {
+        self.theta_values_padded
+            .first()
+            .copied()
+            .expect("exists by construction")
+    }
+
     /// Returns the `θ` array, as extracted from the netCDF file.
     #[must_use]
     pub fn theta_array(&self) -> Array1<f64> {

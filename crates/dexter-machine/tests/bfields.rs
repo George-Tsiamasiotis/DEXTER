@@ -4,6 +4,7 @@
 
 use std::path::PathBuf;
 
+use approx::assert_abs_diff_eq;
 use dexter_machine::*;
 use ndarray::{Array1, Array2};
 
@@ -63,6 +64,7 @@ fn nc_bfield_no_pad() {
 
     assert_eq!(theta_array, theta_array_padded);
     assert_eq!(b_array, b_array_padded);
+    assert_eq!(bfield.padding_theta(), 0.0);
 
     let acc = &mut Accelerator2d::new();
     let psi = MagneticFlux::Toroidal(0.01);
@@ -88,6 +90,16 @@ fn nc_bfield_pad() {
 
     assert_eq!(no_pad_bfield.padding(), 0);
     assert_eq!(pad_bfield.padding(), 10);
+
+    // Since the `θ` values are equidistant by construction, the padding angle should be
+    // equal to `-dθ * padding`, where `dθ` the distance between to neighboring `θ` values
+    let theta_array = pad_bfield.theta_array();
+    let dtheta0 = theta_array[1] - theta_array[0];
+    assert_abs_diff_eq!(
+        pad_bfield.padding_theta(),
+        -dtheta0 * pad_bfield.padding() as f64,
+        epsilon = 1e-10
+    );
 
     let netcdf_shape = no_pad_bfield.shape();
 

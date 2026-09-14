@@ -18,6 +18,7 @@ def test_nc(nc_bfield: dex.NcBfield):
     assert nc_bfield.interp_type == "Bicubic"
     assert isfinite(nc_bfield.baxis)
     assert isfinite(nc_bfield.padding)
+    assert isinstance(nc_bfield.padding_theta, float)
     assert isinstance(nc_bfield.psi_array, np.ndarray)
     assert isinstance(nc_bfield.psip_array, np.ndarray)
     assert isinstance(nc_bfield.theta_array, np.ndarray)
