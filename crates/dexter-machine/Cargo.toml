@@ -1,6 +1,6 @@
 [package]
 name = "dexter-machine"
-version = "0.1.9-pre.4"
+version = "0.1.9-pre.5"
 authors.workspace = true
 edition.workspace = true
 license.workspace = true

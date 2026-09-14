@@ -9,6 +9,7 @@ use core::f64::consts::PI;
 use dexter_common::array1D_getter_impl;
 use ndarray::{Array1, Array2, Order::ColumnMajor};
 use rsl_interpolation::{Accelerator, Accelerator2d};
+use std::hint::cold_path;
 use std::path::{Path, PathBuf};
 
 use super::debug_assert_all_finite_values;
@@ -524,17 +525,22 @@ impl Geometry for NcGeometry {
 
     fn eval_r(&self, flux: MagneticFlux, acc: &mut Accelerator) -> Result<f64, EvalError> {
         debug_assert_non_negative_flux!(flux);
-        let (val, xa, interp) = match flux {
-            Toroidal(val) => (val, self.psi.uvalues(), self.r_of_psi_interp.as_ref()),
-            Poloidal(val) => (val, self.psip.uvalues(), self.r_of_psip_interp.as_ref()),
+        let interp_opt = match flux {
+            Toroidal(_) => self.r_of_psi_interp.as_ref(),
+            Poloidal(_) => self.r_of_psip_interp.as_ref(),
         };
-        let ya = &self.r_values;
-        if let Some(interp) = interp {
-            Ok(debug_assert_is_finite!(interp.eval(xa, ya, val, acc)?))
-        } else {
+        let Some(interp) = interp_opt else {
+            cold_path();
             let msg = format!("r({})", flux.symbol());
-            Err(EvalError::UndefinedEvaluation(msg))
-        }
+            return Err(EvalError::UndefinedEvaluation(msg));
+        };
+        // This cannot panic. If `interp` is `Some` then the corresponding values exist.
+        let (val, xa) = match flux {
+            Toroidal(val) => (val, self.psi.uvalues()),
+            Poloidal(val) => (val, self.psip.uvalues()),
+        };
+        let ya = &self.theta_values;
+        Ok(debug_assert_is_finite!(interp.eval(xa, ya, val, acc)?))
     }
 
     fn eval_psi_of_r(&self, r: f64, acc: &mut Accelerator) -> Result<MagneticFlux, EvalError> {
@@ -570,20 +576,25 @@ impl Geometry for NcGeometry {
         acc: &mut Accelerator2d,
     ) -> Result<f64, EvalError> {
         debug_assert_non_negative_flux!(flux);
-        let (val, xa, interp) = match flux {
-            Toroidal(val) => (val, self.psi.uvalues(), self.rlab_of_psi_interp.as_ref()),
-            Poloidal(val) => (val, self.psip.uvalues(), self.rlab_of_psip_interp.as_ref()),
+        let interp_opt = match flux {
+            Toroidal(_) => self.rlab_of_psi_interp.as_ref(),
+            Poloidal(_) => self.rlab_of_psip_interp.as_ref(),
+        };
+        let Some(interp) = interp_opt else {
+            cold_path();
+            let msg = format!("R({}, θ)", flux.symbol());
+            return Err(EvalError::UndefinedEvaluation(msg));
+        };
+        // This cannot panic. If `interp` is `Some` then the corresponding values exist.
+        let (val, xa) = match flux {
+            Toroidal(val) => (val, self.psi.uvalues()),
+            Poloidal(val) => (val, self.psip.uvalues()),
         };
         let ya = &self.theta_values;
         let za = &self.rlab_values_fortran_flat;
-        if let Some(interp) = interp {
-            Ok(debug_assert_is_finite!(
-                interp.eval(xa, ya, za, val, theta, acc)?
-            ))
-        } else {
-            let msg = format!("R({}, θ)", flux.symbol());
-            Err(EvalError::UndefinedEvaluation(msg))
-        }
+        Ok(debug_assert_is_finite!(
+            interp.eval(xa, ya, za, val, theta, acc)?
+        ))
     }
 
     fn eval_zlab(
@@ -593,20 +604,25 @@ impl Geometry for NcGeometry {
         acc: &mut Accelerator2d,
     ) -> Result<f64, EvalError> {
         debug_assert_non_negative_flux!(flux);
-        let (val, xa, interp) = match flux {
-            Toroidal(val) => (val, self.psi.uvalues(), self.zlab_of_psi_interp.as_ref()),
-            Poloidal(val) => (val, self.psip.uvalues(), self.zlab_of_psip_interp.as_ref()),
+        let interp_opt = match flux {
+            Toroidal(_) => self.zlab_of_psi_interp.as_ref(),
+            Poloidal(_) => self.zlab_of_psip_interp.as_ref(),
+        };
+        let Some(interp) = interp_opt else {
+            cold_path();
+            let msg = format!("Z({}, θ)", flux.symbol());
+            return Err(EvalError::UndefinedEvaluation(msg));
+        };
+        // This cannot panic. If `interp` is `Some` then the corresponding values exist.
+        let (val, xa) = match flux {
+            Toroidal(val) => (val, self.psi.uvalues()),
+            Poloidal(val) => (val, self.psip.uvalues()),
         };
         let ya = &self.theta_values;
         let za = &self.zlab_values_fortran_flat;
-        if let Some(interp) = interp {
-            Ok(debug_assert_is_finite!(
-                interp.eval(xa, ya, za, val, theta, acc)?
-            ))
-        } else {
-            let msg = format!("Z({}, θ)", flux.symbol());
-            Err(EvalError::UndefinedEvaluation(msg))
-        }
+        Ok(debug_assert_is_finite!(
+            interp.eval(xa, ya, za, val, theta, acc)?
+        ))
     }
 
     fn eval_jacobian(
@@ -616,21 +632,25 @@ impl Geometry for NcGeometry {
         acc: &mut Accelerator2d,
     ) -> Result<f64, EvalError> {
         debug_assert_non_negative_flux!(flux);
-        #[rustfmt::skip]
-        let (val, xa, interp) = match flux {
-            Toroidal(val) => (val, self.psi.uvalues(), self.jacobian_of_psi_interp.as_ref()),
-            Poloidal(val) => (val, self.psip.uvalues(), self.jacobian_of_psip_interp.as_ref()),
+        let interp_opt = match flux {
+            Toroidal(_) => self.jacobian_of_psi_interp.as_ref(),
+            Poloidal(_) => self.jacobian_of_psip_interp.as_ref(),
+        };
+        let Some(interp) = interp_opt else {
+            cold_path();
+            let msg = format!("J({}, θ)", flux.symbol());
+            return Err(EvalError::UndefinedEvaluation(msg));
+        };
+        // This cannot panic. If `interp` is `Some` then the corresponding values exist.
+        let (val, xa) = match flux {
+            Toroidal(val) => (val, self.psi.uvalues()),
+            Poloidal(val) => (val, self.psip.uvalues()),
         };
         let ya = &self.theta_values;
         let za = &self.jacobian_values_fortran_flat;
-        if let Some(interp) = interp {
-            Ok(debug_assert_is_finite!(
-                interp.eval(xa, ya, za, val, theta, acc)?
-            ))
-        } else {
-            let msg = format!("J({}, θ)", flux.symbol());
-            Err(EvalError::UndefinedEvaluation(msg))
-        }
+        Ok(debug_assert_is_finite!(
+            interp.eval(xa, ya, za, val, theta, acc)?
+        ))
     }
 
     fn rlab_last(&self) -> Array1<f64> {

@@ -694,7 +694,7 @@ impl Qfactor for NcQfactor {
             }
             _ => (),
         }
-        // SAFETY: the above check ensures the flux values exist.
+        // This cannot panic. The above check ensures the flux values exist.
         #[rustfmt::skip]
         let (val, xa, ya, interp) = match flux {
             Toroidal(val) => (val, self.psi.uvalues(), self.psip.uvalues(), self.psip_of_psi_interp.as_ref()),
@@ -755,7 +755,7 @@ impl Qfactor for NcQfactor {
             }
             _ => (),
         }
-        // SAFETY: the above check ensures the flux values exist.
+        // This cannot panic. The above check ensures the flux values exist.
         #[rustfmt::skip]
         let (val, xa, ya, interp) = match flux {
             Toroidal(val) => (val, self.psi.uvalues(), self.psip.uvalues(), self.psip_of_psi_interp.as_ref()),

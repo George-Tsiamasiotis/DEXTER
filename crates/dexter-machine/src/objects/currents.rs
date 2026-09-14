@@ -246,70 +246,86 @@ impl MachineObject for NcCurrent {
 impl Current for NcCurrent {
     fn eval_g(&self, flux: MagneticFlux, acc: &mut Accelerator) -> Result<f64, EvalError> {
         debug_assert_non_negative_flux!(flux);
-        let (val, xa, interp) = match flux {
-            Toroidal(val) => (val, self.psi.uvalues(), self.g_of_psi_interp.as_ref()),
-            Poloidal(val) => (val, self.psip.uvalues(), self.g_of_psip_interp.as_ref()),
+        let interp_opt = match flux {
+            Toroidal(_) => self.g_of_psi_interp.as_ref(),
+            Poloidal(_) => self.g_of_psip_interp.as_ref(),
         };
-        let ya = &self.g_values;
-        if let Some(interp) = interp {
-            Ok(debug_assert_is_finite!(interp.eval(xa, ya, val, acc)?))
-        } else {
+        let Some(interp) = interp_opt else {
             cold_path();
             let msg = format!("g({})", flux.symbol());
-            Err(EvalError::UndefinedEvaluation(msg))
-        }
+            return Err(EvalError::UndefinedEvaluation(msg));
+        };
+        // This cannot panic. If `interp` is `Some` then the corresponding values exist.
+        let (val, xa) = match flux {
+            Toroidal(val) => (val, self.psi.uvalues()),
+            Poloidal(val) => (val, self.psip.uvalues()),
+        };
+        let ya = &self.g_values;
+        Ok(debug_assert_is_finite!(interp.eval(xa, ya, val, acc)?))
     }
 
     fn eval_i(&self, flux: MagneticFlux, acc: &mut Accelerator) -> Result<f64, EvalError> {
         debug_assert_non_negative_flux!(flux);
-        let (val, xa, interp) = match flux {
-            Toroidal(val) => (val, self.psi.uvalues(), self.i_of_psi_interp.as_ref()),
-            Poloidal(val) => (val, self.psip.uvalues(), self.i_of_psip_interp.as_ref()),
+        let interp_opt = match flux {
+            Toroidal(_) => self.i_of_psi_interp.as_ref(),
+            Poloidal(_) => self.i_of_psip_interp.as_ref(),
         };
-        let ya = &self.i_values;
-        if let Some(interp) = interp {
-            Ok(debug_assert_is_finite!(interp.eval(xa, ya, val, acc)?))
-        } else {
+        let Some(interp) = interp_opt else {
             cold_path();
             let msg = format!("I({})", flux.symbol());
-            Err(EvalError::UndefinedEvaluation(msg))
-        }
+            return Err(EvalError::UndefinedEvaluation(msg));
+        };
+        // This cannot panic. If `interp` is `Some` then the corresponding values exist.
+        let (val, xa) = match flux {
+            Toroidal(val) => (val, self.psi.uvalues()),
+            Poloidal(val) => (val, self.psip.uvalues()),
+        };
+        let ya = &self.i_values;
+        Ok(debug_assert_is_finite!(interp.eval(xa, ya, val, acc)?))
     }
 
     fn eval_g_deriv(&self, flux: MagneticFlux, acc: &mut Accelerator) -> Result<f64, EvalError> {
         debug_assert_non_negative_flux!(flux);
-        let (val, xa, interp) = match flux {
-            Toroidal(val) => (val, self.psi.uvalues(), self.g_of_psi_interp.as_ref()),
-            Poloidal(val) => (val, self.psip.uvalues(), self.g_of_psip_interp.as_ref()),
+        let interp_opt = match flux {
+            Toroidal(_) => self.g_of_psi_interp.as_ref(),
+            Poloidal(_) => self.g_of_psip_interp.as_ref(),
         };
-        let ya = &self.g_values;
-        if let Some(interp) = interp {
-            Ok(debug_assert_is_finite!(
-                interp.eval_deriv(xa, ya, val, acc)?
-            ))
-        } else {
+        let Some(interp) = interp_opt else {
             cold_path();
             let msg = format!("dg({})/d{}", flux.symbol(), flux.symbol());
-            Err(EvalError::UndefinedEvaluation(msg))
-        }
+            return Err(EvalError::UndefinedEvaluation(msg));
+        };
+        // This cannot panic. If `interp` is `Some` then the corresponding values exist.
+        let (val, xa) = match flux {
+            Toroidal(val) => (val, self.psi.uvalues()),
+            Poloidal(val) => (val, self.psip.uvalues()),
+        };
+        let ya = &self.g_values;
+        Ok(debug_assert_is_finite!(
+            interp.eval_deriv(xa, ya, val, acc)?
+        ))
     }
 
     fn eval_i_deriv(&self, flux: MagneticFlux, acc: &mut Accelerator) -> Result<f64, EvalError> {
         debug_assert_non_negative_flux!(flux);
-        let (val, xa, interp) = match flux {
-            Toroidal(val) => (val, self.psi.uvalues(), self.i_of_psi_interp.as_ref()),
-            Poloidal(val) => (val, self.psip.uvalues(), self.i_of_psip_interp.as_ref()),
+        let interp_opt = match flux {
+            Toroidal(_) => self.i_of_psi_interp.as_ref(),
+            Poloidal(_) => self.i_of_psip_interp.as_ref(),
         };
-        let ya = &self.i_values;
-        if let Some(interp) = interp {
-            Ok(debug_assert_is_finite!(
-                interp.eval_deriv(xa, ya, val, acc)?
-            ))
-        } else {
+        let Some(interp) = interp_opt else {
             cold_path();
             let msg = format!("dI({})/d{}", flux.symbol(), flux.symbol());
-            Err(EvalError::UndefinedEvaluation(msg))
-        }
+            return Err(EvalError::UndefinedEvaluation(msg));
+        };
+        // This cannot panic. If `interp` is `Some` then the corresponding values exist.
+        let (val, xa) = match flux {
+            Toroidal(val) => (val, self.psi.uvalues()),
+            Poloidal(val) => (val, self.psip.uvalues()),
+        };
+        let ya = &self.i_values;
+        Ok(debug_assert_is_finite!(
+            interp.eval_deriv(xa, ya, val, acc)?
+        ))
     }
 }
 
