@@ -1,14 +1,20 @@
 """Defines `Machine`, a container for all information a device."""
 
 from dexter.machine.utils import MagneticFlux
-from dexter.types import ArrayLike, ParticleSpecies, Unit
+from dexter.types import (
+    ArrayLike,
+    Interpolation1dType,
+    Interpolation2dType,
+    ParticleSpecies,
+    Unit,
+)
 from pint.facets.plain import PlainQuantity
 
-from dexter.machine.bfields import BfieldObject
-from dexter.machine.currents import CurrentObject
-from dexter.machine.geometries import GeometryObject
+from dexter.machine.bfields import BfieldObject, NcBfield
+from dexter.machine.currents import CurrentObject, NcCurrent
+from dexter.machine.geometries import GeometryObject, NcGeometry
 from dexter.machine.perturbation import Perturbation
-from dexter.machine.qfactors import QfactorObject
+from dexter.machine.qfactors import NcQfactor, QfactorObject
 
 from dexter.machine._registry import _Registry
 
@@ -113,6 +119,40 @@ class Machine:
             self._reg.define_normalizations(geometry.raxis, geometry.baxis, species)
         else:
             self._reg = None
+
+    @classmethod
+    def FromNetcdf(
+        cls,
+        path: str,
+        interp1d_type: Interpolation1dType,
+        interp2d_type: Interpolation2dType,
+    ) -> Machine:
+        r"""Constructs a `Machine` from a netCDF file with no perturbations and default settings.
+
+        Parameters
+        ----------
+        path
+            The path to the netCDF file.
+        interp1d_type
+            The 1D interpolation type for the 1D quantities.
+        interp2d_type
+            The 2D interpolation type for the 2D quantities.
+
+        Example
+        -------
+
+        ```python title="Machine creation from netCDF file"
+        >>> machine = dex.Machine.FromNetcdf(path, "Akima", "Bicubic")
+
+        ```
+
+        """
+        return Machine(
+            geometry=NcGeometry(path, interp1d_type, interp2d_type),
+            qfactor=NcQfactor(path, interp1d_type),
+            current=NcCurrent(path, interp1d_type),
+            bfield=NcBfield(path, interp2d_type),
+        )
 
     def quantity(self, value: float | ArrayLike, units: Unit) -> PlainQuantity:
         if self._reg is None:

@@ -1,3 +1,9 @@
+import matplotlib
+import matplotlib.pyplot
+
+matplotlib.use("gtk3agg")
+matplotlib.pyplot.rcParams["text.usetex"] = True
+
 from typing import TypeAlias
 
 from dexter.types import (
@@ -36,6 +42,8 @@ from dexter.machine.bfields import BfieldObject, LarBfield, NcBfield
 from dexter.machine.modes import ModeObject, FluteMode, NcFluteMode
 from dexter.machine.perturbation import Perturbation
 from dexter.machine.machine import Machine
+
+from dexter.machine.plot import plot_current
 
 from dexter.simulate.initial import InitialConditions
 from dexter.simulate.particle import Particle
@@ -80,6 +88,8 @@ __all__ = [
     "NcFluteMode",
     "Perturbation",
     "Machine",
+    # Machine (plot)
+    "plot_current",
     # Simulate
     "InitialConditions",
     "Particle",

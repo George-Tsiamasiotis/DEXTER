@@ -1,5 +1,6 @@
 """Common helper types to be used across all submodules."""
 
+import inspect
 from typing import Any, TypeAlias
 
 _PyAny: TypeAlias = Any
@@ -29,3 +30,16 @@ class _RustTypeWrapper:
         obj = cls.__new__(cls)
         obj._r = _r
         return obj
+
+
+def _get_default_args(func):
+    """Returns a `Signature` with the optional parameters' names and default values.
+
+    Useful in providing `argparse` the default values.
+    """
+    signature = inspect.signature(func)
+    return {
+        k: v.default
+        for k, v in signature.parameters.items()
+        if v.default is not inspect.Parameter.empty
+    }
