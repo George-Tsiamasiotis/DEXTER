@@ -79,7 +79,7 @@ Variable does not exist or is empty.
 """
 
 Interpolation1dType: TypeAlias = Literal[
-    "Linear", "Cubic", "Cubic Periodic", "Akima", "Akima Periodic", "Steffen"
+    "Linear", "Cubic", "CubicPeriodic", "Akima", "AkimaPeriodic", "Steffen"
 ]
 """Available 1D Interpolation types
 

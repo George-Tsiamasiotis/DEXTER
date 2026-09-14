@@ -80,7 +80,7 @@ fn queue_poloidal_intersect_const_zeta_ncdQ_ncdC_ncdB_ncdP() -> Result<(), Simul
                 .unwrap(),
         ),
         Box::new(
-            NcFluteModeBuilder::new(&path, Akima, 3, 2)
+            NcFluteModeBuilder::new(&path, Akima, 2, 2)
                 .with_phase_method(Interpolation)
                 .build()
                 .unwrap(),

@@ -24,7 +24,7 @@ fn main() {
                 .unwrap(),
         ),
         Box::new(
-            NcFluteModeBuilder::new(&path, Steffen, 3, 2)
+            NcFluteModeBuilder::new(&path, Steffen, 2, 2)
                 .with_phase_method(PhaseMethod::Interpolation)
                 .build()
                 .unwrap(),

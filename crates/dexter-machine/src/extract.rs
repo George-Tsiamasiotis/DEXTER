@@ -551,29 +551,29 @@ mod test {
         use ndarray::s;
         // Index by logical index
         assert_eq!(
-            alpha_3d.slice(s![0, 1, 0]).into_scalar().to_owned() as i64,
+            alpha_3d.slice(s![1, 1, 0]).into_scalar().to_owned() as i64,
             1111,
             "Is this test up to date with the stub netcdf file?"
         );
         assert_eq!(
-            phase_3d.slice(s![0, 1, 0]).into_scalar().to_owned() as i64,
+            phase_3d.slice(s![1, 1, 0]).into_scalar().to_owned() as i64,
             9999,
             "Is this test up to date with the stub netcdf file?"
         );
         assert_eq!(
-            alpha_3d.slice(s![0, 1, -1]).into_scalar().to_owned() as i64,
+            alpha_3d.slice(s![1, 1, -1]).into_scalar().to_owned() as i64,
             11111,
             "Is this test up to date with the stub netcdf file?"
         );
         assert_eq!(
-            phase_3d.slice(s![0, 1, -1]).into_scalar().to_owned() as i64,
+            phase_3d.slice(s![1, 1, -1]).into_scalar().to_owned() as i64,
             99999,
             "Is this test up to date with the stub netcdf file?"
         );
 
         // Index by mode number
         assert_eq!(
-            mode_arrays::<f64>(&file, 2, 2)
+            mode_arrays::<f64>(&file, 3, 2)
                 .unwrap()
                 .0
                 .first()
@@ -583,7 +583,7 @@ mod test {
             "Is this test up to date with the stub netcdf file?"
         );
         assert_eq!(
-            mode_arrays::<f64>(&file, 2, 2)
+            mode_arrays::<f64>(&file, 3, 2)
                 .unwrap()
                 .0
                 .last()
@@ -593,7 +593,7 @@ mod test {
             "Is this test up to date with the stub netcdf file?"
         );
         assert_eq!(
-            mode_arrays::<f64>(&file, 2, 2)
+            mode_arrays::<f64>(&file, 3, 2)
                 .unwrap()
                 .1
                 .first()
@@ -603,7 +603,7 @@ mod test {
             "Is this test up to date with the stub netcdf file?"
         );
         assert_eq!(
-            mode_arrays::<f64>(&file, 2, 2)
+            mode_arrays::<f64>(&file, 3, 2)
                 .unwrap()
                 .1
                 .last()

@@ -64,7 +64,7 @@ fn gc_toroidal_integration_ncdQ_ncdC_ncdB_ncdP() {
     let bfield = NcBfieldBuilder::new(&path, Bicubic).build().unwrap();
     let perturbation = Perturbation::new(vec![
         Box::new(NcFluteModeBuilder::new(&path, Akima, 2, 1).with_phase_method(Interpolation).build().unwrap()),
-        Box::new(NcFluteModeBuilder::new(&path, Akima, 3, 2).with_phase_method(Interpolation).build().unwrap()),
+        Box::new(NcFluteModeBuilder::new(&path, Akima, 2, 2).with_phase_method(Interpolation).build().unwrap()),
     ]);
     let machine = MachineBuilder::new(&qfactor, &current, &bfield)
         .with_perturbation(&perturbation)
@@ -102,7 +102,7 @@ fn gc_poloidal_integration_ncdQ_ncdC_ncdB_ncdP() {
     let bfield = NcBfieldBuilder::new(&path, Bicubic).build().unwrap();
     let perturbation = Perturbation::new(vec![
         Box::new(NcFluteModeBuilder::new(&path, Akima, 2, 1).with_phase_method(Interpolation).build().unwrap()),
-        Box::new(NcFluteModeBuilder::new(&path, Akima, 3, 2).with_phase_method(Interpolation).build().unwrap()),
+        Box::new(NcFluteModeBuilder::new(&path, Akima, 2, 2).with_phase_method(Interpolation).build().unwrap()),
     ]);
     let machine = MachineBuilder::new(&qfactor, &current, &bfield)
         .with_perturbation(&perturbation)
@@ -192,7 +192,7 @@ fn gc_toroidal_poloidal_equivalence() {
     let bfield = NcBfieldBuilder::new(&path, Bicubic).build().unwrap();
     let perturbation = Perturbation::new(vec![
         Box::new(NcFluteModeBuilder::new(&path, Akima, 2, 1).with_phase_method(Interpolation).build().unwrap()),
-        Box::new(NcFluteModeBuilder::new(&path, Akima, 3, 2).with_phase_method(Interpolation).build().unwrap()),
+        Box::new(NcFluteModeBuilder::new(&path, Akima, 2, 2).with_phase_method(Interpolation).build().unwrap()),
     ]);
     let machine = MachineBuilder::new(&qfactor, &current, &bfield)
         .with_perturbation(&perturbation)
@@ -210,7 +210,7 @@ fn gc_toroidal_poloidal_equivalence() {
     assert!(matches!(tor_particle.integration_status(), IntegrationStatus::Initialized));
     assert!(matches!(pol_particle.integration_status(), IntegrationStatus::Initialized));
 
-    let teval = (0.0, 2.14e5);
+    let teval = (0.0, 2.31e5);
     tor_particle.integrate(machine, teval, &solver_params);
     pol_particle.integrate(machine, teval, &solver_params);
     dbg!(&tor_particle);
@@ -287,7 +287,7 @@ fn gc_mixed_boozer_equivalence() {
     let bfield = NcBfieldBuilder::new(&path, Bicubic).build().unwrap();
     let perturbation = Perturbation::new(vec![
         Box::new(NcFluteModeBuilder::new(&path, Akima, 2, 1).with_phase_method(Interpolation).build().unwrap()),
-        Box::new(NcFluteModeBuilder::new(&path, Akima, 3, 2).with_phase_method(Interpolation).build().unwrap()),
+        Box::new(NcFluteModeBuilder::new(&path, Akima, 2, 2).with_phase_method(Interpolation).build().unwrap()),
     ]);
     let machine = MachineBuilder::new(&qfactor, &current, &bfield)
         .with_perturbation(&perturbation)
@@ -308,7 +308,7 @@ fn gc_mixed_boozer_equivalence() {
     assert!(matches!(boozer_particle.integration_status(), IntegrationStatus::Initialized));
     assert!(matches!(mixed_particle.integration_status(), IntegrationStatus::PartlyInitialized));
 
-    let teval = (0.0, 1.6e5);
+    let teval = (0.0, 1.64e5);
     boozer_particle.integrate(machine, teval, &solver_params);
     mixed_particle.integrate(machine, teval, &solver_params);
     dbg!(&boozer_particle);

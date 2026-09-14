@@ -1,3 +1,13 @@
+import matplotlib
+import matplotlib.pyplot as plt
+
+matplotlib.use("gtk3agg")
+plt.rcParams["text.usetex"] = True
+plt.rcParams["figure.dpi"] = 180
+plt.rcParams["savefig.dpi"] = 300
+plt.rcParams["figure.autolayout"] = False
+plt.rcParams["figure.constrained_layout.use"] = True
+
 from typing import TypeAlias
 
 from dexter.types import (
@@ -36,6 +46,9 @@ from dexter.machine.bfields import BfieldObject, LarBfield, NcBfield
 from dexter.machine.modes import ModeObject, FluteMode, NcFluteMode
 from dexter.machine.perturbation import Perturbation
 from dexter.machine.machine import Machine
+
+from dexter.machine.plot import plot_current, plot_qfactor, plot_bfield, plot_mode
+from dexter.simulate.plot import plot_evolution
 
 from dexter.simulate.initial import InitialConditions
 from dexter.simulate.particle import Particle
@@ -80,7 +93,14 @@ __all__ = [
     "NcFluteMode",
     "Perturbation",
     "Machine",
+    # Machine (plot)
+    "plot_current",
+    "plot_qfactor",
+    "plot_bfield",
+    "plot_mode",
     # Simulate
     "InitialConditions",
     "Particle",
+    # Simulate (plot)
+    "plot_evolution",
 ]

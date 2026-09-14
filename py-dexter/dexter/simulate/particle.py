@@ -11,6 +11,7 @@ from collections.abc import Sequence
 
 from dexter.machine.machine import Machine
 from dexter.simulate.initial import InitialConditions
+from dexter.simulate import plot
 
 from dexter.types import (
     Array1,
@@ -629,3 +630,17 @@ class Particle(_ReprStrImpl):
     @property
     def energy_array(self) -> Array1:
         return self._r.get_array("energy_array")
+
+    def plot_evolution(self, machine: Machine, **kwargs):
+        """Wrapper around [`dexter.plot_evolution`][dexter.plot_evolution].
+
+
+        Parameters
+        ----------
+        machine
+            The machine in which the particle was integrated. It is used to convert specific
+            quantities to SI units.
+        **kwargs
+            Extra arguments passed to [`dexter.plot_evolution`][dexter.plot_evolution].
+        """
+        plot.plot_evolution(machine, self, **kwargs)

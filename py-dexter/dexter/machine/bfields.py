@@ -81,6 +81,9 @@ class NcBfield(MachineObject, Bfield):
         The magnetic field strength on the axis $B_0$ in $[T]$.
     padding
         The number of $\theta$ padding columns (per side).
+    padding_theta
+        The angle $\theta$ of the padding. This corresponds to the **absolute value** of the first
+        element of the padded $\theta$ array, e.g the extends of the padding.
     shape
         Returns the $(\psi/\psi_p,\theta)$ shape of the initial 1D arrays (before the padding).
     shape_padded
@@ -111,7 +114,8 @@ class NcBfield(MachineObject, Bfield):
     netcdf_version: NetCDFVersion
     interp_type: Interpolation2dType
     baxis: float
-    padding: float
+    padding: int
+    padding_theta: float
     shape: ArrayShape
     shape_padded: ArrayShape
 
@@ -130,6 +134,7 @@ class NcBfield(MachineObject, Bfield):
         self.interp_type = self._r.interp_type
         self.baxis = self._r.baxis
         self.padding = self._r.padding
+        self.padding_theta = self._r.padding_theta
         self.shape = self._r.shape
         self.shape_padded = self._r.shape_padded
 

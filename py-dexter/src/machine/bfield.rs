@@ -158,6 +158,11 @@ impl PyBfield {
     }
 
     #[getter]
+    pub fn padding_theta(&self) -> Result<f64> {
+        Ok(self.nc()?.padding_theta())
+    }
+
+    #[getter]
     pub fn shape(&self) -> Result<(usize, usize)> {
         Ok(self.nc()?.shape())
     }
