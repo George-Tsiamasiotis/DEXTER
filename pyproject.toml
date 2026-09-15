@@ -1,6 +1,6 @@
 [project]
 name = "dexter"
-version = "0.2.0-pre.16"
+version = "0.2.0-pre.17"
 description = "Calculations and simulations in analytical and reconstructed configurations of toroidal fusion devices."
 readme = "README.md"
 authors = [
@@ -73,3 +73,4 @@ filterwarnings = [
 dexter-plot-current = "scripts:plot_current"
 dexter-plot-qfactor = "scripts:plot_qfactor"
 dexter-plot-bfield  = "scripts:plot_bfield"
+dexter-plot-mode  = "scripts:plot_mode"

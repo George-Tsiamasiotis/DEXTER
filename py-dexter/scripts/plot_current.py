@@ -39,7 +39,7 @@ parser.add_argument(
 )
 parser.add_argument(
     "-d",
-    help="Whether or not to plot the data points (Numerical objects only).",
+    help="Whether or not to plot the data points.",
     action="store_true",
 )
 args = parser.parse_args()

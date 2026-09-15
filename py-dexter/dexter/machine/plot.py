@@ -5,14 +5,20 @@ Methods are also available as command line project scripts.
 Functions
 ---------
 plot_qfactor
-    Plots a [`QfactorObject`][dexter.QfactorObject]'s $q(\psi)$, $q(\psi_p)$, $\psi_p(\psi)$ and $\psi(\psi_p)$.
+    Plots a [`QfactorObject`][dexter.QfactorObject]'s $q(\psi)$, $q(\psi_p)$, $\psi_p(\psi)$ and
+    $\psi(\psi_p)$.
 plot_current
-    Plots a [`CurrentObject`][dexter.CurrentObject]'s $g$, $I$ and their derivatives, with respect to
-    $\psi$ and $\psi_p$.
+    Plots a [`CurrentObject`][dexter.CurrentObject]'s $g$, $I$ and their derivatives, with respect
+    to $\psi$ and $\psi_p$.
 plot_bfield
     Plots a [`BfieldObject`][dexter.BfieldObject]'s $B$ and its derivatives on the $R-Z$ plane.
+plot_mode
+    Plots a [`ModeObject`][dexter.ModeObject]'s $\alpha$, $\phi$ and its derivatives with respect
+    to $\psi$ or $\psi_p$.
+
 """
 
+from dexter.machine.modes import FluteMode, ModeObject, NcFluteMode
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
@@ -46,9 +52,6 @@ def plot_qfactor(
     ----------
     machine
         The machine containing the current object.
-
-    Other parameters
-    ----------------
     points
         The number of points on which to evaluate the flux in each plot.
     data
@@ -87,10 +90,10 @@ def plot_qfactor(
     MARGINS = (0, 0.01)
 
     DATA_COLOR = "k"
-    DATA_MARKER = "+"
-    DATA_SIZE = 15
+    DATA_MARKER = "."
+    DATA_SIZE = 1
     DATA_LABEL = r"$data\ points$"
-    DATA_ZORDER = 10
+    DATA_ZORDER = 2
 
     # ======================================================= q(ψ)
     axqt.set_xlabel(r"$\psi/\psi_{LCFS}$")
@@ -120,12 +123,13 @@ def plot_qfactor(
             q_data = qfactor.q_array  # pyright: ignore
             psi_data = qfactor.psi_array  # pyright: ignore
             psi_data_norm = psi_data / qfactor.psi_last.value
-            axqt.scatter(
+            axqt.plot(
                 psi_data_norm,
                 q_data,
                 c=DATA_COLOR,
+                linewidth=0,
                 marker=DATA_MARKER,
-                s=DATA_SIZE,
+                markersize=DATA_SIZE,
                 zorder=DATA_ZORDER,
                 label=DATA_LABEL,
             )
@@ -164,12 +168,13 @@ def plot_qfactor(
             q_data = qfactor.q_array  # pyright: ignore
             psip_data = qfactor.psip_array  # pyright: ignore
             psip_data_norm = psip_data / qfactor.psip_last.value
-            axqp.scatter(
+            axqp.plot(
                 psip_data_norm,
                 q_data,
                 c=DATA_COLOR,
+                linewidth=0,
                 marker=DATA_MARKER,
-                s=DATA_SIZE,
+                markersize=DATA_SIZE,
                 zorder=DATA_ZORDER,
                 label=DATA_LABEL,
             )
@@ -202,12 +207,13 @@ def plot_qfactor(
             psip_data = qfactor.psip_array  # pyright: ignore
             psi_data_norm = psi_data / qfactor.psi_last.value
             psip_data_norm = psip_data / qfactor.psip_last.value
-            axpt.scatter(
+            axpt.plot(
                 psi_data_norm,
                 psip_data_norm,
                 c=DATA_COLOR,
+                linewidth=0,
                 marker=DATA_MARKER,
-                s=DATA_SIZE,
+                markersize=DATA_SIZE,
                 zorder=DATA_ZORDER,
                 label=DATA_LABEL,
             )
@@ -240,12 +246,13 @@ def plot_qfactor(
             psip_data = qfactor.psip_array  # pyright: ignore
             psi_data_norm = psi_data / qfactor.psi_last.value
             psip_data_norm = psip_data / qfactor.psip_last.value
-            axtp.scatter(
+            axtp.plot(
                 psip_data_norm,
                 psi_data_norm,
                 c=DATA_COLOR,
+                linewidth=0,
                 marker=DATA_MARKER,
-                s=DATA_SIZE,
+                markersize=DATA_SIZE,
                 zorder=DATA_ZORDER,
                 label=DATA_LABEL,
             )
@@ -278,9 +285,6 @@ def plot_current(
     ----------
     machine
         The machine containing the current object.
-
-    Other parameters
-    ----------------
     flux
         The kind of magnetic flux with respect to which to plot. If the toroidal flux is not a
         good coordinate, the poloidal flux is attempted.
@@ -348,25 +352,27 @@ def plot_current(
             flux_data: Array1 = current.psip_array  # pyright: ignore
             flux_data_norm = flux_data / machine.psip_last.value
         DATA_COLOR = "k"
-        DATA_MARKER = "+"
-        DATA_SIZE = 15
+        DATA_MARKER = "."
+        DATA_SIZE = 1
         DATA_LABEL = r"$data\ points$"
-        DATA_ZORDER = 10
-        axg.scatter(
+        DATA_ZORDER = 3
+        axg.plot(
             flux_data_norm,
             g_data,
             c=DATA_COLOR,
+            linewidth=0,
             marker=DATA_MARKER,
-            s=DATA_SIZE,
+            markersize=DATA_SIZE,
             zorder=DATA_ZORDER,
             label=DATA_LABEL,
         )
-        axi.scatter(
+        axi.plot(
             flux_data_norm,
             i_data,
             c=DATA_COLOR,
+            linewidth=0,
             marker=DATA_MARKER,
-            s=DATA_SIZE,
+            markersize=DATA_SIZE,
             zorder=DATA_ZORDER,
             label=DATA_LABEL,
         )
@@ -469,9 +475,6 @@ def plot_bfield(
     ----------
     machine
         The machine containing the current object.
-
-    Other parameters
-    ----------------
     levels
         The number of contour levels.
     show
@@ -576,6 +579,214 @@ def plot_bfield(
         lower_ax.set_xlabel(r"$R\ [m]$")
     for left_ax in axes[:, 0]:
         left_ax.set_ylabel(r"$Z\ [m]$")
+
+    if show:
+        plt.show()
+
+    return fig, axes
+
+
+def plot_mode(
+    mode: ModeObject,
+    flux: MagneticFluxKind = "Toroidal",
+    points: int = 1000,
+    data: bool = False,
+    show: bool = True,
+) -> tuple[Figure, tuple[Axes, Axes]]:
+    r"""Plots a [`ModeObject`][dexter.ModeObject]'s $\alpha$, $\phi$ and its derivatives with
+    respect to $\psi$ or $\psi_p$.
+
+    Parameters
+    ----------
+    machine
+        The machine containing the current object.
+    flux
+        The kind of magnetic flux with respect to which to plot. If the toroidal flux is not a
+        good coordinate, the poloidal flux is attempted.
+    points
+        The number of points on which to evaluate the flux in each plot.
+    data
+        Whether or not to plot the data points, if `#!python machine.current.machine_type == "Numerical"`.
+    show
+        Whether or not to call `plt.show()`.
+
+    Example
+    -------
+
+    ``` py title="Mode plot"
+    >>> mode = dex.NcFluteMode(path, "Cubic", 3, 2)
+    >>> fig, ax = dex.plot_mode(mode, data=True)
+
+    ```
+
+    ``` sh title="From command line"
+    dexter-plot-mode ./netcdf.nc 2 1
+
+    ```
+
+    """
+
+    flux = _resolve_magnetic_flux_kind(mode, flux)
+
+    fig = plt.figure(figsize=(5, 3))
+    axes = fig.subplots(2, 1)
+    axa: Axes = axes[0]
+    axp: Axes = axes[1]
+    twa = axa.twinx()
+    twp = axp.twinx()
+
+    m = mode.m
+    n = mode.n
+    sub = f"{m},{n}"
+
+    if flux == "Toroidal":
+        if isinstance(mode, FluteMode):
+            psi_last = mode.lcfs.value
+        elif isinstance(mode, NcFluteMode):
+            psi_last: float = getattr(mode, "psi_array")[-1]
+        fluxes = np.linspace(1e-10, psi_last, points)
+        fluxes_norm = fluxes / psi_last
+        flux_arg_name = "psi"
+        flux_tex = r"\psi"
+        flux_last_tex = r"\psi_{LCFS}"
+    else:
+        if isinstance(mode, FluteMode):
+            psip_last = mode.lcfs.value
+        elif isinstance(mode, NcFluteMode):
+            psip_last: float = getattr(mode, "psip_array")[-1]
+        fluxes = np.linspace(1e-10, psip_last, points)
+        fluxes_norm = fluxes / psip_last
+        flux_arg_name = "psip"
+        flux_tex = r"\psi_p"
+        flux_last_tex = r"\psi_{p,LCFS}"
+
+    eval_args = {flux_arg_name: fluxes, "theta": 0, "zeta": 0, "t": 0}
+    alpha = mode.eval_amplitude(**eval_args)
+    phase = mode.eval_phase(**eval_args)
+    dalpha = mode.eval_deriv_flux(**eval_args)
+    dphase = np.gradient(phase)
+
+    ALPHA_COLOR = "r"
+    PHASE_COLOR = "xkcd:pumpkin"
+    ALPHA_DERIV_COLOR = "b"
+    PHASE_DERIV_COLOR = "xkcd:forrest green"
+
+    axa.plot(
+        fluxes_norm,
+        alpha,
+        color=ALPHA_COLOR,
+    )
+    axa_handle = twa.plot(
+        [],
+        [],
+        color=ALPHA_COLOR,
+        label=rf"$\alpha_{{{sub}}}({flux_tex})$",
+    )
+    twa_handle = twa.plot(
+        fluxes_norm,
+        dalpha,
+        color=ALPHA_DERIV_COLOR,
+        label=rf"$\partial\alpha_{{{sub}}}/\partial {flux_tex}$",
+    )
+
+    axa.yaxis.label.set_color(ALPHA_COLOR)
+    twa.yaxis.label.set_color(ALPHA_DERIV_COLOR)
+    twa.spines["left"].set_color(ALPHA_COLOR)
+    twa.spines["right"].set_color(ALPHA_DERIV_COLOR)
+    axa.tick_params("y", which="both", colors=ALPHA_COLOR)
+    twa.tick_params("y", which="both", colors=ALPHA_DERIV_COLOR)
+
+    axp.plot(
+        fluxes_norm,
+        phase,
+        color=PHASE_COLOR,
+    )
+    axp_handle = twp.plot(
+        [],
+        [],
+        color=PHASE_COLOR,
+        label=rf"$\phi_{{{sub}}}({flux_tex})$",
+    )
+    twp_handle = twp.plot(
+        fluxes_norm,
+        dphase,
+        color=PHASE_DERIV_COLOR,
+        label=rf"$\partial\phi_{{{sub}}}/\partial {flux_tex}$",
+    )
+
+    axp.yaxis.label.set_color(PHASE_COLOR)
+    twp.yaxis.label.set_color(PHASE_DERIV_COLOR)
+    twp.spines["left"].set_color(PHASE_COLOR)
+    twp.spines["right"].set_color(PHASE_DERIV_COLOR)
+    axp.tick_params("y", which="both", colors=PHASE_COLOR)
+    twp.tick_params("y", which="both", colors=PHASE_DERIV_COLOR)
+
+    if data and mode.machine_type == "Numerical":
+        if mode.psi_state == "Good":
+            flux_data = getattr(mode, "psi_array")
+        else:
+            flux_data = getattr(mode, "psip_array")
+
+        alpha_data = getattr(mode, "alpha_array")
+        phase_data = getattr(mode, "phase_array")
+        flux_data_norm = flux_data / flux_data[-1]
+
+        DATA_COLOR = "k"
+        DATA_MARKER = "."
+        DATA_SIZE = 1
+        DATA_LABEL = r"$data\ points$"
+        DATA_ZORDER = 10
+
+        axa_data_handle = axa.plot(
+            flux_data_norm,
+            alpha_data,
+            linewidth=0,
+            marker=DATA_MARKER,
+            c=DATA_COLOR,
+            markersize=DATA_SIZE,
+            label=DATA_LABEL,
+            zorder=DATA_ZORDER,
+        )
+        axp_data_handle = axp.plot(
+            flux_data_norm,
+            phase_data,
+            marker=DATA_MARKER,
+            linewidth=0,
+            c=DATA_COLOR,
+            markersize=DATA_SIZE,
+            label=DATA_LABEL,
+            zorder=DATA_ZORDER,
+        )
+    else:
+        axa_data_handle = []
+        axp_data_handle = []
+
+    MARGINS = (0, 0.01)
+
+    axa.grid()
+    axp.grid()
+
+    axa.margins(*MARGINS)
+    twa.margins(*MARGINS)
+    axp.margins(*MARGINS)
+    twp.margins(*MARGINS)
+
+    axa.axhline(0, c="k", linestyle="--", linewidth=1, zorder=3)
+    twp.axhline(0, c="k", linestyle="--", linewidth=1, zorder=3)
+    twa.set_ybound(upper=0.1)
+
+    axa.set_ylabel(rf"$\alpha_{{{sub}}}({flux_tex})$")
+    twa.set_ylabel(rf"$\partial\alpha_{{{sub}}}/\partial {flux_tex}$")
+    axp.set_ylabel(rf"$\phi_{{{sub}}}({flux_tex})$")
+    twp.set_ylabel(rf"$\partial\phi_{{{sub}}}/\partial {flux_tex}$")
+
+    axp.set_xlabel(rf"${flux_tex}/{flux_last_tex}$")
+
+    # Bring legend to front
+    axa.legend(handles=axa_handle + twa_handle + axa_data_handle)
+    axp.legend(handles=axp_handle + twp_handle + axp_data_handle)
+    twa.legend_ = axa.get_legend()
+    twp.legend_ = axp.get_legend()
 
     if show:
         plt.show()

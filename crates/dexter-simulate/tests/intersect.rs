@@ -117,7 +117,7 @@ fn gc_toroidal_poloidal_equivalence_const_theta() {
     let bfield = NcBfieldBuilder::new(&path, Bicubic).build().unwrap();
     let perturbation = Perturbation::new(vec![
         Box::new(NcFluteModeBuilder::new(&path, Akima, 2, 1).with_phase_method(Interpolation).build().unwrap()),
-        Box::new(NcFluteModeBuilder::new(&path, Akima, 3, 2).with_phase_method(Interpolation).build().unwrap()),
+        Box::new(NcFluteModeBuilder::new(&path, Akima, 2, 2).with_phase_method(Interpolation).build().unwrap()),
     ]);
     let machine = MachineBuilder::new(&qfactor, &current, &bfield).with_perturbation(&perturbation).build();
 
@@ -174,7 +174,7 @@ fn gc_toroidal_poloidal_equivalence_const_zeta() {
     let bfield = NcBfieldBuilder::new(&path, Bicubic).build().unwrap();
     let perturbation = Perturbation::new(vec![
         Box::new(NcFluteModeBuilder::new(&path, Akima, 2, 1).with_phase_method(Interpolation).build().unwrap()),
-        Box::new(NcFluteModeBuilder::new(&path, Akima, 3, 2).with_phase_method(Interpolation).build().unwrap()),
+        Box::new(NcFluteModeBuilder::new(&path, Akima, 2, 2).with_phase_method(Interpolation).build().unwrap()),
     ]);
     let machine = MachineBuilder::new(&qfactor, &current, &bfield).with_perturbation(&perturbation).build();
 

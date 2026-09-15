@@ -43,7 +43,7 @@ from dexter.machine.modes import ModeObject, FluteMode, NcFluteMode
 from dexter.machine.perturbation import Perturbation
 from dexter.machine.machine import Machine
 
-from dexter.machine.plot import plot_current, plot_qfactor, plot_bfield
+from dexter.machine.plot import plot_current, plot_qfactor, plot_bfield, plot_mode
 
 from dexter.simulate.initial import InitialConditions
 from dexter.simulate.particle import Particle
@@ -92,6 +92,7 @@ __all__ = [
     "plot_current",
     "plot_qfactor",
     "plot_bfield",
+    "plot_mode",
     # Simulate
     "InitialConditions",
     "Particle",

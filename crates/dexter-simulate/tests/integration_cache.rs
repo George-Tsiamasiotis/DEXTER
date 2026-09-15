@@ -66,7 +66,7 @@ fn integration_cache_nc_eq_nc_flute_mode() {
                 .unwrap(),
         ),
         Box::new(
-            NcFluteModeBuilder::new(&path, Akima, 3, 2)
+            NcFluteModeBuilder::new(&path, Akima, 2, 2)
                 .with_phase_method(PhaseMethod::Interpolation)
                 .build()
                 .unwrap(),

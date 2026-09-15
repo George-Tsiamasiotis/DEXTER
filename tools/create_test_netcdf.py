@@ -131,13 +131,13 @@ alphas_norm = np.asarray([[a12, a23], [a13, a23]])
 phases = np.asarray([[p12, p23], [p13, p23]])
 
 # Value Injection
-# Inject the (2, 2) mode with specific values to test that the extraction
+# Inject the (3, 2) mode with specific values to test that the extraction
 # is done correctly. If either the indexes or the values change, the test
 # must be updated accordingly.
-phases[0, 1, 0] = 9999
-phases[0, 1, -1] = 99999
-alphas_norm[0, 1, 0] = 1111
-alphas_norm[0, 1, -1] = 11111
+phases[1, 1, 0] = 9999
+phases[1, 1, -1] = 99999
+alphas_norm[1, 1, 0] = 1111
+alphas_norm[1, 1, -1] = 11111
 
 
 #################
