@@ -1,5 +1,10 @@
 import dexter as dex
+from dexter.utils import get_max_threads
 import pytest
+
+
+def test_threads():
+    dex.set_num_threads(get_max_threads())
 
 
 def test_lcfs():

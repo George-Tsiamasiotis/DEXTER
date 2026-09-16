@@ -1,4 +1,5 @@
 import pytest
+import numpy as np
 import dexter as dex
 from math import isclose
 
@@ -40,3 +41,42 @@ def test_initial_conditions_mixed():
         init.rho0
     init.__repr__()
     init.__str__()
+
+
+def test_magnetic_flux_array():
+    with pytest.raises(RuntimeError):
+        dex.MagneticFluxArray()
+
+    dex.MagneticFluxArray.Toroidal(np.linspace(0, 1, 10))
+    dex.MagneticFluxArray.Poloidal(np.linspace(0, 1, 10))
+    dex.MagneticFluxArray.Toroidal(1)
+    dex.MagneticFluxArray.Toroidal((1, 2))
+    with pytest.raises(TypeError):
+        dex.MagneticFluxArray.Toroidal(np.zeros((2, 2)))
+    with pytest.raises(ValueError):
+        dex.MagneticFluxArray.Toroidal(np.nan)
+
+
+def test_queue_initial_conditions():
+    with pytest.raises(RuntimeError):
+        dex.QueueInitialConditions()
+
+    num = 10
+    psi0s = dex.MagneticFluxArray.Toroidal(np.linspace(0, 0.05, num))
+    initial = dex.QueueInitialConditions.Boozer(
+        t0=np.zeros(num),
+        flux0=psi0s,
+        theta0=np.zeros(num),
+        zeta0=np.zeros(num),
+        rho0=np.full(num, 1e-5),
+        mu0=np.full(num, 1e-6),
+    )
+    psip0s = dex.MagneticFluxArray.Poloidal(np.linspace(0, 0.05, num))
+    initial = dex.QueueInitialConditions.Mixed(
+        t0=np.zeros(num),
+        flux0=psip0s,
+        theta0=np.zeros(num),
+        zeta0=np.zeros(num),
+        pzeta0=np.full(num, -0.02),
+        mu0=np.full(num, 1e-6),
+    )

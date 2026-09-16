@@ -11,6 +11,7 @@ nav = [
     {"Home" = "index.md"},
     {"NetCDF" = "netcdf.md"},
     {"Types" = "reference/types.md"},
+    {"Parallelism" = "parallelism.md"},
     {"Machine" = [
         "reference/machine/helpers.md",
         "reference/machine/base.md",
@@ -26,6 +27,7 @@ nav = [
     {"Simulate" = [
         "reference/simulate/initial.md",
         "reference/simulate/particle.md",
+        "reference/simulate/queue.md",
         "reference/simulate/plots.md",
     ]}
 ]

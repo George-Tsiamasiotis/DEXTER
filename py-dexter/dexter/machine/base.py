@@ -30,7 +30,7 @@ from typing import TypeAlias, Any, Callable
 
 from dexter._core import _PyQfactor, _PyCurrent, _PyBfield, _PyGeometry, _PyMode
 from dexter._utils import _ReprStrImpl
-from dexter.machine.utils import MagneticFlux
+from dexter.machine.flux import MagneticFlux
 from dexter.types import ArrayLike, Array, Array1, FluxCoordinateState, MachineType
 
 # Evaluation method signatures as defined in `_core.pyi`

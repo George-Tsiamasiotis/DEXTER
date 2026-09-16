@@ -7,7 +7,8 @@ use dexter::dexter_simulate::*;
 use numpy::{IntoPyArray, PyArray1};
 use pyo3::prelude::*;
 
-#[pyclass(name = "_PyParticle")]
+#[pyclass(name = "_PyParticle", from_py_object)]
+#[derive(Clone)]
 pub struct PyParticle(pub(crate) Particle);
 
 // ===============================================================================================

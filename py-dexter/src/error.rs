@@ -1,4 +1,6 @@
 use dexter::dexter_machine::*;
+use dexter::dexter_simulate::*;
+use numpy::AsSliceError;
 use pyo3::{CastError, exceptions::PyException, prelude::*};
 
 #[derive(Debug)]
@@ -22,6 +24,8 @@ pub enum DexterError {
     InvalidIntersection,
     MachineError(String),
     EvalError(String),
+    SimulationError(String),
+    NumpyRustError(String),
 }
 
 impl std::fmt::Display for DexterError {
@@ -74,6 +78,8 @@ impl std::fmt::Display for DexterError {
             ),
             Self::MachineError(err) => write!(f, "[D] MachineError: '{err}'"),
             Self::EvalError(err) => write!(f, "[D] EvalError: '{err}'"),
+            Self::SimulationError(err) => write!(f, "[D] SimulationError: '{err}'"),
+            Self::NumpyRustError(err) => write!(f, "[D] NumpyRustError: '{err}'"),
         }
     }
 }
@@ -84,26 +90,24 @@ impl From<DexterError> for PyErr {
     }
 }
 
-impl From<PyErr> for DexterError {
-    fn from(err: PyErr) -> Self {
-        DexterError::PyErr(err.to_string())
-    }
-}
-
 impl<'a, 'py> From<CastError<'a, 'py>> for DexterError {
     fn from(err: CastError) -> Self {
         DexterError::PyErr(err.to_string())
     }
 }
 
-impl From<MachineError> for DexterError {
-    fn from(err: MachineError) -> Self {
-        DexterError::MachineError(err.to_string())
-    }
+macro_rules! impl_to_dexter_error {
+    ($err: ident, $variant: ident) => {
+        impl From<$err> for DexterError {
+            fn from(err: $err) -> Self {
+                DexterError::$variant(err.to_string())
+            }
+        }
+    };
 }
 
-impl From<EvalError> for DexterError {
-    fn from(err: EvalError) -> Self {
-        DexterError::EvalError(err.to_string())
-    }
-}
+impl_to_dexter_error!(PyErr, PyErr);
+impl_to_dexter_error!(MachineError, MachineError);
+impl_to_dexter_error!(EvalError, EvalError);
+impl_to_dexter_error!(SimulationError, SimulationError);
+impl_to_dexter_error!(AsSliceError, NumpyRustError);

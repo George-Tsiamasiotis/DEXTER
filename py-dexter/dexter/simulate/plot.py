@@ -16,7 +16,7 @@ from math import floor, log10
 
 from dexter.machine.machine import Machine
 from dexter.simulate.particle import Particle
-from dexter.simulate.utils import tex_unit
+from dexter._utils import _tex_unit
 
 
 def plot_evolution(
@@ -40,7 +40,6 @@ def plot_evolution(
         drastically improves both figure creation and interaction
         performance. Downsampling is done by increasing the [::step] just
         enough so that the final number of points is more than 50.000.
-        Defaults to True
     show
         Whether or not to call `plt.show()`.
 
@@ -157,7 +156,7 @@ def plot_evolution(
             eu = machine.quantity(energy, "NormJoule").to("kiloelectronvolt")
             e = eu.m
 
-        tunits = tex_unit(tu)
+        tunits = _tex_unit(tu)
         axrho.set_xlabel(rf"$t\ [{tunits}]$")
         axenergy.set_xlabel(rf"$t\ [{tunits}]$")
         axenergy.set_ylabel(rf"$E(t)\ [keV]$", **RIGHT_LABEL_KW)

@@ -6,8 +6,8 @@ from typing import TypeAlias
 
 from dexter._core import _PyBfield
 
-from .utils import MagneticFlux
-from .base import MachineObject, Bfield
+from dexter.machine.flux import MagneticFlux
+from dexter.machine.base import MachineObject, Bfield
 from dexter.types import (
     Array1,
     Array2,

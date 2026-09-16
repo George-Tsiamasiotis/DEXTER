@@ -6,11 +6,14 @@ implementors. The higher level wrappers are responsible for re-exporting the cor
 have. It should not be visible to the user unless the call `._r` explicitly.
 """
 
+import numpy as np
 from numpy import nan as NAN
+from numpy.typing import NDArray
 
 from dexter.types import (
     Array1,
     Array2,
+    ArrayLike,
     ArrayShape,
     EnergyPzetaPosition,
     MagneticFluxKind,
@@ -25,6 +28,13 @@ from dexter.types import (
     SteppingMethod,
     Intersection,
 )
+
+# ================================================================================================
+
+def _py_get_max_threads() -> int: ...
+def _py_set_num_threads(num: int): ...
+
+# ================================================================================================
 
 class _PyMagneticFlux:
 
@@ -433,3 +443,83 @@ class _PyParticle:
     def get_array(self, name: str) -> Array1: ...
     def __repr__(self) -> str: ...
     def __str__(self) -> str: ...
+
+class _PyMagneticFluxArray:
+    @classmethod
+    def toroidal(cls, array: NDArray[np.float64]) -> _PyMagneticFluxArray: ...
+    @classmethod
+    def poloidal(cls, array: NDArray[np.float64]) -> _PyMagneticFluxArray: ...
+    def __repr__(self) -> str: ...
+    def __str__(self) -> str: ...
+
+class _PyQueueInitialConditions:
+    mu_array: Array1
+
+    @classmethod
+    def boozer(
+        cls,
+        t0: ArrayLike,
+        flux0: _PyMagneticFluxArray,
+        theta0: ArrayLike,
+        zeta0: ArrayLike,
+        rho0: ArrayLike,
+        mu0: ArrayLike,
+    ) -> _PyQueueInitialConditions: ...
+    @classmethod
+    def mixed(
+        cls,
+        t0: ArrayLike,
+        flux0: _PyMagneticFluxArray,
+        theta0: ArrayLike,
+        zeta0: ArrayLike,
+        pzeta0: ArrayLike,
+        mu0: ArrayLike,
+    ) -> _PyQueueInitialConditions: ...
+    def __repr__(self) -> str: ...
+    def __str__(self) -> str: ...
+
+class _PyQueue:
+    particles: list[_PyParticle]
+
+    def __init__(self, initial: _PyQueueInitialConditions) -> None: ...
+    @classmethod
+    def from_particles(cls, particles: list[_PyParticle]) -> _PyQueue: ...
+    def integrate(
+        self,
+        qfactor: _PyQfactor,
+        current: _PyCurrent,
+        bfield: _PyBfield,
+        perturbation: _PyPerturbation,
+        teval: tuple[float, float],
+        solver_params: _PySolverParams,
+    ) -> None: ...
+    def intersect(
+        self,
+        qfactor: _PyQfactor,
+        current: _PyCurrent,
+        bfield: _PyBfield,
+        perturbation: _PyPerturbation,
+        intersect_params: _PyIntersectParams,
+        solver_params: _PySolverParams,
+    ) -> None: ...
+    def close(
+        self,
+        qfactor: _PyQfactor,
+        current: _PyCurrent,
+        bfield: _PyBfield,
+        perturbation: _PyPerturbation,
+        periods: int,
+        solver_params: _PySolverParams,
+    ) -> None: ...
+    def classify(
+        self,
+        qfactor: _PyQfactor,
+        current: _PyCurrent,
+        bfield: _PyBfield,
+    ) -> None: ...
+    def classify_common_mu(
+        self,
+        qfactor: _PyQfactor,
+        current: _PyCurrent,
+        bfield: _PyBfield,
+    ) -> None: ...

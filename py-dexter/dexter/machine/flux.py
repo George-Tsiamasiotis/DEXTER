@@ -1,8 +1,8 @@
-import numpy as np
-
-from dexter._core import _PyMagneticFlux
+from collections.abc import Callable
 
 from dexter.types import MagneticFluxKind, Array1
+
+from dexter._core import _PyMagneticFlux
 from dexter._utils import _ReprStrImpl, _RustTypeWrapper
 
 
@@ -43,12 +43,7 @@ class MagneticFlux(_ReprStrImpl, _RustTypeWrapper):
 
         ```
         """
-        obj = MagneticFlux.__new__(MagneticFlux)
-        obj._r = _PyMagneticFlux.toroidal(value)
-        obj.value = obj._r.value
-        obj.kind = obj._r.kind
-
-        return obj
+        return cls._init(value, _PyMagneticFlux.toroidal)
 
     @classmethod
     def Poloidal(cls, value: float) -> MagneticFlux:
@@ -66,8 +61,17 @@ class MagneticFlux(_ReprStrImpl, _RustTypeWrapper):
 
         ```
         """
+        return cls._init(value, _PyMagneticFlux.poloidal)
+
+    @classmethod
+    def _init(
+        cls,
+        value: float,
+        _method: Callable[[float], _PyMagneticFlux],
+    ) -> MagneticFlux:
+        """Creates a `MagneticFlux` by calling the appropriate constructor."""
         obj = MagneticFlux.__new__(MagneticFlux)
-        obj._r = _PyMagneticFlux.poloidal(value)
+        obj._r = _method(value)
         obj.value = obj._r.value
         obj.kind = obj._r.kind
 
