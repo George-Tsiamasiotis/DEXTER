@@ -1,10 +1,18 @@
 """Defines types associated with Particle and Queue initialization."""
 
+import numpy as np
+
 from dexter.machine.utils import MagneticFlux
-from dexter.types import CoordinateSet
+from dexter.types import ArrayLike, CoordinateSet
 
 from dexter._utils import _ReprStrImpl, _RustTypeWrapper
-from dexter._core import _PyInitialConditions
+from dexter._core import (
+    _PyInitialConditions,
+    _PyMagneticFluxArray,
+    _PyQueueInitialConditions,
+)
+
+from collections.abc import Callable
 
 
 class InitialConditions(_ReprStrImpl, _RustTypeWrapper):
@@ -174,3 +182,200 @@ class InitialConditions(_ReprStrImpl, _RustTypeWrapper):
             raise AttributeError("'pzeta0' has not been defined")
         else:
             return self._r.pzeta0
+
+
+class MagneticFluxArray(_ReprStrImpl):
+    r"""A container of multiple [`MagneticFlux`][dexter.MagneticFlux] instances, used to create
+    [`QueueInitialConditions`][dexter.QueueInitialConditions].
+
+    This type is instantiated through the [`Toroidal`][dexter.MagneticFluxArray.Toroidal] and
+    [`Poloidal`][dexter.MagneticFluxArray.Poloidal] class methods.
+
+    """
+
+    _r: _PyMagneticFluxArray
+
+    def __init__(self) -> None:
+        raise RuntimeError("Cannot instantiate class")
+
+    @classmethod
+    def Toroidal(cls, array: ArrayLike) -> MagneticFluxArray:
+        r"""Defines an array of toroidal fluxes $\psi$.
+
+        Parameters
+        ----------
+        array
+            The values of the toroidal magnetic fluxes.
+
+        Example
+        -------
+        ```python title="Toroidal MagneticFluxArray creation"
+        >>> psi0s = dex.MagneticFluxArray.Toroidal(np.linspace(0, 0.05, 30))
+
+        ```
+        """
+        return cls._init(array, _PyMagneticFluxArray.toroidal)
+
+    @classmethod
+    def Poloidal(cls, array: ArrayLike) -> MagneticFluxArray:
+        r"""Defines an array of poloidal fluxes $\psi_p$.
+
+        Parameters
+        ----------
+        array
+            The values of the poloidal magnetic fluxes.
+
+        Example
+        -------
+        ```python title="Poloidal MagneticFluxArray creation"
+        >>> psip0s = dex.MagneticFluxArray.Poloidal(np.linspace(0, 0.05, 30))
+
+        ```
+        """
+        return cls._init(array, _PyMagneticFluxArray.poloidal)
+
+    @classmethod
+    def _init(
+        cls, array: ArrayLike, _method: Callable[[np.ndarray], _PyMagneticFluxArray]
+    ) -> MagneticFluxArray:
+        """Creates a `MagneticFluxArray` by calling the appropriate constructor."""
+        array = np.atleast_1d(np.asarray(array, dtype=np.float64))
+        if not np.all(np.isfinite(array)):
+            raise ValueError("NaN values encounter in MagneticFluxArray")
+        if array.ndim != 1:
+            raise TypeError("Only 1D arrays are accepted in MagneticFluxArray")
+
+        obj = MagneticFluxArray.__new__(MagneticFluxArray)
+        obj._r = _method(array)
+        return obj
+
+
+class QueueInitialConditions(_ReprStrImpl):
+    r"""Sets of initial conditions for initializing a [`Queue`][dexter.Queue].
+
+    This type is instantiated through the [`Boozer`][dexter.QueueInitialConditions.Boozer] and
+    [`Mixed`][dexter.QueueInitialConditions.Mixed] class methods.
+    """
+
+    _r: _PyQueueInitialConditions
+
+    def __init__(self) -> None:
+        raise RuntimeError("Cannot instantiate class")
+
+    @classmethod
+    def Boozer(
+        cls,
+        t0: ArrayLike,
+        flux0: MagneticFluxArray,
+        theta0: ArrayLike,
+        zeta0: ArrayLike,
+        rho0: ArrayLike,
+        mu0: ArrayLike,
+    ) -> QueueInitialConditions:
+        r"""Creates sets of initial conditions for a Particle in Boozer coordinates.
+
+        The initial conditions are defined on the
+        $(t, \psi, \theta, \zeta, \rho, \mu)$ or
+        $(t, \psi_p, \theta, \zeta, \rho, \mu)$
+        space, depending on the value of `flux0`.
+
+        Parameters
+        ----------
+        t0
+            The initial times, in Normalized Units.
+        flux0
+            The initial $\psi / \psi_p$ values, in Normalized Units.
+        theta0
+            The initial $\theta$ angles, in rads.
+        zeta0
+            The initial $\zeta$ angles, in rads.
+        rho0
+            The initial $\rho_{||}$ values, in Normalized Units.
+        mu0
+            The initial magnetic moments $\mu$, in Normalized Units.
+
+        Example
+        -------
+        ```python title="QueueInitialConditions definition in Boozer-Toroidal coordinates"
+        >>> num = 10
+        >>> psi0s = dex.MagneticFluxArray.Toroidal(np.linspace(0, 0.05, num))
+        >>> initial_conditions = dex.QueueInitialConditions.Boozer(
+        ...     t0=np.zeros(num),
+        ...     flux0=psi0s,
+        ...     theta0=np.zeros(num),
+        ...     zeta0=np.zeros(num),
+        ...     rho0=np.full(num, 1e-5),
+        ...     mu0=np.full(num, 1e-6),
+        ... )
+
+        ```
+        """
+        obj = QueueInitialConditions.__new__(QueueInitialConditions)
+        obj._r = _PyQueueInitialConditions.boozer(
+            t0=t0,
+            flux0=flux0._r,
+            theta0=theta0,
+            zeta0=zeta0,
+            rho0=rho0,
+            mu0=mu0,
+        )
+        return obj
+
+    @classmethod
+    def Mixed(
+        cls,
+        t0: ArrayLike,
+        flux0: MagneticFluxArray,
+        theta0: ArrayLike,
+        zeta0: ArrayLike,
+        pzeta0: ArrayLike,
+        mu0: ArrayLike,
+    ) -> QueueInitialConditions:
+        r"""Creates sets of initial conditions for a Particle in Boozer coordinates.
+
+        The initial conditions are defined on the
+        $(t, \psi, \theta, \zeta, P_\zeta, \mu)$ or
+        $(t, \psi_p, \theta, \zeta, P_\zeta, \mu)$
+        space, depending on the value of `flux0`.
+
+        Parameters
+        ----------
+        t0
+            The initial times, in Normalized Units.
+        flux0
+            The initial $\psi / \psi_p$ values, in Normalized Units.
+        theta0
+            The initial $\theta$ angles, in rads.
+        zeta0
+            The initial $\zeta$ angles, in rads.
+        pzeta0
+            The initial $P_\zeta$ values, in Normalized Units.
+        mu0
+            The initial magnetic moments $\mu$, in Normalized Units.
+
+        Example
+        -------
+        ```python title="QueueInitialConditions definition in Mixed-Poloidal coordinates"
+        >>> num = 10
+        >>> psip0s = dex.MagneticFluxArray.Poloidal(np.linspace(0, 0.05, num))
+        >>> initial_conditions = dex.QueueInitialConditions.Mixed(
+        ...     t0=np.zeros(num),
+        ...     flux0=psip0s,
+        ...     theta0=np.zeros(num),
+        ...     zeta0=np.zeros(num),
+        ...     pzeta0=np.full(num, -0.02),
+        ...     mu0=np.full(num, 1e-6),
+        ... )
+
+        ```
+        """
+        obj = QueueInitialConditions.__new__(QueueInitialConditions)
+        obj._r = _PyQueueInitialConditions.mixed(
+            t0=t0,
+            flux0=flux0._r,
+            theta0=theta0,
+            zeta0=zeta0,
+            pzeta0=pzeta0,
+            mu0=mu0,
+        )
+        return obj

@@ -26,5 +26,7 @@ fn _core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<simulate::PySolverParams>()?;
     m.add_class::<simulate::PyIntersectParams>()?;
     m.add_class::<simulate::PyParticle>()?;
+    m.add_class::<simulate::PyMagneticFluxArray>()?;
+    m.add_class::<simulate::PyQueueInitialConditions>()?;
     Ok(())
 }

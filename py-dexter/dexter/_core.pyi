@@ -6,11 +6,14 @@ implementors. The higher level wrappers are responsible for re-exporting the cor
 have. It should not be visible to the user unless the call `._r` explicitly.
 """
 
+import numpy as np
 from numpy import nan as NAN
+from numpy.typing import NDArray
 
 from dexter.types import (
     Array1,
     Array2,
+    ArrayLike,
     ArrayShape,
     EnergyPzetaPosition,
     MagneticFluxKind,
@@ -431,5 +434,37 @@ class _PyParticle:
     def print_caches(self) -> None: ...
     def discard_arrays(self) -> None: ...
     def get_array(self, name: str) -> Array1: ...
+    def __repr__(self) -> str: ...
+    def __str__(self) -> str: ...
+
+class _PyMagneticFluxArray:
+    @classmethod
+    def toroidal(cls, array: NDArray[np.float64]) -> _PyMagneticFluxArray: ...
+    @classmethod
+    def poloidal(cls, array: NDArray[np.float64]) -> _PyMagneticFluxArray: ...
+    def __repr__(self) -> str: ...
+    def __str__(self) -> str: ...
+
+class _PyQueueInitialConditions:
+    @classmethod
+    def boozer(
+        cls,
+        t0: ArrayLike,
+        flux0: _PyMagneticFluxArray,
+        theta0: ArrayLike,
+        zeta0: ArrayLike,
+        rho0: ArrayLike,
+        mu0: ArrayLike,
+    ) -> _PyQueueInitialConditions: ...
+    @classmethod
+    def mixed(
+        cls,
+        t0: ArrayLike,
+        flux0: _PyMagneticFluxArray,
+        theta0: ArrayLike,
+        zeta0: ArrayLike,
+        pzeta0: ArrayLike,
+        mu0: ArrayLike,
+    ) -> _PyQueueInitialConditions: ...
     def __repr__(self) -> str: ...
     def __str__(self) -> str: ...

@@ -50,7 +50,11 @@ from dexter.machine.machine import Machine
 from dexter.machine.plot import plot_current, plot_qfactor, plot_bfield, plot_mode
 from dexter.simulate.plot import plot_evolution
 
-from dexter.simulate.initial import InitialConditions
+from dexter.simulate.initial import (
+    InitialConditions,
+    MagneticFluxArray,
+    QueueInitialConditions,
+)
 from dexter.simulate.particle import Particle
 
 __all__ = [
@@ -100,6 +104,8 @@ __all__ = [
     "plot_mode",
     # Simulate
     "InitialConditions",
+    "MagneticFluxArray",
+    "QueueInitialConditions",
     "Particle",
     # Simulate (plot)
     "plot_evolution",

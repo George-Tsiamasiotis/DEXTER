@@ -969,7 +969,7 @@ dependencies = [
 
 [[package]]
 name = "py-dexter"
-version = "0.2.0-pre.18"
+version = "0.2.0-pre.19"
 dependencies = [
  "dexter",
  "ndarray",
