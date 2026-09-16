@@ -26,6 +26,7 @@ nav = [
     {"Simulate" = [
         "reference/simulate/initial.md",
         "reference/simulate/particle.md",
+        "reference/simulate/plots.md",
     ]}
 ]
 

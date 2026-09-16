@@ -1,8 +1,12 @@
 import matplotlib
-import matplotlib.pyplot
+import matplotlib.pyplot as plt
 
 matplotlib.use("gtk3agg")
-matplotlib.pyplot.rcParams["text.usetex"] = True
+plt.rcParams["text.usetex"] = True
+plt.rcParams["figure.dpi"] = 180
+plt.rcParams["savefig.dpi"] = 300
+plt.rcParams["figure.autolayout"] = False
+plt.rcParams["figure.constrained_layout.use"] = True
 
 from typing import TypeAlias
 
@@ -44,6 +48,7 @@ from dexter.machine.perturbation import Perturbation
 from dexter.machine.machine import Machine
 
 from dexter.machine.plot import plot_current, plot_qfactor, plot_bfield, plot_mode
+from dexter.simulate.plot import plot_evolution
 
 from dexter.simulate.initial import InitialConditions
 from dexter.simulate.particle import Particle
@@ -96,4 +101,6 @@ __all__ = [
     # Simulate
     "InitialConditions",
     "Particle",
+    # Simulate (plot)
+    "plot_evolution",
 ]

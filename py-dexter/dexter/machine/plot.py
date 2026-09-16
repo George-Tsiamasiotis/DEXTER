@@ -28,11 +28,6 @@ from dexter.machine.machine import Machine
 from dexter.machine.base import MachineObject
 from dexter.types import MagneticFluxKind, Interpolation1dType, Array
 
-plt.rcParams["figure.dpi"] = 180
-plt.rcParams["savefig.dpi"] = 300
-plt.rcParams["figure.autolayout"] = False
-plt.rcParams["figure.constrained_layout.use"] = True
-
 TAU = 2 * np.pi
 PI = np.pi
 
@@ -598,8 +593,8 @@ def plot_mode(
 
     Parameters
     ----------
-    machine
-        The machine containing the current object.
+    mode
+        The ModeObject.
     flux
         The kind of magnetic flux with respect to which to plot. If the toroidal flux is not a
         good coordinate, the poloidal flux is attempted.
