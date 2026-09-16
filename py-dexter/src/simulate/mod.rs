@@ -1,8 +1,10 @@
 mod initial;
 mod particle;
+mod queue;
 
 pub use initial::*;
 pub use particle::*;
+pub use queue::*;
 
 use dexter::dexter_simulate::{IntersectParams, Intersection, SolverParams};
 use pyo3::prelude::*;

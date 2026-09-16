@@ -29,6 +29,13 @@ from dexter.types import (
     Intersection,
 )
 
+# ================================================================================================
+
+def _py_get_max_threads() -> int: ...
+def _py_set_num_threads(num: int): ...
+
+# ================================================================================================
+
 class _PyMagneticFlux:
 
     value: float
@@ -446,6 +453,7 @@ class _PyMagneticFluxArray:
     def __str__(self) -> str: ...
 
 class _PyQueueInitialConditions:
+    mu_array: Array1
     @classmethod
     def boozer(
         cls,
@@ -468,3 +476,45 @@ class _PyQueueInitialConditions:
     ) -> _PyQueueInitialConditions: ...
     def __repr__(self) -> str: ...
     def __str__(self) -> str: ...
+
+class _PyQueue:
+    def __init__(self, initial: _PyQueueInitialConditions) -> None: ...
+    def integrate(
+        self,
+        qfactor: _PyQfactor,
+        current: _PyCurrent,
+        bfield: _PyBfield,
+        perturbation: _PyPerturbation,
+        teval: tuple[float, float],
+        solver_params: _PySolverParams,
+    ) -> None: ...
+    def intersect(
+        self,
+        qfactor: _PyQfactor,
+        current: _PyCurrent,
+        bfield: _PyBfield,
+        perturbation: _PyPerturbation,
+        intersect_params: _PyIntersectParams,
+        solver_params: _PySolverParams,
+    ) -> None: ...
+    def close(
+        self,
+        qfactor: _PyQfactor,
+        current: _PyCurrent,
+        bfield: _PyBfield,
+        perturbation: _PyPerturbation,
+        periods: int,
+        solver_params: _PySolverParams,
+    ) -> None: ...
+    def classify(
+        self,
+        qfactor: _PyQfactor,
+        current: _PyCurrent,
+        bfield: _PyBfield,
+    ) -> None: ...
+    def classify_common_mu(
+        self,
+        qfactor: _PyQfactor,
+        current: _PyCurrent,
+        bfield: _PyBfield,
+    ) -> None: ...

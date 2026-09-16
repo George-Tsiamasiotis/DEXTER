@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from dexter.machine.utils import MagneticFlux
+from dexter.machine.flux import MagneticFlux
 from dexter.types import ArrayLike, CoordinateSet
 
 from dexter._utils import _ReprStrImpl, _RustTypeWrapper

@@ -108,7 +108,7 @@ impl PyMagneticFluxArray {
 // ===============================================================================================
 
 #[pyclass(name = "_PyQueueInitialConditions", frozen, immutable_type)]
-pub struct PyQueueInitialConditions(QueueInitialConditions);
+pub struct PyQueueInitialConditions(pub QueueInitialConditions);
 
 #[pymethods]
 impl PyQueueInitialConditions {

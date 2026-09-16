@@ -161,23 +161,21 @@ class Particle(_ReprStrImpl):
         Other Parameters
         ----------------
         stepping_method
-            The optimal step calculation method. Defaults to "EnergyAdaptiveStep".
+            The optimal step calculation method.
         max_steps
-            The maximum amount of steps a particle can make before terminating its integration. Defaults to
-            1.000.000.
+            The maximum amount of steps a particle can make before terminating its integration.
         first_step
-            The initial time step for the RKF45 adaptive step method. The value is empirical. Defaults to
-            1e-1.
+            The initial time step for the RKF45 adaptive step method. The value is empirical.
         safety_factor
-            The safety factor of the solver. Should be less than 1.0. Defaults to 0.9.
+            The safety factor of the solver. Should be less than 1.0.
         energy_rel_tol
-            The relative tolerance of the energy difference in every step. Defaults to 1e-12.
+            The relative tolerance of the energy difference in every step.
         energy_abs_tol
-            The absolute tolerance of the energy difference in every step. Defaults to 1e-14.
+            The absolute tolerance of the energy difference in every step.
         error_rel_tol
-            The relative tolerance of the local truncation error in every step. Defaults to 1e-12.
+            The relative tolerance of the local truncation error in every step.
         error_abs_tol
-            The absolute tolerance of the local truncation error in every step. Defaults to 1e-14.
+            The absolute tolerance of the local truncation error in every step.
 
         Example
         -------
@@ -274,23 +272,21 @@ class Particle(_ReprStrImpl):
         Other Parameters
         ----------------
         stepping_method
-            The optimal step calculation method. Defaults to "EnergyAdaptiveStep".
+            The optimal step calculation method.
         max_steps
-            The maximum amount of steps a particle can make before terminating its integration. Defaults to
-            1.000.000.
+            The maximum amount of steps a particle can make before terminating its integration.
         first_step
-            The initial time step for the RKF45 adaptive step method. The value is empirical. Defaults to
-            1e-1.
+            The initial time step for the RKF45 adaptive step method. The value is empirical.
         safety_factor
-            The safety factor of the solver. Should be less than 1.0. Defaults to 0.9.
+            The safety factor of the solver. Should be less than 1.0.
         energy_rel_tol
-            The relative tolerance of the energy difference in every step. Defaults to 1e-12.
+            The relative tolerance of the energy difference in every step.
         energy_abs_tol
-            The absolute tolerance of the energy difference in every step. Defaults to 1e-14.
+            The absolute tolerance of the energy difference in every step.
         error_rel_tol
-            The relative tolerance of the local truncation error in every step. Defaults to 1e-12.
+            The relative tolerance of the local truncation error in every step.
         error_abs_tol
-            The absolute tolerance of the local truncation error in every step. Defaults to 1e-14.
+            The absolute tolerance of the local truncation error in every step.
 
         Example
         -------
@@ -381,23 +377,21 @@ class Particle(_ReprStrImpl):
         Other Parameters
         ----------------
         stepping_method
-            The optimal step calculation method. Defaults to "EnergyAdaptiveStep".
+            The optimal step calculation method.
         max_steps
-            The maximum amount of steps a particle can make before terminating its integration. Defaults to
-            1.000.000.
+            The maximum amount of steps a particle can make before terminating its integration.
         first_step
-            The initial time step for the RKF45 adaptive step method. The value is empirical. Defaults to
-            1e-1.
+            The initial time step for the RKF45 adaptive step method. The value is empirical.
         safety_factor
-            The safety factor of the solver. Should be less than 1.0. Defaults to 0.9.
+            The safety factor of the solver. Should be less than 1.0.
         energy_rel_tol
-            The relative tolerance of the energy difference in every step. Defaults to 1e-12.
+            The relative tolerance of the energy difference in every step.
         energy_abs_tol
-            The absolute tolerance of the energy difference in every step. Defaults to 1e-14.
+            The absolute tolerance of the energy difference in every step.
         error_rel_tol
-            The relative tolerance of the local truncation error in every step. Defaults to 1e-12.
+            The relative tolerance of the local truncation error in every step.
         error_abs_tol
-            The absolute tolerance of the local truncation error in every step. Defaults to 1e-14.
+            The absolute tolerance of the local truncation error in every step.
 
         Example
         -------
@@ -458,7 +452,7 @@ class Particle(_ReprStrImpl):
         Parameters
         ----------
         machine
-            The machine in which to integrate the particle.
+            The machine in which to classify the particle.
 
         Example
         -------

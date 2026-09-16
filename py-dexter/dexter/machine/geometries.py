@@ -6,8 +6,8 @@ from typing import TypeAlias
 
 from dexter._core import _PyGeometry
 
-from .utils import MagneticFlux
-from .base import MachineObject, Geometry
+from dexter.machine.flux import MagneticFlux
+from dexter.machine.base import MachineObject, Geometry
 from dexter.types import (
     Array1,
     Array2,

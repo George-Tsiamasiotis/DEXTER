@@ -1,11 +1,9 @@
-import numpy as np
-
-from dexter._core import _PyMagneticFlux
+from collections.abc import Callable
 
 from dexter.types import MagneticFluxKind, Array1
-from dexter._utils import _ReprStrImpl, _RustTypeWrapper
 
-from collections.abc import Callable
+from dexter._core import _PyMagneticFlux
+from dexter._utils import _ReprStrImpl, _RustTypeWrapper
 
 
 class MagneticFlux(_ReprStrImpl, _RustTypeWrapper):

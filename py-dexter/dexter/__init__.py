@@ -31,9 +31,9 @@ from dexter.types import (
     OrbitType,
 )
 
+from dexter.utils import get_max_threads, set_num_threads
 
-from dexter.machine.utils import MagneticFlux
-
+from dexter.machine.flux import MagneticFlux
 from dexter.machine.geometries import GeometryObject, LarGeometry, NcGeometry
 from dexter.machine.qfactors import (
     QfactorObject,
@@ -56,6 +56,7 @@ from dexter.simulate.initial import (
     QueueInitialConditions,
 )
 from dexter.simulate.particle import Particle
+from dexter.simulate.queue import Queue
 
 __all__ = [
     # Type Aliases
@@ -77,6 +78,9 @@ __all__ = [
     "IntegrationStatus",
     "EnergyPzetaPosition",
     "OrbitType",
+    # Utilities
+    "get_max_threads",
+    "set_num_threads",
     # Machine
     "GeometryObject",
     "QfactorObject",
@@ -107,6 +111,7 @@ __all__ = [
     "MagneticFluxArray",
     "QueueInitialConditions",
     "Particle",
+    "Queue",
     # Simulate (plot)
     "plot_evolution",
 ]

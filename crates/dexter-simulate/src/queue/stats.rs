@@ -44,7 +44,7 @@ impl QueueStats {
     /// Creating a new [`QueueStats`] is necessary since the previous one is already borrowed
     /// as mutable at the time that [`QueueStats`] must be updated.
     pub(crate) fn from_completed_queue(queue: &Queue) -> Self {
-        Self::from_initial_conditions(&queue.initial_conditions()).update(queue)
+        Self::from_initial_conditions(queue.initial_conditions()).update(queue)
     }
 
     /// Update self's fields.

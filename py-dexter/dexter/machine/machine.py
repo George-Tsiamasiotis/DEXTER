@@ -1,6 +1,6 @@
 """Defines `Machine`, a container for all information a device."""
 
-from dexter.machine.utils import MagneticFlux
+from dexter.machine.flux import MagneticFlux
 from dexter.types import (
     ArrayLike,
     Interpolation1dType,

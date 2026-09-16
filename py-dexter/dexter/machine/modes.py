@@ -6,8 +6,8 @@ from typing import TypeAlias
 
 from dexter._core import _PyMode
 
-from .utils import MagneticFlux
-from .base import MachineObject, Mode
+from dexter.machine.flux import MagneticFlux
+from dexter.machine.base import MachineObject, Mode
 from dexter.types import (
     Array1,
     FluxCoordinateState,

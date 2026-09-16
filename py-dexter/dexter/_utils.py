@@ -3,6 +3,9 @@
 import inspect
 from typing import Any, TypeAlias
 
+from pint.util import UnitsContainer
+from pint.facets.plain import PlainQuantity
+
 _PyAny: TypeAlias = Any
 """The exported type."""
 
@@ -43,3 +46,26 @@ def _get_default_args(func):
         for k, v in signature.parameters.items()
         if v.default is not inspect.Parameter.empty
     }
+
+
+def _tex_unit(pint_unit: PlainQuantity) -> str:
+    r"""Converts a Quantity's units to a Latex-printable format."""
+    units = pint_unit.units
+    if pint_unit.is_compatible_with("second"):
+        match units:
+            case "femtosecond":
+                return r"fm"
+            case "picosecond":
+                return r"ps"
+            case "nanosecond":
+                return r"ns"
+            case "microsecond":
+                return r"\mu s"
+            case "millisecond":
+                return r"ms"
+            case "second":
+                return r"s"
+            case _:
+                return str(units)
+    else:
+        assert False, "unimplemented"

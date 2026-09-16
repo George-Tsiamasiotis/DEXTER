@@ -41,8 +41,14 @@ pub enum Routine {
 /// A collection of multiple [`Particles`](Particle), constructed from a
 /// [`QueueInitialConditions`].
 ///
-/// Offers the ability to batch [`Particle::integrate`] or [`Particle::intersect`] all the
-/// contained particles, using multiple threads.
+/// Offers the ability to batch integrate all the contained particles, using multiple threads.
+///
+/// + [`Particle::integrate`]
+/// + [`Particle::intersect`],
+/// + [`Particle::close`]
+/// + [`Particle::classify`]
+///
+/// The number of threads can be set through [`set_num_threads`][`dexter_common::set_num_threads`].
 pub struct Queue {
     /// The sets of initial conditions.
     initial_conditions: QueueInitialConditions,
@@ -497,10 +503,10 @@ impl Queue {
 
 /// Getters.
 impl Queue {
-    /// Returns the [`Queue`]'s [`QueueInitialConditions`].
+    /// Returns a reference to the [`Queue`]'s [`QueueInitialConditions`].
     #[must_use]
-    pub fn initial_conditions(&self) -> QueueInitialConditions {
-        self.initial_conditions.clone()
+    pub fn initial_conditions(&self) -> &QueueInitialConditions {
+        &self.initial_conditions
     }
 
     /// Returns the [`Queue`]'s [`Routine`].
