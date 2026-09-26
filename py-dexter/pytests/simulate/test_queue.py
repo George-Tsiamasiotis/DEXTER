@@ -2,6 +2,21 @@ import numpy as np
 import dexter as dex
 
 
+def test_queue_from_particles(lar_machine: dex.Machine):
+    psi0 = dex.MagneticFlux.Toroidal(0.01)
+    i = dex.InitialConditions.Boozer(0, psi0, 0, 0, 1e-4, 1e-6)
+    p1 = dex.Particle(i)
+    p2 = dex.Particle(i)
+    p1.close(lar_machine)
+    queue = dex.Queue.FromParticles([p1, p2])
+    particles = queue.particles
+    assert len(particles) == 2
+    assert isinstance(particles[0], dex.Particle)
+    assert isinstance(particles[1], dex.Particle)
+    assert "Closed" in particles[0].integration_status
+    assert particles[1].integration_status == "Initialized"
+
+
 def test_queue_routines_analytical(lar_machine: dex.Machine):
     num = 4
     psi0s = dex.MagneticFluxArray.Toroidal(

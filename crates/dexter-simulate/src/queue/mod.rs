@@ -108,7 +108,7 @@ impl Queue {
         }
     }
 
-    /// Creates a [`Queue`] from a slice of [`Particles`](Particle).
+    /// Creates a [`Queue`] from cloning a slice of [`Particles`](Particle).
     ///
     /// The particles do not have to be initialized, but they must be defined on the same coordinate
     /// set (boozer/mixed).

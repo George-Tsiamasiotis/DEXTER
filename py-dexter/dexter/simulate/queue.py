@@ -1,9 +1,12 @@
 """Definition of the `Queue` object."""
 
+from collections.abc import Collection
+
 from dexter.types import SteppingMethod, Intersection
 
 from dexter.machine.machine import Machine
 from dexter.simulate.initial import QueueInitialConditions
+from dexter.simulate.particle import Particle
 
 from dexter._utils import _ReprStrImpl
 from dexter._core import _PySolverParams, _PyQueue, _PyIntersectParams
@@ -12,12 +15,50 @@ from dexter._core import _PySolverParams, _PyQueue, _PyIntersectParams
 class Queue(_ReprStrImpl):
     r"""A collection of multiple [`Particles`][dexter.Particle], constructed from a
     [`QueueInitialConditions`][dexter.QueueInitialConditions].
+
+    Example
+    -------
+
+    ``` py title="Queue Instantiation"
+    >>> num = 100
+    >>> psi0s = np.linspace(0, 0.15, num)
+    >>> initial_conditions = dex.QueueInitialConditions.Boozer(
+    ...     t0=np.zeros(num),
+    ...     flux0=dex.MagneticFluxArray.Toroidal(psi0s),
+    ...     theta0=np.zeros(num),
+    ...     zeta0=np.zeros(num),
+    ...     rho0=np.full(num, 1e-5),
+    ...     mu0=np.full(num, 1e-6),
+    ... )
+    >>>
+    >>> # Queue setup and integration
+    >>> queue = dex.Queue(initial_conditions)
+
+    ```
+
+    Attributes
+    ----------
+    particles
+        A list of all contained particles.
     """
 
     _r: _PyQueue
 
     def __init__(self, initial_conditions: QueueInitialConditions) -> None:
         self._r = _PyQueue(initial_conditions._r)
+
+    @classmethod
+    def FromParticles(cls, particles: Collection[Particle]) -> Queue:
+        """Creates a `Queue` from a collection of `Particles`, copying all their attributes.
+
+        The particles do not have to be initialized, but they must be defined on the same coordinate
+        set (boozer/mixed).
+        """
+        _particles = [particle._r for particle in particles]
+
+        obj = Queue.__new__(Queue)
+        obj._r = _PyQueue.from_particles(_particles)
+        return obj
 
     def integrate(
         self,
@@ -381,3 +422,7 @@ class Queue(_ReprStrImpl):
             current=machine.current._r,
             bfield=machine.bfield._r,
         )
+
+    @property
+    def particles(self) -> list[Particle]:
+        return [Particle._wrap(_particle) for _particle in self._r.particles]

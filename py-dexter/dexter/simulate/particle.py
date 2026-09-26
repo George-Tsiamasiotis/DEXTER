@@ -23,10 +23,10 @@ from dexter.types import (
 )
 
 from dexter._core import _PyParticle, _PySolverParams, _PyIntersectParams
-from dexter._utils import _ReprStrImpl
+from dexter._utils import _ReprStrImpl, _RustTypeWrapper
 
 
-class Particle(_ReprStrImpl):
+class Particle(_ReprStrImpl, _RustTypeWrapper):
     r"""A Particle.
 
     By taking $\mu = 0$ and $\rho \rightarrow 0$, the particle traces magnetic field

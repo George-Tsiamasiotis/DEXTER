@@ -454,6 +454,7 @@ class _PyMagneticFluxArray:
 
 class _PyQueueInitialConditions:
     mu_array: Array1
+
     @classmethod
     def boozer(
         cls,
@@ -478,7 +479,11 @@ class _PyQueueInitialConditions:
     def __str__(self) -> str: ...
 
 class _PyQueue:
+    particles: list[_PyParticle]
+
     def __init__(self, initial: _PyQueueInitialConditions) -> None: ...
+    @classmethod
+    def from_particles(cls, particles: list[_PyParticle]) -> _PyQueue: ...
     def integrate(
         self,
         qfactor: _PyQfactor,

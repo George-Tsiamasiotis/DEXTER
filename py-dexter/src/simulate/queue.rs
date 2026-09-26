@@ -2,6 +2,7 @@
 
 use dexter::dexter_machine::*;
 use dexter::dexter_simulate::*;
+use pyo3::types::{PyList, PyType};
 
 use crate::*;
 use pyo3::prelude::*;
@@ -18,6 +19,21 @@ impl PyQueue {
         Self(Queue::new(&initial.0))
     }
 
+    #[classmethod]
+    pub fn from_particles<'py>(
+        _: &Bound<'_, PyType>,
+        pyparticles: Bound<'py, PyList>,
+    ) -> PyResult<Self> {
+        let mut particles = Vec::<Particle>::with_capacity(pyparticles.len());
+        for pyparticle in pyparticles {
+            particles.push(pyparticle.extract::<PyParticle>()?.0);
+        }
+        Ok(Self(Queue::from_particles(&particles)))
+    }
+}
+
+#[pymethods] // Routines
+impl PyQueue {
     pub fn integrate(
         &mut self,
         qfactor: &PyQfactor,
@@ -85,6 +101,22 @@ impl PyQueue {
         } else {
             self.0.classify(machine);
         }
+    }
+}
+
+#[pymethods] // Getters
+impl PyQueue {
+    #[getter]
+    pub fn particles<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyList>> {
+        PyList::new(
+            py,
+            self.0
+                .particles()
+                .clone()
+                .into_iter()
+                .map(|particle| PyParticle(particle))
+                .collect::<Vec<PyParticle>>(),
+        )
     }
 }
 
