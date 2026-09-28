@@ -393,7 +393,7 @@ impl Bfield for NcBfield {
             Toroidal(val) => (val, self.psi.uvalues()),
             Poloidal(val) => (val, self.psip.uvalues()),
         };
-        let ya = &self.theta_values;
+        let ya = &self.theta_values_padded;
         let za = &self.b_values_fortran_flat_padded;
         Ok(debug_assert_is_finite!(
             interp.eval(xa, ya, za, val, theta, acc)?
@@ -422,7 +422,7 @@ impl Bfield for NcBfield {
             Toroidal(val) => (val, self.psi.uvalues()),
             Poloidal(val) => (val, self.psip.uvalues()),
         };
-        let ya = &self.theta_values;
+        let ya = &self.theta_values_padded;
         let za = &self.b_values_fortran_flat_padded;
         Ok(debug_assert_is_finite!(
             interp.eval_deriv_x(xa, ya, za, val, theta, acc)?
@@ -451,7 +451,7 @@ impl Bfield for NcBfield {
             Toroidal(val) => (val, self.psi.uvalues()),
             Poloidal(val) => (val, self.psip.uvalues()),
         };
-        let ya = &self.theta_values;
+        let ya = &self.theta_values_padded;
         let za = &self.b_values_fortran_flat_padded;
         Ok(debug_assert_is_finite!(
             interp.eval_deriv_y(xa, ya, za, val, theta, acc)?

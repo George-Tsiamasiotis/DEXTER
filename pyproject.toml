@@ -47,7 +47,7 @@ test = [
 ]
 docs = [
     "mkdocstrings-python>=2.0.5",
-    "zensical==0.0.62",
+    "zensical==0.0.66",
 ]
 
 [tool.pytest.ini_options]

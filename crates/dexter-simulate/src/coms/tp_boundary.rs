@@ -81,12 +81,6 @@ impl TrappedPassingBoundary {
 }
 
 impl TrappedPassingBoundary {
-    /// Returns `true` if an `(E, Pζ)` is inside the Trapped-Passing boundary.
-    #[must_use]
-    pub(crate) fn contains(&self, energy: f64, pzeta: f64, acc: &mut Accelerator) -> bool {
-        !self.is_below(energy, pzeta, acc) && !self.is_above(energy, pzeta, acc)
-    }
-
     /// Returns `true` if an `(E, Pζ)` is below the Trapped-Passing boundary's lower curve.
     #[must_use]
     pub(crate) fn is_below(&self, energy: f64, pzeta: f64, acc: &mut Accelerator) -> bool {

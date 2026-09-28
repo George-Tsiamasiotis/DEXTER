@@ -111,7 +111,8 @@ impl Geometry for LarGeometry {
     fn eval_r(&self, flux: MagneticFlux, _: &mut Accelerator) -> Result<f64, EvalError> {
         debug_assert_non_negative_flux!(flux);
         match flux {
-            Toroidal(psi) => Ok(debug_assert_is_finite!((2.0 * psi).sqrt())),
+            // Must normalize `r`
+            Toroidal(psi) => Ok(debug_assert_is_finite!(self.raxis * (2.0 * psi).sqrt())),
             Poloidal(_) => Err(EvalError::UndefinedEvaluation(
                 "r(ψp) (defined through q)".into(),
             )),
@@ -120,7 +121,10 @@ impl Geometry for LarGeometry {
 
     fn eval_psi_of_r(&self, r: f64, _: &mut Accelerator) -> Result<MagneticFlux, EvalError> {
         debug_assert_non_negative_r!(r);
-        Ok(Toroidal(debug_assert_is_finite!(r.powi(2) / 2.0)))
+        // Must normalize `r` first
+        Ok(Toroidal(debug_assert_is_finite!(
+            (r / self.raxis).powi(2) / 2.0
+        )))
     }
 
     fn eval_psip_of_r(&self, _: f64, _: &mut Accelerator) -> Result<MagneticFlux, EvalError> {

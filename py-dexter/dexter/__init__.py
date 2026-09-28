@@ -48,7 +48,7 @@ from dexter.machine.perturbation import Perturbation
 from dexter.machine.machine import Machine
 
 from dexter.machine.plot import plot_current, plot_qfactor, plot_bfield, plot_mode
-from dexter.simulate.plot import plot_evolution
+from dexter.simulate.plot import plot_evolution, plot_poloidal_drift
 
 from dexter.simulate.initial import (
     InitialConditions,
@@ -57,6 +57,12 @@ from dexter.simulate.initial import (
 )
 from dexter.simulate.particle import Particle
 from dexter.simulate.queue import Queue
+
+from dexter.simulate.energy import (
+    create_poloidal_grid,
+    energy_of_psi_grid,
+    energy_of_psip_grid,
+)
 
 __all__ = [
     # Type Aliases
@@ -112,6 +118,10 @@ __all__ = [
     "QueueInitialConditions",
     "Particle",
     "Queue",
+    "create_poloidal_grid",
+    "energy_of_psi_grid",
+    "energy_of_psip_grid",
     # Simulate (plot)
     "plot_evolution",
+    "plot_poloidal_drift",
 ]

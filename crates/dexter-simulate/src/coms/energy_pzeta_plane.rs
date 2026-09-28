@@ -10,8 +10,7 @@ use rsl_interpolation::Accelerator2d;
 
 use dexter_machine::Machine;
 
-use crate::COMError;
-use crate::coms::{COMs, TrappedPassingBoundary};
+use crate::coms::TrappedPassingBoundary;
 
 /// Representation of the COM space `(E, Pζ, μ=const)`.
 #[derive(Debug, Clone)]
@@ -29,15 +28,6 @@ pub(crate) struct EnergyPzetaPlane {
 }
 
 impl EnergyPzetaPlane {
-    /// Creates a new `EnergyPzetaPlane` from a set of [`COMs`], in a given equilibrium.
-    pub(crate) fn from_coms(machine: Machine, coms: &COMs) -> Result<Self, COMError> {
-        let Some(mu) = coms.mu else {
-            return Err(COMError::UndefinedMu);
-        };
-
-        Ok(Self::from_mu(machine, mu))
-    }
-
     /// Creates a new `EnergyPzetaPlane` from a set magnetic moment `μ=const` value.
     pub(crate) fn from_mu(objects: Machine, mu: f64) -> Self {
         Self {
@@ -196,18 +186,21 @@ impl EnergyPzetaPlane {
 
     /// Returns the [`TrappedPassingBoundary`]'s `Pζ = [-ψp_last, 0]` interval array.
     #[must_use]
+    #[expect(dead_code, reason = "to be used for plots")]
     pub fn tp_pzeta_interval(&self) -> Array1<f64> {
         self.tp_boundary.pzeta_interval()
     }
 
     /// Returns the [`TrappedPassingBoundary`]'s upper curve.
     #[must_use]
+    #[expect(dead_code, reason = "to be used for plots")]
     pub fn tp_upper(&self) -> Array1<f64> {
         self.tp_boundary.upper()
     }
 
     /// Returns the [`TrappedPassingBoundary`]'s lower curve.
     #[must_use]
+    #[expect(dead_code, reason = "to be used for plots")]
     pub fn tp_lower(&self) -> Array1<f64> {
         self.tp_boundary.lower()
     }

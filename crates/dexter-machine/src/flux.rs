@@ -82,6 +82,18 @@ impl std::fmt::Debug for MagneticFlux {
 
 // ===============================================================================================
 
+impl std::ops::Mul<f64> for MagneticFlux {
+    type Output = Self;
+
+    fn mul(self, rhs: f64) -> Self::Output {
+        use MagneticFlux::*;
+        match self {
+            Toroidal(value) => Toroidal(value * rhs),
+            Poloidal(value) => Poloidal(value * rhs),
+        }
+    }
+}
+
 /// Compares discriminants and then forwards the comparison to the contained `f64`.
 impl approx::AbsDiffEq for MagneticFlux {
     type Epsilon = f64;
@@ -140,6 +152,12 @@ mod test {
 
     use crate::MagneticFlux::*;
     use approx::*;
+
+    #[test]
+    fn mul() {
+        assert_relative_eq!(Toroidal(0.1) * 0.4, Toroidal(0.04));
+        assert_relative_eq!(Poloidal(0.1) * 0.5, Poloidal(0.05));
+    }
 
     #[test]
     fn relative_eq() {

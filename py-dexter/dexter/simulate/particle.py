@@ -638,3 +638,16 @@ class Particle(_ReprStrImpl, _RustTypeWrapper):
             Extra arguments passed to [`dexter.plot_evolution`][dexter.plot_evolution].
         """
         plot.plot_evolution(machine, self, **kwargs)
+
+    def plot_poloidal_drift(self, machine: Machine, **kwargs):
+        """Wrapper around [`dexter.plot_poloidal_drift`][dexter.plot_poloidal_drift].
+
+
+        Parameters
+        ----------
+        machine
+            The machine in which the particle was integrated.
+        **kwargs
+            Extra arguments passed to [`dexter.plot_poloidal_drift`][dexter.plot_poloidal_drift].
+        """
+        plot.plot_poloidal_drift(machine, self, **kwargs)

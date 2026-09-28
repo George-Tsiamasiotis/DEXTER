@@ -33,3 +33,5 @@ def test_plot_particle(lar_machine: dex.Machine):
     assert 100 < particle.steps_taken < 10_000
     dex.plot_evolution(lar_machine, particle, show=False)
     particle.plot_evolution(lar_machine, downsample=True, show=False)
+    dex.plot_poloidal_drift(lar_machine, particle, array_shape=(10, 10), show=False)
+    particle.plot_poloidal_drift(lar_machine, array_shape=(10, 10), show=False)
