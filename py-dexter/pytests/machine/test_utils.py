@@ -1,28 +1,43 @@
 import dexter as dex
-from dexter.utils import get_max_threads
 import pytest
+
+
+from dexter.utils import get_max_threads
+from math import isclose
 
 
 def test_threads():
     dex.set_num_threads(get_max_threads())
 
 
-def test_lcfs():
+def test_magnetic_flux():
     with pytest.raises(RuntimeError):
         dex.MagneticFlux()
 
-    lcfs = dex.MagneticFlux.Toroidal(0.1)
-    lcfs.__repr__()
-    lcfs.__str__()
-    assert lcfs.value == 0.1
-    assert lcfs.kind == "Toroidal"
-    lcfs = dex.MagneticFlux.Poloidal(0.2)
-    assert lcfs.value == 0.2
-    assert lcfs.kind == "Poloidal"
+    flux = dex.MagneticFlux.Toroidal(0.1)
+    flux.__repr__()
+    flux.__str__()
+    assert flux.value == 0.1
+    assert flux.kind == "Toroidal"
+    flux = dex.MagneticFlux.Poloidal(0.2)
+    assert flux.value == 0.2
+    assert flux.kind == "Poloidal"
 
     assert dex.MagneticFlux.Toroidal(0.1) == dex.MagneticFlux.Toroidal(0.1)
     assert dex.MagneticFlux.Toroidal(0.1) != dex.MagneticFlux.Toroidal(0.2)
     assert dex.MagneticFlux.Toroidal(0.1) != dex.MagneticFlux.Poloidal(0.1)
+
+
+def test_magnetic_flux_mul():
+    flux = dex.MagneticFlux.Toroidal(0.1)
+    flux2 = 2 * flux * 2
+    assert isclose(4 * flux.value, flux2.value)
+    assert flux.kind == "Toroidal"
+
+    flux = dex.MagneticFlux.Poloidal(0.2)
+    flux2 = 2 * flux * 2
+    assert isclose(4 * flux.value, flux2.value)
+    assert flux.kind == "Poloidal"
 
 
 def test_flux_eval_wrappers(nc_machine_perturbed: dex.Machine):

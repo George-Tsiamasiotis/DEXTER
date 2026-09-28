@@ -32,6 +32,11 @@
 //! + [`Queue::classify_common_mu`]: An optimization to [`Queue::classify`] for classifying
 //!   particles with common `μ`. Results to about 5-8 times better performance.
 //!
+//! ### COMs space calculations:
+//! + [`create_poloidal_grid`]: Creates a `(θ, ψ/ψp)` meshgrid from the two 1D arrays.
+//! + [`energy_of_psi_grid`]: Calculates the energy on a 2D meshgrid of the `θ` and `ψ` arrays.
+//! + [`energy_of_psip_grid`]: Calculates the energy on a 2D meshgrid of the `θ` and `ψp` arrays.
+//!
 //! ### Parallelism
 //!
 //! Using the [`rayon`] crate, particle routines can run in parallel. The number of threads to be
@@ -62,7 +67,7 @@ pub use dexter_machine::MagneticFlux;
 
 pub use dexter_common::{get_max_threads, set_num_threads};
 
-pub use error::{COMError, SimulationError};
+pub use error::SimulationError;
 
 pub use solve::{SolverParams, SteppingMethod};
 
@@ -73,6 +78,8 @@ pub use particle::{
 
 pub use queue::{Queue, QueueInitialConditions, Routine};
 pub use queue::{poloidal_fluxes, toroidal_fluxes};
+
+pub use coms::{create_poloidal_grid, energy_of_psi_grid, energy_of_psip_grid};
 
 // ============== Configuration constants
 

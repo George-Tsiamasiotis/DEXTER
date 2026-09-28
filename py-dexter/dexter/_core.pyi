@@ -523,3 +523,29 @@ class _PyQueue:
         current: _PyCurrent,
         bfield: _PyBfield,
     ) -> None: ...
+
+# ================================================================================================
+
+def _py_create_poloidal_grid(
+    theta_array: Array1, flux_array: Arra1
+) -> tuple[Array2, Array2]: ...
+def _py_energy_of_psi_grid(
+    qfactor: _PyQfactor,
+    current: _PyCurrent,
+    bfield: _PyBfield,
+    perturbation: _PyPerturbation,
+    pzeta: float,
+    mu: float,
+    theta_array: Array2,
+    psi_array: Array2,
+) -> Array2: ...
+def _py_energy_of_psip_grid(
+    qfactor: _PyQfactor,
+    current: _PyCurrent,
+    bfield: _PyBfield,
+    perturbation: _PyPerturbation,
+    pzeta: float,
+    mu: float,
+    theta_array: Array2,
+    psip_array: Array2,
+) -> Array2: ...

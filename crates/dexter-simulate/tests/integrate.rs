@@ -210,7 +210,7 @@ fn gc_toroidal_poloidal_equivalence() {
     assert!(matches!(tor_particle.integration_status(), IntegrationStatus::Initialized));
     assert!(matches!(pol_particle.integration_status(), IntegrationStatus::Initialized));
 
-    let teval = (0.0, 2.31e5);
+    let teval = (0.0, 4.04e5);
     tor_particle.integrate(machine, teval, &solver_params);
     pol_particle.integrate(machine, teval, &solver_params);
     dbg!(&tor_particle);
@@ -308,7 +308,7 @@ fn gc_mixed_boozer_equivalence() {
     assert!(matches!(boozer_particle.integration_status(), IntegrationStatus::Initialized));
     assert!(matches!(mixed_particle.integration_status(), IntegrationStatus::PartlyInitialized));
 
-    let teval = (0.0, 1.64e5);
+    let teval = (0.0, 2.55e5);
     boozer_particle.integrate(machine, teval, &solver_params);
     mixed_particle.integrate(machine, teval, &solver_params);
     dbg!(&boozer_particle);

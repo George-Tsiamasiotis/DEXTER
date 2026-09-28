@@ -46,6 +46,15 @@ Unit: TypeAlias = (
 )
 """Strings parsed by `pint` as units, with the normalized units added."""
 
+Locator: TypeAlias = Literal["Log", "MaxN"]
+"""Tick locator for contour plots.
+
+  - `Log`: Uses `matplotlib.ticker.LogLocator`.
+  - `MaxN`: Uses `matplotlib.ticker.MaxNLocator`.
+
+When the contour levels span is large, a LogLocator helps in better displaying the levels.
+"""
+
 # =================== Machine
 
 MachineType: TypeAlias = Literal["Analytical", "Numerical"]

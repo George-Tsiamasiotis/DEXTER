@@ -28,6 +28,7 @@ nav = [
         "reference/simulate/initial.md",
         "reference/simulate/particle.md",
         "reference/simulate/queue.md",
+        "reference/simulate/energy.md",
         "reference/simulate/plots.md",
     ]}
 ]

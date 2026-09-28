@@ -77,6 +77,18 @@ class MagneticFlux(_ReprStrImpl, _RustTypeWrapper):
 
         return obj
 
+    def __mul__(self, scalar: float) -> MagneticFlux:
+        """Multiplies the inner value with `scalar` without changing the `kind`."""
+        if self.kind == "Toroidal":
+            return MagneticFlux.Toroidal(self.value * scalar)
+        elif self.kind == "Poloidal":
+            return MagneticFlux.Poloidal(self.value * scalar)
+        else:
+            raise RuntimeError("unreachable")
+
+    def __rmul__(self, scalar: float) -> MagneticFlux:
+        return self.__mul__(scalar)
+
     def __eq__(self, other: object) -> bool:
         """Returns `true` if both `kind` and `value` of `other` are equal to `self`."""
         if isinstance(other, MagneticFlux):
