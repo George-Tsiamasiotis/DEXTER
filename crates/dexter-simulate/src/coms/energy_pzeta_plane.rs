@@ -96,7 +96,7 @@ impl EnergyPzetaPlane {
             .unwrap_or_else(|_| {
                 objects
                     .current()
-                    .eval_g(psi_last, acc.xacc())
+                    .eval_g(psip_last, acc.xacc())
                     .expect("At least one of the evaluations will always succeed")
             });
         let blast = objects

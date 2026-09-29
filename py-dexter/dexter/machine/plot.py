@@ -522,9 +522,7 @@ def plot_bfield(
     rlabs = geometry.eval_rlab(**lab_eval_args)
     zlabs = geometry.eval_zlab(**lab_eval_args)
 
-    # The B arrays must be "rotated" to account for θ padding
-    theta_offset = abs(getattr(bfield, "padding_theta", 0))
-    bfield_eval_args = lab_eval_args | {"theta": (theta_grid + theta_offset) % TAU}
+    bfield_eval_args = lab_eval_args | {"theta": theta_grid}
     bb = bfield.eval_b(**bfield_eval_args)
     bf = bfield.eval_deriv_flux(**bfield_eval_args)
     bt = bfield.eval_deriv_theta(**bfield_eval_args)

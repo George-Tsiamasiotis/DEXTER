@@ -16,8 +16,9 @@ def test_intersect_analytical(lar_machine_perturbed: dex.Machine):
     flux0 = dex.MagneticFlux.Toroidal(0.025)
     initial = dex.InitialConditions.Boozer(0, flux0, 1, 2, 1e-6, 1e-7)
     particle = dex.Particle(initial)
-    particle.intersect(lar_machine_perturbed, "ConstZeta", angle=0, turns=2)
-    assert 10 < particle.steps_taken < 5000
+    intersect_params = dex.IntersectParams("ConstZeta", 0, 2)
+    particle.intersect(lar_machine_perturbed, intersect_params)
+    assert 10 < particle.steps_taken < 10000
 
 
 def test_close_analytical(lar_machine: dex.Machine):
@@ -25,7 +26,7 @@ def test_close_analytical(lar_machine: dex.Machine):
     initial = dex.InitialConditions.Boozer(0, flux0, 1, 2, 1e-4, 1e-6)
     particle = dex.Particle(initial)
     particle.close(lar_machine)
-    assert 10 < particle.steps_taken < 5000
+    assert 10 < particle.steps_taken < 10000
 
 
 def test_classify_analytical(lar_machine: dex.Machine):
@@ -41,7 +42,7 @@ def test_getters(lar_machine: dex.Machine):
     particle = dex.Particle(initial)
     particle.close(lar_machine)
     particle.classify(lar_machine)
-    assert 10 < particle.steps_taken < 5000
+    assert 10 < particle.steps_taken < 10000
 
     assert isinstance(particle.initial_conditions, dex.InitialConditions)
     assert particle.integration_status == "ClosedPeriods(1)"

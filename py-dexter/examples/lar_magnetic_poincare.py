@@ -32,12 +32,15 @@ initial_conditions = dex.QueueInitialConditions.Boozer(
 )
 queue = dex.Queue(initial_conditions)
 
+intersect_params = dex.IntersectParams("ConstZeta", 0, 2000)
+solver_params = dex.SolverParams(
+    method=dex.SteppingMethod.EnergyAdaptiveStep(1e-7, 1e-8),
+    max_steps=10_000_000,
+)
 queue.intersect(
     machine,
-    intersection="ConstZeta",
-    angle=0,
-    turns=2000,
-    max_steps=1_000_000,
+    intersect_params,
+    solver_params,
 )
 
 # =========================
@@ -59,7 +62,7 @@ for p in queue.particles:
         z,
         c="b",
         marker=".",
-        markersize=1.4,
+        markersize=1.1,
         markeredgewidth=0,
         alpha=0.6,
         linestyle="",

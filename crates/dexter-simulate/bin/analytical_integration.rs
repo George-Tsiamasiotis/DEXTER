@@ -28,15 +28,15 @@ fn main() {
     // Integrate
     let teval = (0.0, 1e20);
     let solver_params = SolverParams {
-        method: SteppingMethod::EnergyAdaptiveStep,
-        energy_rel_tol: 1e-13,
-        energy_abs_tol: 1e-14,
+        method: SteppingMethod::EnergyAdaptiveStep {
+            rel_tol: 1e-10,
+            abs_tol: 1e-12,
+        },
         max_steps: 5_000_000,
         ..Default::default()
     };
     particle.integrate(machine, teval, &solver_params);
     dbg!(&particle);
-    dbg!(&particle.psi_array());
     assert!(
         matches!(
             particle.integration_status(),

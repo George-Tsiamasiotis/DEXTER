@@ -24,7 +24,6 @@ from dexter.types import (
     Interpolation2dType,
     PhaseMethod,
     CoordinateSet,
-    SteppingMethod,
     ParticleSpecies,
     IntegrationStatus,
     EnergyPzetaPosition,
@@ -55,6 +54,7 @@ from dexter.simulate.initial import (
     MagneticFluxArray,
     QueueInitialConditions,
 )
+from dexter.simulate.params import SteppingMethod, SolverParams, IntersectParams
 from dexter.simulate.particle import Particle
 from dexter.simulate.queue import Queue
 
@@ -79,7 +79,6 @@ __all__ = [
     "Interpolation2dType",
     "PhaseMethod",
     "CoordinateSet",
-    "SteppingMethod",
     "ParticleSpecies",
     "IntegrationStatus",
     "EnergyPzetaPosition",
@@ -116,6 +115,9 @@ __all__ = [
     "InitialConditions",
     "MagneticFluxArray",
     "QueueInitialConditions",
+    "SteppingMethod",
+    "SolverParams",
+    "IntersectParams",
     "Particle",
     "Queue",
     "create_poloidal_grid",

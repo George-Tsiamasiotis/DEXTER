@@ -177,7 +177,7 @@ pub(super) fn classify(
         return;
     };
 
-    particle.initial_energy = Some(initial_state.energy());
+    particle.initial_energy = Some(initial_state.energy);
     particle.orbit_type = OrbitType::Unclassified; // Fallback
 
     // =============== Energy-Pζ plane Setup

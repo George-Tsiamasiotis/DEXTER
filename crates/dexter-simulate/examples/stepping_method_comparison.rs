@@ -19,20 +19,22 @@ fn main() {
         .build();
 
     let energy_params = SolverParams {
-        method: SteppingMethod::EnergyAdaptiveStep,
-        energy_rel_tol: 1e-14,
-        energy_abs_tol: 1e-15,
+        method: SteppingMethod::EnergyAdaptiveStep {
+            rel_tol: 1e-8,
+            abs_tol: 1e-10,
+        },
         ..Default::default()
     };
     let error_params = SolverParams {
-        method: SteppingMethod::ErrorAdaptiveStep,
-        error_rel_tol: 1e-22,
-        error_abs_tol: 1e-23,
+        method: SteppingMethod::ErrorAdaptiveStep {
+            rel_tol: 1e-16,
+            abs_tol: 1e-19,
+        },
         ..Default::default()
     };
 
     let fixed_params = SolverParams {
-        method: SteppingMethod::FixedStep(4.0),
+        method: SteppingMethod::FixedStep(60.0),
         ..Default::default()
     };
 
@@ -42,10 +44,15 @@ fn main() {
     let mut error_particle = Particle::new(&initial);
     let mut fixed_particle = Particle::new(&initial);
 
-    let teval = (0.0, 1e5);
+    let teval = (0.0, 1e7);
     energy_particle.integrate(machine, teval, &energy_params);
     error_particle.integrate(machine, teval, &error_params);
     fixed_particle.integrate(machine, teval, &fixed_params);
+
+    use IntegrationStatus::*;
+    assert_eq!(energy_particle.integration_status(), Integrated);
+    assert_eq!(error_particle.integration_status(), Integrated);
+    assert_eq!(fixed_particle.integration_status(), Integrated);
 
     println!("Energy adaptive step:");
     print_results(&energy_particle);

@@ -126,8 +126,8 @@ def plot_evolution(
     zeta = particle.zeta_array[::step]
     rho = particle.rho_array[::step]
     ptheta = particle.ptheta_array[::step] / machine.psi_last.value
-    pzeta = particle.pzeta_array[::step] / machine.psip_last.value
-    energy = particle.energy_array[::step]
+    pzeta = particle.pzeta_array[::step] / particle.initial_conditions.pzeta0 - 1
+    energy = particle.energy_array[::step] / particle.initial_energy - 1
 
     FLUX_COLOR = "xkcd:forrest green"
     ANGLE_COLOR = "xkcd:royal blue"
@@ -167,18 +167,12 @@ def plot_evolution(
         with warnings.catch_warnings(action="ignore"):
             tu = machine.quantity(t, "NormSecond").to("second").to_compact()
             t = tu.m
-            eu = machine.quantity(energy, "NormJoule").to("kiloelectronvolt")
-            e = eu.m
-
         tunits = _tex_unit(tu)
         axrho.set_xlabel(rf"$t\ [{tunits}]$")
         axenergy.set_xlabel(rf"$t\ [{tunits}]$")
-        axenergy.set_ylabel(rf"$E(t)\ [keV]$", **RIGHT_LABEL_KW)
-
     else:
         axrho.set_xlabel(rf"$t\ [Normalized]$")
         axenergy.set_xlabel(rf"$t\ [Normalized]$")
-        axenergy.set_ylabel(r"$E(t)' \[Normalized]$", **RIGHT_LABEL_KW)
 
     axpsi.set_ylabel(r"$\psi(t)/\psi_{LCFS}$", **LEFT_LABEL_KW)
     axtheta.set_ylabel(r"$\theta(t)\ [rad]$", **LEFT_LABEL_KW)
@@ -186,7 +180,8 @@ def plot_evolution(
     axrho.set_ylabel(r"$\rho_{||}(t)\ [Normalized]$", **LEFT_LABEL_KW)
     axpsip.set_ylabel(r"$\psi_p(t)/\psi_{p,LCFS}$", **RIGHT_LABEL_KW)
     axzeta.set_ylabel(r"$\zeta(t)\ [rad]$", **RIGHT_LABEL_KW)
-    axpzeta.set_ylabel(r"$P_\zeta(t)/\psi_{p,LCFS}$", **RIGHT_LABEL_KW)
+    axpzeta.set_ylabel(r"$\Delta P_\zeta(t)/P_{\zeta,0}$", **RIGHT_LABEL_KW)
+    axenergy.set_ylabel(r"$\Delta E(t)/ E_0$", **RIGHT_LABEL_KW)
 
     if show:
         plt.show()

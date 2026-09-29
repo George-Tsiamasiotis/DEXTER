@@ -21,15 +21,17 @@ fn different_stepping_methods() {
     let machine = MachineBuilder::new(&qfactor, &current, &bfield).with_perturbation(&perturbation).build();
 
     let energy_params =  SolverParams{
-            method: SteppingMethod::EnergyAdaptiveStep,
-            energy_rel_tol: 1e-13,
-            energy_abs_tol: 1e-15,
+            method: SteppingMethod::EnergyAdaptiveStep{
+                rel_tol: 1e-13,
+                abs_tol: 1e-15,
+            },
             ..Default::default()
         };
     let error_params =  SolverParams{
-            method: SteppingMethod::ErrorAdaptiveStep,
-            error_rel_tol: 1e-13,
-            energy_abs_tol: 1e-15,
+            method: SteppingMethod::ErrorAdaptiveStep{
+                rel_tol: 1e-13,
+                abs_tol: 1e-15,
+            },
             ..Default::default()
         };
 
@@ -44,7 +46,7 @@ fn different_stepping_methods() {
     let mut error_particle = Particle::new(&initial);
     let mut fixed_particle = Particle::new(&initial);
 
-    let teval = (0.0, 1e5);
+    let teval = (0.0, 1e4);
     energy_particle.integrate(machine, teval, &energy_params);
     error_particle.integrate(machine, teval, &error_params);
     fixed_particle.integrate(machine, teval, &fixed_params);

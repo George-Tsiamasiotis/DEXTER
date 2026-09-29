@@ -80,7 +80,6 @@ pub(crate) struct Stepper {
     state5: GCState,
     state6: GCState,
     pub(crate) weights: [f64; 5],
-    pub(crate) errors: [f64; 5],
 }
 
 impl Stepper {
@@ -106,7 +105,6 @@ impl Stepper {
         self.calculate_state_k5(dt, machine, caches)?;
         self.calculate_state_k6(dt, machine, caches)?;
         self.calculate_embedded_weights();
-        self.calculate_errors();
         Ok(())
     }
 
@@ -268,74 +266,73 @@ impl Stepper {
         }
     }
 
-    #[rustfmt::skip]
-    pub(crate) fn calculate_errors(&mut self) {
-        for idx in 0..self.errors.len() {
-            self.errors[idx] =
-                  (B1 - B1E) * self.k1[idx]
-                + (B2 - B2E) * self.k2[idx]
-                + (B3 - B3E) * self.k3[idx]
-                + (B4 - B4E) * self.k4[idx]
-                + (B5 - B5E) * self.k5[idx]
-                + (B6 - B6E) * self.k6[idx];
-        }
-    }
-
+    /// Calculates and returns the next optimal time step depending on the [`SteppingMethod`].
     pub(crate) fn calculate_optimal_step(&self, dt: f64, params: &SolverParams) -> f64 {
         match params.method {
-            SteppingMethod::EnergyAdaptiveStep => self.energy_method_optimal_step(dt, params),
-            SteppingMethod::ErrorAdaptiveStep => self.error_method_optimal_step(dt, params),
+            // Adjust the error by calculating the relative difference in the energy at every step.
+            //
+            // Source:
+            // `<https://www.uni-muenster.de/imperia/md/content/physik_tp/lectures/ss2017/numerische_Methoden_fuer_komplexe_Systeme_II/rkm-1.pdf>`.
+            SteppingMethod::EnergyAdaptiveStep { rel_tol, abs_tol } => {
+                // Calculate relative errors between each intermediate state and the starting one.
+                let errors = [
+                    self.state2.energy - self.state1.energy,
+                    self.state3.energy - self.state1.energy,
+                    self.state4.energy - self.state1.energy,
+                    self.state5.energy - self.state1.energy,
+                    self.state6.energy - self.state1.energy,
+                ]
+                .map(|error| error.abs() / self.state1.energy);
+
+                // Use the maximum error in the energy to adjust the step size.
+                let max_error = errors
+                    .iter()
+                    .max_by(|e1, e2| e1.abs().total_cmp(&e2.abs()))
+                    .copied()
+                    .expect("only finite values here");
+
+                // When the relative error happens to be smaller than `rel_tol`, the optimal step
+                // keeps getting smaller due to the `rel_tol/epsilon` factor, so we need to bound it
+                let epsilon = max_error.max(abs_tol);
+
+                let exp = if epsilon >= rel_tol { 0.2 } else { 0.25 };
+                params.safety_factor * dt * (rel_tol / epsilon).powf(exp)
+            }
+
+            // Adjust the error by calculating the local truncation error.
+            //
+            // Source:
+            // `<https://www.uni-muenster.de/imperia/md/content/physik_tp/lectures/ss2017/numerische_Methoden_fuer_komplexe_Systeme_II/rkm-1.pdf>`.
+            SteppingMethod::ErrorAdaptiveStep { rel_tol, abs_tol } => {
+                // Calculate each dynamical variable's relative error.
+                let mut errors = [f64::NAN; 5];
+                for (idx, error) in errors.iter_mut().enumerate() {
+                    *error = (B1 - B1E) * self.k1[idx]
+                        + (B2 - B2E) * self.k2[idx]
+                        + (B3 - B3E) * self.k3[idx]
+                        + (B4 - B4E) * self.k4[idx]
+                        + (B5 - B5E) * self.k5[idx]
+                        + (B6 - B6E) * self.k6[idx];
+                }
+                errors = errors.map(f64::abs); // TODO: Normalize error
+
+                // Use the maximum error to adjust the step size.
+                let max_error = errors
+                    .iter()
+                    .max_by(|e1, e2| e1.abs().total_cmp(&e2.abs()))
+                    .copied()
+                    .expect("only finite values here");
+
+                // When the energy diff happens to be smaller than `rel_tol`, the optimal step
+                // keeps getting smaller due to the `rel_tol/epsilon` factor, so we need to bound it
+                let epsilon = max_error.max(abs_tol);
+
+                let exp = if epsilon >= rel_tol { 0.2 } else { 0.25 };
+                params.safety_factor * dt * (rel_tol / epsilon).powf(exp)
+            }
+
             SteppingMethod::FixedStep(stepsize) => stepsize,
         }
-    }
-
-    /// Adjust the error by calculating the relative difference in the energy at every step.
-    ///
-    /// Source:
-    /// `<https://www.uni-muenster.de/imperia/md/content/physik_tp/lectures/ss2017/numerische_Methoden_fuer_komplexe_Systeme_II/rkm-1.pdf>`.
-    fn energy_method_optimal_step(&self, dt: f64, config: &SolverParams) -> f64 {
-        let initial_energy = self.state1.energy();
-        let final_energy = self.state6.energy();
-        // When the energy diff happens to be smaller than REL_TOL, the optimal step keeps getting
-        // smaller due to the `REL_TOL/energy_diff` factor, so we need to bound it
-        let energy_diff = ((initial_energy - final_energy) / initial_energy)
-            .abs()
-            .max(config.energy_abs_tol);
-        let exp = if energy_diff >= config.energy_rel_tol {
-            0.2
-        } else {
-            0.25
-        };
-        config.safety_factor * dt * (config.energy_rel_tol / energy_diff).powf(exp)
-    }
-
-    /// Adjust the error by calculating the local truncation error.
-    ///
-    /// Source:
-    /// `<https://www.uni-muenster.de/imperia/md/content/physik_tp/lectures/ss2017/numerische_Methoden_fuer_komplexe_Systeme_II/rkm-1.pdf>`.
-    fn error_method_optimal_step(&self, dt: f64, config: &SolverParams) -> f64 {
-        // Using the max error vs each variable's error is equivalent.
-
-        // The only way this could fail was if `self.errors` contained any non-finite values,
-        // which is already checked at the end of `start()`.
-        let mut max_error = self
-            .errors
-            .iter()
-            .max_by(|e1, e2| e1.abs().total_cmp(&e2.abs()))
-            .copied()
-            .expect("only finite values here");
-
-        // When all errors happen to be smaller than REL_TOL, the optimal step keeps getting
-        // smaller due to the `REL_TOL/max_error` factor, so we need to bound it
-        max_error = max_error.max(config.error_abs_tol);
-
-        // 0.2 = 1/(p+1), where p the order
-        let exp = if max_error >= config.error_rel_tol {
-            0.2
-        } else {
-            0.25
-        };
-        config.safety_factor * dt * (config.error_rel_tol / max_error).powf(exp)
     }
 
     pub(crate) fn next_state(
@@ -370,7 +367,6 @@ impl Default for Stepper {
             k5: [f64::NAN; 5],
             k6: [f64::NAN; 5],
             weights: [f64::NAN; 5],
-            errors: [f64::NAN; 5],
             state1: GCState::default(),
             state2: GCState::default(),
             state3: GCState::default(),

@@ -277,7 +277,8 @@ impl Particle {
     /// intersection surface.
     ///
     /// The differences between two consecutive values of the corresponding angle variable are
-    /// guaranteed to be `2π +- ε`, where ε a number smaller than the solver's relative tolerance.
+    /// guaranteed to be `2π +- ε` or `0 +- ε`, where ε a number smaller than the solver's
+    /// relative tolerance.
     ///
     /// [`Hénon`]: https://www.sciencedirect.com/science/article/abs/pii/0167278982900343
     ///
@@ -402,8 +403,8 @@ impl Particle {
     /// OPTIM: Since the most common scenario is to classify particles with the same `μ`, we can
     /// generate the [`EnergyPzetaPlane`] only once and use it for all particles. This method should
     /// only be called by [`crate::Queue::classify_common_mu`].
-    pub(crate) fn _classify(&mut self, objects: Machine, _plane: Option<&EnergyPzetaPlane>) {
-        classify::classify(self, objects, _plane)
+    pub(crate) fn _classify(&mut self, machine: Machine, _plane: Option<&EnergyPzetaPlane>) {
+        classify::classify(self, machine, _plane)
     }
 }
 
