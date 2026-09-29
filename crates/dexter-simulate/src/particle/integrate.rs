@@ -42,7 +42,7 @@ pub(super) fn integrate(
         return;
     };
 
-    particle.initial_energy = Some(state1.energy());
+    particle.initial_energy = Some(state1.energy);
     let mut state2: GCState;
     let mut dt = solver_params.first_step;
 
@@ -81,7 +81,7 @@ pub(super) fn integrate(
     // =============== Finalize
 
     particle.evolution.duration = start.elapsed();
-    particle.final_energy = Some(state1.energy());
+    particle.final_energy = Some(state1.energy);
     particle.evolution.finish();
     particle.store_caches(caches);
 }

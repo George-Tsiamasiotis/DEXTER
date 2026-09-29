@@ -2,9 +2,10 @@
 
 from collections.abc import Collection
 
-from dexter.types import SteppingMethod, Intersection
+from dexter.types import Intersection
 
 from dexter.machine.machine import Machine
+from dexter.simulate.params import SolverParams, IntersectParams
 from dexter.simulate.initial import QueueInitialConditions
 from dexter.simulate.particle import Particle
 
@@ -64,15 +65,7 @@ class Queue(_ReprStrImpl):
         self,
         machine: Machine,
         teval: tuple[float, float],
-        *,
-        stepping_method: SteppingMethod | None = "EnergyAdaptiveStep",
-        max_steps: int | None = 1_000_000,
-        first_step: float | None = 1e-1,
-        safety_factor: float | None = 0.9,
-        energy_rel_tol: float | None = 1e-12,
-        energy_abs_tol: float | None = 1e-14,
-        error_rel_tol: float | None = 1e-12,
-        error_abs_tol: float | None = 1e-14,
+        solver_params: SolverParams = SolverParams(),
     ):
         r"""Integrates the particles for a specific time interval.
 
@@ -84,25 +77,8 @@ class Queue(_ReprStrImpl):
             The machine in which to integrate the particles.
         teval
             The time span $(t_0, t_f)$ in which to integrate the particles, in Normalized Units.
-
-        Other Parameters
-        ----------------
-        stepping_method
-            The optimal step calculation method.
-        max_steps
-            The maximum amount of steps each particle can make before terminating its integration.
-        first_step
-            The initial time step for the RKF45 adaptive step method.
-        safety_factor
-            The safety factor of the solver.
-        energy_rel_tol
-            The relative tolerance of the energy difference in every step.
-        energy_abs_tol
-            The absolute tolerance of the energy difference in every step.
-        error_rel_tol
-            The relative tolerance of the local truncation error in every step.
-        error_abs_tol
-            The absolute tolerance of the local truncation error in every step.
+        solver_params
+            The parameters passed to the solver.
 
         Example
         -------
@@ -135,49 +111,29 @@ class Queue(_ReprStrImpl):
         >>>
         >>> # Queue setup and integration
         >>> queue = dex.Queue(initial_conditions)
-        >>> queue.integrate(
-        ...     machine=machine,
-        ...     teval=(0, 1e2),
-        ...     energy_rel_tol=1e-11,
-        ...     energy_abs_tol=1e-13,
+        >>>
+        >>> solver_params = dex.SolverParams(
+        ...     method=dex.SteppingMethod.EnergyAdaptiveStep(rel_tol=1e-7, abs_tol=1e-9),
+        ...     max_steps=100_000,
         ... )
+        >>> queue.integrate(machine, teval=(0, 1e2), solver_params=solver_params)
 
         ```
         """
-        solver_params = _PySolverParams(
-            stepping_method=stepping_method,
-            max_steps=max_steps,
-            first_step=first_step,
-            safety_factor=safety_factor,
-            energy_rel_tol=energy_rel_tol,
-            energy_abs_tol=energy_abs_tol,
-            error_rel_tol=error_rel_tol,
-            error_abs_tol=error_abs_tol,
-        )
         self._r.integrate(
             qfactor=machine.qfactor._r,
             current=machine.current._r,
             bfield=machine.bfield._r,
             perturbation=machine.perturbation._r,
             teval=teval,
-            solver_params=solver_params,
+            solver_params=solver_params._r,
         )
 
     def intersect(
         self,
         machine: Machine,
-        intersection: Intersection,
-        angle: float,
-        turns: int,
-        *,
-        stepping_method: SteppingMethod | None = "EnergyAdaptiveStep",
-        max_steps: int | None = 1_000_000,
-        first_step: float | None = 1e-1,
-        safety_factor: float | None = 0.9,
-        energy_rel_tol: float | None = 1e-12,
-        energy_abs_tol: float | None = 1e-14,
-        error_rel_tol: float | None = 1e-12,
-        error_abs_tol: float | None = 1e-14,
+        intersect_params: IntersectParams,
+        solver_params: SolverParams = SolverParams(),
     ):
         r"""Integrates the particles, calculating their intersections with a constant $\theta$ or $\zeta$ surface.
 
@@ -190,32 +146,10 @@ class Queue(_ReprStrImpl):
         ----------
         machine
             The machine in which to integrate the particles.
-        intersection
-            The surface of section Σ, defined by an equation $\chi_i = \alpha$, where $\chi_i = \theta$ or
-            $\zeta$.
-        angle
-            The constant that defines the surface of section.
-        turns
-            The number of intersections to calculate.
-
-        Other Parameters
-        ----------------
-        stepping_method
-            The optimal step calculation method.
-        max_steps
-            The maximum amount of steps each particle can make before terminating its integration.
-        first_step
-            The initial time step for the RKF45 adaptive step method.
-        safety_factor
-            The safety factor of the solver.
-        energy_rel_tol
-            The relative tolerance of the energy difference in every step.
-        energy_abs_tol
-            The absolute tolerance of the energy difference in every step.
-        error_rel_tol
-            The relative tolerance of the local truncation error in every step.
-        error_abs_tol
-            The absolute tolerance of the local truncation error in every step.
+        intersect_params
+            The intersection parameters.
+        solver_params
+            The parameters passed to the solver.
 
         Example
         -------
@@ -248,53 +182,26 @@ class Queue(_ReprStrImpl):
         >>>
         >>> # Queue setup and integration
         >>> queue = dex.Queue(initial_conditions)
-        >>> queue.intersect(
-        ...     machine=machine,
-        ...     intersection="ConstZeta",
-        ...     angle=3.1415,
-        ...     turns=5,
-        ... )
+        >>>
+        >>> intersect_params = dex.IntersectParams("ConstZeta", angle=3.1415, turns=5)
+        >>> queue.intersect(machine, intersect_params)
 
         ```
         """
-        solver_params = _PySolverParams(
-            stepping_method=stepping_method,
-            max_steps=max_steps,
-            first_step=first_step,
-            safety_factor=safety_factor,
-            energy_rel_tol=energy_rel_tol,
-            energy_abs_tol=energy_abs_tol,
-            error_rel_tol=error_rel_tol,
-            error_abs_tol=error_abs_tol,
-        )
-        intersect_params = _PyIntersectParams(
-            intersection=intersection,
-            angle=angle,
-            turns=turns,
-        )
-
         self._r.intersect(
             qfactor=machine.qfactor._r,
             current=machine.current._r,
             bfield=machine.bfield._r,
             perturbation=machine.perturbation._r,
-            intersect_params=intersect_params,
-            solver_params=solver_params,
+            intersect_params=intersect_params._r,
+            solver_params=solver_params._r,
         )
 
     def close(
         self,
         machine: Machine,
-        periods: int | None = 1,
-        *,
-        stepping_method: SteppingMethod | None = "EnergyAdaptiveStep",
-        max_steps: int | None = 1_000_000,
-        first_step: float | None = 1e-1,
-        safety_factor: float | None = 0.9,
-        energy_rel_tol: float | None = 1e-12,
-        energy_abs_tol: float | None = 1e-14,
-        error_rel_tol: float | None = 1e-12,
-        error_abs_tol: float | None = 1e-14,
+        periods: int = 1,
+        solver_params: SolverParams = SolverParams(),
     ):
         r"""Integrates the particles for a certain amount of $\theta-\psi$ periods.
 
@@ -304,25 +211,8 @@ class Queue(_ReprStrImpl):
             The machine in which to integrate the particles.
         periods
             The amount of periods to integrate.
-
-        Other Parameters
-        ----------------
-        stepping_method
-            The optimal step calculation method.
-        max_steps
-            The maximum amount of steps each particle can make before terminating its integration.
-        first_step
-            The initial time step for the RKF45 adaptive step method.
-        safety_factor
-            The safety factor of the solver.
-        energy_rel_tol
-            The relative tolerance of the energy difference in every step.
-        energy_abs_tol
-            The absolute tolerance of the energy difference in every step.
-        error_rel_tol
-            The relative tolerance of the local truncation error in every step.
-        error_abs_tol
-            The absolute tolerance of the local truncation error in every step.
+        solver_params
+            The parameters passed to the solver.
 
         Example
         -------
@@ -353,24 +243,13 @@ class Queue(_ReprStrImpl):
 
         ```
         """
-        solver_params = _PySolverParams(
-            stepping_method=stepping_method,
-            max_steps=max_steps,
-            first_step=first_step,
-            safety_factor=safety_factor,
-            energy_rel_tol=energy_rel_tol,
-            energy_abs_tol=energy_abs_tol,
-            error_rel_tol=error_rel_tol,
-            error_abs_tol=error_abs_tol,
-        )
-
         self._r.close(
             qfactor=machine.qfactor._r,
             current=machine.current._r,
             bfield=machine.bfield._r,
             perturbation=machine.perturbation._r,
-            periods=periods if periods is not None else 1,
-            solver_params=solver_params,
+            periods=periods,
+            solver_params=solver_params._r,
         )
 
     def classify(

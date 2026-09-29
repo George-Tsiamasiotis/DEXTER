@@ -8,11 +8,26 @@ pub(crate) use rkf45::Stepper;
 /// The method used to calculate the next optimal step.
 pub enum SteppingMethod {
     /// Forces the step size to be small enough so that the Energy difference from step to step is
-    /// under a certain threshold. The tolerances can be adjusted with the `energy_rel_tol` and
-    /// `energy_abs_tol` fields.
-    EnergyAdaptiveStep,
-    /// Classic RK error estimation : Adjust the step size to minimize the local truncation error.
-    ErrorAdaptiveStep,
+    /// under a certain threshold.
+    EnergyAdaptiveStep {
+        /// The relative tolerance to compare the relative energy error with.
+        rel_tol: f64,
+        /// The absolute error tolerance. Prevents the relative energy error from becoming too
+        /// small, causing the particle to get stuck.
+        abs_tol: f64,
+    },
+    /// Classic RK error estimation: Adjust the step size to minimize the local truncation error.
+    ///
+    /// Note that the errors are *not* normalized, therefore the tolerances must be set according to
+    /// the scale of the system's time derivatives. A good starting point is `rel_tol=1e-17` and
+    /// `abs_tol=1e-19`.
+    ErrorAdaptiveStep {
+        /// The relative tolerance to compare the relative error with.
+        rel_tol: f64,
+        /// The absolute error tolerance. Prevents the relative error from becoming too
+        /// small, causing the particle to get stuck.
+        abs_tol: f64,
+    },
     /// Fixed step size.
     FixedStep(f64),
 }
@@ -25,25 +40,18 @@ impl std::fmt::Display for SteppingMethod {
 
 /// Defines the parameters of the integration.
 ///
-/// See [`SolverParams::default`] for the default values.
+/// See [`crate::constants`] for default values.
 #[derive(Debug, Clone)]
 pub struct SolverParams {
     /// The optimal step calculation method.
     pub method: SteppingMethod,
     /// The maximum amount of steps a particle can make before terminating its integration.
     pub max_steps: usize,
-    /// The initial time step for the RKF45 adaptive step method. The value is empirical.
+    /// The initial time step for the RKF45 adaptive step method in Normalized Units. The value is
+    /// empirical.
     pub first_step: f64,
     /// The safety factor of the solver. Should be less than 1.0.
     pub safety_factor: f64,
-    /// The relative tolerance of the energy difference in every step.
-    pub energy_rel_tol: f64,
-    /// The absolute tolerance of the energy difference in every step.
-    pub energy_abs_tol: f64,
-    /// The relative tolerance of the local truncation error in every step.
-    pub error_rel_tol: f64,
-    /// The absolute tolerance of the local truncation error in every step.
-    pub error_abs_tol: f64,
 }
 
 impl Default for SolverParams {
@@ -55,10 +63,6 @@ impl Default for SolverParams {
             max_steps: DEFAULT_MAX_STEPS,
             first_step: DEFAULT_FIRST_STEP,
             safety_factor: DEFAULT_SAFETY_FACTOR,
-            energy_rel_tol: DEFAULT_ENERGY_REL_TOL,
-            energy_abs_tol: DEFAULT_ENERGY_ABS_TOL,
-            error_rel_tol: DEFAULT_ERROR_REL_TOL,
-            error_abs_tol: DEFAULT_ERROR_ABS_TOL,
         }
     }
 }

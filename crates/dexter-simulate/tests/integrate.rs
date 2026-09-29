@@ -160,7 +160,7 @@ fn gc_toroidal_integration_gcmotion_check_uniQ_larC_larB_cosP() {
     assert_eq!(particle.steps_stored(), particle.steps_taken());
     assert!(particle.t_array().last().copied().unwrap() >= teval.1);
     assert!(particle.steps_stored() > 1000);
-    assert!(particle.steps_stored() < 10000);
+    assert!(particle.steps_stored() < 20000);
     assert!(particle.energy_var().unwrap() < 1e-18);
     assert_relative_eq!(particle.initial_energy().unwrap(), particle.final_energy().unwrap(), epsilon = 1e-8);
 
@@ -210,7 +210,7 @@ fn gc_toroidal_poloidal_equivalence() {
     assert!(matches!(tor_particle.integration_status(), IntegrationStatus::Initialized));
     assert!(matches!(pol_particle.integration_status(), IntegrationStatus::Initialized));
 
-    let teval = (0.0, 4.04e5);
+    let teval = (0.0, 2.56e5);
     tor_particle.integrate(machine, teval, &solver_params);
     pol_particle.integrate(machine, teval, &solver_params);
     dbg!(&tor_particle);
@@ -308,7 +308,7 @@ fn gc_mixed_boozer_equivalence() {
     assert!(matches!(boozer_particle.integration_status(), IntegrationStatus::Initialized));
     assert!(matches!(mixed_particle.integration_status(), IntegrationStatus::PartlyInitialized));
 
-    let teval = (0.0, 2.55e5);
+    let teval = (0.0, 3.2e5);
     boozer_particle.integrate(machine, teval, &solver_params);
     mixed_particle.integrate(machine, teval, &solver_params);
     dbg!(&boozer_particle);

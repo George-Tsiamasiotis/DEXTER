@@ -25,7 +25,6 @@ from dexter.types import (
     PhaseMethod,
     MachineType,
     CoordinateSet,
-    SteppingMethod,
     Intersection,
 )
 
@@ -362,18 +361,37 @@ class _PyInitialConditions:
     def __repr__(self) -> str: ...
     def __str__(self) -> str: ...
 
+class _PySteppingMethod:
+    @classmethod
+    def energy_adaptive_step(
+        cls,
+        rel_tol: float,
+        abs_tol: float,
+    ) -> _PySteppingMethod: ...
+    @classmethod
+    def error_adaptive_step(
+        cls,
+        rel_tol: float,
+        abs_tol: float,
+    ) -> _PySteppingMethod: ...
+    @classmethod
+    def fixed_step(
+        cls,
+        step: float,
+    ) -> _PySteppingMethod: ...
+    def __repr__(self) -> str: ...
+    def __str__(self) -> str: ...
+
 class _PySolverParams:
     def __init__(
         self,
-        stepping_method: SteppingMethod | None,
+        method: _PySteppingMethod | None,
         max_steps: int | None,
         first_step: float | None,
         safety_factor: float | None,
-        energy_rel_tol: float | None,
-        energy_abs_tol: float | None,
-        error_rel_tol: float | None,
-        error_abs_tol: float | None,
     ) -> None: ...
+    def __repr__(self) -> str: ...
+    def __str__(self) -> str: ...
 
 class _PyIntersectParams:
     def __init__(
@@ -382,6 +400,8 @@ class _PyIntersectParams:
         angle: float,
         turns: int,
     ) -> None: ...
+    def __repr__(self) -> str: ...
+    def __str__(self) -> str: ...
 
 class _PyParticle:
     initial_conditions: _PyInitialConditions
@@ -527,7 +547,7 @@ class _PyQueue:
 # ================================================================================================
 
 def _py_create_poloidal_grid(
-    theta_array: Array1, flux_array: Arra1
+    theta_array: Array1, flux_array: Array1
 ) -> tuple[Array2, Array2]: ...
 def _py_energy_of_psi_grid(
     qfactor: _PyQfactor,

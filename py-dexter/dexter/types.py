@@ -173,21 +173,6 @@ r""" The kind of InitialConditions set.
     - `MixedPoloidal`: Initial conditions set in the $(t, P_\zeta, \psi_p, \theta, \zeta, \mu)$ space.
 """
 
-SteppingMethod = (
-    Literal["EnergyAdaptiveStep", "ErrorAdaptiveStep"]
-    | tuple[Literal["FixedStep"], float]
-)
-"""The stepping method of the solver.
-
-- `EnergyAdaptiveStep`: Forces the step size to be small enough so that the Energy difference
-    from step to step is under a certain threshold. The tolerances can be adjusted with the
-    energy_rel_tol and energy_abs_tol fields.
-- `ErrorAdaptiveStep`: Classic RK error estimation : Adjust the step size to minimize the
-    local truncation error.
-- `FixedStep(float)`: Fixed step size.
-"""
-
-
 Intersection: TypeAlias = Literal["ConstZeta", "ConstTheta"]
 r""" Defines the surface of the Poincare section.
 

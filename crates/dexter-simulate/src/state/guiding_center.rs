@@ -361,7 +361,11 @@ impl GCState {
     }
 
     fn calculate_energy(&mut self) {
-        self.energy = self.energy()
+        // Use the ρ expression here, since the g^2 in the denominator causes numerical instability
+        // on configurations with g=0.
+        let parallel = (self.rho * self.b).powi(2) / 2.0;
+        let perpendicular = self.mu * self.b;
+        self.energy = parallel + perpendicular;
     }
 
     /// See [`Self::adjust_for_flux`].
@@ -391,25 +395,6 @@ impl GCState {
 
     fn calculate_mu_dot(&mut self) {
         self.mu_dot = 0.0;
-    }
-
-    /// Returns the Energy of the State.
-    pub(crate) fn energy(&self) -> f64 {
-        let parallel = self.parallel_energy();
-        let perpendicular = self.perpendicular_energy();
-        parallel + perpendicular
-    }
-
-    /// Returns the parallel energy of the State.
-    pub(crate) fn parallel_energy(&self) -> f64 {
-        // Use the ρ expression here, since the g^2 in the denominator causes numerical instability
-        // on configurations with g=0.
-        (self.rho * self.b).powi(2) / 2.0
-    }
-
-    /// Returns the perpendicular energy of the State.
-    pub(crate) fn perpendicular_energy(&self) -> f64 {
-        self.mu * self.b
     }
 }
 

@@ -90,7 +90,10 @@ pub mod constants {
     // ================ Solver Parameters ================
 
     /// The default optimal step calculation method.
-    pub const DEFAULT_STEPPING_METHOD: SteppingMethod = SteppingMethod::EnergyAdaptiveStep;
+    pub const DEFAULT_STEPPING_METHOD: SteppingMethod = SteppingMethod::EnergyAdaptiveStep {
+        rel_tol: 1e-8,
+        abs_tol: 1e-10,
+    };
 
     /// The default maximum amount of steps a particle can make before terminating its integration.
     pub const DEFAULT_MAX_STEPS: usize = 1_000_000;
@@ -100,18 +103,6 @@ pub mod constants {
 
     /// The default safety factor of the solver. Should be less than 1.0.
     pub const DEFAULT_SAFETY_FACTOR: f64 = 0.9;
-
-    /// The default relative tolerance of the energy difference in every step.
-    pub const DEFAULT_ENERGY_REL_TOL: f64 = 1e-12;
-
-    /// The default absolute tolerance of the energy difference in every step.
-    pub const DEFAULT_ENERGY_ABS_TOL: f64 = 1e-14;
-
-    /// The default relative tolerance of the local truncation error in every step.
-    pub const DEFAULT_ERROR_REL_TOL: f64 = 1e-12;
-
-    /// The default absolute tolerance of the local truncation error in every step.
-    pub const DEFAULT_ERROR_ABS_TOL: f64 = 1e-14;
 
     // ============== COMs Space Parameters ==============
 

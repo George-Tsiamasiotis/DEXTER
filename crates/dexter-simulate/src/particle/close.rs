@@ -54,7 +54,7 @@ pub(super) fn close(
     };
 
     // `state0` has been evaluated on the initial point
-    particle.initial_energy = Some(state0.energy());
+    particle.initial_energy = Some(state0.energy);
     let mut state1 = state0.clone();
 
     let mut state2: GCState;
@@ -168,7 +168,7 @@ pub(super) fn close(
 
     calculate_frequencies(particle);
     particle.evolution.duration = start.elapsed();
-    particle.final_energy = Some(state1.energy());
+    particle.final_energy = Some(state1.energy);
     particle.evolution.finish();
     particle.store_caches(caches);
 }
