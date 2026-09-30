@@ -22,7 +22,7 @@ fn queue_integrate_parQ_larC_larB_cosP() -> Result<(), SimulationError> {
 
     // Initial Conditions setup
     let particle_count = 10;
-    let psis = machine.qfactor().psi_last().value() * Array1::linspace(0.0, 0.5, particle_count);
+    let psis = machine.qfactor().psi_last().value() * Array1::linspace(0.1, 0.5, particle_count);
     let psis = toroidal_fluxes(&psis.to_vec());
     let initial_conditions = QueueInitialConditions::boozer(
         &vec![0.0; particle_count],
@@ -48,16 +48,12 @@ fn queue_integrate_parQ_larC_larB_cosP() -> Result<(), SimulationError> {
 
     queue.integrate(machine, (0.0, 1e4), &SolverParams::default());
 
-    // All but the first at `ψ=0` should be integrated.
-    assert!(queue[0].integration_status() == IntegrationStatus::OutOfBoundsInitialization);
     assert_eq!(queue.routines(), vec![Routine::Integrate]);
-    assert_eq!(
+    assert!(
         queue
             .particles()
             .iter()
-            .filter(|particle| particle.integration_status() == IntegrationStatus::Integrated)
-            .count(),
-        particle_count - 1
+            .all(|particle| particle.integration_status() == IntegrationStatus::Integrated)
     );
 
     println!("{queue:#?}");

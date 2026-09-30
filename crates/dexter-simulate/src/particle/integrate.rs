@@ -23,20 +23,15 @@ pub(super) fn integrate(
 
     let start = Instant::now();
     particle.evolution.reset();
+    particle.finalize_initial_conditions(machine);
+    if !particle._integration_ready {
+        return;
+    }
+
     let mut caches = IntegrationCaches {
         mode_caches: machine.perturbation().generate_caches(),
         ..Default::default()
     };
-
-    // Return early if the initial flux happens to be exactly 0.0 or out of bounds.
-    if particle.initial_conditions().flux0.value() == 0.0 {
-        particle.integration_status = IntegrationStatus::OutOfBoundsInitialization;
-        return;
-    }
-    if particle.initial_conditions.finalize(machine).is_err() {
-        particle.integration_status = IntegrationStatus::InvalidInitialConditions;
-        return;
-    }
     let Ok(mut state1) = GCState::new(&particle.initial_conditions, machine, &mut caches) else {
         particle.integration_status = IntegrationStatus::OutOfBoundsInitialization;
         return;

@@ -13,7 +13,7 @@ IntersectParams
 from dexter._core import _PySteppingMethod, _PySolverParams, _PyIntersectParams
 from dexter._utils import _ReprStrImpl
 
-from dexter.types import Intersection
+from dexter.types import Directionality, Intersection
 
 
 class SteppingMethod(_ReprStrImpl):
@@ -163,6 +163,8 @@ class IntersectParams(_ReprStrImpl):
         The constant that defines the surface of section.
     turns
         The number of intersections to calculate.
+    directionality
+        The method with which Poincare intersections are recorded.
 
     Example
     -------
@@ -173,6 +175,18 @@ class IntersectParams(_ReprStrImpl):
 
     ```
 
+    Attributes
+    ----------
+    intersection
+        The surface of section $\Sigma$, defined by an equation $x_i=\alpha$,
+        where $x_i = \theta$ or $\zeta$.
+    angle
+        The constant that defines the surface of section.
+    turns
+        The number of intersections to calculate.
+    directionality
+        The method with which Poincare intersections are recorded.
+
     """
 
     _r: _PyIntersectParams
@@ -182,7 +196,27 @@ class IntersectParams(_ReprStrImpl):
         intersection: Intersection,
         angle: float,
         turns: int,
+        directionality: Directionality = "Initial",
     ) -> None:
         self._r = _PyIntersectParams(
-            intersection=intersection, angle=angle, turns=turns
+            intersection=intersection,
+            angle=angle,
+            turns=turns,
+            directionality=directionality,
         )
+
+    @property
+    def intersection(self) -> Intersection:
+        return self._r.intersection
+
+    @property
+    def angle(self) -> float:
+        return self._r.angle
+
+    @property
+    def turns(self) -> int:
+        return self._r.turns
+
+    @property
+    def directionality(self) -> Directionality:
+        return self._r.directionality

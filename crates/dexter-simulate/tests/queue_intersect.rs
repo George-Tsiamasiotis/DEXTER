@@ -25,7 +25,7 @@ fn queue_intersect_const_theta_parQ_larC_larB_cosP() -> Result<(), SimulationErr
 
     // Initial Conditions setup
     let particle_count = 10;
-    let psis = machine.qfactor().psi_last().value() * Array1::linspace(0.0, 0.5, particle_count);
+    let psis = machine.qfactor().psi_last().value() * Array1::linspace(0.1, 0.5, particle_count);
     let psis = toroidal_fluxes(&psis.to_vec());
     let initial_conditions = QueueInitialConditions::boozer(
         &vec![0.0; particle_count],
@@ -49,21 +49,17 @@ fn queue_intersect_const_theta_parQ_larC_larB_cosP() -> Result<(), SimulationErr
         particle_count
     );
 
-    let intersect_params = IntersectParams::new(Intersection::ConstTheta, 0.0, 10);
+    let intersect_params =
+        IntersectParams::new(Intersection::ConstTheta, 0.0, 10, Directionality::default());
     queue.intersect(machine, &intersect_params, &SolverParams::default());
 
-    // All but the first at `ψ=0` should be intersected.
-    assert!(queue[0].integration_status() == IntegrationStatus::OutOfBoundsInitialization);
     assert_eq!(queue.routines(), vec![Routine::Intersect]);
-    assert_eq!(
+    assert!(
         queue
             .particles()
             .iter()
-            .filter(|particle| particle.integration_status() == IntegrationStatus::Intersected)
-            .count(),
-        particle_count - 1
+            .all(|particle| particle.integration_status() == IntegrationStatus::Intersected)
     );
-
     println!("{queue:#?}");
     Ok(())
 }
@@ -95,7 +91,7 @@ fn queue_poloidal_intersect_const_zeta_ncdQ_ncdC_ncdB_ncdP() -> Result<(), Simul
 
     // Initial Conditions setup
     let particle_count = 10;
-    let psips = machine.qfactor().psip_last().value() * Array1::linspace(0.0, 0.3, particle_count);
+    let psips = machine.qfactor().psip_last().value() * Array1::linspace(0.1, 0.3, particle_count);
     let psips = poloidal_fluxes(&psips.to_vec());
     let initial_conditions = QueueInitialConditions::boozer(
         &vec![0.0; particle_count],
@@ -119,18 +115,15 @@ fn queue_poloidal_intersect_const_zeta_ncdQ_ncdC_ncdB_ncdP() -> Result<(), Simul
         particle_count
     );
 
-    let intersect_params = IntersectParams::new(Intersection::ConstZeta, 0.0, 10);
+    let intersect_params =
+        IntersectParams::new(Intersection::ConstZeta, 0.0, 10, Directionality::default());
     queue.intersect(machine, &intersect_params, &SolverParams::default());
 
-    // All but the first at `ψ=0` should be intersected.
-    assert!(queue[0].integration_status() == IntegrationStatus::OutOfBoundsInitialization);
-    assert_eq!(
+    assert!(
         queue
             .particles()
             .iter()
-            .filter(|particle| particle.integration_status() == IntegrationStatus::Intersected)
-            .count(),
-        particle_count - 1
+            .all(|particle| particle.integration_status() == IntegrationStatus::Intersected)
     );
 
     println!("{queue:#?}");

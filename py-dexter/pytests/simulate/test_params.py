@@ -21,5 +21,7 @@ def test_solver_params():
 
 
 def test_intersect_params():
-    dex.IntersectParams("ConstZeta", 2, 1000)
-    dex.IntersectParams("ConstTheta", 2, 1000)
+    dex.IntersectParams("ConstZeta", 2, 1000, "Initial")
+    dex.IntersectParams("ConstZeta", 2, 1000, "Both")
+    dex.IntersectParams("ConstTheta", 2, 1000, "DotNegative")
+    dex.IntersectParams("ConstTheta", 2, 1000, "DotPositive")

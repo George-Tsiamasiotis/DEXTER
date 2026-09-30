@@ -10,17 +10,19 @@ plot_poloidal_drift
 
 import warnings
 
-from dexter.types import ArrayShape, Locator, Array1
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 from matplotlib.axes import Axes
 from matplotlib.ticker import LogLocator, MaxNLocator
+from cycler import cycler
 from math import floor, log10
 
 from dexter.machine.machine import Machine
 from dexter.machine.geometries import GeometryObject
+from dexter.simulate.params import IntersectParams
 from dexter.simulate.particle import Particle
+from dexter.simulate.queue import Queue
 from dexter.simulate.energy import (
     create_poloidal_grid,
     energy_of_psi_grid,
@@ -28,6 +30,7 @@ from dexter.simulate.energy import (
 )
 from dexter._utils import _tex_unit
 from dexter.machine.plot import _resolve_magnetic_flux_kind
+from dexter.types import ArrayShape, Locator, Array1, OrbitType
 
 TAU = 2 * np.pi
 PI = np.pi
@@ -62,29 +65,6 @@ def plot_evolution(
     RuntimeError
         If the particle has not been integrated (`#!python particle.steps_taken == 0`).
 
-    Example
-    -------
-
-    ``` py title="Particle integration and evolution plotting"
-    >>> machine = dex.Machine.FromNetcdf(path, "Akima", "Bicubic")
-    >>>
-    >>> # Initial conditions setup
-    >>> initial_conditions = dex.InitialConditions.Mixed(
-    ...     t0=0,
-    ...     flux0=dex.MagneticFlux.Toroidal(0.1),
-    ...     theta0=3.14,
-    ...     zeta0=0,
-    ...     pzeta0=-0.5*machine.psip_last.value,
-    ...     mu0=7e-6,
-    ... )
-    >>>
-    >>> # Particle setup and integration
-    >>> particle = dex.Particle(initial_conditions)
-    >>> particle.integrate(machine, (0, 500))
-    >>>
-    >>> fig, axes = dex.plot_evolution(machine, particle)
-
-    ```
     """
     if particle.steps_taken == 0:
         raise RuntimeError("Particle has not been integrated")
@@ -223,29 +203,6 @@ def plot_poloidal_drift(
     AttributeError
         If `machine` has not defined a `geometry`.
 
-    Example
-    -------
-
-    ``` py title="Particle integration and evolution plotting"
-    >>> machine = dex.Machine.FromNetcdf(path, "Akima", "Bicubic")
-    >>>
-    >>> # Initial conditions setup
-    >>> initial_conditions = dex.InitialConditions.Mixed(
-    ...     t0=0,
-    ...     flux0=dex.MagneticFlux.Toroidal(0.1),
-    ...     theta0=0,
-    ...     zeta0=0,
-    ...     pzeta0=-0.5*machine.psip_last.value,
-    ...     mu0=7e-6,
-    ... )
-    >>>
-    >>> # Particle setup and integration
-    >>> particle = dex.Particle(initial_conditions)
-    >>> particle.integrate(machine, (0, 500))
-    >>>
-    >>> fig, axes = dex.plot_poloidal_drift(machine, particle)
-
-    ```
     """
     if particle.steps_taken == 0:
         raise RuntimeError("Particle has not been integrated")
@@ -350,3 +307,217 @@ def plot_poloidal_drift(
         plt.show()
 
     return fig, ax
+
+
+def plot_pzeta_poincare(
+    machine: Machine,
+    queue: Queue,
+    intersect_params: IntersectParams,
+    *,
+    color: bool = True,
+    initial: bool = False,
+    show: bool = True,
+) -> tuple[Figure, Axes]:
+    r"""Plots a $P_\zeta-\theta$ or $P_\zeta-\zeta$ Poincare plot.
+
+    The kind of plot depends on the `intersection` field of `intersect_params`.
+
+    Parameters
+    ----------
+    machine
+        The machine in which the `queue` was integrated.
+    queue
+        The `Queue` containing the integrated particles.
+    intersect_params
+        The queue's intersection parameters.
+    color
+        Whether or not to color each orbit with a different color.
+    initial
+        Whether or not to plot each particle's initial point.
+    show
+        Whether or not to call `plt.show()`.
+    """
+
+    fig = plt.figure(layout="constrained", figsize=(5, 3))
+    ax = fig.add_subplot()
+
+    if color:
+        ax.set_prop_cycle(cycler(color="brcmk"))
+    else:
+        ax.set_prop_cycle(cycler(color=["blue"]))
+
+    if intersect_params == "ConstTheta":
+        xlabel = r"$\zeta\ [rads]$"
+        array_name = "zeta_array"
+    else:
+        xlabel = r"$\theta\ [rads]$"
+        array_name = "theta_array"
+
+    for p in queue.particles():
+        if p.steps_stored == 0:
+            continue
+        angle_array = _pi_mod(p._r.get_array(array_name))
+        pzeta_array = p.pzeta_array / machine.psip_last.value
+        ax.plot(
+            angle_array,
+            pzeta_array,
+            linewidth=0,
+            marker=".",
+            markersize=1.5,
+            markeredgewidth=0,
+        )
+        if initial:
+            angle0 = angle_array[0]
+            pzeta0 = pzeta_array[0]
+            ax.scatter(
+                angle0,
+                pzeta0,
+                s=10,
+                c="k",
+                marker="x",
+            )
+
+    ax.margins(0)
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(r"$P_\zeta/\psi_{p,LCFS}$")
+
+    if show:
+        plt.show()
+
+    return fig, ax
+
+
+def plot_rz_poincare(
+    machine: Machine,
+    queue: Queue,
+    intersect_params: IntersectParams,
+    *,
+    color: bool = True,
+    initial: bool = False,
+    show: bool = True,
+) -> tuple[Figure, Axes]:
+    r"""Plots an $R-Z$ Poincare plot.
+
+    The kind of plot depends on the `intersection` field of `intersect_params`.
+
+    Parameters
+    ----------
+    machine
+        The machine in which the `queue` was integrated.
+    queue
+        The `Queue` containing the integrated particles.
+    intersect_params
+        The queue's intersection parameters.
+    color
+        Whether or not to color each orbit with a different color.
+    initial
+        Whether or not to plot each particle's initial point.
+    show
+        Whether or not to call `plt.show()`.
+
+    Raises
+    ------
+    RuntimeError
+        If `queue` was run with a 'ConstTheta' intersection.
+    RuntimeError
+        If `machine.geometry` is not defined.
+    """
+
+    if intersect_params == "ConstTheta":
+        raise RuntimeError(
+            "Cannot plot R-Z Poincare map with a 'ConstTheta' intersection"
+        )
+    if machine.geometry is None:
+        raise RuntimeError("Geometry must be defined")
+
+    fig = plt.figure(layout="constrained", figsize=(3.5, 3))
+    ax = fig.add_subplot()
+
+    if color:
+        ax.set_prop_cycle(cycler(color="brcmk"))
+    else:
+        ax.set_prop_cycle(cycler(color=["blue"]))
+
+    for p in queue.particles():
+        if p.steps_stored == 0:
+            continue
+        theta_array = p.theta_array % TAU
+        if machine.qfactor.psi_state == "Good":
+            eval_arg = {"psi": p.psi_array, "theta": theta_array}
+        else:
+            eval_arg = {"psip": p.psip_array, "theta": theta_array}
+        rlab_array = machine.geometry.eval_rlab(**eval_arg)
+        zlab_array = machine.geometry.eval_zlab(**eval_arg)
+        ax.plot(
+            rlab_array,
+            zlab_array,
+            linewidth=0,
+            marker=".",
+            markersize=1.3,
+            markeredgewidth=0,
+        )
+        if initial:
+            rlab0 = rlab_array[0]
+            zlab0 = zlab_array[0]
+            ax.scatter(
+                rlab0,
+                zlab0,
+                s=5,
+                c="k",
+                marker="x",
+            )
+
+    LAST_COLOR = "k"
+    MARGINS = (0.01, 0.01)
+
+    axis_point = (machine.geometry.raxis, machine.geometry.zaxis)
+    ax.plot(machine.geometry.rlab_last, machine.geometry.zlab_last, color=LAST_COLOR)
+    ax.scatter(*axis_point, marker="+", c="k", s=40, zorder=10)
+
+    ax.set_aspect("equal")
+    ax.margins(*MARGINS)
+    ax.set_xlabel(r"$R\ [m]$")
+    ax.set_ylabel(r"$Z\ [m]$")
+
+    if show:
+        plt.show()
+
+    return fig, ax
+
+
+def orbit_color(orbit_type: OrbitType) -> str:
+    r"""Returns each orbit type's color string.
+
+    Helps with being consistent with the coloring on different plots.
+    """
+    # In general, Confined = 'bright', Lost = 'deep'
+    match orbit_type:
+        case "Undefined":
+            return "xkcd:coral"
+        case "TrappedConfined":
+            return "xkcd:bright red"
+        case "TrappedLost":
+            return "xkcd:deep red"
+        case "CoPassingConfined":
+            return "xkcd:bright blue"
+        case "CoPassingLost":
+            return "xkcd:deep blue"
+        case "CuPassingConfined":
+            return "xkcd:bright green"
+        case "CuPassingLost":
+            return "xkcd:deep green"
+        case "Potato":
+            return "xkcd:tan"
+        case "Stagnated":
+            return "xkcd:sky"
+        case "Unclassified":
+            return "xkcd:bright purple"
+        case _:
+            return "xkcd:indigo"
+
+
+def _pi_mod(arr: Array1) -> Array1:
+    """Mods an angle time series in the interval [-π, π]."""
+    a: Array1 = np.mod(arr, 2 * np.pi)
+    a = a - 2 * np.pi * (a > np.pi)
+    return a

@@ -14,7 +14,7 @@ use crate::particle::intersect::{
 use crate::particle::{IntegrationCaches, Particle};
 use crate::solve::{SolverParams, Stepper};
 use crate::state::GCState;
-use crate::{Frequencies, IntegrationStatus, IntersectParams, Intersection};
+use crate::{Directionality, Frequencies, IntegrationStatus, IntersectParams, Intersection};
 
 // ===============================================================================================
 
@@ -30,6 +30,11 @@ pub(super) fn close(
 
     let start = Instant::now();
     particle.evolution.reset();
+    particle.finalize_initial_conditions(machine);
+    if !particle._integration_ready {
+        return;
+    }
+
     let mut caches = IntegrationCaches {
         mode_caches: machine.perturbation().generate_caches(),
         ..Default::default()
@@ -39,15 +44,6 @@ pub(super) fn close(
         ..Default::default()
     };
 
-    // Return early if the initial flux happens to be exactly 0.0 or out of bounds.
-    if particle.initial_conditions().flux0.value() == 0.0 {
-        particle.integration_status = IntegrationStatus::OutOfBoundsInitialization;
-        return;
-    }
-    if particle.initial_conditions.finalize(machine).is_err() {
-        particle.integration_status = IntegrationStatus::InvalidInitialConditions;
-        return;
-    }
     let Ok(state0) = GCState::new(&particle.initial_conditions, machine, &mut caches) else {
         particle.integration_status = IntegrationStatus::OutOfBoundsInitialization;
         return;
@@ -61,9 +57,15 @@ pub(super) fn close(
     let mut dt = solver_params.first_step;
     let mut closed_periods: usize = 0;
 
-    // Phony intersection parameters to be used in the modified system. The `turns` field is
-    // ignored.
-    let intersect_params = &IntersectParams::new(Intersection::ConstTheta, state0.theta, 0);
+    // Phony intersection parameters to be used in the modified system. The `turns` and
+    // `directionality` fields are ignored. The directionality is handled independently in
+    // `close_period_check`.
+    let intersect_params = &IntersectParams::new(
+        Intersection::ConstTheta,
+        state0.theta,
+        0,
+        Directionality::Both,
+    );
 
     // =============== Main loop
 

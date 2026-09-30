@@ -231,7 +231,12 @@ impl Queue {
     ///     &[7e-6, 7e-6],
     /// )?;
     /// let mut queue = Queue::new(&initial_conditions);
-    /// let intersect_params = IntersectParams::new(Intersection::ConstTheta, 0.0, 100);
+    /// let intersect_params = IntersectParams::new(
+    ///     Intersection::ConstTheta,
+    ///     0.0,
+    ///     10,
+    ///     Directionality::Initial,
+    /// );
     /// queue.intersect(machine, &intersect_params, &SolverParams::default());
     /// # Ok::<_, SimulationError>(())
     /// ```
@@ -273,7 +278,7 @@ impl Queue {
     /// use MagneticFlux::*;
     /// let initial_conditions = QueueInitialConditions::boozer(
     ///     &[0.0, 0.1],
-    ///     &[Toroidal(0.1), Toroidal(0.2)],
+    ///     &[Toroidal(0.01), Toroidal(0.02)],
     ///     &[0.0, 0.1],
     ///     &[0.0, 0.0],
     ///     &[1e-5, 1e-5],

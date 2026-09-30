@@ -72,8 +72,8 @@ pub use error::SimulationError;
 pub use solve::{SolverParams, SteppingMethod};
 
 pub use particle::{
-    CoordinateSet, EnergyPzetaPosition, Frequencies, InitialConditions, IntegrationStatus,
-    IntersectParams, Intersection, OrbitType, Particle,
+    CoordinateSet, Directionality, EnergyPzetaPosition, Frequencies, InitialConditions,
+    IntegrationStatus, IntersectParams, Intersection, OrbitType, Particle,
 };
 
 pub use queue::{Queue, QueueInitialConditions, Routine};

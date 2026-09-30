@@ -128,7 +128,7 @@ impl IntegratePbar {
         self.pbar.set_message(format!(
             concat!(
                 "===== 📊 Stats =====\n",
-                "ℹ️ OutOfBounds = {}\n",
+                "🧱 OutOfBounds = {}\n",
                 "✅ Integrated  = {}\n",
                 "🏃 Escaped     = {}\n",
                 "⌛ Timed-out   = {}\n",
@@ -223,7 +223,7 @@ impl IntersectPbar {
         self.pbar.set_message(format!(
             concat!(
                 "========= 📊 Stats =========\n",
-                "ℹ️ OutOfBounds         = {}\n",
+                "🧱 OutOfBounds         = {}\n",
                 "✅ Intersected         = {}\n",
                 "⌛ IntersectedTimedOut = {}\n",
                 "🏃 Escaped             = {}\n",
@@ -309,7 +309,7 @@ impl ClosePbar {
         self.pbar.set_message(format!(
             concat!(
                 "====== 📊 Stats =====\n",
-                "ℹ️ OutOfBounds = {}\n",
+                "🧱 OutOfBounds = {}\n",
                 "✅ Closed      = {}\n",
                 "🏃 Escaped     = {}\n",
                 "⌛ Timed-out   = {}\n",

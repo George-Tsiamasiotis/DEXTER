@@ -180,6 +180,17 @@ r""" Defines the surface of the Poincare section.
 - `ConstZeta`: Defines a surface of $\zeta = const$.
 """
 
+Directionality: TypeAlias = Literal["Initial", "Both", "DotPositive", "DotNegative"]
+r"""Defines the method with which Poincare intersections are recorded by taking into consideration
+the direction of the corresponding angle.
+
+- `Initial`: Only intersections with a direction equal to the direction of the initial point are
+  recorded ($\dot\theta=\dot\theta_0$ or $\dot\zeta=\dot\zeta_0$).
+- `Both`: All intersections are recorded, regardless of the direction.
+- `DotPositive`: Only intersections with $\dot\theta>0$ or $\dot\zeta>0$ are recorded.
+- `DotNegative`: Only intersections with $\dot\theta<0$ or $\dot\zeta<0$ are recorded.
+"""
+
 IntegrationStatus: TypeAlias = Literal[
     "Initialized",
     "PartlyInitialized",
