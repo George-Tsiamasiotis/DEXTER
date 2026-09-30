@@ -37,9 +37,10 @@ fn queue_close_parQ_larC_larB_cosP() -> Result<(), SimulationError> {
     let mut queue = Queue::new(&initial_conditions);
 
     assert_eq!(queue.particle_count(), particle_count);
-    assert_eq!(queue.routine(), Routine::None);
+    assert_eq!(queue.routines(), vec![]);
     assert_eq!(
         queue
+            .particles()
             .iter()
             .filter(|particle| particle.integration_status() == IntegrationStatus::Initialized)
             .count(),
@@ -48,8 +49,10 @@ fn queue_close_parQ_larC_larB_cosP() -> Result<(), SimulationError> {
 
     queue.close(machine, 1, &SolverParams::default());
 
+    assert_eq!(queue.routines(), vec![Routine::Close]);
     assert_eq!(
         queue
+            .particles()
             .iter()
             .filter(|particle| particle.integration_status() == IntegrationStatus::ClosedPeriods(1))
             .count(),
@@ -61,6 +64,7 @@ fn queue_close_parQ_larC_larB_cosP() -> Result<(), SimulationError> {
     let steps_taken = queue.steps_taken_array();
     let steps_stored = queue.steps_stored_array();
     let energy_array = queue.energy_array();
+    let energy_rsd_array = queue.energy_rsd_array();
     let qkinetic_array = queue.qkinetic_array();
     let omega_theta_array = queue.omega_theta_array();
     let omega_zeta_array = queue.omega_zeta_array();
@@ -69,6 +73,7 @@ fn queue_close_parQ_larC_larB_cosP() -> Result<(), SimulationError> {
     assert!(steps_taken.iter().all(|steps| *steps > 0));
     assert!(steps_stored.iter().all(|steps| *steps == 0)); // close() discards arrays
     assert!(energy_array.iter().all(|energy| energy.is_finite()));
+    assert!(energy_rsd_array.iter().all(|energy| energy.is_nan())); // close() discards arrays
     assert!(qkinetic_array.iter().all(|qkinetic| qkinetic.is_finite()));
     assert!(omega_theta_array.iter().all(|omega| omega.is_finite()));
     assert!(omega_zeta_array.iter().all(|omega| omega.is_finite()));

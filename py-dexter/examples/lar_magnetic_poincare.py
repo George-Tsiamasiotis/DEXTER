@@ -17,8 +17,8 @@ machine = dex.Machine(
     ),
 )
 
-num = 43
-rs = np.linspace(1e-5, geometry.rlast, num)
+num = 42
+rs = np.linspace(0.01, geometry.rlast * 0.99, num)
 num = len(rs)
 psis = (rs / geometry.raxis) ** 2 / 2
 
@@ -42,6 +42,8 @@ queue.intersect(
     intersect_params,
     solver_params,
 )
+print(f"Min energy variance: {queue.energy_rsd_array.min()}")
+print(f"Max energy variance: {queue.energy_rsd_array.max()}")
 
 # =========================
 
@@ -52,7 +54,7 @@ ax = fig.subplots()
 rlab_last = geometry.rlab_last
 zlab_last = geometry.zlab_last
 
-for p in queue.particles:
+for p in queue.particles():
     if p.steps_stored == 0:
         continue
     r = geometry.eval_rlab(psi=p.psi_array, theta=p.theta_array)
@@ -62,9 +64,9 @@ for p in queue.particles:
         z,
         c="b",
         marker=".",
-        markersize=1.1,
+        markersize=1.2,
         markeredgewidth=0,
-        alpha=0.6,
+        alpha=0.7,
         linestyle="",
     )
 

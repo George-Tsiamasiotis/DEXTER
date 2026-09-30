@@ -64,6 +64,6 @@ fn main() {
 
 fn print_results(particle: &Particle) {
     println!("\tSteps taken: {}", particle.steps_taken());
-    println!("\tEnergy variance: {:?}", particle.energy_var());
+    println!("\tEnergy variance: {:?}", particle.energy_rsd());
     println!("\tDuration: {:?}", particle.duration());
 }

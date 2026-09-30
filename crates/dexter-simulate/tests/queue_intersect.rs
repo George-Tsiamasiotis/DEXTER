@@ -39,9 +39,10 @@ fn queue_intersect_const_theta_parQ_larC_larB_cosP() -> Result<(), SimulationErr
     let mut queue = Queue::new(&initial_conditions);
 
     assert_eq!(queue.particle_count(), particle_count);
-    assert_eq!(queue.routine(), Routine::None);
+    assert_eq!(queue.routines(), vec![]);
     assert_eq!(
         queue
+            .particles()
             .iter()
             .filter(|particle| particle.integration_status() == IntegrationStatus::Initialized)
             .count(),
@@ -53,8 +54,10 @@ fn queue_intersect_const_theta_parQ_larC_larB_cosP() -> Result<(), SimulationErr
 
     // All but the first at `ψ=0` should be intersected.
     assert!(queue[0].integration_status() == IntegrationStatus::OutOfBoundsInitialization);
+    assert_eq!(queue.routines(), vec![Routine::Intersect]);
     assert_eq!(
         queue
+            .particles()
             .iter()
             .filter(|particle| particle.integration_status() == IntegrationStatus::Intersected)
             .count(),
@@ -106,9 +109,10 @@ fn queue_poloidal_intersect_const_zeta_ncdQ_ncdC_ncdB_ncdP() -> Result<(), Simul
     let mut queue = Queue::new(&initial_conditions);
 
     assert_eq!(queue.particle_count(), particle_count);
-    assert_eq!(queue.routine(), Routine::None);
+    assert_eq!(queue.routines(), vec![]);
     assert_eq!(
         queue
+            .particles()
             .iter()
             .filter(|particle| particle.integration_status() == IntegrationStatus::Initialized)
             .count(),
@@ -122,6 +126,7 @@ fn queue_poloidal_intersect_const_zeta_ncdQ_ncdC_ncdB_ncdP() -> Result<(), Simul
     assert!(queue[0].integration_status() == IntegrationStatus::OutOfBoundsInitialization);
     assert_eq!(
         queue
+            .particles()
             .iter()
             .filter(|particle| particle.integration_status() == IntegrationStatus::Intersected)
             .count(),

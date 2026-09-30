@@ -250,7 +250,7 @@ class MagneticFluxArray(_ReprStrImpl):
         return obj
 
 
-class QueueInitialConditions(_ReprStrImpl):
+class QueueInitialConditions(_ReprStrImpl, _RustTypeWrapper):
     r"""Sets of initial conditions for initializing a [`Queue`][dexter.Queue].
 
     This type is instantiated through the [`Boozer`][dexter.QueueInitialConditions.Boozer] and

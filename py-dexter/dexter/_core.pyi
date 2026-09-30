@@ -6,6 +6,8 @@ implementors. The higher level wrappers are responsible for re-exporting the cor
 have. It should not be visible to the user unless the call `._r` explicitly.
 """
 
+from collections.abc import Iterable
+
 import numpy as np
 from numpy import nan as NAN
 from numpy.typing import NDArray
@@ -26,6 +28,7 @@ from dexter.types import (
     MachineType,
     CoordinateSet,
     Intersection,
+    Routine,
 )
 
 # ================================================================================================
@@ -411,7 +414,7 @@ class _PyParticle:
     duration: str
     initial_energy: float | None
     final_energy: float | None
-    energy_var: float | None
+    energy_rsd: float | None
     energy_pzeta_position: EnergyPzetaPosition
     orbit_type: OrbitType
     omega_theta: float | None
@@ -499,7 +502,8 @@ class _PyQueueInitialConditions:
     def __str__(self) -> str: ...
 
 class _PyQueue:
-    particles: list[_PyParticle]
+    initial_conditions: _PyQueueInitialConditions
+    routines: list[Routine]
 
     def __init__(self, initial: _PyQueueInitialConditions) -> None: ...
     @classmethod
@@ -543,6 +547,22 @@ class _PyQueue:
         current: _PyCurrent,
         bfield: _PyBfield,
     ) -> None: ...
+    def particles(self) -> list[_PyParticle]: ...
+    def retain_pzeta(self, start: float, end: float) -> None: ...
+    def retain_energy(self, start: float, end: float) -> None: ...
+    def retain_energy_pzeta_positions(
+        self,
+        positions: list[EnergyPzetaPosition],
+    ) -> None: ...
+    def retain_orbit_types(
+        self,
+        orbit_types: list[OrbitType],
+    ) -> None: ...
+    def get_array(self, name: str) -> Array1: ...
+    def __getitem__(self, index: int) -> _PyParticle | None: ...
+    def __len__(self) -> int: ...
+    def __repr__(self) -> str: ...
+    def __str__(self) -> str: ...
 
 # ================================================================================================
 

@@ -2,18 +2,15 @@
 
 mod initials;
 mod pbars;
-mod stats;
 
 pub use initials::QueueInitialConditions;
 pub use initials::{poloidal_fluxes, toroidal_fluxes};
 
 use ndarray::Array1;
 use pbars::{ClassifyPbar, ClosePbar, IntegratePbar, IntersectPbar};
-use stats::QueueStats;
 
 use rayon::iter::{IntoParallelRefMutIterator, ParallelIterator};
 use std::ops::{Index, Range};
-use std::slice::Iter;
 use std::time::Duration;
 
 use dexter_machine::Machine;
@@ -22,12 +19,9 @@ use crate::coms::EnergyPzetaPlane;
 use crate::{EnergyPzetaPosition, OrbitType};
 use crate::{IntersectParams, Particle, SolverParams};
 
-/// Indicates the routine Queue's particles executed.
-#[derive(Default, Clone, Debug, PartialEq, Eq)]
+/// Available [`Queue`] routines.
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Routine {
-    /// [`Queue`] has not run any routine yet.
-    #[default]
-    None,
     /// [`Queue`] has run the [`Particle::integrate`] routine.
     Integrate,
     /// [`Queue`] has run the [`Particle::intersect`] routine.
@@ -54,10 +48,8 @@ pub struct Queue {
     initial_conditions: QueueInitialConditions,
     /// The contained particles.
     particles: Vec<Particle>,
-    /// Helper struct to keep track of a Queue's run statistics.
-    stats: QueueStats,
-    /// The routine Queue's particles executed.
-    routine: Routine,
+    /// The routines Queue's particles have executed.
+    routines: Vec<Routine>,
 }
 
 impl Queue {
@@ -103,8 +95,7 @@ impl Queue {
         Self {
             initial_conditions: initial_conditions.clone(),
             particles: initial_conditions.to_particles(),
-            stats: QueueStats::from_initial_conditions(initial_conditions),
-            routine: Routine::None,
+            routines: Vec::new(),
         }
     }
 
@@ -140,13 +131,21 @@ impl Queue {
         Self {
             initial_conditions: QueueInitialConditions::from_particles(particles),
             particles: particles.to_vec(),
-            stats: QueueStats::default(),
-            routine: Routine::None,
+            routines: Vec::new(),
         }
     }
 }
 
 impl Queue {
+    /// Pushes a `Routine` unless it is already contained in `self.routines`.
+    ///
+    /// Often more than one routine is run, e.g. `classify` and `close`.
+    fn push_routine(&mut self, routine: Routine) {
+        if !self.routines.contains(&routine) {
+            self.routines.push(routine);
+        }
+    }
+
     /// Integrates all the contained particles for a specific time interval.
     ///
     /// # Example
@@ -194,8 +193,7 @@ impl Queue {
         });
         pbar.finish();
 
-        self.routine = Routine::Integrate;
-        self.stats = QueueStats::from_completed_queue(self);
+        self.push_routine(Routine::Integrate);
     }
 
     /// Integrates all the contained particles, calculating their intersections with a constant θ or ζ surface.
@@ -254,8 +252,7 @@ impl Queue {
         });
         pbar.finish();
 
-        self.routine = Routine::Intersect;
-        self.stats = QueueStats::from_completed_queue(self);
+        self.push_routine(Routine::Intersect);
     }
 
     /// Integrates all the contained particles for a specific number of periods and calculates
@@ -299,8 +296,7 @@ impl Queue {
         });
         pbar.finish();
 
-        self.routine = Routine::Close;
-        self.stats = QueueStats::from_completed_queue(self);
+        self.push_routine(Routine::Close);
     }
 
     /// Classifies all the contained particles' orbits. using their position on the (E, Pζ, μ=const)
@@ -347,8 +343,7 @@ impl Queue {
         });
         pbar.finish();
 
-        self.routine = Routine::Classify;
-        self.stats = QueueStats::from_completed_queue(self);
+        self.push_routine(Routine::Classify);
     }
 
     /// Classifies all the contained particles' orbits. using their position on the (E, Pζ, μ=const)
@@ -416,8 +411,7 @@ impl Queue {
         });
         pbar.finish();
 
-        self.routine = Routine::Classify;
-        self.stats = QueueStats::from_completed_queue(self);
+        self.push_routine(Routine::Classify);
     }
 }
 
@@ -509,10 +503,10 @@ impl Queue {
         &self.initial_conditions
     }
 
-    /// Returns the [`Queue`]'s [`Routine`].
+    /// Returns the [`Routine`]s the `Queue` has executed.
     #[must_use]
-    pub fn routine(&self) -> Routine {
-        self.routine.clone()
+    pub fn routines(&self) -> &[Routine] {
+        &self.routines
     }
 
     /// Returns the [`Queue`]'s number of contained [`Particle`]s.
@@ -521,17 +515,10 @@ impl Queue {
         self.particles.len()
     }
 
-    /// Returns an iterator over the Queue's [`Particle`]s.
-    ///
-    /// The iterator yields all items from start to end.
-    pub fn iter(&self) -> Iter<'_, Particle> {
-        self.particles.iter()
-    }
-
-    /// Returns a [`Vec`] with all the contained particles.
+    /// Returns a reference to the stored [`Vec<Particle>`].
     #[must_use]
-    pub fn particles(&self) -> Vec<Particle> {
-        self.particles.clone()
+    pub fn particles(&self) -> &[Particle] {
+        &self.particles
     }
 
     /// Returns an [`Array1`] with all the particles' calculated **initial** energies.
@@ -546,6 +533,24 @@ impl Queue {
             self.particles
                 .iter()
                 .map(|particle| particle.initial_energy().unwrap_or(f64::NAN)),
+        )
+    }
+
+    /// Returns an [`Array1`] with all the particles' calculated relative standard deviations.
+    ///
+    /// The relative variance is defined as `σ/μ`, where `σ` the standard deviation and `μ` the mean
+    /// energy value.
+    ///
+    /// Particles are visited in order of instantiation.
+    ///
+    /// For particles whose energies have not been calculated, the corresponding element is
+    /// replaced with NaN.
+    #[must_use]
+    pub fn energy_rsd_array(&self) -> Array1<f64> {
+        Array1::from_iter(
+            self.particles
+                .iter()
+                .map(|particle| particle.energy_rsd().unwrap_or(f64::NAN)),
         )
     }
 
@@ -629,6 +634,9 @@ impl Index<usize> for Queue {
 
 impl std::fmt::Debug for Queue {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        self.stats.fmt(f)
+        f.debug_struct("Queue")
+            .field("Number of particles", &self.particles.len())
+            .field("Routines executed", &self.routines)
+            .finish()
     }
 }

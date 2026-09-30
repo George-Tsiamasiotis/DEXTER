@@ -454,15 +454,24 @@ impl Particle {
         self.final_energy
     }
 
-    /// Calculates the variance of the energy array.
+    /// Calculates the relative standard deviation of the energy array.
+    ///
+    /// The relative variance is defined as `σ/μ`, where `σ` the standard deviation and `μ` the mean
+    /// energy value.
     ///
     /// The variance is lazily calculated when this method is called. If the particle has not been
     /// integrated, it returns `None`.
     #[must_use]
-    pub fn energy_var(&self) -> Option<f64> {
+    #[expect(clippy::missing_panics_doc, reason = "unreachable")]
+    pub fn energy_rsd(&self) -> Option<f64> {
         // `len()` must be larger than 2, panics otherwise
-        // call `energy_array()` since we need an `Array1`
-        (self.evolution.energy.len() > 2).then(|| self.energy_array().var(1.0))
+        (self.evolution.energy.len() > 2).then(|| {
+            // call `energy_array()` since we need an `Array1`
+            let energy_array = self.evolution.energy_array();
+            let mean = energy_array.mean().expect("checked length");
+            let std = energy_array.std(1.0);
+            std / mean
+        })
     }
 
     /// Returns the particle's [`EnergyPzetaPosition`].
@@ -621,7 +630,7 @@ impl std::fmt::Debug for Particle {
             .field("frequencies", &self.frequencies)
             .field("initial energy", &self.initial_energy.unwrap_or(f64::NAN))
             .field("final energy  ", &self.final_energy.unwrap_or(f64::NAN))
-            .field("energy variance", &self.energy_var())
+            .field("energy rsd", &self.energy_rsd())
             .finish()
     }
 }
