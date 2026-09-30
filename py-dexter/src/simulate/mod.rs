@@ -8,7 +8,7 @@ pub use initial::*;
 pub use particle::*;
 pub use queue::*;
 
-use dexter::dexter_simulate::{IntersectParams, Intersection, SolverParams, SteppingMethod};
+use dexter::dexter_simulate::*;
 use pyo3::prelude::*;
 use pyo3::types::PyType;
 
@@ -69,15 +69,47 @@ pub struct PyIntersectParams(pub(crate) IntersectParams);
 #[pymethods]
 impl PyIntersectParams {
     #[new]
-    pub fn new<'py>(intersection: String, angle: f64, turns: usize) -> PyResult<Self> {
+    pub fn new<'py>(
+        intersection: String,
+        angle: f64,
+        turns: usize,
+        directionality: String,
+    ) -> PyResult<Self> {
         let intersection = match intersection.to_lowercase().as_str() {
             "consttheta" => Intersection::ConstTheta,
             "constzeta" => Intersection::ConstZeta,
             _ => return Err(PyErr::from(DexterError::InvalidIntersection)),
         };
-        let intersect_params = IntersectParams::new(intersection, angle, turns);
+        let directionality = match directionality.to_lowercase().as_str() {
+            "initial" => Directionality::Initial,
+            "both" => Directionality::Both,
+            "dotpositive" => Directionality::DotPositive,
+            "dotnegative" => Directionality::DotNegative,
+            _ => return Err(PyErr::from(DexterError::InvalidDirectionality)),
+        };
+        let intersect_params = IntersectParams::new(intersection, angle, turns, directionality);
 
         Ok(Self(intersect_params))
+    }
+
+    #[getter]
+    pub fn intersection(&self) -> String {
+        format!("{:?}", self.0.intersection)
+    }
+
+    #[getter]
+    pub fn angle(&self) -> f64 {
+        self.0.angle
+    }
+
+    #[getter]
+    pub fn turns(&self) -> usize {
+        self.0.turns
+    }
+
+    #[getter]
+    pub fn directionality(&self) -> String {
+        format!("{:?}", self.0.directionality)
     }
 }
 

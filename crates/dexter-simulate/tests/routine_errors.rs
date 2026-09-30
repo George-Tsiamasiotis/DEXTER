@@ -27,7 +27,8 @@ fn time_out() {
 
     // Particle intersection
     let mut particle = Particle::new(&initial);
-    let intersect_params = IntersectParams::new(Intersection::ConstTheta, 1.0, 10);
+    let intersect_params =
+        IntersectParams::new(Intersection::ConstTheta, 1.0, 10, Directionality::default());
     particle.intersect(machine, &intersect_params, &solver_params);
     assert!(matches!(
         particle.integration_status(),
@@ -55,7 +56,8 @@ fn out_of_bounds_initialization() {
 
     // Particle intersection
     let mut particle = Particle::new(&initial);
-    let intersect_params = IntersectParams::new(Intersection::ConstTheta, 0.0, 10);
+    let intersect_params =
+        IntersectParams::new(Intersection::ConstTheta, 0.0, 10, Directionality::default());
     particle.intersect(machine, &intersect_params, &SolverParams::default());
     assert!(matches!(
         particle.integration_status(),
@@ -78,7 +80,12 @@ fn intersected_time_out() {
 
     // Particle intersection
     let mut particle = Particle::new(&initial);
-    let intersect_params = IntersectParams::new(Intersection::ConstTheta, 1.0, 10000);
+    let intersect_params = IntersectParams::new(
+        Intersection::ConstTheta,
+        1.0,
+        10000,
+        Directionality::default(),
+    );
     particle.intersect(machine, &intersect_params, &solver_params);
     dbg!(&particle);
     assert!(matches!(

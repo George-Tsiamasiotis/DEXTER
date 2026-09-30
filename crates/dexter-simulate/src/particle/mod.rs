@@ -9,7 +9,7 @@ mod intersect;
 
 pub use classify::EnergyPzetaPosition;
 pub use initial::{CoordinateSet, InitialConditions};
-pub use intersect::{IntersectParams, Intersection};
+pub use intersect::{Directionality, IntersectParams, Intersection};
 
 // ===============================================================================================
 
@@ -20,14 +20,14 @@ use std::time::Duration;
 use dexter_common::export_array1D_getter_impl;
 use dexter_machine::{DynModeCaches, Machine};
 
-use crate::SolverParams;
 use crate::coms::EnergyPzetaPlane;
+use crate::{SimulationError, SolverParams};
 use evolution::Evolution;
 
 // ===============================================================================================
 
 /// Container for the caching objects needed for the evaluations.
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Clone)]
 #[non_exhaustive]
 pub(crate) struct IntegrationCaches {
     /// The 2D integration Accelerator.
@@ -176,6 +176,7 @@ pub enum OrbitType {
 // ===============================================================================================
 
 /// Representation of a charged particle.
+#[derive(Clone)]
 pub struct Particle {
     /// The [`InitialConditions`] set of the particle.
     initial_conditions: InitialConditions,
@@ -196,6 +197,8 @@ pub struct Particle {
     initial_energy: Option<f64>,
     /// The particle's energy after the integration.
     final_energy: Option<f64>,
+    /// Indicates whether the initial conditions are valid and ready to be integrated.
+    _integration_ready: bool,
 }
 
 impl Particle {
@@ -228,12 +231,39 @@ impl Particle {
             frequencies: Frequencies::default(),
             initial_energy: None,
             final_energy: None,
+            _integration_ready: false,
         }
     }
 }
 
 // Routines
 impl Particle {
+    /// Finalizes the particle's initial conditions and sets the `integration_status` in case of an
+    /// error.
+    ///
+    /// This method should be called at the beginning of every routine to account for changes in
+    /// `Machine` after the particle initialization.
+    pub(crate) fn finalize_initial_conditions(&mut self, machine: Machine) {
+        use SimulationError::*;
+        use dexter_machine::EvalError::*;
+        match self.initial_conditions.finalize(machine) {
+            Ok(_) => self._integration_ready = true,
+            Err(EvalError(Domain1dError(..))) | Err(EvalError(AnalyticalDomainError)) => {
+                // Magnetic flux ψ0/ψp0 is out of bounds
+                self.integration_status = IntegrationStatus::OutOfBoundsInitialization
+            }
+            Err(EvalError(UndefinedEvaluation(..))) => {
+                // Instantiated with 'bad' magnetic flux
+                self.integration_status = IntegrationStatus::InvalidInitialConditions
+            }
+            Err(InvalidInitialConditions) => {
+                // NaN encountered
+                self.integration_status = IntegrationStatus::InvalidInitialConditions
+            }
+            Err(_) => unreachable!(),
+        }
+    }
+
     /// Integrates the particle for a certain time interval.
     ///
     /// The time interval is in Normalized Units (inverse gyro-frequency).
@@ -301,7 +331,12 @@ impl Particle {
     /// let initial = InitialConditions::boozer(0.0, psi0, 3.14, 0.0, 1e-4, 1e-6);
     /// let mut particle = Particle::new(&initial);
     ///
-    /// let intersect_params = IntersectParams::new(Intersection::ConstTheta, 3.14, 10);
+    /// let intersect_params = IntersectParams::new(
+    ///     Intersection::ConstTheta,
+    ///     3.14,
+    ///     10,
+    ///     Directionality::Initial,
+    /// );
     ///
     /// particle.intersect(machine, &intersect_params, &SolverParams::default());
     ///
@@ -584,22 +619,6 @@ impl Particle {
     export_array1D_getter_impl!(ptheta_array, evolution, ptheta_array);
     export_array1D_getter_impl!(pzeta_array, evolution, pzeta_array);
     export_array1D_getter_impl!(energy_array, evolution, energy_array);
-}
-
-impl Clone for Particle {
-    fn clone(&self) -> Self {
-        Self {
-            initial_conditions: self.initial_conditions.clone(),
-            integration_status: self.integration_status.clone(),
-            evolution: self.evolution.clone(),
-            caches: IntegrationCaches::default(),
-            energy_pzeta_position: self.energy_pzeta_position,
-            orbit_type: self.orbit_type.clone(),
-            frequencies: self.frequencies.clone(),
-            initial_energy: self.initial_energy,
-            final_energy: self.final_energy,
-        }
-    }
 }
 
 impl std::fmt::Debug for Frequencies {

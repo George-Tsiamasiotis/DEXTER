@@ -123,9 +123,14 @@ impl InitialConditions {
     ///
     /// # Errors
     ///
-    /// Returns a [`SimulationError`] if the missing coordinates cannot be calculated. This can
-    /// occur if the [`Current`] object specifically does not define g(ψ) (`MixedToroidal` case) or
-    /// g(ψp) (`MixedPoloidal` case), which are necessary for calculating the fluxes.
+    /// Returns a [`SimulationError::EvalError`] if the missing coordinates cannot be calculated
+    /// due to a Domain Error. This can occur if the magnetic flux is out of bounds.
+    ///
+    /// Returns a [`SimulationError::EvalError`] if the missing coordinates cannot be calculated
+    /// due to an undefined evaluation. This can occur if the passed magnetic flux is 'bad'.
+    ///
+    /// Returns a [`SimulationError::InvalidInitialConditions`] if a NaN is encountered in the
+    /// final values.
     #[expect(clippy::min_ident_chars, reason = "poloidal current")]
     pub(crate) fn finalize(&mut self, machine: Machine) -> Result<(), SimulationError> {
         let acc = &mut Accelerator::new();
@@ -155,24 +160,20 @@ impl InitialConditions {
                 self.rho0 = Some((self.pzeta0.expect("mixed to boozer") + psip0.value()) / g);
             }
         };
-        self.assert_integration_ready();
-        Ok(())
-    }
 
-    /// Asserts the necessary coordinates are initialized.
-    ///
-    /// `t0`, `flux0`, `theta0`, `zeta0` and `mu0` are guaranteed to exist, and we must ensure
-    /// `rho0` is initialized as well.
-    fn assert_integration_ready(&self) {
-        assert!(
-            self.t0.is_finite()
-                && self.flux0.value().is_finite()
-                && self.theta0.is_finite()
-                && self.zeta0.is_finite()
-                && self.rho0.is_some_and(f64::is_finite)
-                && self.mu0.is_finite(),
-            "Invalid InitialConditions"
-        )
+        // Sanity check
+        if self.t0.is_finite()
+            && (self.flux0.value().is_finite() && self.flux0.value() > 0.0)
+            && self.theta0.is_finite()
+            && self.zeta0.is_finite()
+            && self.rho0.is_some_and(f64::is_finite)
+            && self.pzeta0.is_some_and(f64::is_finite)
+            && self.mu0.is_finite()
+        {
+            Ok(())
+        } else {
+            Err(SimulationError::InvalidInitialConditions)
+        }
     }
 }
 

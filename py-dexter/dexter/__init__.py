@@ -47,7 +47,12 @@ from dexter.machine.perturbation import Perturbation
 from dexter.machine.machine import Machine
 
 from dexter.machine.plot import plot_current, plot_qfactor, plot_bfield, plot_mode
-from dexter.simulate.plot import plot_evolution, plot_poloidal_drift
+from dexter.simulate.plot import (
+    plot_evolution,
+    plot_poloidal_drift,
+    plot_pzeta_poincare,
+    plot_rz_poincare,
+)
 
 from dexter.simulate.initial import (
     InitialConditions,
@@ -126,4 +131,6 @@ __all__ = [
     # Simulate (plot)
     "plot_evolution",
     "plot_poloidal_drift",
+    "plot_pzeta_poincare",
+    "plot_rz_poincare",
 ]

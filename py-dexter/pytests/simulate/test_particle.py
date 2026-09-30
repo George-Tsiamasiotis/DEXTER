@@ -14,7 +14,7 @@ def test_integrate_analytical(lar_machine_perturbed: dex.Machine):
 
 def test_intersect_analytical(lar_machine_perturbed: dex.Machine):
     flux0 = dex.MagneticFlux.Toroidal(0.025)
-    initial = dex.InitialConditions.Boozer(0, flux0, 1, 2, 1e-6, 1e-7)
+    initial = dex.InitialConditions.Boozer(0, flux0, 3, 2, 1e-6, 1e-7)
     particle = dex.Particle(initial)
     intersect_params = dex.IntersectParams("ConstZeta", 0, 2)
     particle.intersect(lar_machine_perturbed, intersect_params)

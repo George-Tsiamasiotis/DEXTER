@@ -1,4 +1,5 @@
 import dexter as dex
+import numpy as np
 
 
 def test_plots_analytical(lar_machine: dex.Machine):
@@ -35,3 +36,24 @@ def test_plot_particle(lar_machine: dex.Machine):
     particle.plot_evolution(lar_machine, downsample=True, show=False)
     dex.plot_poloidal_drift(lar_machine, particle, array_shape=(10, 10), show=False)
     particle.plot_poloidal_drift(lar_machine, array_shape=(10, 10), show=False)
+
+
+def test_plot_queue(lar_machine: dex.Machine):
+    num = 4
+    psi0s = dex.MagneticFluxArray.Toroidal(
+        np.linspace(1e-6, lar_machine.psi_last.value, num)
+    )
+    initial = dex.QueueInitialConditions.Boozer(
+        t0=np.zeros(num),
+        flux0=psi0s,
+        theta0=np.zeros(num),
+        zeta0=np.zeros(num),
+        rho0=np.full(num, 1e-5),
+        mu0=np.full(num, 1e-6),
+    )
+    queue = dex.Queue(initial)
+    intersect_params = dex.IntersectParams("ConstZeta", 0, 10, "Both")
+    queue.intersect(lar_machine, intersect_params)
+
+    queue.plot_pzeta_poincare(lar_machine, intersect_params, initial=True)
+    queue.plot_rz_poincare(lar_machine, intersect_params, initial=True)

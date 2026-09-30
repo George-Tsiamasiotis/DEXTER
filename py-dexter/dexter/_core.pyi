@@ -17,6 +17,7 @@ from dexter.types import (
     Array2,
     ArrayLike,
     ArrayShape,
+    Directionality,
     EnergyPzetaPosition,
     MagneticFluxKind,
     FluxCoordinateState,
@@ -397,11 +398,16 @@ class _PySolverParams:
     def __str__(self) -> str: ...
 
 class _PyIntersectParams:
+    intersection: Intersection
+    angle: float
+    turns: int
+    directionality: Directionality
     def __init__(
         self,
         intersection: Intersection,
         angle: float,
         turns: int,
+        directionality: Directionality,
     ) -> None: ...
     def __repr__(self) -> str: ...
     def __str__(self) -> str: ...

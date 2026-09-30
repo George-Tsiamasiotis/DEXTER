@@ -21,6 +21,22 @@ pub enum Intersection {
     ConstZeta,
 }
 
+/// Defines the method with which Poincare intersections are recorded by taking into consideration
+/// the direction of the corresponding angle.
+#[derive(Debug, Clone, Copy, Default)]
+pub enum Directionality {
+    /// Only intersections with a direction equal to the direction of the particle's initial
+    /// point are recorded (`dot(θ)=dot(θ0)` or dot(ζ)=dot(ζ0)).
+    #[default]
+    Initial,
+    /// All intersections are recorded, regardless of the direction.
+    Both,
+    /// Only intersections with `dot(θ)>0` or `dot(ζ)>0` are recorded.
+    DotPositive,
+    /// Only intersections with `dot(θ)<0` or `dot(ζ)<0` are recorded.
+    DotNegative,
+}
+
 /// Defines all necessary parameters for the [`Particle::intersect`] routine.
 #[non_exhaustive]
 #[derive(Debug, Clone)]
@@ -31,17 +47,25 @@ pub struct IntersectParams {
     pub angle: f64,
     /// The number of intersections to calculate.
     pub turns: usize,
+    /// The method deciding which intersections should be recorded.
+    pub directionality: Directionality,
 }
 
 impl IntersectParams {
     /// Creates a new [`IntersectParams`].
     #[must_use]
-    pub fn new(intersection: Intersection, angle: f64, turns: usize) -> Self {
+    pub fn new(
+        intersection: Intersection,
+        angle: f64,
+        turns: usize,
+        directionality: Directionality,
+    ) -> Self {
         // Mod `angle` to avoid modding it in every step
         Self {
             intersection,
             angle: angle.rem_euclid(TAU),
             turns,
+            directionality,
         }
     }
 }
@@ -58,6 +82,11 @@ pub(super) fn intersect(
 
     let start = Instant::now();
     particle.evolution.reset();
+    particle.finalize_initial_conditions(machine);
+    if !particle._integration_ready {
+        return;
+    }
+
     let mut caches = IntegrationCaches {
         mode_caches: machine.perturbation().generate_caches(),
         ..Default::default()
@@ -68,15 +97,6 @@ pub(super) fn intersect(
         ..Default::default()
     };
 
-    // Return early if the initial flux happens to be exactly 0.0 or out of bounds.
-    if particle.initial_conditions().flux0.value() == 0.0 {
-        particle.integration_status = IntegrationStatus::OutOfBoundsInitialization;
-        return;
-    }
-    if particle.initial_conditions.finalize(machine).is_err() {
-        particle.integration_status = IntegrationStatus::InvalidInitialConditions;
-        return;
-    }
     let Ok(mut state1) = GCState::new(&particle.initial_conditions, machine, &mut caches) else {
         particle.integration_status = IntegrationStatus::OutOfBoundsInitialization;
         return;
@@ -85,6 +105,12 @@ pub(super) fn intersect(
     particle.initial_energy = Some(state1.energy);
     let mut state2: GCState;
     let mut dt = solver_params.first_step;
+
+    // The direction of the initial point
+    let dot0 = match intersect_params.intersection {
+        Intersection::ConstTheta => state1.theta_dot.signum(),
+        Intersection::ConstZeta => state1.zeta_dot.signum(),
+    };
 
     // =============== Main loop
 
@@ -117,8 +143,21 @@ pub(super) fn intersect(
             Intersection::ConstZeta => (state1.zeta, state2.zeta),
         };
 
+        // The direction of the current state
+        let dot: f64 = match intersect_params.intersection {
+            Intersection::ConstTheta => state1.theta_dot,
+            Intersection::ConstZeta => state1.zeta_dot,
+        };
+        #[expect(clippy::float_cmp, reason = "sign check")]
+        let direction_cond = match intersect_params.directionality {
+            Directionality::Initial => dot.signum() == dot0,
+            Directionality::Both => true,
+            Directionality::DotPositive => dot.is_sign_positive(),
+            Directionality::DotNegative => dot.is_sign_negative(),
+        };
+
         // Hénon's trick
-        if intersected(old_angle, new_angle, intersect_params.angle) {
+        if direction_cond && intersected(old_angle, new_angle, intersect_params.angle) {
             // Switch to the modified system
             let mod_state1 = calculate_mod_state1(&state1, &intersect_params.intersection);
 

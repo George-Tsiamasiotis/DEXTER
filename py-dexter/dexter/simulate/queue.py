@@ -8,6 +8,7 @@ from dexter.machine.machine import Machine
 from dexter.simulate.params import SolverParams, IntersectParams
 from dexter.simulate.initial import QueueInitialConditions
 from dexter.simulate.particle import Particle
+from dexter.simulate import plot
 
 from dexter._utils import _ReprStrImpl
 from dexter._core import _PySolverParams, _PyQueue, _PyIntersectParams
@@ -419,3 +420,37 @@ class Queue(_ReprStrImpl):
     def __len__(self) -> int:
         """Returns the particle count."""
         return self._r.__len__()
+
+    def plot_pzeta_poincare(
+        self, machine: Machine, intersect_params: IntersectParams, **kwargs
+    ):
+        """Wrapper around [`dexter.plot_pzeta_poincare`][dexter.plot_pzeta_poincare].
+
+
+        Parameters
+        ----------
+        machine
+            The machine in which the particle was integrated.
+        intersect_params
+            The queue's intersection parameters.
+        **kwargs
+            Extra arguments passed to [`dexter.plot_poloidal_drift`][dexter.plot_poloidal_drift].
+        """
+        plot.plot_pzeta_poincare(machine, self, intersect_params, **kwargs)
+
+    def plot_rz_poincare(
+        self, machine: Machine, intersect_params: IntersectParams, **kwargs
+    ):
+        """Wrapper around [`dexter.plot_rz_poincare`][dexter.plot_rz_poincare].
+
+
+        Parameters
+        ----------
+        machine
+            The machine in which the particle was integrated.
+        intersect_params
+            The queue's intersection parameters.
+        **kwargs
+            Extra arguments passed to [`dexter.plot_poloidal_drift`][dexter.plot_poloidal_drift].
+        """
+        plot.plot_rz_poincare(machine, self, intersect_params, **kwargs)

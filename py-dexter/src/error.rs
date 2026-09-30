@@ -22,6 +22,7 @@ pub enum DexterError {
     InvalidPhaseMethod,
     InvalidSteppingMethod,
     InvalidIntersection,
+    InvalidDirectionality,
     MachineError(String),
     EvalError(String),
     SimulationError(String),
@@ -74,6 +75,13 @@ impl std::fmt::Display for DexterError {
                 concat!(
                     "[D] Supported intersection options are ",
                     "'ConstTheta' and 'ConstZeta'",
+                )
+            ),
+            Self::InvalidDirectionality => write!(
+                f,
+                concat!(
+                    "[D] Supported directionality options are ",
+                    "'Initial', 'Both', 'DotPositive' and 'DotNegative'",
                 )
             ),
             Self::MachineError(err) => write!(f, "[D] MachineError: '{err}'"),
