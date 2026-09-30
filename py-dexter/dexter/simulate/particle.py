@@ -81,8 +81,9 @@ class Particle(_ReprStrImpl, _RustTypeWrapper):
         The Particle's initial energy in Normalized Units.
     final_energy
         The Particle's final energy in Normalized Units.
-    energy_var
-        The variance of the particles `energy_array`.
+    energy_rsd
+        The relative standard deviation of the particles `energy_array`. It is defined as
+        $\sigma/\mu$, where $\sigma$ the standard deviation and $\mu$ the mean energy value.
     energy_pzeta_position
         The Particle's [`EnergyPzetaPosition`][dexter.EnergyPzetaPosition].
     orbit_type
@@ -399,10 +400,10 @@ class Particle(_ReprStrImpl, _RustTypeWrapper):
         return self._r.final_energy
 
     @property
-    def energy_var(self) -> float:
-        if self._r.energy_var is None:
-            raise AttributeError("`energy_var` has not been calculated")
-        return self._r.energy_var
+    def energy_rsd(self) -> float:
+        if self._r.energy_rsd is None:
+            raise AttributeError("`energy_rsd` has not been calculated")
+        return self._r.energy_rsd
 
     @property
     def energy_pzeta_position(self) -> EnergyPzetaPosition:

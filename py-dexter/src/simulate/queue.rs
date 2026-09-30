@@ -2,6 +2,7 @@
 
 use dexter::dexter_machine::*;
 use dexter::dexter_simulate::*;
+use numpy::{IntoPyArray, PyArray1};
 use pyo3::types::{PyList, PyType};
 
 use crate::*;
@@ -104,19 +105,125 @@ impl PyQueue {
     }
 }
 
+#[pymethods] // Slicing
+impl PyQueue {
+    pub fn retain_pzeta<'py>(&mut self, start: f64, end: f64) {
+        self.0.retain_pzeta(start..end);
+    }
+
+    pub fn retain_energy<'py>(&mut self, start: f64, end: f64) {
+        self.0.retain_energy(start..end);
+    }
+
+    pub fn retain_energy_pzeta_positions(&mut self, positions: Vec<String>) {
+        let positions: Vec<EnergyPzetaPosition> = positions
+            .iter()
+            .map(|pos| match pos.as_str() {
+                "Alpha" => EnergyPzetaPosition::Alpha,
+                "Beta" => EnergyPzetaPosition::Beta,
+                "Gamma" => EnergyPzetaPosition::Gamma,
+                "Delta" => EnergyPzetaPosition::Delta,
+                "Epsilon" => EnergyPzetaPosition::Epsilon,
+                "Zeta" => EnergyPzetaPosition::Zeta,
+                "Eta" => EnergyPzetaPosition::Eta,
+                "Theta" => EnergyPzetaPosition::Theta,
+                "Iota" => EnergyPzetaPosition::Iota,
+                "Kappa" => EnergyPzetaPosition::Kappa,
+                "Lambda" => EnergyPzetaPosition::Lambda,
+                "Mu" => EnergyPzetaPosition::Mu,
+                "Unclassified" => EnergyPzetaPosition::Unclassified,
+                _ => panic!("'positions' must be valid 'EnergyPzetaPosition' variants"),
+            })
+            .collect();
+
+        self.0.retain_energy_pzeta_positions(&positions);
+    }
+
+    pub fn retain_orbit_types(&mut self, orbit_types: Vec<String>) {
+        let orbit_types: Vec<OrbitType> = orbit_types
+            .iter()
+            .map(|typ| match typ.as_str() {
+                "Undefined" => OrbitType::Undefined,
+                "TrappedLost" => OrbitType::TrappedLost,
+                "TrappedConfined" => OrbitType::TrappedConfined,
+                "CoPassingLost" => OrbitType::CoPassingLost,
+                "CoPassingConfined" => OrbitType::CoPassingConfined,
+                "CuPassingLost" => OrbitType::CuPassingLost,
+                "CuPassingConfined" => OrbitType::CuPassingConfined,
+                "Potato" => OrbitType::Potato,
+                "Stagnated" => OrbitType::Stagnated,
+                "Unclassified" => OrbitType::Unclassified,
+                _ => panic!("'orbit_types' must be valid 'OrbitType' variants"),
+            })
+            .collect();
+
+        self.0.retain_orbit_types(&orbit_types);
+    }
+}
+
 #[pymethods] // Getters
 impl PyQueue {
     #[getter]
+    pub fn initial_conditions(&mut self) -> PyQueueInitialConditions {
+        PyQueueInitialConditions(self.0.initial_conditions().clone())
+    }
+
+    #[getter]
+    pub fn routines<'py>(&mut self, py: Python<'py>) -> PyResult<Bound<'py, PyList>> {
+        let routine_strings: Vec<String> = self
+            .0
+            .routines()
+            .iter()
+            .map(|routine| format!("{:?}", routine))
+            .collect();
+        PyList::new(py, routine_strings.iter())
+    }
+
     pub fn particles<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyList>> {
         PyList::new(
             py,
             self.0
                 .particles()
-                .clone()
-                .into_iter()
-                .map(|particle| PyParticle(particle))
+                .iter()
+                .map(|particle| PyParticle(particle.clone()))
                 .collect::<Vec<PyParticle>>(),
         )
+    }
+
+    pub fn steps_taken_array<'py>(&mut self, py: Python<'py>) -> Bound<'py, PyArray1<usize>> {
+        self.0.steps_taken_array().into_pyarray(py)
+    }
+
+    pub fn steps_stored_array<'py>(&mut self, py: Python<'py>) -> Bound<'py, PyArray1<usize>> {
+        self.0.steps_stored_array().into_pyarray(py)
+    }
+
+    pub fn get_array<'py>(&self, py: Python<'py>, name: &str) -> Result<Bound<'py, PyArray1<f64>>> {
+        let array = match name {
+            "energy_array" => self.0.energy_array(),
+            "energy_rsd_array" => self.0.energy_rsd_array(),
+            "omega_theta_array" => self.0.omega_theta_array(),
+            "omega_zeta_array" => self.0.omega_zeta_array(),
+            "qkinetic_array" => self.0.qkinetic_array(),
+            _ => {
+                return Err(DexterError::AttributeError {
+                    obj: "Queue".into(),
+                    attr: name.into(),
+                });
+            }
+        };
+        Ok(array.into_pyarray(py))
+    }
+
+    pub fn __len__(&mut self) -> usize {
+        self.0.particle_count()
+    }
+
+    pub fn __getitem__(&self, index: usize) -> Option<PyParticle> {
+        self.0
+            .particles()
+            .get(index)
+            .map(|particle| PyParticle(particle.clone()))
     }
 }
 

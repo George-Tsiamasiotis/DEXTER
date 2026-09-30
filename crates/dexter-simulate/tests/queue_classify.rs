@@ -37,9 +37,10 @@ fn queue_classify_parQ_larC_larB_cosP() -> Result<(), SimulationError> {
     let mut queue = Queue::new(&initial_conditions);
 
     assert_eq!(queue.particle_count(), particle_count);
-    assert_eq!(queue.routine(), Routine::None);
+    assert_eq!(queue.routines(), vec![]);
     assert_eq!(
         queue
+            .particles()
             .iter()
             .filter(|particle| particle.integration_status() == IntegrationStatus::Initialized)
             .count(),
@@ -48,8 +49,10 @@ fn queue_classify_parQ_larC_larB_cosP() -> Result<(), SimulationError> {
 
     queue.classify(machine);
 
+    assert_eq!(queue.routines(), vec![Routine::Classify]);
     assert_eq!(
         queue
+            .particles()
             .iter()
             .filter(|particle| particle.integration_status() == IntegrationStatus::Initialized)
             .count(),

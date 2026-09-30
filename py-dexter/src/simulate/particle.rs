@@ -110,8 +110,8 @@ impl PyParticle {
     }
 
     #[getter]
-    pub fn energy_var(&self) -> Option<f64> {
-        self.0.energy_var()
+    pub fn energy_rsd(&self) -> Option<f64> {
+        self.0.energy_rsd()
     }
 
     #[getter]

@@ -215,6 +215,9 @@ r"""The integration status of a Particle.
 - `Failed(...)`: Simulation failed for unknown reasons.
 """
 
+Routine: TypeAlias = Literal["Integrate", "Intersect", "Close", "Classify"]
+"""Available Queue routines."""
+
 EnergyPzetaPosition = Literal[
     "Alpha",
     "Beta",

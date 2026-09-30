@@ -50,7 +50,7 @@ def test_getters(lar_machine: dex.Machine):
     assert isinstance(particle.duration, str)
     assert particle.initial_energy is not None and isfinite(particle.initial_energy)
     assert particle.final_energy is not None and isfinite(particle.final_energy)
-    assert particle.energy_var is not None and isfinite(particle.energy_var)
+    assert particle.energy_rsd is not None and isfinite(particle.energy_rsd)
     assert particle.energy_pzeta_position == "Iota"
     assert particle.orbit_type == "TrappedConfined"
     assert isfinite(particle.omega_theta)
