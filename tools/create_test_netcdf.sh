@@ -10,3 +10,9 @@ ln -srvf ./crates/dexter-machine/test_netcdf.nc ./crates/dexter-simulate/test_ne
 ln -srvf ./crates/dexter-machine/test_netcdf.nc ./crates/dexter-simulate/netcdf.nc
 ln -srvf ./crates/dexter-machine/toroidal_test_netcdf.nc ./crates/dexter-simulate/toroidal_test_netcdf.nc
 ln -srvf ./crates/dexter-machine/poloidal_test_netcdf.nc ./crates/dexter-simulate/poloidal_test_netcdf.nc
+
+ln -srvf ./crates/dexter-machine/test_netcdf.nc ./netcdf.nc
+ln -srvf ./crates/dexter-machine/test_netcdf.nc ./crates/dexter-comspace/test_netcdf.nc
+ln -srvf ./crates/dexter-machine/test_netcdf.nc ./crates/dexter-comspace/netcdf.nc
+ln -srvf ./crates/dexter-machine/toroidal_test_netcdf.nc ./crates/dexter-comspace/toroidal_test_netcdf.nc
+ln -srvf ./crates/dexter-machine/poloidal_test_netcdf.nc ./crates/dexter-comspace/poloidal_test_netcdf.nc

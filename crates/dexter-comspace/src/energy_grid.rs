@@ -6,9 +6,7 @@ use ndarray::{Array2, ArrayRef1, ArrayRef2, ArrayView2};
 use rsl_interpolation::Accelerator2d;
 use std::{f64::consts::TAU, mem::MaybeUninit};
 
-use dexter_machine::Machine;
-
-use crate::MagneticFlux::*;
+use dexter_machine::{Machine, MagneticFlux::*};
 
 /// Creates a `(θ, ψ/ψp)` meshgrid from the two 1D arrays.
 ///

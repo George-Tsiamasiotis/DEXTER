@@ -7,7 +7,6 @@ mod initial;
 mod integrate;
 mod intersect;
 
-pub use classify::EnergyPzetaPosition;
 pub use initial::{CoordinateSet, InitialConditions};
 pub use intersect::{Directionality, IntersectParams, Intersection};
 
@@ -18,9 +17,9 @@ use rsl_interpolation::{Accelerator, Accelerator2d};
 use std::time::Duration;
 
 use dexter_common::export_array1D_getter_impl;
+use dexter_comspace::{EnergyPzetaPlane, EnergyPzetaPosition, OrbitType};
 use dexter_machine::{DynModeCaches, Machine};
 
-use crate::coms::EnergyPzetaPlane;
 use crate::{SimulationError, SolverParams};
 use evolution::Evolution;
 
@@ -102,74 +101,6 @@ pub struct Frequencies {
     pub omega_zeta: Option<f64>,
     /// The particle's calculated `qkinetic`.
     pub qkinetic: Option<f64>,
-}
-
-/// A particle's orbit type.
-///
-/// As described by [`R. B. White`], an orbit is classified depending on its location relative
-/// to the well-defined `(E, Pζ, μ=const)`.
-///
-/// [`R. B. White`]: https://doi.org/10.1142/P440
-#[derive(Default, Debug, Clone, PartialEq, Eq)]
-#[non_exhaustive]
-pub enum OrbitType {
-    /// Particle has not been classified.
-    #[default]
-    Undefined,
-    /// A Trapped-Lost particle.
-    ///
-    /// # Definition
-    ///
-    /// A particle is called *trapped* if there exists a mirror point where `ρ=0`.
-    TrappedLost,
-    /// A Trapped-Confined particle.
-    ///
-    /// # Definition
-    ///
-    /// A particle is called *trapped* if there exists a mirror point where `ρ=0`.
-    TrappedConfined,
-    /// A CoPassing-Lost particle.
-    ///
-    /// # Definition
-    ///
-    /// A particle is called *co-passing* if it is not trapped and it holds that `dot(θ)>0`.
-    CoPassingLost,
-    /// A CoPassing-Confined particle.
-    ///
-    /// # Definition
-    ///
-    /// A particle is called *co-passing* if it is not trapped and it holds that `dot(θ)>0`.
-    CoPassingConfined,
-    /// A CounterPassing-Lost particle.
-    ///
-    /// # Definition
-    ///
-    /// A particle is called *counter-passing* if it is not trapped and it holds that `dot(θ)<0`.
-    CuPassingLost,
-    /// A CounterPassing-Confined particle.
-    ///
-    /// # Definition
-    ///
-    /// A particle is called *counter-passing* if it is not trapped and it holds that `dot(θ)<0`.
-    CuPassingConfined,
-    /// A Potato particle.
-    ///
-    /// # Definition
-    ///
-    /// A particle's orbit is called a *potato* orbit if it is trapped but still circles the
-    /// magnetic axis due to its drift. In the `(E, Pζ)` plane, those lie inside the intersection
-    /// of the trapped-passing boundary and the magnetic axis parabola.
-    Potato,
-    /// A Stagnated particle.
-    ///
-    /// # Definition
-    ///
-    /// A particle is called *stagnated* if it always has positive parallel velocity but does
-    /// not circle the magnetic axis. In the `(E, Pζ)` plane, those lie to the right of the
-    /// trapped-passing boundary and above the magnetic axis parabola.
-    Stagnated,
-    /// Not falling under any of the other categories.
-    Unclassified,
 }
 
 // ===============================================================================================

@@ -3,7 +3,7 @@
 use std::f64::consts::PI;
 
 use dexter_machine::{FluxCoordinateState, Machine, MagneticFlux::*};
-use ndarray::Array1;
+use ndarray::{Array1, ArrayView1};
 use rsl_interpolation::{
     Accelerator, Accelerator2d, AkimaInterpolator, BuildInterpolator, Interpolation,
 };
@@ -28,23 +28,23 @@ use crate::constants::TRAPPED_PASSING_BOUNDARY_DENSITY;
 /// # Note
 ///
 /// If the equilibrium has a `good` ψp coordinate, then it is used for all calculations, since
-/// its faster. This also results in an equispaced [`TrappedPassingBoundary::pzeta_interval`].
+/// its faster. This also results in an equispaced [`TrappedPassingBoundary::pzeta`].
 ///
 /// If ψ is the only `good` coordinate, some extra conversions are necessary and the
 /// `pzeta_interval` is no longer a linspace.
 ///
 #[derive(Clone)]
-pub(crate) struct TrappedPassingBoundary {
+pub struct TrappedPassingBoundary {
     /// The `Pζ = [-ψp_last, 0]` interval array.
-    pub(crate) pzeta_interval: Box<[f64]>,
+    pub(crate) pzeta: Array1<f64>,
     /// The curve corresponding to the lower part of the boundary, defined by `θ=0` (eq. 1).
-    pub(crate) lower: Box<[f64]>,
+    pub(crate) lower: Array1<f64>,
     /// The curve corresponding to the upper part of the boundary, defined by `θ=π` (eq. 2).
-    pub(crate) upper: Box<[f64]>,
+    pub(crate) upper: Array1<f64>,
     /// The `Pζ` -> lower trapped-passing boundary interpolator.
-    pub(crate) lower_interp: AkimaInterpolator,
+    lower_interp: AkimaInterpolator,
     /// The `Pζ` -> upper trapped-passing boundary interpolator.
-    pub(crate) upper_interp: AkimaInterpolator,
+    upper_interp: AkimaInterpolator,
 }
 
 impl TrappedPassingBoundary {
@@ -63,48 +63,44 @@ impl TrappedPassingBoundary {
 
     /// Returns the [`TrappedPassingBoundary`]'s `Pζ = [-ψp_last, 0]` interval array.
     #[must_use]
-    pub(crate) fn pzeta_interval(&self) -> Array1<f64> {
-        Array1::from(self.pzeta_interval.clone())
+    pub fn pzeta(&self) -> ArrayView1<'_, f64> {
+        self.pzeta.view()
     }
 
     /// Returns the [`TrappedPassingBoundary`]'s upper curve.
     #[must_use]
-    pub(crate) fn upper(&self) -> Array1<f64> {
-        Array1::from(self.upper.clone())
+    pub fn upper(&self) -> ArrayView1<'_, f64> {
+        self.upper.view()
     }
 
     /// Returns the [`TrappedPassingBoundary`]'s lower curve.
     #[must_use]
-    pub(crate) fn lower(&self) -> Array1<f64> {
-        Array1::from(self.lower.clone())
-    }
-}
-
-impl TrappedPassingBoundary {
-    /// Returns `true` if an `(E, Pζ)` is below the Trapped-Passing boundary's lower curve.
-    #[must_use]
-    pub(crate) fn is_below(&self, energy: f64, pzeta: f64, acc: &mut Accelerator) -> bool {
-        let Some(lower_energy) = self
-            .lower_interp
-            .eval(&self.pzeta_interval, &self.lower, pzeta, acc)
-            .ok()
-        else {
-            return false;
-        };
-        energy < lower_energy
+    pub(crate) fn lower(&self) -> ArrayView1<'_, f64> {
+        self.lower.view()
     }
 
-    /// Returns `true` if an `(E, Pζ)` is above the Trapped-Passing boundary's above curve.
+    /// Return a slice to the `lower` values, to avoid unwrapping every time.
     #[must_use]
-    pub(crate) fn is_above(&self, energy: f64, pzeta: f64, acc: &mut Accelerator) -> bool {
-        let Some(upper) = self
-            .upper_interp
-            .eval(&self.pzeta_interval, &self.upper, pzeta, acc)
-            .ok()
-        else {
-            return false;
-        };
-        energy > upper
+    fn lower_slice(&self) -> &[f64] {
+        self.lower
+            .as_slice()
+            .expect("always exists by construction")
+    }
+
+    /// Return a slice to the `upper` values, to avoid unwrapping every time.
+    #[must_use]
+    fn upper_slice(&self) -> &[f64] {
+        self.upper
+            .as_slice()
+            .expect("always exists by construction")
+    }
+
+    /// Return a slice to the `pzeta` values, to avoid unwrapping every time.
+    #[must_use]
+    fn pzeta_slice(&self) -> &[f64] {
+        self.pzeta
+            .as_slice()
+            .expect("always exists by construction")
     }
 }
 
@@ -120,14 +116,14 @@ impl TrappedPassingBoundary {
 
         let acc = &mut Accelerator2d::new();
 
-        let lower_array = mu
+        let lower = mu
             * psip_interval.mapv(|psip| {
                 machine
                     .bfield()
                     .eval_b(psip, 0.0, acc)
                     .expect("-pzeta=psip is always inbound and evaluation is defined")
             });
-        let upper_array = mu
+        let upper = mu
             * psip_interval.mapv(|psip| {
                 machine
                     .bfield()
@@ -135,18 +131,19 @@ impl TrappedPassingBoundary {
                     .expect("-pzeta=psip is always inbound and evaluation is defined")
             });
 
-        let pzeta_interval = (psip_interval.map(|psip| -psip.value())).to_vec();
-        let lower = lower_array.to_vec();
-        let upper = upper_array.to_vec();
-        let lower_interp = AkimaInterpolator::build(&pzeta_interval, &lower)
+        let pzeta = psip_interval.map(|psip| -psip.value());
+        let pzeta_slice = pzeta.as_slice().expect("always non-empty by construction");
+        let lower_slice = lower.as_slice().expect("always non-empty by construction");
+        let upper_slice = upper.as_slice().expect("always non-empty by construction");
+        let lower_interp = AkimaInterpolator::build(pzeta_slice, lower_slice)
             .expect("sorted dataset and same shape by definition");
-        let upper_interp = AkimaInterpolator::build(&pzeta_interval, &upper)
+        let upper_interp = AkimaInterpolator::build(pzeta_slice, upper_slice)
             .expect("sorted dataset and same shape by definition");
 
         Self {
-            pzeta_interval: pzeta_interval.into_boxed_slice(),
-            lower: lower.into_boxed_slice(),
-            upper: upper.into_boxed_slice(),
+            pzeta,
+            lower,
+            upper,
             lower_interp,
             upper_interp,
         }
@@ -168,14 +165,14 @@ impl TrappedPassingBoundary {
 
         let acc = &mut Accelerator2d::new();
 
-        let lower_array = mu
+        let lower = mu
             * psi_interval.mapv(|psi| {
                 machine
                     .bfield()
                     .eval_b(psi, 0.0, acc)
                     .expect("-pzeta=psip is always inbound and evaluation is defined")
             });
-        let upper_array = mu
+        let upper = mu
             * psi_interval.mapv(|psi| {
                 machine
                     .bfield()
@@ -190,28 +187,57 @@ impl TrappedPassingBoundary {
                 .expect("psi is always inbound and evaluation is defined")
         });
 
-        let pzeta_interval = (psip_interval.map(|psip| -psip.value())).to_vec();
-        let lower = lower_array.to_vec();
-        let upper = upper_array.to_vec();
-        let lower_interp = AkimaInterpolator::build(&pzeta_interval, &lower)
+        let pzeta = psip_interval.map(|psip| -psip.value());
+        let pzeta_slice = pzeta.as_slice().expect("always non-empty by construction");
+        let lower_slice = lower.as_slice().expect("always non-empty by construction");
+        let upper_slice = upper.as_slice().expect("always non-empty by construction");
+        let lower_interp = AkimaInterpolator::build(pzeta_slice, lower_slice)
             .expect("sorted dataset and same shape by definition");
-        let upper_interp = AkimaInterpolator::build(&pzeta_interval, &upper)
+        let upper_interp = AkimaInterpolator::build(pzeta_slice, upper_slice)
             .expect("sorted dataset and same shape by definition");
 
         Self {
-            pzeta_interval: pzeta_interval.into_boxed_slice(),
-            lower: lower.into_boxed_slice(),
-            upper: upper.into_boxed_slice(),
+            pzeta,
+            lower,
+            upper,
             lower_interp,
             upper_interp,
         }
     }
 }
 
+impl TrappedPassingBoundary {
+    /// Returns `true` if the `(E, Pζ)` point is below the Trapped-Passing boundary's lower curve.
+    #[must_use]
+    pub fn is_below(&self, energy: f64, pzeta: f64, acc: &mut Accelerator) -> bool {
+        let Some(lower_energy) = self
+            .lower_interp
+            .eval(self.pzeta_slice(), self.lower_slice(), pzeta, acc)
+            .ok()
+        else {
+            return false;
+        };
+        energy < lower_energy
+    }
+
+    /// Returns `true` if the `(E, Pζ)` point is above the Trapped-Passing boundary's upper curve.
+    #[must_use]
+    pub fn is_above(&self, energy: f64, pzeta: f64, acc: &mut Accelerator) -> bool {
+        let Some(upper) = self
+            .upper_interp
+            .eval(self.pzeta_slice(), self.upper_slice(), pzeta, acc)
+            .ok()
+        else {
+            return false;
+        };
+        energy > upper
+    }
+}
+
 impl std::fmt::Debug for TrappedPassingBoundary {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("TrappedPassingBoundary")
-            .field("pzeta_interval", &self.pzeta_interval)
+            .field("pzeta", &self.pzeta)
             .field("lower", &self.lower)
             .field("upper", &self.upper)
             .finish()

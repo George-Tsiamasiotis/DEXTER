@@ -32,11 +32,6 @@
 //! + [`Queue::classify_common_mu`]: An optimization to [`Queue::classify`] for classifying
 //!   particles with common `μ`. Results to about 5-8 times better performance.
 //!
-//! ### COMs space calculations:
-//! + [`create_poloidal_grid`]: Creates a `(θ, ψ/ψp)` meshgrid from the two 1D arrays.
-//! + [`energy_of_psi_grid`]: Calculates the energy on a 2D meshgrid of the `θ` and `ψ` arrays.
-//! + [`energy_of_psip_grid`]: Calculates the energy on a 2D meshgrid of the `θ` and `ψp` arrays.
-//!
 //! ### Parallelism
 //!
 //! Using the [`rayon`] crate, particle routines can run in parallel. The number of threads to be
@@ -47,12 +42,12 @@
 //! Each integration routine's set of parameters can be adjusted with the following structs:
 //!
 //! + [`SolverParams`]: Parameters passed to the solver.
+//! + [`IntersectParams`]: Parameters passed [`Particle::intersect`].
 //!
 //! The integration is done with the RKF4(5) method. The step size can be adaptive by minimizing
 //! the energy difference from step to step or minimizing the local truncation error (classic
 //! RKF4(5)), or simple set to be constant.
 
-mod coms;
 mod error;
 mod particle;
 mod queue;
@@ -61,6 +56,7 @@ mod state;
 
 // ============== Re-exports
 
+pub use dexter_comspace::{EnergyPzetaPosition, OrbitType};
 pub use dexter_machine::MagneticFlux;
 
 // ============== Public API
@@ -72,14 +68,12 @@ pub use error::SimulationError;
 pub use solve::{SolverParams, SteppingMethod};
 
 pub use particle::{
-    CoordinateSet, Directionality, EnergyPzetaPosition, Frequencies, InitialConditions,
-    IntegrationStatus, IntersectParams, Intersection, OrbitType, Particle,
+    CoordinateSet, Directionality, Frequencies, InitialConditions, IntegrationStatus,
+    IntersectParams, Intersection, Particle,
 };
 
 pub use queue::{Queue, QueueInitialConditions, Routine};
 pub use queue::{poloidal_fluxes, toroidal_fluxes};
-
-pub use coms::{create_poloidal_grid, energy_of_psi_grid, energy_of_psip_grid};
 
 // ============== Configuration constants
 
@@ -103,13 +97,6 @@ pub mod constants {
 
     /// The default safety factor of the solver. Should be less than 1.0.
     pub const DEFAULT_SAFETY_FACTOR: f64 = 0.9;
-
-    // ============== COMs Space Parameters ==============
-
-    /// The density of the trapped-passing boundary curves' points.
-    ///
-    /// A higher number is needed to better classify Potato and Stagnated orbits.
-    pub const TRAPPED_PASSING_BOUNDARY_DENSITY: usize = 500;
 
     // ============== Poincare intersection ==============
 
