@@ -69,6 +69,8 @@ from dexter.simulate.energy import (
     energy_of_psip_grid,
 )
 
+from dexter.comspace.energy_pzeta_plane import EnergyPzetaPlane
+
 __all__ = [
     # Type Aliases
     "Array",
@@ -133,4 +135,6 @@ __all__ = [
     "plot_poloidal_drift",
     "plot_pzeta_poincare",
     "plot_rz_poincare",
+    # Comspace
+    "EnergyPzetaPlane",
 ]

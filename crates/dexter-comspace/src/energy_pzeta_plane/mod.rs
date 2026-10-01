@@ -22,7 +22,7 @@ pub use tp_boundary::TrappedPassingBoundary;
     feature="doc-images",
     doc = ::embed_doc_image::embed_image!("parabolas", "../../docs/assets/parabolas.svg"))
 ]
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct EnergyPzetaPlane {
     /// The magnetic axis (MA) parabola.
     axis_parabola: Parabola,
@@ -39,12 +39,12 @@ pub struct EnergyPzetaPlane {
 impl EnergyPzetaPlane {
     /// Creates a new `EnergyPzetaPlane` from a set magnetic moment `μ=const` value.
     #[must_use]
-    pub fn from_mu(objects: Machine, mu: f64) -> Self {
+    pub fn from_mu(machine: Machine, mu: f64) -> Self {
         Self {
-            axis_parabola: Self::build_magnetic_axis_parabola(objects, mu),
-            left_wall_parabola: Self::build_left_wall_parabola(objects, mu),
-            right_wall_parabola: Self::build_right_wall_parabola(objects, mu),
-            tp_boundary: TrappedPassingBoundary::new(objects, mu),
+            axis_parabola: Self::build_magnetic_axis_parabola(machine, mu),
+            left_wall_parabola: Self::build_left_wall_parabola(machine, mu),
+            right_wall_parabola: Self::build_right_wall_parabola(machine, mu),
+            tp_boundary: TrappedPassingBoundary::new(machine, mu),
             mu,
         }
     }
@@ -58,26 +58,26 @@ impl EnergyPzetaPlane {
     ///
     /// where all values are evaluated at `(ψ/ψp, θ) = (0, 0)`.
     #[must_use]
-    fn build_magnetic_axis_parabola(objects: Machine, mu: f64) -> Parabola {
+    fn build_magnetic_axis_parabola(machine: Machine, mu: f64) -> Parabola {
         let acc = &mut Accelerator2d::new();
         let psi_axis = Toroidal(0.0);
         let psip_axis = Poloidal(0.0);
 
         // Use `unwrap_or_else` for lazy evaluation.
-        let gaxis = objects
+        let gaxis = machine
             .current()
             .eval_g(psi_axis, acc.xacc())
             .unwrap_or_else(|_| {
-                objects
+                machine
                     .current()
                     .eval_g(psip_axis, acc.xacc())
                     .expect("At least one of the evaluations will always succeed")
             });
-        let baxis = objects
+        let baxis = machine
             .bfield() // This might be redundant
             .eval_b(psi_axis, 0.0, acc)
             .unwrap_or_else(|_| {
-                objects
+                machine
                     .bfield()
                     .eval_b(psip_axis, 0.0, acc)
                     .expect("At least one of the evaluations will always succeed")
@@ -96,27 +96,27 @@ impl EnergyPzetaPlane {
     ///
     /// where all values are evaluated at `(ψ/ψp, θ) = (ψlast/ψplast, π)`.
     #[must_use]
-    fn build_left_wall_parabola(objects: Machine, mu: f64) -> Parabola {
+    fn build_left_wall_parabola(machine: Machine, mu: f64) -> Parabola {
         use std::f64::consts::PI;
-        let psi_last = objects.qfactor().psi_last();
-        let psip_last = objects.qfactor().psip_last();
+        let psi_last = machine.qfactor().psi_last();
+        let psip_last = machine.qfactor().psip_last();
         let acc = &mut Accelerator2d::new();
 
         // Use `unwrap_or_else` for lazy evaluation.
-        let glast = objects
+        let glast = machine
             .current()
             .eval_g(psi_last, acc.xacc())
             .unwrap_or_else(|_| {
-                objects
+                machine
                     .current()
                     .eval_g(psip_last, acc.xacc())
                     .expect("At least one of the evaluations will always succeed")
             });
-        let blast = objects
+        let blast = machine
             .bfield()
             .eval_b(psi_last, PI, acc)
             .unwrap_or_else(|_| {
-                objects
+                machine
                     .bfield()
                     .eval_b(psip_last, PI, acc)
                     .expect("At least one of the evaluations will always succeed")
@@ -134,26 +134,26 @@ impl EnergyPzetaPlane {
     ///
     /// where all values are evaluated at `(ψ/ψp, θ) = (ψlast/ψplast, 0)`.
     #[must_use]
-    fn build_right_wall_parabola(objects: Machine, mu: f64) -> Parabola {
-        let psi_last = objects.qfactor().psi_last();
-        let psip_last = objects.qfactor().psip_last();
+    fn build_right_wall_parabola(machine: Machine, mu: f64) -> Parabola {
+        let psi_last = machine.qfactor().psi_last();
+        let psip_last = machine.qfactor().psip_last();
         let acc = &mut Accelerator2d::new();
 
         // Use `unwrap_or_else` for lazy evaluation.
-        let glast = objects
+        let glast = machine
             .current()
             .eval_g(psi_last, acc.xacc())
             .unwrap_or_else(|_| {
-                objects
+                machine
                     .current()
                     .eval_g(psip_last, acc.xacc())
                     .expect("At least one of the evaluations will always succeed")
             });
-        let blast = objects
+        let blast = machine
             .bfield()
             .eval_b(psi_last, 0.0, acc)
             .unwrap_or_else(|_| {
-                objects
+                machine
                     .bfield()
                     .eval_b(psip_last, 0.0, acc)
                     .expect("At least one of the evaluations will always succeed")
@@ -199,19 +199,31 @@ impl EnergyPzetaPlane {
 
     /// Returns the [`TrappedPassingBoundary`]'s `Pζ = [-ψp_last, 0]` interval array.
     #[must_use]
-    pub fn tp_pzeta_interval(&self) -> ArrayView1<'_, f64> {
+    pub fn tp_pzeta_values(&self) -> ArrayView1<'_, f64> {
         self.tp_boundary.pzeta()
     }
 
     /// Returns the [`TrappedPassingBoundary`]'s upper curve.
     #[must_use]
-    pub fn tp_upper(&self) -> ArrayView1<'_, f64> {
+    pub fn tp_upper_values(&self) -> ArrayView1<'_, f64> {
         self.tp_boundary.upper()
     }
 
     /// Returns the [`TrappedPassingBoundary`]'s lower curve.
     #[must_use]
-    pub fn tp_lower(&self) -> ArrayView1<'_, f64> {
+    pub fn tp_lower_values(&self) -> ArrayView1<'_, f64> {
         self.tp_boundary.lower()
+    }
+}
+
+impl std::fmt::Debug for EnergyPzetaPlane {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("EnergyPzetaPlane")
+            .field("mu", &self.mu)
+            .field("axis_parabola", &self.axis_parabola)
+            .field("left_wall_parabola", &self.left_wall_parabola)
+            .field("right_wall_parabola", &self.right_wall_parabola)
+            .field("tp_boundary", &self.tp_boundary)
+            .finish()
     }
 }

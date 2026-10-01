@@ -237,9 +237,7 @@ impl TrappedPassingBoundary {
 impl std::fmt::Debug for TrappedPassingBoundary {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("TrappedPassingBoundary")
-            .field("pzeta", &self.pzeta)
-            .field("lower", &self.lower)
-            .field("upper", &self.upper)
+            .field("array lengths", &self.pzeta.len())
             .finish()
     }
 }

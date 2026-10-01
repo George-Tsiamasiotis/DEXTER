@@ -31,7 +31,11 @@ nav = [
         "reference/simulate/queue.md",
         "reference/simulate/energy.md",
         "reference/simulate/plots.md",
-    ]}
+    ]},
+    {"COM Space" = [
+        "reference/comspace/energy.md",
+        "reference/comspace/energy_pzeta_plane.md",
+    ]},
 ]
 
 extra_javascript = [

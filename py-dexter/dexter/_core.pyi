@@ -595,3 +595,33 @@ def _py_energy_of_psip_grid(
     theta_array: Array2,
     psip_array: Array2,
 ) -> Array2: ...
+
+# ================================================================================================
+
+class _PyParabola:
+    def eval_array(self, x: Array1) -> Array1: ...
+    def horizontal_intercepts(
+        self,
+        y: float,
+    ) -> tuple[float, float]: ...
+    def __repr__(self) -> str: ...
+    def __str__(self) -> str: ...
+
+class _PyEnergyPzetaPlane:
+    mu: float
+    axis_parabola: _PyParabola
+    left_wall_parabola: _PyParabola
+    right_wall_parabola: _PyParabola
+    tp_pzeta_values: Array1
+    tp_upper_values: Array1
+    tp_lower_values: Array1
+
+    def __init__(
+        self,
+        qfactor: _PyQfactor,
+        current: _PyCurrent,
+        bfield: _PyBfield,
+        mu: float,
+    ) -> None: ...
+    def __repr__(self) -> str: ...
+    def __str__(self) -> str: ...

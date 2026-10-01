@@ -313,7 +313,7 @@ dependencies = [
 
 [[package]]
 name = "dexter-comspace"
-version = "0.1.0"
+version = "0.1.1-pre.1"
 dependencies = [
  "dexter-machine",
  "embed-doc-image",
@@ -1000,7 +1000,7 @@ dependencies = [
 
 [[package]]
 name = "py-dexter"
-version = "0.2.0-pre.25"
+version = "0.2.0-pre.26"
 dependencies = [
  "dexter",
  "ndarray",
