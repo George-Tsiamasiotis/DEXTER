@@ -2,12 +2,12 @@ r"""Calculations of the Energy in a 2D grids.
 
 Functions
 ---------
+create_poloidal_grid
+    Creates a $(\theta, \psi/\psi_p)$ meshgrid from the two 1D arrays.
 energy_of_psi_grid
     Calculates the energy on a 2D meshgrid of the $\theta$ and $\psi$ arrays, in Normalized Units.
 energy_of_psip_grid
     Calculates the energy on a 2D meshgrid of the $\theta$ and $\psi_p$ arrays, in Normalized Units.
-create_poloidal_grid
-    Creates a $(\theta, \psi/\psi_p)$ meshgrid from the two 1D arrays.
 """
 
 from dexter._core import (

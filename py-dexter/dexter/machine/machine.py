@@ -96,7 +96,7 @@ class Machine:
     current: CurrentObject
     bfield: BfieldObject
     perturbation: Perturbation
-    _reg = _Registry
+    _reg = _Registry | None
 
     def __init__(
         self,
@@ -155,10 +155,10 @@ class Machine:
         )
 
     def quantity(self, value: float | ArrayLike, units: Unit) -> PlainQuantity:
-        if self._reg is None:
-            raise RuntimeError("UnitRegistry has not been defined")
-        else:
+        if isinstance(self._reg, _Registry):
             return self._reg.Quantity(value, units)
+        else:
+            raise RuntimeError("UnitRegistry has not been defined")
 
     @property
     def psi_last(self) -> MagneticFlux:

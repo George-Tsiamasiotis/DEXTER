@@ -1,3 +1,3 @@
-# Energy
+# Energy Grid
 
 ::: dexter.simulate.energy

@@ -1,5 +1,6 @@
 mod args;
 mod common;
+mod comspace;
 mod error;
 mod machine;
 mod macros;
@@ -7,6 +8,7 @@ mod simulate;
 
 pub use args::*;
 pub use common::*;
+pub use comspace::*;
 pub use error::*;
 pub use machine::*;
 pub use simulate::*;
@@ -37,5 +39,7 @@ fn _core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(simulate::create_poloidal_grid, m)?)?;
     m.add_function(wrap_pyfunction!(simulate::energy_of_psi_grid, m)?)?;
     m.add_function(wrap_pyfunction!(simulate::energy_of_psip_grid, m)?)?;
+    m.add_class::<comspace::PyParabola>()?;
+    m.add_class::<comspace::PyEnergyPzetaPlane>()?;
     Ok(())
 }
