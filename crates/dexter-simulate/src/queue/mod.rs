@@ -13,10 +13,9 @@ use rayon::iter::{IntoParallelRefMutIterator, ParallelIterator};
 use std::ops::{Index, Range};
 use std::time::Duration;
 
+use dexter_comspace::{EnergyPzetaPlane, EnergyPzetaPosition, OrbitType};
 use dexter_machine::Machine;
 
-use crate::coms::EnergyPzetaPlane;
-use crate::{EnergyPzetaPosition, OrbitType};
 use crate::{IntersectParams, Particle, SolverParams};
 
 /// Available [`Queue`] routines.

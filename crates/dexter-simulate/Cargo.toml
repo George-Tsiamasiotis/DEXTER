@@ -1,6 +1,6 @@
 [package]
 name = "dexter-simulate"
-version = "0.1.6-pre.10"
+version = "0.1.6-pre.11"
 authors.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -15,10 +15,10 @@ description = "Simulations of charge particles inside a plasma"
 [dependencies]
 dexter-common.workspace = true
 dexter-machine.workspace = true
+dexter-comspace.workspace = true
 thiserror.workspace = true
 ndarray.workspace = true
 approx.workspace = true
-parabola.workspace = true
 rsl-interpolation.workspace = true
 rayon = "1.12.0"
 indicatif = "0.18.6"

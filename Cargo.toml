@@ -3,6 +3,7 @@ resolver = "3"
 members = [
     "crates/dexter-common",
     "crates/dexter-machine",
+    "crates/dexter-comspace",
     "crates/dexter-simulate",
     "crates/dexter",
     "py-dexter",
@@ -22,6 +23,7 @@ rsl-interpolation = { git = "https://github.com/George-Tsiamasiotis/rsl-interpol
 dexter = { path = "crates/dexter" }
 dexter-common = { path = "crates/dexter-common" }
 dexter-machine = { path = "crates/dexter-machine" }
+dexter-comspace = { path = "crates/dexter-comspace" }
 dexter-simulate = { path = "crates/dexter-simulate" }
 
 [workspace.package]

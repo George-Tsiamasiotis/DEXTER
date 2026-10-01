@@ -8,8 +8,9 @@ use std::time::Duration;
 
 use indicatif::{ProgressBar, ProgressStyle};
 
-use crate::{IntegrationStatus, IntersectParams};
-use crate::{OrbitType, Queue};
+use dexter_comspace::OrbitType;
+
+use crate::{IntegrationStatus, IntersectParams, Queue};
 
 /// The [`Queue::integrate`] progress bar style.
 const INTEGRATE_PBAR_STYLE: &str = concat!(
@@ -398,6 +399,7 @@ impl ClassifyPbar {
             OrbitType::Potato => self.potato.fetch_add(1, SeqCst),
             OrbitType::Stagnated => self.stagnated.fetch_add(1, SeqCst),
             OrbitType::Unclassified => self.unclassified.fetch_add(1, SeqCst),
+            _ => unimplemented!(),
         };
     }
 

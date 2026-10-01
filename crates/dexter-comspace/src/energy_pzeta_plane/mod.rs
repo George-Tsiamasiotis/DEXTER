@@ -1,20 +1,29 @@
 //! Representation of the COM space `(E, Pζ, μ=const)`.
 
-#![expect(unreachable_pub, reason = "api needs re-write")]
 #![expect(clippy::min_ident_chars, reason = "parabola a, b, c coefficients")]
 
+mod orbit_type;
+mod tp_boundary;
+
 use dexter_machine::MagneticFlux::*;
-use ndarray::Array1;
+use ndarray::ArrayView1;
 use parabola::Parabola;
 use rsl_interpolation::Accelerator2d;
 
 use dexter_machine::Machine;
 
-use crate::coms::TrappedPassingBoundary;
+pub use orbit_type::{EnergyPzetaPosition, OrbitType};
+pub use tp_boundary::TrappedPassingBoundary;
 
 /// Representation of the COM space `(E, Pζ, μ=const)`.
+///
+/// ![Parabolas][parabolas].
+#[cfg_attr(
+    feature="doc-images",
+    doc = ::embed_doc_image::embed_image!("parabolas", "../../docs/assets/parabolas.svg"))
+]
 #[derive(Debug, Clone)]
-pub(crate) struct EnergyPzetaPlane {
+pub struct EnergyPzetaPlane {
     /// The magnetic axis (MA) parabola.
     axis_parabola: Parabola,
     /// The left wall (LW) parabola.
@@ -29,7 +38,8 @@ pub(crate) struct EnergyPzetaPlane {
 
 impl EnergyPzetaPlane {
     /// Creates a new `EnergyPzetaPlane` from a set magnetic moment `μ=const` value.
-    pub(crate) fn from_mu(objects: Machine, mu: f64) -> Self {
+    #[must_use]
+    pub fn from_mu(objects: Machine, mu: f64) -> Self {
         Self {
             axis_parabola: Self::build_magnetic_axis_parabola(objects, mu),
             left_wall_parabola: Self::build_left_wall_parabola(objects, mu),
@@ -38,7 +48,10 @@ impl EnergyPzetaPlane {
             mu,
         }
     }
+}
 
+// Parabola builders
+impl EnergyPzetaPlane {
     /// Constructs the Magnetic Axis (MA) parabola:
     ///
     /// E(Pζ) = Pζ²B²/2g² + μB.
@@ -186,22 +199,19 @@ impl EnergyPzetaPlane {
 
     /// Returns the [`TrappedPassingBoundary`]'s `Pζ = [-ψp_last, 0]` interval array.
     #[must_use]
-    #[expect(dead_code, reason = "to be used for plots")]
-    pub fn tp_pzeta_interval(&self) -> Array1<f64> {
-        self.tp_boundary.pzeta_interval()
+    pub fn tp_pzeta_interval(&self) -> ArrayView1<'_, f64> {
+        self.tp_boundary.pzeta()
     }
 
     /// Returns the [`TrappedPassingBoundary`]'s upper curve.
     #[must_use]
-    #[expect(dead_code, reason = "to be used for plots")]
-    pub fn tp_upper(&self) -> Array1<f64> {
+    pub fn tp_upper(&self) -> ArrayView1<'_, f64> {
         self.tp_boundary.upper()
     }
 
     /// Returns the [`TrappedPassingBoundary`]'s lower curve.
     #[must_use]
-    #[expect(dead_code, reason = "to be used for plots")]
-    pub fn tp_lower(&self) -> Array1<f64> {
+    pub fn tp_lower(&self) -> ArrayView1<'_, f64> {
         self.tp_boundary.lower()
     }
 }

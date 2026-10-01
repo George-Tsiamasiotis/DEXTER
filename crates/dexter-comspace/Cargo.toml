@@ -1,0 +1,30 @@
+[package]
+name = "dexter-comspace"
+version = "0.1.0"
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+homepage.workspace = true
+repository.workspace = true
+documentation.workspace = true
+keywords.workspace = true
+categories.workspace = true
+description = "Calculations in the Constants of Motion space"
+
+[dependencies]
+dexter-machine.workspace = true
+thiserror.workspace = true
+ndarray.workspace = true
+parabola.workspace = true
+rsl-interpolation.workspace = true
+embed-doc-image = { version = "0.1.4", optional = true}
+
+[lints]
+workspace = true
+
+[package.metadata.docs.rs]
+features = ["doc-images"]
+
+[features]
+doc-images = ["dep:embed-doc-image"]

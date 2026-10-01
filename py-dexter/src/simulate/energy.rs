@@ -1,5 +1,6 @@
-use dexter::dexter_machine::MachineBuilder;
-use dexter::dexter_simulate;
+//! Extraction of energy grid calculation free functions.
+
+use dexter::{dexter_comspace, dexter_machine::MachineBuilder};
 use numpy::{IntoPyArray, PyReadonlyArray1, PyReadonlyArray2};
 
 use crate::*;
@@ -16,7 +17,7 @@ pub fn create_poloidal_grid<'py>(
 ) -> (Bound<'py, PyArray2<f64>>, Bound<'py, PyArray2<f64>>) {
     let theta_array = theta_array.as_array();
     let flux_array = flux_array.as_array();
-    let (theta_grid, flux_grid) = dexter_simulate::create_poloidal_grid(&theta_array, &flux_array);
+    let (theta_grid, flux_grid) = dexter_comspace::create_poloidal_grid(&theta_array, &flux_array);
 
     (
         theta_grid.to_owned().into_pyarray(py),
@@ -40,7 +41,7 @@ pub fn energy_of_psi_grid<'py>(
     let machine = MachineBuilder::new(qfactor.inner(), current.inner(), bfield.inner())
         .with_perturbation(perturbation.inner())
         .build();
-    let energy_grid = dexter_simulate::energy_of_psi_grid(
+    let energy_grid = dexter_comspace::energy_of_psi_grid(
         machine,
         pzeta,
         mu,
@@ -66,7 +67,7 @@ pub fn energy_of_psip_grid<'py>(
     let machine = MachineBuilder::new(qfactor.inner(), current.inner(), bfield.inner())
         .with_perturbation(perturbation.inner())
         .build();
-    let energy_grid = dexter_simulate::energy_of_psip_grid(
+    let energy_grid = dexter_comspace::energy_of_psip_grid(
         machine,
         pzeta,
         mu,

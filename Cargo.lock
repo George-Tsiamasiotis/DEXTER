@@ -61,6 +61,12 @@ checksum = "f2032f911046de80f0a198e0901378627c33f59ea0ac00e363d481118bd70a53"
 
 [[package]]
 name = "base64"
+version = "0.13.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9e1b586273c5702936fe7b7d6896644d8be71e6314cfe09d3167c95f712589e8"
+
+[[package]]
+name = "base64"
 version = "0.23.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ac07cdecf99051d9a5238b80f35af32cdeba5b336e55d957b318b50137e18da5"
@@ -291,8 +297,9 @@ dependencies = [
 
 [[package]]
 name = "dexter"
-version = "0.1.1"
+version = "0.1.2-pre.1"
 dependencies = [
+ "dexter-comspace",
  "dexter-machine",
  "dexter-simulate",
 ]
@@ -302,6 +309,18 @@ name = "dexter-common"
 version = "0.1.3-pre.2"
 dependencies = [
  "rsl-interpolation",
+]
+
+[[package]]
+name = "dexter-comspace"
+version = "0.1.0"
+dependencies = [
+ "dexter-machine",
+ "embed-doc-image",
+ "ndarray",
+ "parabola",
+ "rsl-interpolation",
+ "thiserror",
 ]
 
 [[package]]
@@ -320,14 +339,14 @@ dependencies = [
 
 [[package]]
 name = "dexter-simulate"
-version = "0.1.6-pre.10"
+version = "0.1.6-pre.11"
 dependencies = [
  "approx",
  "dexter-common",
+ "dexter-comspace",
  "dexter-machine",
  "indicatif",
  "ndarray",
- "parabola",
  "rayon",
  "rsl-interpolation",
  "thiserror",
@@ -359,6 +378,18 @@ name = "either"
 version = "1.18.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "252afb9ae5eaa683babdc6a068b3f5726eb19e05070c731f9b2a23a7c3e8ed34"
+
+[[package]]
+name = "embed-doc-image"
+version = "0.1.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "af36f591236d9d822425cb6896595658fa558fcebf5ee8accac1d4b92c47166e"
+dependencies = [
+ "base64 0.13.1",
+ "proc-macro2",
+ "quote",
+ "syn 1.0.109",
+]
 
 [[package]]
 name = "encode_unicode"
@@ -969,7 +1000,7 @@ dependencies = [
 
 [[package]]
 name = "py-dexter"
-version = "0.2.0-pre.24"
+version = "0.2.0-pre.25"
 dependencies = [
  "dexter",
  "ndarray",
@@ -1331,6 +1362,17 @@ checksum = "13c2bddecc57b384dee18652358fb23172facb8a2c51ccc10d74c157bdea3292"
 
 [[package]]
 name = "syn"
+version = "1.0.109"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "72b64191b275b66ffe2469e8af2c1cfe3bafa67b529ead792a6d0160888b4237"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "unicode-ident",
+]
+
+[[package]]
+name = "syn"
 version = "2.0.119"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "872831b642d1a07999a962a351ed35b955ea2cfc8f3862091e2a240a84f17297"
@@ -1428,7 +1470,7 @@ version = "3.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "972d7902c8735f2695410b8aed7df6ed12a47394aa1c8d7af49f0497b731a94d"
 dependencies = [
- "base64",
+ "base64 0.23.1",
  "log",
  "percent-encoding",
  "rustls",
@@ -1444,7 +1486,7 @@ version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "da5f78b09e6941e1a0f2e30e695e4b120377b54d5e0aec11b594bb57b3971613"
 dependencies = [
- "base64",
+ "base64 0.23.1",
  "http",
  "httparse",
  "log",
