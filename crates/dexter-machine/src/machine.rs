@@ -137,7 +137,7 @@ pub struct Machine<'obj> {
     qfactor: &'obj dyn Qfactor,
     current: &'obj dyn Current,
     bfield: &'obj dyn Bfield,
-    perturbation: Option<&'obj Perturbation>,
+    perturbation: &'obj Perturbation,
 }
 
 impl<'obj> Machine<'obj> {
@@ -149,7 +149,7 @@ impl<'obj> Machine<'obj> {
             qfactor: builder.qfactor,
             current: builder.current,
             bfield: builder.bfield,
-            perturbation: builder.perturbation,
+            perturbation: builder.perturbation.unwrap_or(ZERO_PERTURBATION),
         }
     }
 
@@ -180,8 +180,7 @@ impl<'obj> Machine<'obj> {
     /// Returns a reference to the [`Perturbation`] object.
     #[must_use]
     pub fn perturbation(&self) -> &Perturbation {
-        // To avoid calling `unwrap` every time
-        self.perturbation.unwrap_or(ZERO_PERTURBATION)
+        self.perturbation
     }
 }
 

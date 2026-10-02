@@ -62,7 +62,7 @@ class EnergyPzetaPlane(_ReprStrImpl):
         ----------
         xlim
             The xaxis limits, normalized to $\psi_{p,wall}$.
-        ymax
+        ylim
             The yaxis limits, in $E/\mu$ units. If a float, it sets the yaxis upper limit while
             the lower limit is set to `0`.
         show

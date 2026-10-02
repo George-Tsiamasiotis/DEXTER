@@ -77,7 +77,7 @@ debug = true
 missing_docs = "warn"
 missing_debug_implementations = "warn"
 non_ascii_idents = "forbid"
-nonstandard-style = "deny"
+nonstandard_style = {level = "warn", priority = 1}
 redundant_imports = "warn"
 unreachable_pub = "warn"
 unused_qualifications = "warn"

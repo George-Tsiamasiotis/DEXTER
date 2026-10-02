@@ -275,6 +275,17 @@ class Particle(_ReprStrImpl, _RustTypeWrapper):
     ):
         r"""Integrates the particle for a certain amount of $\theta-\psi$ periods.
 
+        When the particle approximately reaches its initial point after `periods` periods, it
+        halts its integration and performs one more step using
+        [Hénon](https://www.sciencedirect.com/science/article/abs/pii/0167278982900343)'s trick,
+        to land itself on the initial point exactly, similar to how [`Particle.intersect`] lands
+        exactly on the intersection surface.
+
+        This routine also yields the particle's $\omega_theta$, $\omega_\zeta$ and $q_{kin}$.
+
+
+        This routine only uses the axisymmetric system, ignoring the Perturbation.
+
         Parameters
         ----------
         machine
