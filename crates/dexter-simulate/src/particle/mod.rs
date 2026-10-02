@@ -18,7 +18,7 @@ use std::time::Duration;
 
 use dexter_common::export_array1D_getter_impl;
 use dexter_comspace::{EnergyPzetaPlane, EnergyPzetaPosition, OrbitType};
-use dexter_machine::{DynModeCaches, Machine};
+use dexter_machine::{DynModeCaches, Machine, MachineBuilder};
 
 use crate::{SimulationError, SolverParams};
 use evolution::Evolution;
@@ -296,6 +296,10 @@ impl Particle {
     ///
     /// [`Hénon`]: https://www.sciencedirect.com/science/article/abs/pii/0167278982900343
     ///
+    /// # Note
+    ///
+    /// This routine only uses the axisymmetric system, ignoring the Perturbation.
+    ///
     /// # Example
     ///
     /// ```
@@ -324,6 +328,9 @@ impl Particle {
     ///
     /// ```
     pub fn close(&mut self, machine: Machine, periods: usize, solver_params: &SolverParams) {
+        // ignore perturbation
+        let machine =
+            MachineBuilder::new(machine.qfactor(), machine.current(), machine.bfield()).build();
         close::close(self, machine, periods, solver_params);
     }
 
