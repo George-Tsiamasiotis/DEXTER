@@ -1,6 +1,7 @@
 from collections.abc import Callable
+from typing import override
 
-from dexter.types import MagneticFluxKind, Array1
+from dexter.types import MagneticFluxKind
 
 from dexter._core import _PyMagneticFlux
 from dexter._utils import _ReprStrImpl, _RustTypeWrapper
@@ -89,6 +90,7 @@ class MagneticFlux(_ReprStrImpl, _RustTypeWrapper):
     def __rmul__(self, scalar: float) -> MagneticFlux:
         return self.__mul__(scalar)
 
+    @override
     def __eq__(self, other: object) -> bool:
         """Returns `true` if both `kind` and `value` of `other` are equal to `self`."""
         if isinstance(other, MagneticFlux):
@@ -96,6 +98,7 @@ class MagneticFlux(_ReprStrImpl, _RustTypeWrapper):
                 return True
         return False
 
+    @override
     @classmethod
     def _wrap(cls, _r: _PyMagneticFlux) -> MagneticFlux:
         """Wraps the `_r` type to a `MagneticFlux`."""

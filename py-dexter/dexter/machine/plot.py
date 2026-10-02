@@ -18,15 +18,18 @@ plot_mode
 
 """
 
-from dexter.machine.modes import FluteMode, ModeObject, NcFluteMode
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 from matplotlib.axes import Axes
+from typing import cast
 
 from dexter.machine.machine import Machine
 from dexter.machine.base import MachineObject
-from dexter.types import MagneticFluxKind, Interpolation1dType, Array
+from dexter.machine.qfactors import NcQfactor
+from dexter.machine.currents import NcCurrent
+from dexter.machine.modes import FluteMode, ModeObject
+from dexter.types import Array1, MagneticFluxKind
 
 TAU = 2 * np.pi
 PI = np.pi
@@ -114,9 +117,9 @@ def plot_qfactor(
                 label=rf"$d\psi/d\psi_p$",
             )
         if data and qfactor.machine_type == "Numerical":
-            # Arrays always exist if `machine_type == "Numerical"`
-            q_data = qfactor.q_array  # pyright: ignore
-            psi_data = qfactor.psi_array  # pyright: ignore
+            qfactor = cast(NcQfactor, qfactor)
+            q_data = qfactor.q_array
+            psi_data = qfactor.psi_array
             psi_data_norm = psi_data / qfactor.psi_last.value
             axqt.plot(
                 psi_data_norm,
@@ -159,9 +162,9 @@ def plot_qfactor(
                 label=r"$(d\psi_p/d\psi)^{-1}$",
             )
         if data and qfactor.machine_type == "Numerical":
-            # Arrays always exist if `machine_type == "Numerical"`
-            q_data = qfactor.q_array  # pyright: ignore
-            psip_data = qfactor.psip_array  # pyright: ignore
+            qfactor = cast(NcQfactor, qfactor)
+            q_data = qfactor.q_array
+            psip_data = qfactor.psip_array
             psip_data_norm = psip_data / qfactor.psip_last.value
             axqp.plot(
                 psip_data_norm,
@@ -197,9 +200,9 @@ def plot_qfactor(
             label=rf"$\psi_p(\psi)$",
         )
         if data and qfactor.machine_type == "Numerical":
-            # Arrays always exist if `machine_type == "Numerical"`
-            psi_data = qfactor.psi_array  # pyright: ignore
-            psip_data = qfactor.psip_array  # pyright: ignore
+            assert isinstance(qfactor, NcQfactor)
+            psi_data = qfactor.psi_array
+            psip_data = qfactor.psip_array
             psi_data_norm = psi_data / qfactor.psi_last.value
             psip_data_norm = psip_data / qfactor.psip_last.value
             axpt.plot(
@@ -236,9 +239,9 @@ def plot_qfactor(
             label=rf"$\psi(\psi_p)$",
         )
         if data and qfactor.machine_type == "Numerical":
-            # Arrays always exist if `machine_type == "Numerical"`
-            psi_data = qfactor.psi_array  # pyright: ignore
-            psip_data = qfactor.psip_array  # pyright: ignore
+            assert isinstance(qfactor, NcQfactor)
+            psi_data = qfactor.psi_array
+            psip_data = qfactor.psip_array
             psi_data_norm = psi_data / qfactor.psi_last.value
             psip_data_norm = psip_data / qfactor.psip_last.value
             axtp.plot(
@@ -337,14 +340,14 @@ def plot_current(
     i_deriv_values = current.eval_i_deriv(**eval_arg)
 
     if data and current.machine_type == "Numerical":
-        # Arrays always exist if `machine_type == "Numerical"`
-        g_data = current.g_array  # pyright: ignore
-        i_data = current.i_array  # pyright: ignore
+        current = cast(NcCurrent, current)
+        g_data = current.g_array
+        i_data = current.i_array
         if flux == "Toroidal":
-            flux_data: Array1 = current.psi_array  # pyright: ignore
+            flux_data = cast(Array1, current.psi_array)
             flux_data_norm = flux_data / machine.psi_last.value
         else:
-            flux_data: Array1 = current.psip_array  # pyright: ignore
+            flux_data = cast(Array1, current.psip_array)
             flux_data_norm = flux_data / machine.psip_last.value
         DATA_COLOR = "k"
         DATA_MARKER = "."
@@ -529,7 +532,6 @@ def plot_bfield(
     bb = machine.quantity(bb, "NormTesla").to("Tesla")
 
     CMAP = "plasma"
-    LEVEL_LINE_COLOR = "k"
     LEVEL_LINE_WIDTH = 0.5
     SC_COLOR = "xkcd:bright blue"
     LAST_COLOR = "k"
@@ -635,7 +637,7 @@ def plot_mode(
     if flux == "Toroidal":
         if isinstance(mode, FluteMode):
             psi_last = mode.lcfs.value
-        elif isinstance(mode, NcFluteMode):
+        else:
             psi_last: float = getattr(mode, "psi_array")[-1]
         fluxes = np.linspace(1e-10, psi_last, points)
         fluxes_norm = fluxes / psi_last
@@ -645,7 +647,7 @@ def plot_mode(
     else:
         if isinstance(mode, FluteMode):
             psip_last = mode.lcfs.value
-        elif isinstance(mode, NcFluteMode):
+        else:
             psip_last: float = getattr(mode, "psip_array")[-1]
         fluxes = np.linspace(1e-10, psip_last, points)
         fluxes_norm = fluxes / psip_last

@@ -1,17 +1,18 @@
 """Definition of the `Queue` object."""
 
-from collections.abc import Collection, Iterable, Sequence
+from collections.abc import Collection, Iterable
+from typing import Any
 
-from dexter.types import Array1, EnergyPzetaPosition, Intersection, OrbitType, Routine
+from dexter.types import Array1, EnergyPzetaPosition, OrbitType, Routine
 
 from dexter.machine.machine import Machine
 from dexter.simulate.params import SolverParams, IntersectParams
 from dexter.simulate.initial import QueueInitialConditions
 from dexter.simulate.particle import Particle
-from dexter.simulate import plot
+import dexter.simulate.plot as plot
 
 from dexter._utils import _ReprStrImpl
-from dexter._core import _PySolverParams, _PyQueue, _PyIntersectParams
+from dexter._core import _PyQueue
 
 
 class Queue(_ReprStrImpl):
@@ -83,7 +84,7 @@ class Queue(_ReprStrImpl):
         self,
         machine: Machine,
         teval: tuple[float, float],
-        solver_params: SolverParams = SolverParams(),
+        solver_params: SolverParams | None = None,
     ):
         r"""Integrates the particles for a specific time interval.
 
@@ -138,6 +139,8 @@ class Queue(_ReprStrImpl):
 
         ```
         """
+        if solver_params is None:
+            solver_params = SolverParams()
         self._r.integrate(
             qfactor=machine.qfactor._r,
             current=machine.current._r,
@@ -151,7 +154,7 @@ class Queue(_ReprStrImpl):
         self,
         machine: Machine,
         intersect_params: IntersectParams,
-        solver_params: SolverParams = SolverParams(),
+        solver_params: SolverParams | None = None,
     ):
         r"""Integrates the particles, calculating their intersections with a constant $\theta$ or $\zeta$ surface.
 
@@ -206,6 +209,8 @@ class Queue(_ReprStrImpl):
 
         ```
         """
+        if solver_params is None:
+            solver_params = SolverParams()
         self._r.intersect(
             qfactor=machine.qfactor._r,
             current=machine.current._r,
@@ -219,7 +224,7 @@ class Queue(_ReprStrImpl):
         self,
         machine: Machine,
         periods: int = 1,
-        solver_params: SolverParams = SolverParams(),
+        solver_params: SolverParams | None = None,
     ):
         r"""Integrates the particles for a certain amount of $\theta-\psi$ periods.
 
@@ -261,6 +266,8 @@ class Queue(_ReprStrImpl):
 
         ```
         """
+        if solver_params is None:
+            solver_params = SolverParams()
         self._r.close(
             qfactor=machine.qfactor._r,
             current=machine.current._r,
@@ -422,7 +429,7 @@ class Queue(_ReprStrImpl):
         return self._r.__len__()
 
     def plot_pzeta_poincare(
-        self, machine: Machine, intersect_params: IntersectParams, **kwargs
+        self, machine: Machine, intersect_params: IntersectParams, **kwargs: Any
     ):
         """Wrapper around [`dexter.plot_pzeta_poincare`][dexter.plot_pzeta_poincare].
 
@@ -439,7 +446,7 @@ class Queue(_ReprStrImpl):
         plot.plot_pzeta_poincare(machine, self, intersect_params, **kwargs)
 
     def plot_rz_poincare(
-        self, machine: Machine, intersect_params: IntersectParams, **kwargs
+        self, machine: Machine, intersect_params: IntersectParams, **kwargs: Any
     ):
         """Wrapper around [`dexter.plot_rz_poincare`][dexter.plot_rz_poincare].
 

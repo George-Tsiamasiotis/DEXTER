@@ -1,6 +1,5 @@
 """Defines the Perturbation wrapper over `_PyPerturbation`"""
 
-import numpy as np
 from collections.abc import Collection
 from typing import TypeAlias
 
@@ -8,7 +7,7 @@ from .modes import FluteMode, NcFluteMode
 from .base import _flux_eval_wrap4d
 from dexter._utils import _ReprStrImpl
 from dexter._core import _PyPerturbation
-from dexter.types import ArrayLike, Array
+from dexter.types import Array, ArrayLike
 
 ModeObject: TypeAlias = FluteMode | NcFluteMode
 

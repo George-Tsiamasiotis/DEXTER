@@ -3,7 +3,7 @@
 import numpy as np
 
 from dexter.machine.flux import MagneticFlux
-from dexter.types import ArrayLike, CoordinateSet
+from dexter.types import Array1, CoordinateSet, ArrayLike
 
 from dexter._utils import _ReprStrImpl, _RustTypeWrapper
 from dexter._core import (
@@ -265,12 +265,12 @@ class QueueInitialConditions(_ReprStrImpl, _RustTypeWrapper):
     @classmethod
     def Boozer(
         cls,
-        t0: ArrayLike,
+        t0: Array1,
         flux0: MagneticFluxArray,
-        theta0: ArrayLike,
-        zeta0: ArrayLike,
-        rho0: ArrayLike,
-        mu0: ArrayLike,
+        theta0: Array1,
+        zeta0: Array1,
+        rho0: Array1,
+        mu0: Array1,
     ) -> QueueInitialConditions:
         r"""Creates sets of initial conditions for a Particle in Boozer coordinates.
 
@@ -324,12 +324,12 @@ class QueueInitialConditions(_ReprStrImpl, _RustTypeWrapper):
     @classmethod
     def Mixed(
         cls,
-        t0: ArrayLike,
+        t0: Array1,
         flux0: MagneticFluxArray,
-        theta0: ArrayLike,
-        zeta0: ArrayLike,
-        pzeta0: ArrayLike,
-        mu0: ArrayLike,
+        theta0: Array1,
+        zeta0: Array1,
+        pzeta0: Array1,
+        mu0: Array1,
     ) -> QueueInitialConditions:
         r"""Creates sets of initial conditions for a Particle in Boozer coordinates.
 

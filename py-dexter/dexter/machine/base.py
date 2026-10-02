@@ -25,8 +25,8 @@ Mode
 
 import numpy as np
 from numpy import nan as NAN
-from functools import wraps
-from typing import TypeAlias, Any, Callable
+from typing import TypeAlias, Any
+from collections.abc import Callable
 
 from dexter._core import _PyQfactor, _PyCurrent, _PyBfield, _PyGeometry, _PyMode
 from dexter._utils import _ReprStrImpl
@@ -42,12 +42,11 @@ _FluxEval4dMethod: TypeAlias = Callable[[float, float, float, float, float], flo
 def _flux_eval_wrap1d(method: _FluxEval1dMethod) -> np.vectorize:
     """Wraps and vectorizes methods with signature `func(psi, psip)`."""
 
-    @wraps(method)
-    def new_func(psi: float, psip: float) -> float:
+    def new_func(psi: float | None, psip: float | None) -> float:
         if psi is not None and psip is None:
-            return method(psi=psi, psip=NAN)
+            return method(psi, NAN)
         elif psip is not None and psi is None:
-            return method(psi=NAN, psip=psip)
+            return method(NAN, psip)
         else:
             raise TypeError("One of `psi` or `psip` must be passed")
 
@@ -57,12 +56,11 @@ def _flux_eval_wrap1d(method: _FluxEval1dMethod) -> np.vectorize:
 def _flux_eval_wrap2d(method: _FluxEval2dMethod) -> np.vectorize:
     """Wraps and vectorizes methods with signature `func(theta, psi, psip)`."""
 
-    @wraps(method)
-    def new_func(theta: float, psi: float, psip: float) -> float:
+    def new_func(theta: float, psi: float | None, psip: float | None) -> float:
         if psi is not None and psip is None:
-            return method(theta=theta, psi=psi, psip=NAN)
+            return method(theta, psi, NAN)
         elif psip is not None and psi is None:
-            return method(theta=theta, psi=NAN, psip=psip)
+            return method(theta, NAN, psip)
         else:
             raise TypeError("One of `psi` or `psip` must be passed")
 
@@ -72,18 +70,17 @@ def _flux_eval_wrap2d(method: _FluxEval2dMethod) -> np.vectorize:
 def _flux_eval_wrap4d(method: _FluxEval4dMethod) -> np.vectorize:
     """Wraps and vectorizes methods with signature `func(theta, zeta, t, psi, psip)`."""
 
-    @wraps(method)
     def new_func(
         theta: float,
         zeta: float,
         t: float,
-        psi: float,
-        psip: float,
+        psi: float | None,
+        psip: float | None,
     ) -> float:
         if psi is not None and psip is None:
-            return method(theta=theta, zeta=zeta, t=t, psi=psi, psip=NAN)
+            return method(theta, zeta, t, psi, NAN)
         elif psip is not None and psi is None:
-            return method(theta=theta, zeta=zeta, t=t, psi=NAN, psip=psip)
+            return method(theta, zeta, t, NAN, psip)
         else:
             raise TypeError("One of `psi` or `psip` must be passed")
 

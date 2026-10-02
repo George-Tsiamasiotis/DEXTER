@@ -1,10 +1,10 @@
 """Plots a BfieldObject's `B` and its derivatives on the R-Z plane."""
 
 import argparse
-from dexter._utils import _get_default_args
-from dexter import Machine, MagneticFluxKind, Interpolation2dType, plot_bfield
+from dexter._utils import get_default_args
+from dexter import Machine, Interpolation2dType, plot_bfield
 
-plot_bfield_args = _get_default_args(plot_bfield)
+plot_bfield_args = get_default_args(plot_bfield)
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument(

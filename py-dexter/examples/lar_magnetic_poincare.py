@@ -1,6 +1,5 @@
 import numpy as np
 import dexter as dex
-import matplotlib.pyplot as plt
 
 geometry = dex.LarGeometry(1, 1.75, 0.5)
 LCFS = geometry.psi_last

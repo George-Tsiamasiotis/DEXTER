@@ -1,10 +1,10 @@
 """Plots a CurrentObject's `g`, `I` and its derivatives with respect to `ψ` or `ψp`."""
 
 import argparse
-from dexter._utils import _get_default_args
+from dexter._utils import get_default_args
 from dexter import Machine, MagneticFluxKind, Interpolation1dType, plot_current
 
-plot_current_args = _get_default_args(plot_current)
+plot_current_args = get_default_args(plot_current)
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument(
@@ -24,7 +24,7 @@ parser.add_argument(
     "-f",
     "--flux",
     help="The kind of magnetic flux on the x-axis. "
-    f"Defaults to {plot_current_args["flux"]}.",
+    + f"Defaults to {plot_current_args["flux"]}.",
     choices=MagneticFluxKind.__args__,
     type=str,
     default=plot_current_args["flux"],
@@ -33,7 +33,7 @@ parser.add_argument(
     "-p",
     "--points",
     help="The number of flux points to evaluate. "
-    f"Defaults to {plot_current_args["points"]}.",
+    + f"Defaults to {plot_current_args["points"]}.",
     type=int,
     default=plot_current_args["points"],
 )

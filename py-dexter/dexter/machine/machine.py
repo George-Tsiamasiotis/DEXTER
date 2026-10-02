@@ -1,5 +1,8 @@
 """Defines `Machine`, a container for all information a device."""
 
+from pint.facets.plain import PlainQuantity
+from typing import cast, override
+
 from dexter.machine.flux import MagneticFlux
 from dexter.types import (
     ArrayLike,
@@ -8,7 +11,6 @@ from dexter.types import (
     ParticleSpecies,
     Unit,
 )
-from pint.facets.plain import PlainQuantity
 
 from dexter.machine.bfields import BfieldObject, NcBfield
 from dexter.machine.currents import CurrentObject, NcCurrent
@@ -105,14 +107,17 @@ class Machine:
         bfield: BfieldObject,
         *,
         geometry: GeometryObject | None = None,
-        perturbation: Perturbation = Perturbation(),
+        perturbation: Perturbation | None = None,
         species: ParticleSpecies = "Proton",
     ) -> None:
         self.qfactor = qfactor
         self.current = current
         self.bfield = bfield
         self.geometry = geometry
-        self.perturbation = perturbation
+        if perturbation is not None:
+            self.perturbation = perturbation
+        else:
+            self.perturbation = Perturbation()
 
         if geometry is not None:
             self._reg = _Registry(case_sensitive=False, cache_folder=":auto:")
@@ -154,9 +159,16 @@ class Machine:
             bfield=NcBfield(path, interp2d_type),
         )
 
-    def quantity(self, value: float | ArrayLike, units: Unit) -> PlainQuantity:
+    def quantity(
+        self,
+        value: float | ArrayLike,
+        units: Unit,
+    ) -> PlainQuantity[float | ArrayLike]:
         if isinstance(self._reg, _Registry):
-            return self._reg.Quantity(value, units)
+            return cast(
+                PlainQuantity[float | ArrayLike],
+                self._reg.Quantity(value, units),
+            )
         else:
             raise RuntimeError("UnitRegistry has not been defined")
 
@@ -203,6 +215,7 @@ class Machine:
         else:
             raise AttributeError("`rlast` is not defined")
 
+    @override
     def __str__(self) -> str:
         string = "Machine:\n"
         if self.geometry is not None:
@@ -213,5 +226,6 @@ class Machine:
         string += str(getattr(self, "perturbation", "")) + "\n"
         return string
 
+    @override
     def __repr__(self) -> str:
         return self.__str__()

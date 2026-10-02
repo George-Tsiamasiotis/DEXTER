@@ -1,6 +1,6 @@
 [project]
 name = "dexter"
-version = "0.2.0-pre.27"
+version = "0.2.0-pre.28"
 description = "Calculations and simulations in analytical and reconstructed configurations of toroidal fusion devices."
 readme = "README.md"
 authors = [
@@ -68,6 +68,57 @@ addopts = """
 filterwarnings = [
     "ignore:.*Figure.*", # matplotlib non-interactive
 ]
+
+[tool.pyright]
+include = ["py-dexter", "tools"]
+exclude = ["py-dexter/examples", "py-dexter/pytests"]
+typeCheckingMode = "standard"
+# Enable some options that are disabled in standard mode
+strictListInference = true
+strictDictionaryInference = true
+strictSetInference = true
+deprecateTypingAliases = true
+reportMissingTypeStubs = "error"
+reportConstantRedefinition = "error"
+reportDeprecated = "error"
+reportDuplicateImport = "warning"
+reportIncompleteStub = "error"
+reportInconsistentConstructor = "error"
+reportInvalidStubStatement = "error"
+reportMatchNotExhaustive = "error"
+reportMissingParameterType = "error"
+reportMissingTypeArgument = "error"
+reportTypeCommentUsage = "warning"
+reportUnknownArgumentType = "error"
+reportUnknownLambdaType = "error"
+reportUnknownParameterType = "error"
+reportUnknownVariableType = "error"
+reportUnnecessaryCast = "warning"
+reportUnnecessaryComparison = "warning"
+reportUnnecessaryContains = "warning"
+reportUnnecessaryIsInstance = "warning"
+reportUnusedImport = "information"
+reportUnusedFunction = "information"
+reportUnusedVariable = "information"
+reportUntypedBaseClass = "error"
+reportUntypedClassDecorator = "error"
+reportUntypedFunctionDecorator = "error"
+reportUntypedNamedTuple = "error"
+reportCallInDefaultInitializer = "warning"
+reportImplicitOverride = "error"
+reportImplicitStringConcatenation = "warning"
+reportPropertyTypeMismatch = "error"
+reportUninitializedInstanceVariable = "error"
+reportUnnecessaryTypeIgnoreComment = "warning"
+
+# remaining diagnostics
+reportImportCycles = false
+reportUnknownMemberType = false
+reportUnusedCallResult = false
+reportPrivateUsage = false
+reportUnreachable = false
+reportUnusedClass = false
+
 
 [project.scripts]
 dexter-plot-current = "scripts:plot_current"

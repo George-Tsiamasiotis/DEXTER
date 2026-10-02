@@ -1,5 +1,7 @@
 """Definition of the `EnergyPzetaPlane` object and its plotting methods."""
 
+from typing import cast
+
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
@@ -7,7 +9,7 @@ from matplotlib.axes import Axes
 
 from dexter.machine.machine import Machine
 
-from dexter._core import _PyParabola, _PyEnergyPzetaPlane
+from dexter._core import _PyEnergyPzetaPlane
 from dexter._utils import _ReprStrImpl
 
 
@@ -145,8 +147,10 @@ class EnergyPzetaPlane(_ReprStrImpl):
         if self.machine._reg is not None:
             si_ax = ax.twinx()
             max_energy_nu = ymax * mu
-            max_energy_si = self.machine.quantity(max_energy_nu, "NormJoule").to("keV")
-            si_ax.set_ybound(0, max_energy_si.m)
+            max_energy_si = cast(
+                float, self.machine.quantity(max_energy_nu, "NormJoule").to("keV").m
+            )
+            si_ax.set_ybound(0, max_energy_si)
             si_ax.set_ylabel(r"$E\ [keV]$")
 
         ax.grid(True)

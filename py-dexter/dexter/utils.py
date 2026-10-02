@@ -1,5 +1,3 @@
-import numpy as np
-
 from dexter._core import _py_get_max_threads, _py_set_num_threads
 
 # ================================================================================================

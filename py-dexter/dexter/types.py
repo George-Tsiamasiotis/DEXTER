@@ -2,7 +2,6 @@ r"""Type Aliases used throughout the package."""
 
 import numpy as np
 from typing import TypeAlias, Literal
-from collections.abc import Sequence
 
 from semver import Version
 
@@ -21,8 +20,11 @@ Array1: TypeAlias = np.ndarray[tuple[int], np.dtype[np.float64]]
 Array2: TypeAlias = np.ndarray[tuple[int, int], np.dtype[np.float64]]
 """2D numpy array."""
 
-ArrayLike: TypeAlias = float | Array | Sequence
-"""Objects that can be converted to arrays, i.e. float, np.ndarray, sequences, ..."""
+ArrayLike: TypeAlias = np.typing.ArrayLike
+"""Objects that can be converted to arrays, i.e. float, np.ndarray, sequences, ...
+
+Re-export of `np.typing.ArrayLike`.
+"""
 
 ParticleSpecies: TypeAlias = Literal[
     "Electron",
