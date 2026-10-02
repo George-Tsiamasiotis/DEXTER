@@ -7,22 +7,21 @@ Many of the Particle's attributes are stored as properties as they must be pulle
 object to be up-to-date.
 """
 
-from collections.abc import Sequence
+from typing import Any
 
 from dexter.machine.machine import Machine
 from dexter.simulate.initial import InitialConditions
 from dexter.simulate.params import SolverParams, IntersectParams
-from dexter.simulate import plot
+import dexter.simulate.plot as plot
 
 from dexter.types import (
     Array1,
     EnergyPzetaPosition,
     IntegrationStatus,
-    Intersection,
     OrbitType,
 )
 
-from dexter._core import _PyParticle, _PySolverParams, _PyIntersectParams
+from dexter._core import _PyParticle
 from dexter._utils import _ReprStrImpl, _RustTypeWrapper
 
 
@@ -138,7 +137,7 @@ class Particle(_ReprStrImpl, _RustTypeWrapper):
         self,
         machine: Machine,
         teval: tuple[float, float],
-        solver_params: SolverParams = SolverParams(),
+        solver_params: SolverParams | None = None,
     ):
         r"""Integrates the particle for a specific time interval.
 
@@ -191,6 +190,8 @@ class Particle(_ReprStrImpl, _RustTypeWrapper):
 
         ```
         """
+        if solver_params is None:
+            solver_params = SolverParams()
         self._r.integrate(
             qfactor=machine.qfactor._r,
             current=machine.current._r,
@@ -204,7 +205,7 @@ class Particle(_ReprStrImpl, _RustTypeWrapper):
         self,
         machine: Machine,
         intersect_params: IntersectParams,
-        solver_params: SolverParams = SolverParams(),
+        solver_params: SolverParams | None = None,
     ):
         r"""Integrates the particle, calculating its intersections with a constant $\theta$ or $\zeta$ surface.
 
@@ -258,6 +259,8 @@ class Particle(_ReprStrImpl, _RustTypeWrapper):
 
         ```
         """
+        if solver_params is None:
+            solver_params = SolverParams()
         self._r.intersect(
             qfactor=machine.qfactor._r,
             current=machine.current._r,
@@ -271,7 +274,7 @@ class Particle(_ReprStrImpl, _RustTypeWrapper):
         self,
         machine: Machine,
         periods: int = 1,
-        solver_params: SolverParams = SolverParams(),
+        solver_params: SolverParams | None = None,
     ):
         r"""Integrates the particle for a certain amount of $\theta-\psi$ periods.
 
@@ -322,6 +325,8 @@ class Particle(_ReprStrImpl, _RustTypeWrapper):
 
         ```
         """
+        if solver_params is None:
+            solver_params = SolverParams()
         self._r.close(
             qfactor=machine.qfactor._r,
             current=machine.current._r,
@@ -418,14 +423,10 @@ class Particle(_ReprStrImpl, _RustTypeWrapper):
 
     @property
     def energy_pzeta_position(self) -> EnergyPzetaPosition:
-        if self._r.energy_pzeta_position is None:
-            raise AttributeError("`energy_pzeta_position` has not been calculated")
         return self._r.energy_pzeta_position
 
     @property
     def orbit_type(self) -> OrbitType:
-        if self._r.orbit_type is None:
-            raise AttributeError("`orbit_type` has not been calculated")
         return self._r.orbit_type
 
     @property
@@ -516,7 +517,7 @@ class Particle(_ReprStrImpl, _RustTypeWrapper):
     def energy_array(self) -> Array1:
         return self._r.get_array("energy_array")
 
-    def plot_evolution(self, machine: Machine, **kwargs):
+    def plot_evolution(self, machine: Machine, **kwargs: Any):
         """Wrapper around [`dexter.plot_evolution`][dexter.plot_evolution].
 
 
@@ -530,7 +531,7 @@ class Particle(_ReprStrImpl, _RustTypeWrapper):
         """
         plot.plot_evolution(machine, self, **kwargs)
 
-    def plot_poloidal_drift(self, machine: Machine, **kwargs):
+    def plot_poloidal_drift(self, machine: Machine, **kwargs: Any):
         """Wrapper around [`dexter.plot_poloidal_drift`][dexter.plot_poloidal_drift].
 
 

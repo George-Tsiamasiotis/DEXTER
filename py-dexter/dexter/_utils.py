@@ -1,28 +1,32 @@
 """Common helper types to be used across all submodules."""
 
 import inspect
-from typing import Any, TypeAlias
-
-from pint.util import UnitsContainer
+import numpy as np
+from collections.abc import Callable
+from typing import Any, TypeAlias, Protocol, override
 from pint.facets.plain import PlainQuantity
+
+from dexter.types import Array1
 
 _PyAny: TypeAlias = Any
 """The exported type."""
 
 
-class _ReprStrImpl:
+class _ReprStrImpl(Protocol):
     """Exports the wrapped type's `__str__` and `__repr__`."""
 
     _r: _PyAny
 
+    @override
     def __repr__(self) -> str:
         return self._r.__repr__()
 
+    @override
     def __str__(self) -> str:
         return self._r.__repr__()
 
 
-class _RustTypeWrapper:
+class _RustTypeWrapper(Protocol):
     """Wrappers around the exported Rust types."""
 
     _r: _PyAny
@@ -35,7 +39,7 @@ class _RustTypeWrapper:
         return obj
 
 
-def _get_default_args(func):
+def get_default_args(func: Callable[[Any], Any]):
     """Returns a `Signature` with the optional parameters' names and default values.
 
     Useful in providing `argparse` the default values.
@@ -48,11 +52,11 @@ def _get_default_args(func):
     }
 
 
-def _tex_unit(pint_unit: PlainQuantity) -> str:
+def tex_unit(pint_unit: PlainQuantity[Any]) -> str:
     r"""Converts a Quantity's units to a Latex-printable format."""
     units = pint_unit.units
     if pint_unit.is_compatible_with("second"):
-        match units:
+        match str(units):
             case "femtosecond":
                 return r"fm"
             case "picosecond":
@@ -69,3 +73,16 @@ def _tex_unit(pint_unit: PlainQuantity) -> str:
                 return str(units)
     else:
         assert False, "unimplemented"
+
+
+def _into_pyarray1f64(array: Array1) -> Array1:
+    """Makes sure that a numpy array is C-contiguous and of the correct type.
+
+    Use this function whenever Rust expects a `PyArray1<f64>`.
+    """
+    if array.ndim != 1:
+        raise TypeError("Array must be 1-dimensional")
+    if not array.flags.c_contiguous:
+        array = np.ascontiguousarray(array)
+
+    return array.astype(np.float64)

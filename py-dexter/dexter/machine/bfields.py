@@ -1,19 +1,15 @@
 """Defines the different bfield objects as wrappers over `_PyBfield`."""
 
-import numpy as np
 from semver import Version
 from typing import TypeAlias
 
 from dexter._core import _PyBfield
 
-from dexter.machine.flux import MagneticFlux
 from dexter.machine.base import MachineObject, Bfield
 from dexter.types import (
     Array1,
     Array2,
     ArrayShape,
-    FluxCoordinateState,
-    Interpolation1dType,
     Interpolation2dType,
     NetCDFVersion,
 )

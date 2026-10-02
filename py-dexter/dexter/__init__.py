@@ -8,8 +8,6 @@ plt.rcParams["savefig.dpi"] = 300
 plt.rcParams["figure.autolayout"] = False
 plt.rcParams["figure.constrained_layout.use"] = True
 
-from typing import TypeAlias
-
 from dexter.types import (
     Array,
     Array1,

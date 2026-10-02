@@ -76,7 +76,7 @@ impl PyParticle {
 impl PyParticle {
     #[getter]
     pub fn initial_conditions(&self) -> PyInitialConditions {
-        PyInitialConditions(self.0.initial_conditions())
+        PyInitialConditions(self.0.initial_conditions().clone())
     }
 
     #[getter]
@@ -144,7 +144,7 @@ impl PyParticle {
     }
 
     pub fn discard_arrays(&mut self) {
-        self.0.discard_vecs()
+        self.0.discard_arrays()
     }
 
     #[getter]

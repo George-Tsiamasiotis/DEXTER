@@ -64,6 +64,8 @@ pub enum IntegrationStatus {
     /// Invalid [`InitialConditions`]. May occur when using Mixed variables with objects that
     /// cannot define them.
     InvalidInitialConditions,
+    /// Particle initialized with a 'bad' initial magnetic flux.
+    BadMagneticFlux,
     /// [`InitialConditions`] were out of bounds.
     OutOfBoundsInitialization,
     /// Reached the end of the integration successfully.
@@ -128,8 +130,8 @@ pub struct Particle {
     initial_energy: Option<f64>,
     /// The particle's energy after the integration.
     final_energy: Option<f64>,
-    /// Indicates whether the initial conditions are valid and ready to be integrated.
-    _integration_ready: bool,
+    /// Indicates whether the initial conditions are valid and ready to run a routine.
+    _routine_ready: bool,
 }
 
 impl Particle {
@@ -162,7 +164,7 @@ impl Particle {
             frequencies: Frequencies::default(),
             initial_energy: None,
             final_energy: None,
-            _integration_ready: false,
+            _routine_ready: false,
         }
     }
 }
@@ -178,14 +180,16 @@ impl Particle {
         use SimulationError::*;
         use dexter_machine::EvalError::*;
         match self.initial_conditions.finalize(machine) {
-            Ok(_) => self._integration_ready = true,
-            Err(EvalError(Domain1dError(..))) | Err(EvalError(AnalyticalDomainError)) => {
+            Ok(_) => self._routine_ready = true,
+            Err(EvalError(Domain1dError(..)))
+            | Err(EvalError(Domain2dError(..)))
+            | Err(EvalError(AnalyticalDomainError)) => {
                 // Magnetic flux ψ0/ψp0 is out of bounds
                 self.integration_status = IntegrationStatus::OutOfBoundsInitialization
             }
             Err(EvalError(UndefinedEvaluation(..))) => {
                 // Instantiated with 'bad' magnetic flux
-                self.integration_status = IntegrationStatus::InvalidInitialConditions
+                self.integration_status = IntegrationStatus::BadMagneticFlux
             }
             Err(InvalidInitialConditions) => {
                 // NaN encountered
@@ -226,6 +230,10 @@ impl Particle {
     ///
     /// ```
     pub fn integrate(&mut self, machine: Machine, teval: (f64, f64), solver_params: &SolverParams) {
+        self.finalize_initial_conditions(machine);
+        if !self._routine_ready {
+            return;
+        }
         integrate::integrate(self, machine, teval, solver_params);
     }
 
@@ -282,6 +290,10 @@ impl Particle {
         intersect_params: &IntersectParams,
         solver_params: &SolverParams,
     ) {
+        self.finalize_initial_conditions(machine);
+        if !self._routine_ready {
+            return;
+        }
         intersect::intersect(self, machine, intersect_params, solver_params);
     }
 
@@ -328,6 +340,10 @@ impl Particle {
     ///
     /// ```
     pub fn close(&mut self, machine: Machine, periods: usize, solver_params: &SolverParams) {
+        self.finalize_initial_conditions(machine);
+        if !self._routine_ready {
+            return;
+        }
         // ignore perturbation
         let machine =
             MachineBuilder::new(machine.qfactor(), machine.current(), machine.bfield()).build();
@@ -368,6 +384,10 @@ impl Particle {
     ///
     /// ```
     pub fn classify(&mut self, machine: Machine) {
+        self.finalize_initial_conditions(machine);
+        if !self._routine_ready {
+            return;
+        }
         self._classify(machine, None);
     }
 
@@ -377,22 +397,26 @@ impl Particle {
     /// generate the [`EnergyPzetaPlane`] only once and use it for all particles. This method should
     /// only be called by [`crate::Queue::classify_common_mu`].
     pub(crate) fn _classify(&mut self, machine: Machine, _plane: Option<&EnergyPzetaPlane>) {
+        self.finalize_initial_conditions(machine);
+        if !self._routine_ready {
+            return;
+        }
         classify::classify(self, machine, _plane)
     }
 }
 
 // Getters
 impl Particle {
-    /// Returns the Particle's [`InitialConditions`].
+    /// Returns a reference to the Particle's [`InitialConditions`].
     #[must_use]
-    pub fn initial_conditions(&self) -> InitialConditions {
-        self.initial_conditions.clone()
+    pub fn initial_conditions(&self) -> &InitialConditions {
+        &self.initial_conditions
     }
 
-    /// Returns the Particle's [`IntegrationStatus`].
+    /// Returns a reference to the Particle's [`IntegrationStatus`].
     #[must_use]
-    pub fn integration_status(&self) -> IntegrationStatus {
-        self.integration_status.clone()
+    pub fn integration_status(&self) -> &IntegrationStatus {
+        &self.integration_status
     }
 
     /// Returns the total number of steps taken during the integration.
@@ -496,8 +520,8 @@ impl Particle {
     }
 
     /// Discares the time evolution arrays, keeping metadata such as duration, step count, etc.
-    pub fn discard_vecs(&mut self) {
-        self.evolution.discard_vecs();
+    pub fn discard_arrays(&mut self) {
+        self.evolution.discard_arrays();
     }
 
     /// Stores the integration caches in the particle. Should be called after every integration routine.
@@ -559,6 +583,12 @@ impl Particle {
     export_array1D_getter_impl!(energy_array, evolution, energy_array);
 }
 
+impl PartialEq<IntegrationStatus> for &IntegrationStatus {
+    fn eq(&self, other: &IntegrationStatus) -> bool {
+        self.eq(&other)
+    }
+}
+
 impl std::fmt::Debug for Frequencies {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         fn stringify(field: Option<f64>) -> String {
@@ -583,6 +613,7 @@ impl std::fmt::Debug for Particle {
             .field("initial conditions", &self.initial_conditions)
             .field("integration status", &self.integration_status)
             .field("evolution", &self.evolution)
+            .field("E-Pζ position", &self.energy_pzeta_position)
             .field("orbit_type", &self.orbit_type)
             .field("frequencies", &self.frequencies)
             .field("initial energy", &self.initial_energy.unwrap_or(f64::NAN))

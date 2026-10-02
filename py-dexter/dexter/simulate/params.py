@@ -138,11 +138,13 @@ class SolverParams(_ReprStrImpl):
 
     def __init__(
         self,
-        method: SteppingMethod = SteppingMethod.EnergyAdaptiveStep(),
+        method: SteppingMethod | None = None,
         max_steps: int = 1_000_000,
         first_step: float = 1e-1,
         safety_factor: float = 0.9,
     ) -> None:
+        if method is None:
+            method = SteppingMethod.EnergyAdaptiveStep()
         self._r = _PySolverParams(
             method=method._r,
             max_steps=max_steps,

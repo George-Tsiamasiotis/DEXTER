@@ -1,18 +1,15 @@
 """Plots a ModeObject's `α`, `φ` and its derivatives with respect to `ψ` or `ψp`."""
 
 import argparse
-from dexter._utils import _get_default_args
+from dexter._utils import get_default_args
 from dexter import (
-    Machine,
-    Perturbation,
     NcFluteMode,
-    PhaseMethod,
     MagneticFluxKind,
     Interpolation1dType,
     plot_mode,
 )
 
-plot_mode_args = _get_default_args(plot_mode)
+plot_mode_args = get_default_args(plot_mode)
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument(
@@ -42,7 +39,7 @@ parser.add_argument(
     "-f",
     "--flux",
     help="The kind of magnetic flux on the x-axis. "
-    f"Defaults to {plot_mode_args["flux"]}.",
+    + f"Defaults to {plot_mode_args["flux"]}.",
     choices=MagneticFluxKind.__args__,
     type=str,
     default=plot_mode_args["flux"],
@@ -51,7 +48,7 @@ parser.add_argument(
     "-p",
     "--points",
     help="The number of flux points to evaluate. "
-    f"Defaults to {plot_mode_args["points"]}.",
+    + f"Defaults to {plot_mode_args["points"]}.",
     type=int,
     default=plot_mode_args["points"],
 )

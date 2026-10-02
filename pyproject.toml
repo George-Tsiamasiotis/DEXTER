@@ -1,6 +1,6 @@
 [project]
 name = "dexter"
-version = "0.2.0-pre.27"
+version = "0.2.0-pre.34"
 description = "Calculations and simulations in analytical and reconstructed configurations of toroidal fusion devices."
 readme = "README.md"
 authors = [
@@ -9,11 +9,11 @@ authors = [
 requires-python = ">=3.14"
 dependencies = [
     "alpha-shapes>=1.1.1",
-    "matplotlib>=3.11.1",
-    "maturin>=1.14.1",
-    "numpy==2.5.1", # maturin MSRV
-    "pint>=0.25.3",
-    "semver>=3.0.4",
+    "matplotlib>=3.11.2",
+    "maturin>=1.15.0",
+    "numpy>=2.5.1",
+    "pint>=0.26.1",
+    "semver>=3.1.0",
 ]
 
 [tool.maturin]
@@ -32,22 +32,22 @@ build-backend = "maturin"
 
 [dependency-groups]
 dev = [
-    "ipython>=9.16.0",
+    "ipython>=9.17.1",
     "maturin-import-hook>=0.3.0",
-    "patchelf>=0.17.2.4",
-    "xarray>=2026.7.0",
     "netcdf4>=1.7.4",
+    "patchelf>=0.19.1.0",
+    "xarray>=2026.9.0",
 ]
 plot = [
-    "pygobject>=3.56.3",
+    "pygobject>=3.58.0",
 ]
 test = [
     "pytest>=9.1.1",
     "pytest-cov>=7.1.0",
 ]
 docs = [
-    "mkdocstrings-python>=2.0.5",
-    "zensical==0.0.67",
+    "mkdocstrings-python>=2.0.9",
+    "zensical>=0.0.67",
 ]
 
 [tool.pytest.ini_options]
@@ -68,6 +68,57 @@ addopts = """
 filterwarnings = [
     "ignore:.*Figure.*", # matplotlib non-interactive
 ]
+
+[tool.pyright]
+include = ["py-dexter", "tools"]
+exclude = ["py-dexter/examples", "py-dexter/pytests"]
+typeCheckingMode = "standard"
+# Enable some options that are disabled in standard mode
+strictListInference = true
+strictDictionaryInference = true
+strictSetInference = true
+deprecateTypingAliases = true
+reportMissingTypeStubs = "error"
+reportConstantRedefinition = "error"
+reportDeprecated = "error"
+reportDuplicateImport = "warning"
+reportIncompleteStub = "error"
+reportInconsistentConstructor = "error"
+reportInvalidStubStatement = "error"
+reportMatchNotExhaustive = "error"
+reportMissingParameterType = "error"
+reportMissingTypeArgument = "error"
+reportTypeCommentUsage = "warning"
+reportUnknownArgumentType = "error"
+reportUnknownLambdaType = "error"
+reportUnknownParameterType = "error"
+reportUnknownVariableType = "error"
+reportUnnecessaryCast = "warning"
+reportUnnecessaryComparison = "warning"
+reportUnnecessaryContains = "warning"
+reportUnnecessaryIsInstance = "warning"
+reportUnusedImport = "information"
+reportUnusedVariable = "information"
+reportUntypedBaseClass = "error"
+reportUntypedClassDecorator = "error"
+reportUntypedFunctionDecorator = "error"
+reportUntypedNamedTuple = "error"
+reportCallInDefaultInitializer = "warning"
+reportImplicitOverride = "error"
+reportImplicitStringConcatenation = "warning"
+reportPropertyTypeMismatch = "error"
+reportUninitializedInstanceVariable = "error"
+reportUnnecessaryTypeIgnoreComment = "warning"
+
+# remaining diagnostics
+reportImportCycles = false
+reportUnknownMemberType = false
+reportUnusedCallResult = false
+reportPrivateUsage = false
+reportUnreachable = false
+reportUnusedClass = false
+reportUnusedFunction = false
+
 
 [project.scripts]
 dexter-plot-current = "scripts:plot_current"

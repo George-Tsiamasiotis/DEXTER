@@ -1,6 +1,7 @@
 from collections.abc import Callable
+from typing import override
 
-from dexter.types import MagneticFluxKind, Array1
+from dexter.types import MagneticFluxKind
 
 from dexter._core import _PyMagneticFlux
 from dexter._utils import _ReprStrImpl, _RustTypeWrapper
@@ -77,18 +78,31 @@ class MagneticFlux(_ReprStrImpl, _RustTypeWrapper):
 
         return obj
 
+    def __add__(self, scalar: float) -> MagneticFlux:
+        return MagneticFlux._wrap(self._r.__add__(scalar))
+
+    def __sub__(self, scalar: float) -> MagneticFlux:
+        return MagneticFlux._wrap(self._r.__sub__(scalar))
+
+    def __neg__(self) -> MagneticFlux:
+        return MagneticFlux._wrap(self._r.__neg__())
+
     def __mul__(self, scalar: float) -> MagneticFlux:
-        """Multiplies the inner value with `scalar` without changing the `kind`."""
-        if self.kind == "Toroidal":
-            return MagneticFlux.Toroidal(self.value * scalar)
-        elif self.kind == "Poloidal":
-            return MagneticFlux.Poloidal(self.value * scalar)
-        else:
-            raise RuntimeError("unreachable")
+        return MagneticFlux._wrap(self._r.__mul__(scalar))
+
+    def __truediv__(self, scalar: float) -> MagneticFlux:
+        return MagneticFlux._wrap(self._r.__truediv__(scalar))
+
+    def __radd__(self, scalar: float) -> MagneticFlux:
+        return self.__add__(scalar)
+
+    def __rsub__(self, scalar: float) -> MagneticFlux:
+        return self.__sub__(scalar).__neg__()
 
     def __rmul__(self, scalar: float) -> MagneticFlux:
         return self.__mul__(scalar)
 
+    @override
     def __eq__(self, other: object) -> bool:
         """Returns `true` if both `kind` and `value` of `other` are equal to `self`."""
         if isinstance(other, MagneticFlux):
@@ -96,12 +110,14 @@ class MagneticFlux(_ReprStrImpl, _RustTypeWrapper):
                 return True
         return False
 
+    @override
     @classmethod
     def _wrap(cls, _r: _PyMagneticFlux) -> MagneticFlux:
         """Wraps the `_r` type to a `MagneticFlux`."""
-        if _r.kind == "Toroidal":
-            return MagneticFlux.Toroidal(_r.value)
-        elif _r.kind == "Poloidal":
-            return MagneticFlux.Poloidal(_r.value)
-        else:
-            raise RuntimeError("unreachable")
+        match _r.kind:
+            case "Toroidal":
+                return MagneticFlux.Toroidal(_r.value)
+            case "Poloidal":
+                return MagneticFlux.Poloidal(_r.value)
+            case _:
+                raise RuntimeError("unreachable")

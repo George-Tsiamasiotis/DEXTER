@@ -82,10 +82,6 @@ pub(super) fn intersect(
 
     let start = Instant::now();
     particle.evolution.reset();
-    particle.finalize_initial_conditions(machine);
-    if !particle._integration_ready {
-        return;
-    }
 
     let mut caches = IntegrationCaches {
         mode_caches: machine.perturbation().generate_caches(),
@@ -98,8 +94,7 @@ pub(super) fn intersect(
     };
 
     let Ok(mut state1) = GCState::new(&particle.initial_conditions, machine, &mut caches) else {
-        particle.integration_status = IntegrationStatus::OutOfBoundsInitialization;
-        return;
+        unreachable!("Particle::finalize_initial_conditions checks bounds");
     };
 
     particle.initial_energy = Some(state1.energy);

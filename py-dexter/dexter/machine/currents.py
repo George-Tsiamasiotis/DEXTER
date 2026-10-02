@@ -1,14 +1,12 @@
 """Defines the different plasma current objects as wrappers over `_PyCurrent`."""
 
-import numpy as np
 from semver import Version
 from typing import TypeAlias
 
 from dexter._core import _PyCurrent
 
-from dexter.machine.flux import MagneticFlux
 from dexter.machine.base import MachineObject, Current
-from dexter.types import Array1, FluxCoordinateState, Interpolation1dType, NetCDFVersion
+from dexter.types import Array1, Interpolation1dType, NetCDFVersion
 
 
 class LarCurrent(MachineObject, Current):

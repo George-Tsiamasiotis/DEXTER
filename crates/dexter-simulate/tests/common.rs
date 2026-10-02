@@ -5,7 +5,7 @@ use dexter_simulate::*;
 /// Checks that the time series calculated from an integration routine are valid.
 #[allow(dead_code, reason = "used in tests")]
 pub(crate) fn check_integrated_particle_arrays(particle: &Particle) {
-    let _: InitialConditions = particle.initial_conditions();
+    let _: &InitialConditions = particle.initial_conditions();
     assert_eq!(particle.t_array().len(), particle.steps_stored());
     assert_eq!(particle.psi_array().len(), particle.steps_stored());
     assert_eq!(particle.psip_array().len(), particle.steps_stored());

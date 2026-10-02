@@ -1,6 +1,5 @@
 """Defines the different geometry objects as wrappers over `_PyGeometry`."""
 
-import numpy as np
 from semver import Version
 from typing import TypeAlias
 
@@ -12,7 +11,6 @@ from dexter.types import (
     Array1,
     Array2,
     ArrayShape,
-    FluxCoordinateState,
     Interpolation1dType,
     Interpolation2dType,
     NetCDFVersion,

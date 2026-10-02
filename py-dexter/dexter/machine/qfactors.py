@@ -1,6 +1,5 @@
 """Defines the different q-factor objects as wrappers over `_PyQfactor`."""
 
-import numpy as np
 from semver import Version
 from typing import TypeAlias
 
@@ -10,7 +9,6 @@ from dexter.machine.flux import MagneticFlux
 from dexter.machine.base import MachineObject, Qfactor
 from dexter.types import (
     Array1,
-    FluxCoordinateState,
     Interpolation1dType,
     NetCDFVersion,
 )

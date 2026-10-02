@@ -2,7 +2,6 @@ r"""Type Aliases used throughout the package."""
 
 import numpy as np
 from typing import TypeAlias, Literal
-from collections.abc import Sequence
 
 from semver import Version
 
@@ -21,8 +20,11 @@ Array1: TypeAlias = np.ndarray[tuple[int], np.dtype[np.float64]]
 Array2: TypeAlias = np.ndarray[tuple[int, int], np.dtype[np.float64]]
 """2D numpy array."""
 
-ArrayLike: TypeAlias = float | Array | Sequence
-"""Objects that can be converted to arrays, i.e. float, np.ndarray, sequences, ..."""
+ArrayLike: TypeAlias = np.typing.ArrayLike
+"""Objects that can be converted to arrays, i.e. float, np.ndarray, sequences, ...
+
+Re-export of `np.typing.ArrayLike`.
+"""
 
 ParticleSpecies: TypeAlias = Literal[
     "Electron",
@@ -243,6 +245,7 @@ EnergyPzetaPosition = Literal[
     "Lambda",
     "Mu",
     "Unclassified",
+    "Forbidden",
 ]
 r"""The position of an $(E, P_\zeta)$ point on the $(E, P_\zeta)$ plane, relative to the orbit
 classification curves.
@@ -251,7 +254,7 @@ See the diagram for explanation.
 """
 
 OrbitType: TypeAlias = Literal[
-    "Undefined",
+    "Unclassified",
     "TrappedLost",
     "TrappedConfined",
     "CoPassingLost",
@@ -260,12 +263,11 @@ OrbitType: TypeAlias = Literal[
     "CuPassingConfined",
     "Potato",
     "Stagnated",
-    "Unclassified",
-    "Failed(..)",
+    "Undefined",
 ]
 r"""A particle's orbit type, calculated through the [`dexter.Particle.close()`] routine.
 
-- `Undefined`: Particle has not been classified.
+- `Unclassified`: Particle has not been classified.
 - `TrappedLost`: A Trapped-Lost particle. A particle is called trapped if there exists a
     mirror point where $\rho=0$.
 - `TrappedConfined`: A Trapped-Confined particle. A particle is called trapped if there
@@ -284,6 +286,5 @@ r"""A particle's orbit type, calculated through the [`dexter.Particle.close()`] 
 - `Stagnated`: A Stagnated particle. A particle is called stagnated if it always has positive
     parallel velocity but does not circle the magnetic axis. In the $(E, P_\zeta)$ plane,
     those lie to the right of the trapped-passing boundary and above the magnetic axis parabola.
-- `Unclassified`: Not falling under any of the other categories.
-- `Failed(..)`: Error classifying the orbit.
+- `Undefined`: Not falling under any of the other categories.
 """

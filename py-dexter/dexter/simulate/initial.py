@@ -1,11 +1,13 @@
 """Defines types associated with Particle and Queue initialization."""
 
+from warnings import warn
+
 import numpy as np
 
 from dexter.machine.flux import MagneticFlux
-from dexter.types import ArrayLike, CoordinateSet
+from dexter.types import Array1, CoordinateSet, ArrayLike
 
-from dexter._utils import _ReprStrImpl, _RustTypeWrapper
+from dexter._utils import _ReprStrImpl, _RustTypeWrapper, _into_pyarray1f64
 from dexter._core import (
     _PyInitialConditions,
     _PyMagneticFluxArray,
@@ -33,21 +35,15 @@ class InitialConditions(_ReprStrImpl, _RustTypeWrapper):
         The initial $\zeta$ angle.
     rho0
         The initial $\rho_{||,0}$. If the set was initialized from [`Mixed`][dexter.InitialConditions.Mixed]
-        and no particle routines have run, then `rho0` is `None`.
+        and no particle routines have run, raises `AttributeError`.
     pzeta0
         The initial $P_{\zeta,0}$. If the set was initialized from [`Boozer`][dexter.InitialConditions.Boozer]
-        and no particle routines have run, then `pzeta0` is `None`.
+        and no particle routines have run, raises `AttributeError`.
     coordinate_set
         The kind of initial conditions set.
     """
 
     _r: _PyInitialConditions
-    t0: float
-    flux0: MagneticFlux
-    theta0: float
-    zeta0: float
-    mu0: float
-    coordinate_set: CoordinateSet
 
     def __init__(self) -> None:
         raise RuntimeError("Cannot instantiate class")
@@ -100,12 +96,6 @@ class InitialConditions(_ReprStrImpl, _RustTypeWrapper):
         """
         obj = InitialConditions.__new__(InitialConditions)
         obj._r = _PyInitialConditions.boozer(t0, flux0._r, theta0, zeta0, rho0, mu0)
-        obj.t0 = obj._r.t0
-        obj.flux0 = MagneticFlux._wrap(obj._r.flux0)
-        obj.theta0 = obj._r.theta0
-        obj.zeta0 = obj._r.zeta0
-        obj.mu0 = obj._r.mu0
-        obj.coordinate_set = obj._r.coordinate_set
 
         return obj
 
@@ -116,7 +106,7 @@ class InitialConditions(_ReprStrImpl, _RustTypeWrapper):
         flux0: MagneticFlux,
         theta0: float,
         zeta0: float,
-        pzeta0: float,
+        pzeta0: float | MagneticFlux,
         mu0: float,
     ) -> InitialConditions:
         r"""Creates initial conditions for a Particle in Mixed coordinates.
@@ -156,20 +146,39 @@ class InitialConditions(_ReprStrImpl, _RustTypeWrapper):
 
         ```
         """
+
+        if isinstance(pzeta0, MagneticFlux):
+            if pzeta0.kind == "Toroidal":
+                warn("'MagneticFlux.Toroidal' value encountered for 'pzeta0'")
+            pzeta0 = pzeta0.value
+
         obj = InitialConditions.__new__(InitialConditions)
         obj._r = _PyInitialConditions.mixed(t0, flux0._r, theta0, zeta0, pzeta0, mu0)
-        obj.t0 = obj._r.t0
-        obj.flux0 = MagneticFlux._wrap(obj._r.flux0)
-        obj.theta0 = obj._r.theta0
-        obj.zeta0 = obj._r.zeta0
-        obj.mu0 = obj._r.mu0
-        obj.coordinate_set = obj._r.coordinate_set
 
         return obj
 
     @property
+    def t0(self) -> float:
+        return self._r.t0
+
+    @property
+    def flux0(self) -> MagneticFlux:
+        return MagneticFlux._wrap(self._r.flux0)
+
+    @property
+    def theta0(self) -> float:
+        return self._r.theta0
+
+    @property
+    def zeta0(self) -> float:
+        return self._r.zeta0
+
+    @property
+    def mu0(self) -> float:
+        return self._r.mu0
+
+    @property
     def rho0(self) -> float:
-        r"""The initial parallel radius $\rho_{||}$, in Normalized Units."""
         if self._r.rho0 is None:
             raise AttributeError("'rho0' has not been defined")
         else:
@@ -177,11 +186,14 @@ class InitialConditions(_ReprStrImpl, _RustTypeWrapper):
 
     @property
     def pzeta0(self) -> float:
-        r"""The initial canonical momentum $P_\zeta$, in Normalized Units."""
         if self._r.pzeta0 is None:
             raise AttributeError("'pzeta0' has not been defined")
         else:
             return self._r.pzeta0
+
+    @property
+    def coordinate_set(self) -> CoordinateSet:
+        return self._r.coordinate_set
 
 
 class MagneticFluxArray(_ReprStrImpl):
@@ -240,10 +252,9 @@ class MagneticFluxArray(_ReprStrImpl):
     ) -> MagneticFluxArray:
         """Creates a `MagneticFluxArray` by calling the appropriate constructor."""
         array = np.atleast_1d(np.asarray(array, dtype=np.float64))
+        array = _into_pyarray1f64(array)
         if not np.all(np.isfinite(array)):
             raise ValueError("NaN values encounter in MagneticFluxArray")
-        if array.ndim != 1:
-            raise TypeError("Only 1D arrays are accepted in MagneticFluxArray")
 
         obj = MagneticFluxArray.__new__(MagneticFluxArray)
         obj._r = _method(array)
@@ -265,12 +276,12 @@ class QueueInitialConditions(_ReprStrImpl, _RustTypeWrapper):
     @classmethod
     def Boozer(
         cls,
-        t0: ArrayLike,
+        t0: Array1,
         flux0: MagneticFluxArray,
-        theta0: ArrayLike,
-        zeta0: ArrayLike,
-        rho0: ArrayLike,
-        mu0: ArrayLike,
+        theta0: Array1,
+        zeta0: Array1,
+        rho0: Array1,
+        mu0: Array1,
     ) -> QueueInitialConditions:
         r"""Creates sets of initial conditions for a Particle in Boozer coordinates.
 
@@ -312,24 +323,24 @@ class QueueInitialConditions(_ReprStrImpl, _RustTypeWrapper):
         """
         obj = QueueInitialConditions.__new__(QueueInitialConditions)
         obj._r = _PyQueueInitialConditions.boozer(
-            t0=t0,
+            t0=_into_pyarray1f64(t0),
             flux0=flux0._r,
-            theta0=theta0,
-            zeta0=zeta0,
-            rho0=rho0,
-            mu0=mu0,
+            theta0=_into_pyarray1f64(theta0),
+            zeta0=_into_pyarray1f64(zeta0),
+            rho0=_into_pyarray1f64(rho0),
+            mu0=_into_pyarray1f64(mu0),
         )
         return obj
 
     @classmethod
     def Mixed(
         cls,
-        t0: ArrayLike,
+        t0: Array1,
         flux0: MagneticFluxArray,
-        theta0: ArrayLike,
-        zeta0: ArrayLike,
-        pzeta0: ArrayLike,
-        mu0: ArrayLike,
+        theta0: Array1,
+        zeta0: Array1,
+        pzeta0: Array1,
+        mu0: Array1,
     ) -> QueueInitialConditions:
         r"""Creates sets of initial conditions for a Particle in Boozer coordinates.
 
@@ -371,11 +382,11 @@ class QueueInitialConditions(_ReprStrImpl, _RustTypeWrapper):
         """
         obj = QueueInitialConditions.__new__(QueueInitialConditions)
         obj._r = _PyQueueInitialConditions.mixed(
-            t0=t0,
+            t0=_into_pyarray1f64(t0),
             flux0=flux0._r,
-            theta0=theta0,
-            zeta0=zeta0,
-            pzeta0=pzeta0,
-            mu0=mu0,
+            theta0=_into_pyarray1f64(theta0),
+            zeta0=_into_pyarray1f64(zeta0),
+            pzeta0=_into_pyarray1f64(pzeta0),
+            mu0=_into_pyarray1f64(mu0),
         )
         return obj

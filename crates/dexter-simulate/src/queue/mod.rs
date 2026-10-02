@@ -184,10 +184,11 @@ impl Queue {
     pub fn integrate(&mut self, machine: Machine, teval: (f64, f64), solver_params: &SolverParams) {
         let pbar = IntegratePbar::new(self);
         pbar.print_prelude();
+        pbar.print_stats();
 
         self.particles.par_iter_mut().for_each(|particle| {
             particle.integrate(machine, teval, solver_params);
-            pbar.inc(&particle.integration_status());
+            pbar.inc(particle.integration_status());
             pbar.print_stats();
         });
         pbar.finish();
@@ -248,10 +249,11 @@ impl Queue {
     ) {
         let pbar = IntersectPbar::new(self, intersect_params);
         pbar.print_prelude();
+        pbar.print_stats();
 
         self.particles.par_iter_mut().for_each(|particle| {
             particle.intersect(machine, intersect_params, solver_params);
-            pbar.inc(&particle.integration_status());
+            pbar.inc(particle.integration_status());
             pbar.print_stats();
         });
         pbar.finish();
@@ -285,18 +287,27 @@ impl Queue {
     /// )?;
     /// let mut queue = Queue::new(&initial_conditions);
     /// dbg!(&queue);
-    /// queue.close(machine, 1, &SolverParams::default());
+    /// queue.close(machine, 1, true, &SolverParams::default());
     /// # Ok::<_, SimulationError>(())
     /// ```
-    pub fn close(&mut self, machine: Machine, periods: usize, solver_params: &SolverParams) {
+    pub fn close(
+        &mut self,
+        machine: Machine,
+        periods: usize,
+        discard_arrays: bool,
+        solver_params: &SolverParams,
+    ) {
         let pbar = ClosePbar::new(self);
         pbar.print_prelude();
+        pbar.print_stats();
 
         self.particles.par_iter_mut().for_each(|particle| {
             particle.close(machine, periods, solver_params);
-            pbar.inc(&particle.integration_status());
+            pbar.inc(particle.integration_status());
             pbar.print_stats();
-            particle.discard_vecs();
+            if discard_arrays {
+                particle.discard_arrays();
+            }
         });
         pbar.finish();
 

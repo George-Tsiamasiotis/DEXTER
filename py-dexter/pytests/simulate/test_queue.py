@@ -40,10 +40,6 @@ def test_queue_routines_analytical(lar_machine: dex.Machine):
     queue.classify(lar_machine)
 
 
-import numpy as np
-import dexter as dex
-
-
 def test_queue_routines_numerical(nc_machine: dex.Machine):
     num = 4
     psi0s = dex.MagneticFluxArray.Toroidal(
@@ -92,12 +88,12 @@ def test_queue_getters(lar_machine: dex.Machine):
     psi0s = dex.MagneticFluxArray.Toroidal(
         np.linspace(1e-6, lar_machine.psi_last.value, num)
     )
-    initial = dex.QueueInitialConditions.Boozer(
+    initial = dex.QueueInitialConditions.Mixed(
         t0=np.zeros(num),
         flux0=psi0s,
         theta0=np.zeros(num),
         zeta0=np.zeros(num),
-        rho0=np.full(num, 1e-5),
+        pzeta0=np.full(num, 1e-5),
         mu0=np.full(num, 1e-6),
     )
     queue = dex.Queue(initial)
@@ -123,3 +119,10 @@ def test_queue_getters(lar_machine: dex.Machine):
     )
     assert queue.omega_zeta_array is not None and queue.omega_zeta_array.shape == (num,)
     assert queue.qkinetic_array is not None and queue.qkinetic_array.shape == (num,)
+
+    assert np.all(np.isclose(queue._r._initial_pzetas(), np.full(num, 1e-5)))
+    assert isinstance(queue._r._initial_energies(), np.ndarray)
+    assert isinstance(queue._r._initial_energies()[0], float)
+    assert isinstance(queue._r._orbit_types(), list)
+    assert isinstance(queue._r._orbit_types()[0], str)
+    assert queue._r._orbit_types()[0] in dex.OrbitType.__args__

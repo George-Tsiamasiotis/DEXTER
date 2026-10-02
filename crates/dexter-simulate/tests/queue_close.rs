@@ -47,7 +47,7 @@ fn queue_close_parQ_larC_larB_cosP() -> Result<(), SimulationError> {
         particle_count
     );
 
-    queue.close(machine, 1, &SolverParams::default());
+    queue.close(machine, 1, false, &SolverParams::default());
 
     assert_eq!(queue.routines(), vec![Routine::Close]);
     assert_eq!(
@@ -71,9 +71,9 @@ fn queue_close_parQ_larC_larB_cosP() -> Result<(), SimulationError> {
     let durations = queue.durations();
 
     assert!(steps_taken.iter().all(|steps| *steps > 0));
-    assert!(steps_stored.iter().all(|steps| *steps == 0)); // close() discards arrays
+    assert!(steps_stored.iter().all(|steps| *steps != 0));
     assert!(energy_array.iter().all(|energy| energy.is_finite()));
-    assert!(energy_rsd_array.iter().all(|energy| energy.is_nan())); // close() discards arrays
+    assert!(energy_rsd_array.iter().all(|energy| energy.is_finite()));
     assert!(qkinetic_array.iter().all(|qkinetic| qkinetic.is_finite()));
     assert!(omega_theta_array.iter().all(|omega| omega.is_finite()));
     assert!(omega_zeta_array.iter().all(|omega| omega.is_finite()));

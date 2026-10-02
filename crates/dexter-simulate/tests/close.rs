@@ -7,6 +7,7 @@ mod common;
 use approx::assert_relative_eq as ar;
 use dexter_machine::*;
 use dexter_simulate::*;
+use ndarray::Array1;
 use std::f64::consts::TAU;
 
 /// Simplest case
@@ -76,4 +77,56 @@ fn trapped_particle_single_period_uniQ() {
     ar!(particle.frequencies().omega_theta.unwrap(), expected_omega_theta, epsilon=eps);
     ar!(particle.frequencies().omega_zeta.unwrap(), expected_omega_zeta, epsilon=eps);
     ar!(particle.frequencies().qkinetic.unwrap(), 0.012222584887591207, epsilon=eps); // derived
+}
+
+#[test]
+#[rustfmt::skip]
+fn multiple_periods_frequencies_calculation() {
+    let qfactor = UnityQfactor::new(LastClosedFluxSurface::Toroidal(0.1));
+    let current = LarCurrent::new();
+    let bfield = LarBfield::new();
+    let machine = MachineBuilder::new(&qfactor, &current, &bfield).build();
+
+    // Taken from `trapped_particle_single_period_uniQ`
+    let initial = InitialConditions::boozer(0.0, MagneticFlux::Toroidal(0.02), 1.0, 0.0, 1e-6, 1e-6);
+
+    let mut omega_thetas = Vec::new();
+    let mut omega_zetas = Vec::new();
+    let mut qkinetics = Vec::new();
+
+    let PERIODS = 5;
+
+    for periods in 1..=PERIODS{
+        let mut particle = Particle::new(&initial);
+        particle.close(machine, periods, &SolverParams::default());
+        particle.classify(machine);
+        match particle.integration_status(){
+            IntegrationStatus::ClosedPeriods(closed_periods) => assert_eq!(periods, *closed_periods),
+            _ => panic!("wrong integration status")
+        }
+        assert_eq!(particle.orbit_type(), OrbitType::TrappedConfined);
+        omega_thetas.push(particle.omega_theta().unwrap());
+        omega_zetas.push(particle.omega_zeta().unwrap());
+        qkinetics.push(particle.qkinetic().unwrap());
+    }
+
+
+    // Taken from `trapped_particle_single_period_uniQ`
+    let expected_dt = 17703.530171220227;
+    let expected_dzeta = 0.07681124462891854; // from manual integration
+    let expected_omega_theta = TAU / expected_dt;
+    let expected_omega_zeta = expected_dzeta / expected_dt;
+    let expected_qkinetic = expected_omega_zeta / expected_omega_theta;
+
+    let omega_thetas = Array1::from_vec(omega_thetas);
+    let omega_zetas = Array1::from_vec(omega_zetas);
+    let qkinetics = Array1::from_vec(qkinetics);
+    let expected_omega_thetas = Array1::from_elem(PERIODS, expected_omega_theta);
+    let expected_omega_zetas = Array1::from_elem(PERIODS, expected_omega_zeta);
+    let expected_qkinetics = Array1::from_elem(PERIODS, expected_qkinetic);
+
+    let eps = 1e-5;
+    ar!(omega_thetas, expected_omega_thetas, epsilon=eps);
+    ar!(omega_zetas, expected_omega_zetas, epsilon=eps);
+    ar!(qkinetics, expected_qkinetics, epsilon=eps);
 }

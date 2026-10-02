@@ -297,21 +297,21 @@ fn gc_mixed_boozer_equivalence() {
 
     let rho0 = 1e-4;
     let psip0 = Poloidal(0.2);
-    let g0 = machine.current().eval_g(psip0, &mut Accelerator::new()).unwrap();
-    let pzeta0 = rho0 * g0 - psip0.value();
+    let teval = (0.0, 3.2e5);
 
     let boozer_initial = InitialConditions::boozer(0.0, psip0, 0.0, 0.0, rho0, 1e-6);
-    let mixed_initial = InitialConditions::mixed(0.0, psip0, 0.0, 0.0, pzeta0, 1e-6);
-
     let mut boozer_particle = Particle::new(&boozer_initial);
-    let mut mixed_particle = Particle::new(&mixed_initial);
     assert!(matches!(boozer_particle.integration_status(), IntegrationStatus::Initialized));
-    assert!(matches!(mixed_particle.integration_status(), IntegrationStatus::PartlyInitialized));
-
-    let teval = (0.0, 3.2e5);
     boozer_particle.integrate(machine, teval, &solver_params);
-    mixed_particle.integrate(machine, teval, &solver_params);
     dbg!(&boozer_particle);
+
+    // use the `pzeta` calculated by the boozer particle
+    let pzeta = boozer_particle.initial_conditions().pzeta0().unwrap();
+
+    let mixed_initial = InitialConditions::mixed(0.0, psip0, 0.0, 0.0, pzeta, 1e-6);
+    let mut mixed_particle = Particle::new(&mixed_initial);
+    assert!(matches!(mixed_particle.integration_status(), IntegrationStatus::PartlyInitialized));
+    mixed_particle.integrate(machine, teval, &solver_params);
     dbg!(&mixed_particle);
 
     assert!(matches!(boozer_particle.integration_status(), IntegrationStatus::Integrated));

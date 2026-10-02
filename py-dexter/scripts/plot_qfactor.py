@@ -1,10 +1,10 @@
 """Plots a QfactorObject q(ψ), q(ψp), ψp(ψ)$ and ψ(ψp)."""
 
 import argparse
-from dexter._utils import _get_default_args
+from dexter._utils import get_default_args
 from dexter import Machine, Interpolation1dType, plot_qfactor
 
-plot_qfactor_args = _get_default_args(plot_qfactor)
+plot_qfactor_args = get_default_args(plot_qfactor)
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument(
@@ -24,7 +24,7 @@ parser.add_argument(
     "-p",
     "--points",
     help="The number of flux points to evaluate. "
-    f"Defaults to {plot_qfactor_args["points"]}.",
+    + f"Defaults to {plot_qfactor_args["points"]}.",
     type=int,
     default=plot_qfactor_args["points"],
 )

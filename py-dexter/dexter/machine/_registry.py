@@ -1,15 +1,14 @@
 """Defines a Machine's `UnitRegistry` with defined normalized units."""
 
-from math import isclose
-
-from dexter.types import ArrayLike, ParticleSpecies
+import numpy as np
 from pint import UnitRegistry
+from dexter.types import ParticleSpecies
 
 PROTON_MASS = 1.672621923e-27
 PROTON_CHARGE = 1.602176634e-19
 
 
-class _Registry(UnitRegistry):
+class _Registry(UnitRegistry[float | np.ndarray]):
 
     def define_normalizations(
         self, raxis: float, baxis: float, species: ParticleSpecies
@@ -45,8 +44,6 @@ def get_mass_number(species: ParticleSpecies) -> float:
             return 4
         case "He3":
             return 3
-        case _:
-            raise TypeError("Invalid particle species")
 
 
 def get_charge(species: ParticleSpecies) -> float:

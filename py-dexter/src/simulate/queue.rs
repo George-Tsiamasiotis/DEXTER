@@ -73,12 +73,14 @@ impl PyQueue {
         bfield: &PyBfield,
         perturbation: &PyPerturbation,
         periods: usize,
+        discard_arrays: bool,
         solver_params: &PySolverParams,
     ) {
         let machine = MachineBuilder::new(qfactor.inner(), current.inner(), bfield.inner())
             .with_perturbation(perturbation.inner())
             .build();
-        self.0.close(machine, periods, &solver_params.0);
+        self.0
+            .close(machine, periods, discard_arrays, &solver_params.0);
     }
 
     pub fn classify(&mut self, qfactor: &PyQfactor, current: &PyCurrent, bfield: &PyBfield) {
@@ -131,7 +133,8 @@ impl PyQueue {
                 "Kappa" => EnergyPzetaPosition::Kappa,
                 "Lambda" => EnergyPzetaPosition::Lambda,
                 "Mu" => EnergyPzetaPosition::Mu,
-                "Unclassified" => EnergyPzetaPosition::Unclassified,
+                "Undefined" => EnergyPzetaPosition::Undefined,
+                "Forbidden" => EnergyPzetaPosition::Forbidden,
                 _ => panic!("'positions' must be valid 'EnergyPzetaPosition' variants"),
             })
             .collect();
@@ -143,7 +146,7 @@ impl PyQueue {
         let orbit_types: Vec<OrbitType> = orbit_types
             .iter()
             .map(|typ| match typ.as_str() {
-                "Undefined" => OrbitType::Undefined,
+                "Unclassified" => OrbitType::Unclassified,
                 "TrappedLost" => OrbitType::TrappedLost,
                 "TrappedConfined" => OrbitType::TrappedConfined,
                 "CoPassingLost" => OrbitType::CoPassingLost,
@@ -152,7 +155,7 @@ impl PyQueue {
                 "CuPassingConfined" => OrbitType::CuPassingConfined,
                 "Potato" => OrbitType::Potato,
                 "Stagnated" => OrbitType::Stagnated,
-                "Unclassified" => OrbitType::Unclassified,
+                "Undefined" => OrbitType::Undefined,
                 _ => panic!("'orbit_types' must be valid 'OrbitType' variants"),
             })
             .collect();
@@ -196,6 +199,40 @@ impl PyQueue {
 
     pub fn steps_stored_array<'py>(&mut self, py: Python<'py>) -> Bound<'py, PyArray1<usize>> {
         self.0.steps_stored_array().into_pyarray(py)
+    }
+
+    /// Utility method to avoid iterating on the Python side, which requires cloning.
+    pub fn _initial_pzetas<'py>(&mut self, py: Python<'py>) -> Bound<'py, PyArray1<f64>> {
+        let vector = self
+            .0
+            .particles()
+            .iter()
+            .map(|p| p.initial_conditions().pzeta0().unwrap_or(f64::NAN))
+            .collect::<Vec<f64>>();
+        PyArray1::from_vec(py, vector)
+    }
+
+    /// Utility method to avoid iterating on the Python side, which requires cloning.
+    pub fn _initial_energies<'py>(&mut self, py: Python<'py>) -> Bound<'py, PyArray1<f64>> {
+        let vector = self
+            .0
+            .particles()
+            .iter()
+            .map(|p| p.initial_energy().unwrap_or(f64::NAN))
+            .collect::<Vec<f64>>();
+        PyArray1::from_vec(py, vector)
+    }
+
+    /// Utility method to avoid iterating on the Python side, which requires cloning.
+    pub fn _orbit_types<'py>(&mut self, py: Python<'py>) -> PyResult<Bound<'py, PyList>> {
+        // maybe there is a better way to do this
+        let vector = self
+            .0
+            .particles()
+            .iter()
+            .map(|p| format!("{:?}", p.orbit_type()))
+            .collect::<Vec<String>>();
+        PyList::new(py, vector.iter())
     }
 
     pub fn get_array<'py>(&self, py: Python<'py>, name: &str) -> Result<Bound<'py, PyArray1<f64>>> {

@@ -17,6 +17,8 @@ from matplotlib.axes import Axes
 from matplotlib.ticker import LogLocator, MaxNLocator
 from cycler import cycler
 from math import floor, log10
+from typing import cast
+from pint.facets.plain import PlainQuantity
 
 from dexter.machine.machine import Machine
 from dexter.machine.geometries import GeometryObject
@@ -28,9 +30,9 @@ from dexter.simulate.energy import (
     energy_of_psi_grid,
     energy_of_psip_grid,
 )
-from dexter._utils import _tex_unit
+from dexter._utils import tex_unit
 from dexter.machine.plot import _resolve_magnetic_flux_kind
-from dexter.types import ArrayShape, Locator, Array1, OrbitType
+from dexter.types import Array2, ArrayShape, Locator, Array1, OrbitType
 
 TAU = 2 * np.pi
 PI = np.pi
@@ -95,10 +97,6 @@ def plot_evolution(
     if downsample and not len(t_array) < DOWNSAMPLE_TARGET * 10:
         warnings.warn("Downsampling did not work..")
 
-    steps_stored = particle.steps_stored
-    points = min(int(np.floor(steps_stored)), steps_stored)
-    initial_energy = particle.initial_energy
-
     t = t_array[::step]
     psi = particle.psi_array[::step] / machine.psi_last.value
     psip = particle.psip_array[::step] / machine.psip_last.value
@@ -139,15 +137,18 @@ def plot_evolution(
         ax.yaxis.set_label_position("left")
 
     LEFT_LABEL_KW = dict(fontsize=12)
-    RIGHT_LABEL_KW = dict(fontsize=12, rotation=270, labelpad=18)
     RIGHT_LABEL_KW = dict(fontsize=12)
 
     if machine.geometry is not None:
         # Possible divide by zero at t=0 during conversion
         with warnings.catch_warnings(action="ignore"):
-            tu = machine.quantity(t, "NormSecond").to("second").to_compact()
+            # FIXME: this does not rescale the time units as expected
+            tu = cast(
+                PlainQuantity[Array1],
+                machine.quantity(t, "NormSecond").to("second").to_compact(),
+            )
             t = tu.m
-        tunits = _tex_unit(tu)
+        tunits = tex_unit(tu)
         axrho.set_xlabel(rf"$t\ [{tunits}]$")
         axenergy.set_xlabel(rf"$t\ [{tunits}]$")
     else:
@@ -171,7 +172,7 @@ def plot_evolution(
 
 def plot_poloidal_drift(
     machine: Machine,
-    particle: Particle,
+    obj: Particle | Queue,
     array_shape: ArrayShape = (300, 300),
     levels: int = 50,
     locator: Locator = "MaxN",
@@ -179,13 +180,17 @@ def plot_poloidal_drift(
 ) -> tuple[Figure, Axes]:
     r"""Plots a particle's drift on the $R-Z$ plane, overlaid on a contour plot of the Hamiltonian.
 
+    If a single particle is passed, an extra bold contour line is drawn at its energy level.
+
     Parameters
     ----------
     machine
         The machine in which the particle was integrated. It is used to convert specific
         quantities to SI units.
-    particle
-        The integrated particle.
+    obj
+        The Particle or Queue containing the particles.
+    array_shape
+        The shape of the $(r, \theta)$ array on which to calculate the contour lines.
     levels
         The number of contour levels.
     show
@@ -198,14 +203,17 @@ def plot_poloidal_drift(
 
     Raises
     ------
-    RuntimeError
-        If the particle has not been integrated (`#!python particle.steps_taken == 0`).
     AttributeError
         If `machine` has not defined a `geometry`.
 
     """
-    if particle.steps_taken == 0:
-        raise RuntimeError("Particle has not been integrated")
+    if isinstance(obj, Particle):
+        particles = [obj]
+    else:
+        particles = obj.particles()
+
+    if len(particles) == 0:
+        raise RuntimeError("Empty queue")
 
     geometry: GeometryObject = getattr(machine, "geometry")
 
@@ -216,76 +224,100 @@ def plot_poloidal_drift(
 
     if flux == "Toroidal":
         flux_arg_name = "psi"
-        lcfs = machine.psi_last
-        pfluxes = particle.psi_array
-        energy_function = energy_of_psi_grid
-        eval_flux_of_r_function = geometry.eval_psi_of_r
     else:
         flux_arg_name = "psip"
-        lcfs = machine.psip_last
-        pfluxes = particle.psip_array
-        energy_function = energy_of_psip_grid
-        eval_flux_of_r_function = geometry.eval_psip_of_r
 
-    r_array = np.linspace(0, machine.rlast, array_shape[1]) * 0.99999
-    flux_array: Array1 = eval_flux_of_r_function(r_array)  # pyright: ignore
-    theta_grid, flux_grid = create_poloidal_grid(
-        theta_array=np.linspace(0, TAU, array_shape[0]),
-        flux_array=flux_array,
-    )
-    grid_eval_arg = {"theta": theta_grid, flux_arg_name: flux_grid}
-    rlab_grid = geometry.eval_rlab(**grid_eval_arg)
-    zlab_grid = geometry.eval_zlab(**grid_eval_arg)
-
-    particle_eval_arg = {flux_arg_name: pfluxes, "theta": particle.theta_array % TAU}
-    prlab = geometry.eval_rlab(**particle_eval_arg)
-    pzlab = geometry.eval_zlab(**particle_eval_arg)
-
-    pzeta = particle.initial_conditions._r.pzeta0
-    assert pzeta is not None, "particle has been integrated"
-    mu = particle.initial_conditions._r.mu0
-    energy_grid: np.ndarray = (
-        machine.quantity(
-            energy_function(
-                machine,
-                pzeta,
-                mu,
-                theta_grid,
-                flux_grid,
-            ),
-            "NormJoule",
-        )
-        .to("keV")
-        .m
-    )
-
-    ORBIT_COLOR = "red"
     CMAP = "plasma"
     LOG_LOCATOR_BASE = 1 + 1e-10
     LAST_COLOR = "k"
     MARGINS = (0.001, 0.001)
 
-    _locator = locator.lower()
-    _locator = (
-        LogLocator(base=LOG_LOCATOR_BASE, numticks=levels)
-        if _locator == "log"
-        else MaxNLocator(nbins=levels)
-    )
+    for particle in particles:
+        if particle.steps_stored == 0:
+            continue
+        if flux == "Toroidal":
+            flux_array = particle.psi_array
+        else:
+            flux_array = particle.psip_array
+        particle_eval_arg = {
+            flux_arg_name: flux_array,
+            "theta": particle.theta_array % TAU,
+        }
+        prlab = geometry.eval_rlab(**particle_eval_arg)
+        pzlab = geometry.eval_zlab(**particle_eval_arg)
+        color = orbit_color(particle.orbit_type)
+        ax.plot(prlab, pzlab, c=color, linewidth=0, marker=".", markersize=1, zorder=10)
 
-    contourf_kw = {
-        "levels": levels,
-        "locator": _locator,
-        "cmap": "plasma",
-    }
-    contour_kw = {
-        "linewidths": 0.1,
-        "colors": "k",
-    }
+    # Plot energy contour only if all particles have the same Pζ and μ
+    pzetas = np.asarray([particle.initial_conditions.pzeta0 for particle in particles])
+    mus = np.asarray([particle.initial_conditions.mu0 for particle in particles])
+    if np.all(pzetas == pzetas[0]) and np.all(mus == mus[0]):
 
-    contourf = ax.contourf(rlab_grid, zlab_grid, energy_grid, **contourf_kw)
-    ax.contour(contourf, **contour_kw)
-    fig.colorbar(contourf, label=r"$Energy\ [keV]$")
-    ax.plot(prlab, pzlab, c=ORBIT_COLOR, linewidth=0, marker=".", markersize=1)
+        if flux == "Toroidal":
+            energy_function = energy_of_psi_grid
+            eval_flux_of_r_function = geometry.eval_psi_of_r
+        else:
+            energy_function = energy_of_psip_grid
+            eval_flux_of_r_function = geometry.eval_psip_of_r
+
+        r_array = np.linspace(0, machine.rlast, array_shape[1]) * 0.99999
+        flux_array: Array1 = eval_flux_of_r_function(r_array)  # pyright: ignore
+        theta_grid, flux_grid = create_poloidal_grid(
+            theta_array=np.linspace(0, TAU, array_shape[0]),
+            flux_array=flux_array,
+        )
+        grid_eval_arg = {"theta": theta_grid, flux_arg_name: flux_grid}
+        rlab_grid = geometry.eval_rlab(**grid_eval_arg)
+        zlab_grid = geometry.eval_zlab(**grid_eval_arg)
+        energy_grid = cast(
+            Array2,
+            machine.quantity(
+                energy_function(
+                    machine,
+                    pzetas[0],
+                    mus[0],
+                    theta_grid,
+                    flux_grid,
+                ),
+                "NormJoule",
+            )
+            .to("keV")
+            .m,
+        )
+
+        _locator = locator.lower()
+        _locator = (
+            LogLocator(base=LOG_LOCATOR_BASE, numticks=levels)
+            if _locator == "log"
+            else MaxNLocator(nbins=levels)
+        )
+
+        contourf = ax.contourf(
+            rlab_grid,
+            zlab_grid,
+            energy_grid,
+            levels=levels,
+            locator=_locator,
+            cmap=CMAP,
+        )
+        ax.contour(
+            contourf,
+            linewidths=0.1,
+            colors="k",
+        )
+        fig.colorbar(contourf, label=r"$Energy\ [keV]$")
+
+        # Add an extra contour line on the particle's energy
+        if isinstance(obj, Particle):
+            particle_energy = cast(
+                float, machine.quantity(obj.initial_energy, "NormJoule").to("keV").m
+            )
+            ax.contour(
+                contourf,
+                levels=[particle_energy],
+                linewidths=0.5,
+                colors="k",
+            )
 
     ax.plot(geometry.rlab_last, geometry.zlab_last, color=LAST_COLOR)
     ax.scatter(
@@ -346,7 +378,7 @@ def plot_pzeta_poincare(
     else:
         ax.set_prop_cycle(cycler(color=["blue"]))
 
-    if intersect_params == "ConstTheta":
+    if intersect_params.intersection == "ConstTheta":
         xlabel = r"$\zeta\ [rads]$"
         array_name = "zeta_array"
     else:
@@ -423,7 +455,7 @@ def plot_rz_poincare(
         If `machine.geometry` is not defined.
     """
 
-    if intersect_params == "ConstTheta":
+    if intersect_params.intersection == "ConstTheta":
         raise RuntimeError(
             "Cannot plot R-Z Poincare map with a 'ConstTheta' intersection"
         )
