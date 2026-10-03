@@ -82,6 +82,30 @@ impl std::fmt::Debug for MagneticFlux {
 
 // ===============================================================================================
 
+impl std::ops::Add<f64> for MagneticFlux {
+    type Output = Self;
+
+    fn add(self, rhs: f64) -> Self::Output {
+        use MagneticFlux::*;
+        match self {
+            Toroidal(value) => Toroidal(value + rhs),
+            Poloidal(value) => Poloidal(value + rhs),
+        }
+    }
+}
+
+impl std::ops::Sub<f64> for MagneticFlux {
+    type Output = Self;
+
+    fn sub(self, rhs: f64) -> Self::Output {
+        use MagneticFlux::*;
+        match self {
+            Toroidal(value) => Toroidal(value - rhs),
+            Poloidal(value) => Poloidal(value - rhs),
+        }
+    }
+}
+
 impl std::ops::Mul<f64> for MagneticFlux {
     type Output = Self;
 
@@ -90,6 +114,30 @@ impl std::ops::Mul<f64> for MagneticFlux {
         match self {
             Toroidal(value) => Toroidal(value * rhs),
             Poloidal(value) => Poloidal(value * rhs),
+        }
+    }
+}
+
+impl std::ops::Div<f64> for MagneticFlux {
+    type Output = Self;
+
+    fn div(self, rhs: f64) -> Self::Output {
+        use MagneticFlux::*;
+        match self {
+            Toroidal(value) => Toroidal(value / rhs),
+            Poloidal(value) => Poloidal(value / rhs),
+        }
+    }
+}
+
+impl std::ops::Neg for MagneticFlux {
+    type Output = Self;
+
+    fn neg(self) -> Self::Output {
+        use MagneticFlux::*;
+        match self {
+            Toroidal(value) => Toroidal(-value),
+            Poloidal(value) => Poloidal(-value),
         }
     }
 }
@@ -154,9 +202,33 @@ mod test {
     use approx::*;
 
     #[test]
+    fn add() {
+        assert_relative_eq!(Toroidal(0.1) + 0.4, Toroidal(0.5));
+        assert_relative_eq!(Poloidal(0.1) + 0.5, Poloidal(0.6));
+    }
+
+    #[test]
+    fn sun() {
+        assert_relative_eq!(Toroidal(0.4) - 0.1, Toroidal(0.3));
+        assert_relative_eq!(Poloidal(0.5) - 0.1, Poloidal(0.4));
+    }
+
+    #[test]
     fn mul() {
         assert_relative_eq!(Toroidal(0.1) * 0.4, Toroidal(0.04));
         assert_relative_eq!(Poloidal(0.1) * 0.5, Poloidal(0.05));
+    }
+
+    #[test]
+    fn div() {
+        assert_relative_eq!(Toroidal(0.4) / 0.2, Toroidal(2.0));
+        assert_relative_eq!(Poloidal(0.4) / 0.2, Poloidal(2.0));
+    }
+
+    #[test]
+    fn neg() {
+        assert_relative_eq!(-Toroidal(0.4), Toroidal(-0.4));
+        assert_relative_eq!(-Poloidal(0.4), Poloidal(-0.4));
     }
 
     #[test]

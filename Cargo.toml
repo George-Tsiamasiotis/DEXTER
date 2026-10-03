@@ -15,10 +15,10 @@ default-members = [
 [workspace.dependencies]
 approx = "0.5.1"
 ndarray = "0.17.2"
-thiserror = "2.0.19"
+thiserror = "2.0.21"
 criterion = "0.8.2"
 parabola = "0.1.2"
-rsl-interpolation = { git = "https://github.com/George-Tsiamasiotis/rsl-interpolation", branch = "refactor", features = ["openblas-system"] }
+rsl-interpolation = { git = "https://github.com/George-Tsiamasiotis/rsl-interpolation", branch = "dev", features = ["openblas-system"] }
 
 dexter = { path = "crates/dexter" }
 dexter-common = { path = "crates/dexter-common" }

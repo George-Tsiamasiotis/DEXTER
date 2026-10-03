@@ -1,7 +1,7 @@
 """Defines `Machine`, a container for all information a device."""
 
-from pint.facets.plain import PlainQuantity
-from typing import cast, override
+from pint import Quantity
+from typing import override
 
 from dexter.machine.flux import MagneticFlux
 from dexter.types import (
@@ -163,14 +163,12 @@ class Machine:
         self,
         value: float | ArrayLike,
         units: Unit,
-    ) -> PlainQuantity[float | ArrayLike]:
-        if isinstance(self._reg, _Registry):
-            return cast(
-                PlainQuantity[float | ArrayLike],
-                self._reg.Quantity(value, units),
-            )
-        else:
+    ) -> Quantity:
+        if not isinstance(self._reg, _Registry):
             raise RuntimeError("UnitRegistry has not been defined")
+
+        # typing is hopeless here
+        return self._reg.Quantity(value, units)  # pyright: ignore
 
     @property
     def psi_last(self) -> MagneticFlux:

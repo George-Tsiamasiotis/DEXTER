@@ -29,7 +29,7 @@ from dexter.machine.base import MachineObject
 from dexter.machine.qfactors import NcQfactor
 from dexter.machine.currents import NcCurrent
 from dexter.machine.modes import FluteMode, ModeObject
-from dexter.types import Array1, MagneticFluxKind
+from dexter.types import Array1, Array2, MagneticFluxKind
 
 TAU = 2 * np.pi
 PI = np.pi
@@ -529,7 +529,7 @@ def plot_bfield(
     bb = bfield.eval_b(**bfield_eval_args)
     bf = bfield.eval_deriv_flux(**bfield_eval_args)
     bt = bfield.eval_deriv_theta(**bfield_eval_args)
-    bb = machine.quantity(bb, "NormTesla").to("Tesla")
+    bb = cast(Array2, machine.quantity(bb, "NormTesla").to("Tesla").m)
 
     CMAP = "plasma"
     LEVEL_LINE_WIDTH = 0.5
@@ -537,7 +537,7 @@ def plot_bfield(
     LAST_COLOR = "k"
     MARGINS = (0.01, 0.01)
 
-    csbb = axbb.contourf(rlabs, zlabs, bb.m, cmap=CMAP, levels=levels)
+    csbb = axbb.contourf(rlabs, zlabs, bb, cmap=CMAP, levels=levels)
     csbf = axbf.contourf(rlabs, zlabs, bf, cmap=CMAP, levels=levels)
     csbt = axbt.contourf(rlabs, zlabs, bt, cmap=CMAP, levels=levels)
     cssc = axsc.contourf(rlabs, zlabs, bt, cmap=CMAP, levels=levels)

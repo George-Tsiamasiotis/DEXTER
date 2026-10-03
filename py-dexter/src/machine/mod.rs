@@ -17,6 +17,7 @@ pub use qfactor::*;
 use crate::{impl_py_repr, wrapper_debug_export};
 use dexter::dexter_machine::*;
 use pyo3::{prelude::*, types::PyType};
+use std::ops::{Add, Div, Mul, Neg, Sub};
 
 // ===============================================================================================
 
@@ -44,6 +45,29 @@ impl PyMagneticFlux {
     #[getter]
     pub fn kind(&self) -> String {
         self.0.kind().into()
+    }
+}
+
+#[pymethods]
+impl PyMagneticFlux {
+    fn __add__(&self, scalar: f64) -> PyMagneticFlux {
+        PyMagneticFlux(self.0.add(scalar))
+    }
+
+    fn __sub__(&self, scalar: f64) -> PyMagneticFlux {
+        PyMagneticFlux(self.0.sub(scalar))
+    }
+
+    fn __neg__(&self) -> PyMagneticFlux {
+        PyMagneticFlux(self.0.neg())
+    }
+
+    fn __mul__(&self, scalar: f64) -> PyMagneticFlux {
+        PyMagneticFlux(self.0.mul(scalar))
+    }
+
+    fn __truediv__(&self, scalar: f64) -> PyMagneticFlux {
+        PyMagneticFlux(self.0.div(scalar))
     }
 }
 
