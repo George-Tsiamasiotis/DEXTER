@@ -76,7 +76,7 @@ impl PyParticle {
 impl PyParticle {
     #[getter]
     pub fn initial_conditions(&self) -> PyInitialConditions {
-        PyInitialConditions(self.0.initial_conditions())
+        PyInitialConditions(self.0.initial_conditions().clone())
     }
 
     #[getter]

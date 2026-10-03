@@ -187,7 +187,7 @@ impl Queue {
 
         self.particles.par_iter_mut().for_each(|particle| {
             particle.integrate(machine, teval, solver_params);
-            pbar.inc(&particle.integration_status());
+            pbar.inc(particle.integration_status());
             pbar.print_stats();
         });
         pbar.finish();
@@ -251,7 +251,7 @@ impl Queue {
 
         self.particles.par_iter_mut().for_each(|particle| {
             particle.intersect(machine, intersect_params, solver_params);
-            pbar.inc(&particle.integration_status());
+            pbar.inc(particle.integration_status());
             pbar.print_stats();
         });
         pbar.finish();
@@ -294,7 +294,7 @@ impl Queue {
 
         self.particles.par_iter_mut().for_each(|particle| {
             particle.close(machine, periods, solver_params);
-            pbar.inc(&particle.integration_status());
+            pbar.inc(particle.integration_status());
             pbar.print_stats();
             particle.discard_vecs();
         });

@@ -198,6 +198,40 @@ impl PyQueue {
         self.0.steps_stored_array().into_pyarray(py)
     }
 
+    /// Utility method to avoid iterating on the Python side, which requires cloning.
+    pub fn _initial_pzetas<'py>(&mut self, py: Python<'py>) -> Bound<'py, PyArray1<f64>> {
+        let vector = self
+            .0
+            .particles()
+            .iter()
+            .map(|p| p.initial_conditions().pzeta0().unwrap_or(f64::NAN))
+            .collect::<Vec<f64>>();
+        PyArray1::from_vec(py, vector)
+    }
+
+    /// Utility method to avoid iterating on the Python side, which requires cloning.
+    pub fn _initial_energies<'py>(&mut self, py: Python<'py>) -> Bound<'py, PyArray1<f64>> {
+        let vector = self
+            .0
+            .particles()
+            .iter()
+            .map(|p| p.initial_energy().unwrap_or(f64::NAN))
+            .collect::<Vec<f64>>();
+        PyArray1::from_vec(py, vector)
+    }
+
+    /// Utility method to avoid iterating on the Python side, which requires cloning.
+    pub fn _orbit_types<'py>(&mut self, py: Python<'py>) -> PyResult<Bound<'py, PyList>> {
+        // maybe there is a better way to do this
+        let vector = self
+            .0
+            .particles()
+            .iter()
+            .map(|p| format!("{:?}", p.orbit_type()))
+            .collect::<Vec<String>>();
+        PyList::new(py, vector.iter())
+    }
+
     pub fn get_array<'py>(&self, py: Python<'py>, name: &str) -> Result<Bound<'py, PyArray1<f64>>> {
         let array = match name {
             "energy_array" => self.0.energy_array(),

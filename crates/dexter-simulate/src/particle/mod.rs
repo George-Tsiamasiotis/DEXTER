@@ -383,16 +383,16 @@ impl Particle {
 
 // Getters
 impl Particle {
-    /// Returns the Particle's [`InitialConditions`].
+    /// Returns a reference to the Particle's [`InitialConditions`].
     #[must_use]
-    pub fn initial_conditions(&self) -> InitialConditions {
-        self.initial_conditions.clone()
+    pub fn initial_conditions(&self) -> &InitialConditions {
+        &self.initial_conditions
     }
 
-    /// Returns the Particle's [`IntegrationStatus`].
+    /// Returns a reference to the Particle's [`IntegrationStatus`].
     #[must_use]
-    pub fn integration_status(&self) -> IntegrationStatus {
-        self.integration_status.clone()
+    pub fn integration_status(&self) -> &IntegrationStatus {
+        &self.integration_status
     }
 
     /// Returns the total number of steps taken during the integration.
@@ -557,6 +557,12 @@ impl Particle {
     export_array1D_getter_impl!(ptheta_array, evolution, ptheta_array);
     export_array1D_getter_impl!(pzeta_array, evolution, pzeta_array);
     export_array1D_getter_impl!(energy_array, evolution, energy_array);
+}
+
+impl PartialEq<IntegrationStatus> for &IntegrationStatus {
+    fn eq(&self, other: &IntegrationStatus) -> bool {
+        self.eq(&other)
+    }
 }
 
 impl std::fmt::Debug for Frequencies {

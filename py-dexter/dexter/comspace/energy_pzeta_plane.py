@@ -1,7 +1,6 @@
 """Definition of the `EnergyPzetaPlane` object and its plotting methods."""
 
 from typing import cast
-from collections.abc import Sequence
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -10,6 +9,7 @@ from matplotlib.axes import Axes
 
 from dexter.machine.machine import Machine
 from dexter.simulate.particle import Particle
+from dexter.simulate.queue import Queue
 from dexter.simulate.plot import orbit_color
 from dexter.types import Array1
 
@@ -18,21 +18,32 @@ from dexter._utils import _ReprStrImpl
 
 
 class _ParticlePoints:
-    r"""Helper container type to store the particle's E-Pζ points and their orbit color."""
+    r"""Helper container type to store the particle's E-Pζ points and their orbit color.
+
+    Parameters
+    ----------
+    obj
+        The particle/queue to export the data from.
+    """
 
     pzetas: Array1
     energies: Array1
     orbit_colors: list[str]
 
-    def __init__(self, particles: Sequence[Particle]) -> None:
-        length = len(particles)
-        self.pzetas = np.empty(length, dtype=float)
-        self.energies = np.empty(length, dtype=float)
-        self.orbit_colors = []
-        for i, p in enumerate(particles):
-            self.pzetas[i] = p.initial_conditions.pzeta0
-            self.energies[i] = p.initial_energy
-            self.orbit_colors.append(orbit_color(p.orbit_type))
+    def __init__(self, obj: Particle | Queue | None = None) -> None:
+        if obj is None:  # Empty initialization
+            self.pzetas = np.asarray([])
+            self.energies = np.asarray([])
+            self.orbit_colors = []
+        elif isinstance(obj, Particle):  # Single point
+            self.pzetas = np.atleast_1d(obj.initial_conditions.pzeta0)
+            self.energies = np.atleast_1d(obj.initial_energy)
+            self.orbit_colors = [orbit_color(obj.orbit_type)]
+        else:
+            self.pzetas = obj._r._initial_pzetas()
+            self.energies = obj._r._initial_energies()
+            orbit_types = obj._r._orbit_types()
+            self.orbit_colors = [orbit_color(orbit_type) for orbit_type in orbit_types]
 
     def __len__(self) -> int:
         return len(self.pzetas)
@@ -76,26 +87,24 @@ class EnergyPzetaPlane(_ReprStrImpl):
             machine.qfactor._r, machine.current._r, machine.bfield._r, mu
         )
         assert mu == self._r.mu
-        self.machine = machine  # handy
-        self._particle_points = _ParticlePoints([])
+        self.machine = machine  # handy reference
+        self._particle_points = _ParticlePoints()
 
-    def add_particles(self, particles: Particle | Sequence[Particle]):
-        r"""Adds particles to the plane.
+    def add_particles(self, obj: Particle | Queue):
+        r"""Adds particles to the plane, discarding any previously stored ones.
 
         At the time only certain particle attributes are stored.
 
         Parameters
         ----------
-        particles
-            The particle list
+        obj
+            The particle/queue to extract the data from.
         """
-        if isinstance(particles, Particle):
-            particles = [particles]
-        self._particle_points = _ParticlePoints(particles)
+        self._particle_points = _ParticlePoints(obj)
 
     def clear_particles(self):
         r"""Clears all stored particles."""
-        self._particle_points = _ParticlePoints([])
+        self._particle_points = _ParticlePoints()
 
     def show(
         self,

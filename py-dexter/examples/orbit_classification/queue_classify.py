@@ -43,7 +43,7 @@ queue.retain_energy(0, 3 * mu)
 
 # Plot orbits on the E-Pζ space
 plane = dex.EnergyPzetaPlane(machine, mu)
-plane.add_particles(particles=queue.particles())
+plane.add_particles(queue)
 plane.show()
 plane.clear_particles()
 
@@ -59,6 +59,6 @@ confined_particles = queue.retain_orbit_types(
     ]
 )
 
-plane.add_particles(particles=queue.particles())
+plane.add_particles(queue)
 plane.show()
 plane.clear_particles()
