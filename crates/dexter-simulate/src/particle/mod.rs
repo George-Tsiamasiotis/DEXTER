@@ -583,6 +583,7 @@ impl std::fmt::Debug for Particle {
             .field("initial conditions", &self.initial_conditions)
             .field("integration status", &self.integration_status)
             .field("evolution", &self.evolution)
+            .field("E-Pζ position", &self.energy_pzeta_position)
             .field("orbit_type", &self.orbit_type)
             .field("frequencies", &self.frequencies)
             .field("initial energy", &self.initial_energy.unwrap_or(f64::NAN))

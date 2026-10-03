@@ -1,6 +1,7 @@
 """Definition of the `EnergyPzetaPlane` object and its plotting methods."""
 
 from typing import cast
+from collections.abc import Sequence
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -8,9 +9,33 @@ from matplotlib.figure import Figure
 from matplotlib.axes import Axes
 
 from dexter.machine.machine import Machine
+from dexter.simulate.particle import Particle
+from dexter.simulate.plot import orbit_color
+from dexter.types import Array1
 
 from dexter._core import _PyEnergyPzetaPlane
 from dexter._utils import _ReprStrImpl
+
+
+class _ParticlePoints:
+    r"""Helper container type to store the particle's E-Pζ points and their orbit color."""
+
+    pzetas: Array1
+    energies: Array1
+    orbit_colors: list[str]
+
+    def __init__(self, particles: Sequence[Particle]) -> None:
+        length = len(particles)
+        self.pzetas = np.empty(length, dtype=float)
+        self.energies = np.empty(length, dtype=float)
+        self.orbit_colors = []
+        for i, p in enumerate(particles):
+            self.pzetas[i] = p.initial_conditions.pzeta0
+            self.energies[i] = p.initial_energy
+            self.orbit_colors.append(orbit_color(p.orbit_type))
+
+    def __len__(self) -> int:
+        return len(self.pzetas)
 
 
 class EnergyPzetaPlane(_ReprStrImpl):
@@ -44,6 +69,7 @@ class EnergyPzetaPlane(_ReprStrImpl):
 
     _r: _PyEnergyPzetaPlane
     machine: Machine
+    _particle_points: _ParticlePoints
 
     def __init__(self, machine: Machine, mu: float) -> None:
         self._r = _PyEnergyPzetaPlane(
@@ -51,11 +77,31 @@ class EnergyPzetaPlane(_ReprStrImpl):
         )
         assert mu == self._r.mu
         self.machine = machine  # handy
+        self._particle_points = _ParticlePoints([])
 
-    def plot(
+    def add_particles(self, particles: Particle | Sequence[Particle]):
+        r"""Adds particles to the plane.
+
+        At the time only certain particle attributes are stored.
+
+        Parameters
+        ----------
+        particles
+            The particle list
+        """
+        if isinstance(particles, Particle):
+            particles = [particles]
+        self._particle_points = _ParticlePoints(particles)
+
+    def clear_particles(self):
+        r"""Clears all stored particles."""
+        self._particle_points = _ParticlePoints([])
+
+    def show(
         self,
-        xlim: tuple[float, float] = (-1.6, 0.5),
+        xlim: tuple[float, float] | None = None,
         ylim: float | tuple[float, float] = 3,
+        particles: bool = True,
         show: bool = True,
     ) -> tuple[Figure, Axes]:
         r"""Plots the plane with the orbit classification curves.
@@ -105,7 +151,7 @@ class EnergyPzetaPlane(_ReprStrImpl):
         tp_upper = self._r.tp_upper_values / mu
 
         LINEWIDTH = 3
-        ZORDER = 5
+        ZORDER = 20
         MA_COLOR = "xkcd:cobalt blue"
         LW_COLOR = "xkcd:coral"
         RW_COLOR = "xkcd:forrest green"
@@ -153,9 +199,29 @@ class EnergyPzetaPlane(_ReprStrImpl):
             si_ax.set_ybound(0, max_energy_si)
             si_ax.set_ylabel(r"$E\ [keV]$")
 
+        if particles:
+            zorder = 10
+            if len(self._particle_points) < 500:
+                point_size = 20
+                zorder = 1000
+            elif 500 <= len(self._particle_points) < 5000:
+                point_size = 10
+            else:
+                point_size = 1
+            ax.scatter(
+                self._particle_points.pzetas / psip_last,
+                self._particle_points.energies / mu,
+                c=self._particle_points.orbit_colors,
+                s=point_size,
+                zorder=zorder,
+            )
+
         ax.grid(True)
-        ax.set_xlim(*xlim)
         ax.set_ylim(ymin, ymax)
+        if xlim is None:
+            ax.margins(x=0.05)
+        else:
+            ax.set_xlim(*xlim)
         ax.set_xlabel(r"$P_\zeta/\psi_{p, LCFS}$")
         ax.set_ylabel(r"$E/\mu$")
         ax.legend(loc="lower right")

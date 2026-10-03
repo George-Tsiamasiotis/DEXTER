@@ -1,6 +1,6 @@
 [project]
 name = "dexter"
-version = "0.2.0-pre.29"
+version = "0.2.0-pre.30"
 description = "Calculations and simulations in analytical and reconstructed configurations of toroidal fusion devices."
 readme = "README.md"
 authors = [
@@ -98,7 +98,6 @@ reportUnnecessaryComparison = "warning"
 reportUnnecessaryContains = "warning"
 reportUnnecessaryIsInstance = "warning"
 reportUnusedImport = "information"
-reportUnusedFunction = "information"
 reportUnusedVariable = "information"
 reportUntypedBaseClass = "error"
 reportUntypedClassDecorator = "error"
@@ -118,6 +117,7 @@ reportUnusedCallResult = false
 reportPrivateUsage = false
 reportUnreachable = false
 reportUnusedClass = false
+reportUnusedFunction = false
 
 
 [project.scripts]

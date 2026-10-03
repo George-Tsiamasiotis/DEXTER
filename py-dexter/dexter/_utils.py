@@ -1,10 +1,12 @@
 """Common helper types to be used across all submodules."""
 
 import inspect
+import numpy as np
 from collections.abc import Callable
 from typing import Any, TypeAlias, Protocol, override
-
 from pint.facets.plain import PlainQuantity
+
+from dexter.types import Array1
 
 _PyAny: TypeAlias = Any
 """The exported type."""
@@ -71,3 +73,16 @@ def tex_unit(pint_unit: PlainQuantity[Any]) -> str:
                 return str(units)
     else:
         assert False, "unimplemented"
+
+
+def _into_pyarray1f64(array: Array1) -> Array1:
+    """Makes sure that a numpy array is C-contiguous and of the correct type.
+
+    Use this function whenever Rust expects a `PyArray1<f64>`.
+    """
+    if array.ndim != 1:
+        raise TypeError("Array must be 1-dimensional")
+    if not array.flags.c_contiguous:
+        array = np.ascontiguousarray(array)
+
+    return array.astype(np.float64)

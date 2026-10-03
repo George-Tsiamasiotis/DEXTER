@@ -17,12 +17,12 @@ def test_plot_machine_numerical(nc_machine_perturbed: dex.Machine):
 
 
 def test_plot_mode_analytical():
-    LCFS = dex.MagneticFlux.Toroidal(0.03)
-    flute_mode = dex.FluteMode(1e-5, LCFS, 5, 2, 0)
+    lcfs = dex.MagneticFlux.Toroidal(0.03)
+    flute_mode = dex.FluteMode(1e-5, lcfs, 5, 2, 0)
     dex.plot_mode(flute_mode, points=50, show=False)
 
-    LCFS = dex.MagneticFlux.Poloidal(0.03)
-    flute_mode = dex.FluteMode(1e-5, LCFS, 5, 2, 0)
+    lcfs = dex.MagneticFlux.Poloidal(0.03)
+    flute_mode = dex.FluteMode(1e-5, lcfs, 5, 2, 0)
     dex.plot_mode(flute_mode, points=50, data=True, show=False)
 
 
@@ -102,9 +102,9 @@ def test_plot_queue_numerical(nc_machine: dex.Machine):
 
 def test_plot_energy_pzeta_plane_analytical(lar_machine: dex.Machine):
     plane = dex.EnergyPzetaPlane(lar_machine, 1e-5)
-    plane.plot()
+    plane.show()
 
 
 def test_plot_energy_pzeta_plane_numerical(nc_machine: dex.Machine):
     plane = dex.EnergyPzetaPlane(nc_machine, 1e-5)
-    plane.plot()
+    plane.show()

@@ -1,11 +1,13 @@
 """Defines types associated with Particle and Queue initialization."""
 
+from warnings import warn
+
 import numpy as np
 
 from dexter.machine.flux import MagneticFlux
 from dexter.types import Array1, CoordinateSet, ArrayLike
 
-from dexter._utils import _ReprStrImpl, _RustTypeWrapper
+from dexter._utils import _ReprStrImpl, _RustTypeWrapper, _into_pyarray1f64
 from dexter._core import (
     _PyInitialConditions,
     _PyMagneticFluxArray,
@@ -116,7 +118,7 @@ class InitialConditions(_ReprStrImpl, _RustTypeWrapper):
         flux0: MagneticFlux,
         theta0: float,
         zeta0: float,
-        pzeta0: float,
+        pzeta0: float | MagneticFlux,
         mu0: float,
     ) -> InitialConditions:
         r"""Creates initial conditions for a Particle in Mixed coordinates.
@@ -156,6 +158,12 @@ class InitialConditions(_ReprStrImpl, _RustTypeWrapper):
 
         ```
         """
+
+        if isinstance(pzeta0, MagneticFlux):
+            if pzeta0.kind == "Toroidal":
+                warn("'MagneticFlux.Toroidal' value encountered for 'pzeta0'")
+            pzeta0 = pzeta0.value
+
         obj = InitialConditions.__new__(InitialConditions)
         obj._r = _PyInitialConditions.mixed(t0, flux0._r, theta0, zeta0, pzeta0, mu0)
         obj.t0 = obj._r.t0
@@ -240,10 +248,9 @@ class MagneticFluxArray(_ReprStrImpl):
     ) -> MagneticFluxArray:
         """Creates a `MagneticFluxArray` by calling the appropriate constructor."""
         array = np.atleast_1d(np.asarray(array, dtype=np.float64))
+        array = _into_pyarray1f64(array)
         if not np.all(np.isfinite(array)):
             raise ValueError("NaN values encounter in MagneticFluxArray")
-        if array.ndim != 1:
-            raise TypeError("Only 1D arrays are accepted in MagneticFluxArray")
 
         obj = MagneticFluxArray.__new__(MagneticFluxArray)
         obj._r = _method(array)
@@ -312,12 +319,12 @@ class QueueInitialConditions(_ReprStrImpl, _RustTypeWrapper):
         """
         obj = QueueInitialConditions.__new__(QueueInitialConditions)
         obj._r = _PyQueueInitialConditions.boozer(
-            t0=t0,
+            t0=_into_pyarray1f64(t0),
             flux0=flux0._r,
-            theta0=theta0,
-            zeta0=zeta0,
-            rho0=rho0,
-            mu0=mu0,
+            theta0=_into_pyarray1f64(theta0),
+            zeta0=_into_pyarray1f64(zeta0),
+            rho0=_into_pyarray1f64(rho0),
+            mu0=_into_pyarray1f64(mu0),
         )
         return obj
 
@@ -371,11 +378,11 @@ class QueueInitialConditions(_ReprStrImpl, _RustTypeWrapper):
         """
         obj = QueueInitialConditions.__new__(QueueInitialConditions)
         obj._r = _PyQueueInitialConditions.mixed(
-            t0=t0,
+            t0=_into_pyarray1f64(t0),
             flux0=flux0._r,
-            theta0=theta0,
-            zeta0=zeta0,
-            pzeta0=pzeta0,
-            mu0=mu0,
+            theta0=_into_pyarray1f64(theta0),
+            zeta0=_into_pyarray1f64(zeta0),
+            pzeta0=_into_pyarray1f64(pzeta0),
+            mu0=_into_pyarray1f64(mu0),
         )
         return obj

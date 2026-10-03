@@ -102,9 +102,6 @@ class MagneticFlux(_ReprStrImpl, _RustTypeWrapper):
     def __rmul__(self, scalar: float) -> MagneticFlux:
         return self.__mul__(scalar)
 
-    def __rtruediv__(self, scalar: float) -> MagneticFlux:
-        return self.__truediv__(1 / scalar)
-
     @override
     def __eq__(self, other: object) -> bool:
         """Returns `true` if both `kind` and `value` of `other` are equal to `self`."""

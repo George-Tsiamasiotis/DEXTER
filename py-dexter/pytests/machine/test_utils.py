@@ -66,14 +66,14 @@ def test_magnetic_flux_mul():
 
 def test_magnetic_flux_div():
     flux = dex.MagneticFlux.Toroidal(5)
-    flux2 = 2 / flux / 2
+    flux2 = flux / 2
     assert flux.kind == "Toroidal"
-    assert isclose(flux2.value, 5)
+    assert isclose(flux2.value, 2.5)
 
     flux = dex.MagneticFlux.Poloidal(5)
-    flux2 = 2 / flux / 2
+    flux2 = flux / 2
     assert flux.kind == "Poloidal"
-    assert isclose(flux2.value, 5)
+    assert isclose(flux2.value, 2.5)
 
 
 def test_flux_eval_wrappers(nc_machine_perturbed: dex.Machine):
