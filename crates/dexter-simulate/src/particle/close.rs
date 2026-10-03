@@ -244,14 +244,14 @@ fn calculate_frequencies(particle: &mut Particle) {
     // Use `NaN`for particles with invalid initial conditions or out of bounds initialization.
     let t0 = particle.evolution.t.first().copied().unwrap_or(f64::NAN);
     let tf = particle.evolution.t.last().copied().unwrap_or(f64::NAN);
-    let theta_period = tf - t0;
+    let theta_period = (tf - t0) / periodsf64; // period of 1 closed orbit
 
     let zeta0 = particle.evolution.zeta.first().copied().unwrap_or(f64::NAN);
     let zetaf = particle.evolution.zeta.last().copied().unwrap_or(f64::NAN);
-    let dzeta = zetaf - zeta0;
+    let dzeta = (zetaf - zeta0) / periodsf64; // average precession over 1 period
 
-    let omega_theta = TAU / (theta_period / periodsf64);
-    let omega_zeta = dzeta / (theta_period / periodsf64);
+    let omega_theta = TAU / theta_period;
+    let omega_zeta = dzeta / theta_period;
     let qkinetic = omega_zeta / omega_theta;
 
     particle.frequencies = Frequencies {
