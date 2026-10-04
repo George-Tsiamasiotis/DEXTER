@@ -180,6 +180,8 @@ def plot_poloidal_drift(
 ) -> tuple[Figure, Axes]:
     r"""Plots a particle's drift on the $R-Z$ plane, overlaid on a contour plot of the Hamiltonian.
 
+    If a single particle is passed, an extra bold contour line is drawn at its energy level.
+
     Parameters
     ----------
     machine
@@ -187,6 +189,8 @@ def plot_poloidal_drift(
         quantities to SI units.
     obj
         The Particle or Queue containing the particles.
+    array_shape
+        The shape of the $(r, \theta)$ array on which to calculate the contour lines.
     levels
         The number of contour levels.
     show
@@ -207,6 +211,9 @@ def plot_poloidal_drift(
         particles = [obj]
     else:
         particles = obj.particles()
+
+    if len(particles) == 0:
+        raise RuntimeError("Empty queue")
 
     geometry: GeometryObject = getattr(machine, "geometry")
 
@@ -299,6 +306,18 @@ def plot_poloidal_drift(
             colors="k",
         )
         fig.colorbar(contourf, label=r"$Energy\ [keV]$")
+
+        # Add an extra contour line on the particle's energy
+        if isinstance(obj, Particle):
+            particle_energy = cast(
+                float, machine.quantity(obj.initial_energy, "NormJoule").to("keV").m
+            )
+            ax.contour(
+                contourf,
+                levels=[particle_energy],
+                linewidths=0.5,
+                colors="k",
+            )
 
     ax.plot(geometry.rlab_last, geometry.zlab_last, color=LAST_COLOR)
     ax.scatter(

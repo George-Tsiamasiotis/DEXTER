@@ -140,24 +140,52 @@ impl InitialConditions {
                 let psi0 = self.flux0;
                 let g = machine.current().eval_g(psi0, acc)?;
                 let psip0 = machine.qfactor().eval_other(psi0, acc)?;
-                self.pzeta0 = Some(self.rho0.expect("boozer to mixed") * g - psip0.value())
+                let p = machine.perturbation().eval_p(
+                    psi0,
+                    self.theta0,
+                    self.zeta0,
+                    self.t0,
+                    &mut machine.perturbation().generate_caches(),
+                )?;
+                self.pzeta0 = Some((self.rho0.expect("boozer to mixed") + p) * g - psip0.value())
             }
             CoordinateSet::BoozerPoloidal => {
                 let psip0 = self.flux0;
                 let g = machine.current().eval_g(psip0, acc)?;
-                self.pzeta0 = Some(self.rho0.expect("boozer to mixed") * g - psip0.value())
+                let p = machine.perturbation().eval_p(
+                    psip0,
+                    self.theta0,
+                    self.zeta0,
+                    self.t0,
+                    &mut machine.perturbation().generate_caches(),
+                )?;
+                self.pzeta0 = Some((self.rho0.expect("boozer to mixed") + p) * g - psip0.value())
             }
             // Calculate `rho0`
             CoordinateSet::MixedToroidal => {
                 let psi0 = self.flux0;
                 let g = machine.current().eval_g(psi0, acc)?;
                 let psip0 = machine.qfactor().eval_other(psi0, acc)?;
-                self.rho0 = Some((self.pzeta0.expect("mixed to boozer") + psip0.value()) / g);
+                let p = machine.perturbation().eval_p(
+                    psi0,
+                    self.theta0,
+                    self.zeta0,
+                    self.t0,
+                    &mut machine.perturbation().generate_caches(),
+                )?;
+                self.rho0 = Some((self.pzeta0.expect("mixed to boozer") + psip0.value()) / g - p);
             }
             CoordinateSet::MixedPoloidal => {
                 let psip0 = self.flux0;
                 let g = machine.current().eval_g(psip0, acc)?;
-                self.rho0 = Some((self.pzeta0.expect("mixed to boozer") + psip0.value()) / g);
+                let p = machine.perturbation().eval_p(
+                    psip0,
+                    self.theta0,
+                    self.zeta0,
+                    self.t0,
+                    &mut machine.perturbation().generate_caches(),
+                )?;
+                self.rho0 = Some((self.pzeta0.expect("mixed to boozer") + psip0.value()) / g - p);
             }
         };
 
@@ -274,11 +302,9 @@ mod test {
         assert!(i1.rho0.is_some());
         assert!(i1.pzeta0.is_some());
 
+        // Flute modes are defined with respect to `psi_last`, therefore cannot evaluate w.r.t `psip`
         let mut i2 = InitialConditions::boozer(0.0, Poloidal(0.02), PI, PI, 1e-4, 1e-6);
-        i2.finalize(machine).unwrap();
-        assert_eq!(i2.coordinate_set, CoordinateSet::BoozerPoloidal);
-        assert!(i2.rho0.is_some());
-        assert!(i2.pzeta0.is_some());
+        assert!(i2.finalize(machine).is_err());
 
         let mut initial = InitialConditions::boozer(0.0, Toroidal(0.02), PI, PI, 1e-4, 1e-6);
         initial.finalize(machine).unwrap();
@@ -316,10 +342,12 @@ mod test {
         assert!(particle.steps_taken() > 10);
         assert!(particle.integration_status() == IntegrationStatus::Integrated);
 
-        // LarCurrent defines ψp evaluations but LarBfield cannot integrate with respect to ψp.
-        InitialConditions::mixed(0.0, Poloidal(0.01), PI, PI, -0.027, 1e-6)
-            .finalize(machine)
-            .unwrap();
+        // Flute modes are defined with respect to `psi_last`, therefore cannot evaluate w.r.t `psip`
+        assert!(
+            InitialConditions::mixed(0.0, Poloidal(0.01), PI, PI, -0.027, 1e-6)
+                .finalize(machine)
+                .is_err()
+        );
     }
 
     #[test]

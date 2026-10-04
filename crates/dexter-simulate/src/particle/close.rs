@@ -71,10 +71,7 @@ pub(super) fn close(
 
     loop {
         if particle.evolution.steps_taken == solver_params.max_steps {
-            particle.integration_status = match closed_periods {
-                0 => IntegrationStatus::TimedOut(start.elapsed()),
-                1.. => IntegrationStatus::ClosedPeriods(closed_periods),
-            };
+            particle.integration_status = IntegrationStatus::TimedOut(start.elapsed());
             break;
         }
 
@@ -179,8 +176,12 @@ pub(super) fn close(
 /// indicates that the particle reached its starting point.
 ///
 /// The check is performed by taking a step on the modified system, which guarantees that `θ` will
-/// be exactly `θ0`. Then, it checks if `ψ` is also close to `ψ0`, which indicates that the orbit is
-/// closed.
+/// be exactly `θ0`. Then, it checks if the flux w.r.t which the integration is performed is also
+/// close to its initial value, which indicates that the orbit is closed.
+///
+/// Using the flux w.r.t. which the integration is performed as a criterion alleviates the
+/// ambiguity that might arise in the case where one of the fluxes is non-monotonic, as the
+/// integration flux is always [`dexter_machine::FluxCoordinateState::Good`].
 ///
 /// # Errors
 ///
@@ -194,10 +195,18 @@ fn closed_period(
     intersect_params: &IntersectParams,
     mod_caches: &mut IntegrationCaches,
 ) -> Result<bool, ()> {
-    // PERF: Short-circuit the `ψ` check to avoid the more expensive checks
-    if !relative_eq!(state0.psi, state1.psi, epsilon = SHORT_CIRCUIT_FLUX_REL_TOL) {
+    // PERF: Short-circuit the `flux` and `dot(θ)` checks to avoid the more expensive checks
+    if !relative_eq!(
+        state0.flux_value(),
+        state1.flux_value(),
+        epsilon = SHORT_CIRCUIT_FLUX_REL_TOL
+    ) {
         return Ok(false);
     }
+    if state0.theta_dot.signum() != state1.theta_dot.signum() {
+        return Ok(false);
+    }
+
     if !intersected(state1.theta, state2.theta, state0.theta) {
         return Ok(false);
     }
@@ -222,8 +231,12 @@ fn closed_period(
         return Err(());
     };
 
-    // Final `ψ-ψ0` and `θ` direction checks
-    if !relative_eq!(state0.psi, intersection_state.psi, epsilon = FLUX_REL_TOL) {
+    // Final `flux-flux0` and `θ` direction checks
+    if !relative_eq!(
+        state0.flux_value(),
+        intersection_state.flux_value(),
+        epsilon = FLUX_REL_TOL
+    ) {
         return Ok(false);
     }
     if state0.theta_dot.signum() != intersection_state.theta_dot.signum() {
