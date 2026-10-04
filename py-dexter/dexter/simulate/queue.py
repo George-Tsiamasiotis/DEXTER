@@ -224,6 +224,7 @@ class Queue(_ReprStrImpl):
         self,
         machine: Machine,
         periods: int = 1,
+        discard_arrays: bool = True,
         solver_params: SolverParams | None = None,
     ):
         r"""Integrates the particles for a certain amount of $\theta-\psi$ periods.
@@ -234,6 +235,9 @@ class Queue(_ReprStrImpl):
             The machine in which to integrate the particles.
         periods
             The amount of periods to integrate.
+        discard_arrays
+            Whether or not to discard the integration timeseries after the routine is finished.
+            Quantities such as $q_{kin}$ are still calculated.
         solver_params
             The parameters passed to the solver.
 
@@ -274,6 +278,7 @@ class Queue(_ReprStrImpl):
             bfield=machine.bfield._r,
             perturbation=machine.perturbation._r,
             periods=periods,
+            discard_arrays=discard_arrays,
             solver_params=solver_params._r,
         )
 

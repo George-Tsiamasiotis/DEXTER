@@ -496,8 +496,8 @@ impl Particle {
     }
 
     /// Discares the time evolution arrays, keeping metadata such as duration, step count, etc.
-    pub fn discard_vecs(&mut self) {
-        self.evolution.discard_vecs();
+    pub fn discard_arrays(&mut self) {
+        self.evolution.discard_arrays();
     }
 
     /// Stores the integration caches in the particle. Should be called after every integration routine.

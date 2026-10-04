@@ -567,6 +567,7 @@ class _PyQueue:
         bfield: _PyBfield,
         perturbation: _PyPerturbation,
         periods: int,
+        discard_arrays: bool,
         solver_params: _PySolverParams,
     ) -> None: ...
     def classify(

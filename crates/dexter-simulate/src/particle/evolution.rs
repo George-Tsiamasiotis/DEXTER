@@ -77,7 +77,7 @@ impl Evolution {
     }
 
     /// Discards the vecs, keeping all the other fields.
-    pub(crate) fn discard_vecs(&mut self) {
+    pub(crate) fn discard_arrays(&mut self) {
         let vectors = [
             &mut self.t,
             &mut self.psi,

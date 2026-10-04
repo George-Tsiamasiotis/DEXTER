@@ -144,7 +144,7 @@ impl PyParticle {
     }
 
     pub fn discard_arrays(&mut self) {
-        self.0.discard_vecs()
+        self.0.discard_arrays()
     }
 
     #[getter]

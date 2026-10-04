@@ -73,12 +73,14 @@ impl PyQueue {
         bfield: &PyBfield,
         perturbation: &PyPerturbation,
         periods: usize,
+        discard_arrays: bool,
         solver_params: &PySolverParams,
     ) {
         let machine = MachineBuilder::new(qfactor.inner(), current.inner(), bfield.inner())
             .with_perturbation(perturbation.inner())
             .build();
-        self.0.close(machine, periods, &solver_params.0);
+        self.0
+            .close(machine, periods, discard_arrays, &solver_params.0);
     }
 
     pub fn classify(&mut self, qfactor: &PyQfactor, current: &PyCurrent, bfield: &PyBfield) {

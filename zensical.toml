@@ -29,7 +29,6 @@ nav = [
         "reference/simulate/params.md",
         "reference/simulate/particle.md",
         "reference/simulate/queue.md",
-        "reference/simulate/energy.md",
         "reference/simulate/plots.md",
     ]},
     {"COM Space" = [

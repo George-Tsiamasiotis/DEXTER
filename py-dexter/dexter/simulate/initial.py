@@ -35,21 +35,15 @@ class InitialConditions(_ReprStrImpl, _RustTypeWrapper):
         The initial $\zeta$ angle.
     rho0
         The initial $\rho_{||,0}$. If the set was initialized from [`Mixed`][dexter.InitialConditions.Mixed]
-        and no particle routines have run, then `rho0` is `None`.
+        and no particle routines have run, raises `AttributeError`.
     pzeta0
         The initial $P_{\zeta,0}$. If the set was initialized from [`Boozer`][dexter.InitialConditions.Boozer]
-        and no particle routines have run, then `pzeta0` is `None`.
+        and no particle routines have run, raises `AttributeError`.
     coordinate_set
         The kind of initial conditions set.
     """
 
     _r: _PyInitialConditions
-    t0: float
-    flux0: MagneticFlux
-    theta0: float
-    zeta0: float
-    mu0: float
-    coordinate_set: CoordinateSet
 
     def __init__(self) -> None:
         raise RuntimeError("Cannot instantiate class")
@@ -102,12 +96,6 @@ class InitialConditions(_ReprStrImpl, _RustTypeWrapper):
         """
         obj = InitialConditions.__new__(InitialConditions)
         obj._r = _PyInitialConditions.boozer(t0, flux0._r, theta0, zeta0, rho0, mu0)
-        obj.t0 = obj._r.t0
-        obj.flux0 = MagneticFlux._wrap(obj._r.flux0)
-        obj.theta0 = obj._r.theta0
-        obj.zeta0 = obj._r.zeta0
-        obj.mu0 = obj._r.mu0
-        obj.coordinate_set = obj._r.coordinate_set
 
         return obj
 
@@ -166,18 +154,31 @@ class InitialConditions(_ReprStrImpl, _RustTypeWrapper):
 
         obj = InitialConditions.__new__(InitialConditions)
         obj._r = _PyInitialConditions.mixed(t0, flux0._r, theta0, zeta0, pzeta0, mu0)
-        obj.t0 = obj._r.t0
-        obj.flux0 = MagneticFlux._wrap(obj._r.flux0)
-        obj.theta0 = obj._r.theta0
-        obj.zeta0 = obj._r.zeta0
-        obj.mu0 = obj._r.mu0
-        obj.coordinate_set = obj._r.coordinate_set
 
         return obj
 
     @property
+    def t0(self) -> float:
+        return self._r.t0
+
+    @property
+    def flux0(self) -> MagneticFlux:
+        return MagneticFlux._wrap(self._r.flux0)
+
+    @property
+    def theta0(self) -> float:
+        return self._r.theta0
+
+    @property
+    def zeta0(self) -> float:
+        return self._r.zeta0
+
+    @property
+    def mu0(self) -> float:
+        return self._r.mu0
+
+    @property
     def rho0(self) -> float:
-        r"""The initial parallel radius $\rho_{||}$, in Normalized Units."""
         if self._r.rho0 is None:
             raise AttributeError("'rho0' has not been defined")
         else:
@@ -185,11 +186,14 @@ class InitialConditions(_ReprStrImpl, _RustTypeWrapper):
 
     @property
     def pzeta0(self) -> float:
-        r"""The initial canonical momentum $P_\zeta$, in Normalized Units."""
         if self._r.pzeta0 is None:
             raise AttributeError("'pzeta0' has not been defined")
         else:
             return self._r.pzeta0
+
+    @property
+    def coordinate_set(self) -> CoordinateSet:
+        return self._r.coordinate_set
 
 
 class MagneticFluxArray(_ReprStrImpl):
