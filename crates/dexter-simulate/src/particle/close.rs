@@ -30,10 +30,6 @@ pub(super) fn close(
 
     let start = Instant::now();
     particle.evolution.reset();
-    particle.finalize_initial_conditions(machine);
-    if !particle._integration_ready {
-        return;
-    }
 
     let mut caches = IntegrationCaches {
         mode_caches: machine.perturbation().generate_caches(),
@@ -45,8 +41,7 @@ pub(super) fn close(
     };
 
     let Ok(state0) = GCState::new(&particle.initial_conditions, machine, &mut caches) else {
-        particle.integration_status = IntegrationStatus::OutOfBoundsInitialization;
-        return;
+        unreachable!("Particle::finalize_initial_conditions checks bounds");
     };
 
     // `state0` has been evaluated on the initial point

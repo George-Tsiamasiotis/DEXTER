@@ -25,22 +25,12 @@ pub(super) fn classify(
         ..Default::default()
     };
 
-    // Return early if the initial flux happens to be exactly 0.0 or out of bounds.
-    if particle.initial_conditions().flux0.value() == 0.0 {
-        particle.orbit_type = OrbitType::Undefined;
-        return;
-    }
-    if particle.initial_conditions.finalize(machine).is_err() {
-        particle.orbit_type = OrbitType::Undefined;
-        return;
-    }
     let Ok(initial_state) = GCState::new(&particle.initial_conditions, machine, &mut caches) else {
-        particle.orbit_type = OrbitType::Undefined;
-        return;
+        unreachable!("Particle::finalize_initial_conditions checks bounds");
     };
 
     particle.initial_energy = Some(initial_state.energy);
-    particle.orbit_type = OrbitType::Unclassified; // Fallback
+    particle.orbit_type = OrbitType::Undefined; // Fallback
 
     // =============== Energy-Pζ plane Setup
 

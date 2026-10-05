@@ -194,6 +194,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "colored"
+version = "3.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "faf9468729b8cbcea668e36183cb69d317348c2e08e994829fb56ebfdfbaac34"
+dependencies = [
+ "windows-sys 0.61.2",
+]
+
+[[package]]
 name = "console"
 version = "0.16.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -313,7 +322,7 @@ dependencies = [
 
 [[package]]
 name = "dexter-comspace"
-version = "0.1.1-pre.1"
+version = "0.1.1-pre.2"
 dependencies = [
  "dexter-machine",
  "embed-doc-image",
@@ -339,9 +348,10 @@ dependencies = [
 
 [[package]]
 name = "dexter-simulate"
-version = "0.1.6-pre.16"
+version = "0.1.6-pre.17"
 dependencies = [
  "approx",
+ "colored",
  "criterion",
  "dexter-common",
  "dexter-comspace",
@@ -1001,7 +1011,7 @@ dependencies = [
 
 [[package]]
 name = "py-dexter"
-version = "0.2.0-pre.33"
+version = "0.2.0-pre.34"
 dependencies = [
  "dexter",
  "ndarray",

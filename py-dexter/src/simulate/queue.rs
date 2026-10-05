@@ -133,7 +133,8 @@ impl PyQueue {
                 "Kappa" => EnergyPzetaPosition::Kappa,
                 "Lambda" => EnergyPzetaPosition::Lambda,
                 "Mu" => EnergyPzetaPosition::Mu,
-                "Unclassified" => EnergyPzetaPosition::Unclassified,
+                "Undefined" => EnergyPzetaPosition::Undefined,
+                "Forbidden" => EnergyPzetaPosition::Forbidden,
                 _ => panic!("'positions' must be valid 'EnergyPzetaPosition' variants"),
             })
             .collect();
@@ -145,7 +146,7 @@ impl PyQueue {
         let orbit_types: Vec<OrbitType> = orbit_types
             .iter()
             .map(|typ| match typ.as_str() {
-                "Undefined" => OrbitType::Undefined,
+                "Unclassified" => OrbitType::Unclassified,
                 "TrappedLost" => OrbitType::TrappedLost,
                 "TrappedConfined" => OrbitType::TrappedConfined,
                 "CoPassingLost" => OrbitType::CoPassingLost,
@@ -154,7 +155,7 @@ impl PyQueue {
                 "CuPassingConfined" => OrbitType::CuPassingConfined,
                 "Potato" => OrbitType::Potato,
                 "Stagnated" => OrbitType::Stagnated,
-                "Unclassified" => OrbitType::Unclassified,
+                "Undefined" => OrbitType::Undefined,
                 _ => panic!("'orbit_types' must be valid 'OrbitType' variants"),
             })
             .collect();

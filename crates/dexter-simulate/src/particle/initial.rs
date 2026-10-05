@@ -1,6 +1,6 @@
 //! Definition of a Particle's initial conditions in various coordinate sets.
 
-use dexter_machine::Machine;
+use dexter_machine::{EvalError, Machine};
 use rsl_interpolation::Accelerator;
 
 use crate::{MagneticFlux, SimulationError};
@@ -133,6 +133,15 @@ impl InitialConditions {
     /// final values.
     #[expect(clippy::min_ident_chars, reason = "poloidal current")]
     pub(crate) fn finalize(&mut self, machine: Machine) -> Result<(), SimulationError> {
+        // Not all `Current` objects perform bounds checks.
+        let last = match self.flux0 {
+            MagneticFlux::Toroidal(_) => machine.qfactor().psi_last(),
+            MagneticFlux::Poloidal(_) => machine.qfactor().psip_last(),
+        };
+        if self.flux0.value() > last.value() {
+            return Err(SimulationError::EvalError(EvalError::AnalyticalDomainError));
+        }
+
         let acc = &mut Accelerator::new();
         match self.coordinate_set {
             // Calculate `pzeta0`

@@ -15,7 +15,7 @@ use crate::EnergyPzetaPlane;
 pub enum EnergyPzetaPosition {
     /// No classification has been attempted.
     #[default]
-    Undefined,
+    Unclassified,
     Alpha,
     Beta,
     Gamma,
@@ -29,7 +29,9 @@ pub enum EnergyPzetaPosition {
     Lambda,
     Mu,
     /// Not falling under any of the above categories.
-    Unclassified,
+    Undefined,
+    /// Energetically forbidden position. No particle should ever land here.
+    Forbidden,
 }
 
 /// A particle's orbit type.
@@ -43,7 +45,7 @@ pub enum EnergyPzetaPosition {
 pub enum OrbitType {
     /// Particle has not been classified.
     #[default]
-    Undefined,
+    Unclassified,
     /// A Trapped-Lost particle.
     ///
     /// # Definition
@@ -97,7 +99,7 @@ pub enum OrbitType {
     /// trapped-passing boundary and above the magnetic axis parabola.
     Stagnated,
     /// Not falling under any of the other categories.
-    Unclassified,
+    Undefined,
 }
 
 impl EnergyPzetaPosition {
@@ -132,7 +134,7 @@ impl EnergyPzetaPosition {
 
         if is_in_left_wall {
             if is_in_axis {
-                return Self::Unclassified; // No allowed orbits here.
+                return Self::Forbidden; // No allowed orbits here.
             } else {
                 return Self::Alpha; // CounterPassing-Confined
             }
@@ -184,7 +186,7 @@ impl EnergyPzetaPosition {
             }
         }
 
-        Self::Unclassified
+        Self::Undefined
     }
 
     /// Calculates the [`OrbitType`] from the resolved [`EnergyPzetaPosition`].
@@ -192,7 +194,7 @@ impl EnergyPzetaPosition {
     #[must_use]
     pub fn orbit_type(&self) -> OrbitType {
         match *self {
-            Self::Undefined => OrbitType::Undefined,
+            Self::Unclassified => OrbitType::Unclassified,
             Self::Alpha => OrbitType::CuPassingConfined,
             Self::Beta => OrbitType::CuPassingLost,
             Self::Gamma => OrbitType::TrappedLost,
@@ -205,7 +207,7 @@ impl EnergyPzetaPosition {
             Self::Kappa => OrbitType::CoPassingConfined,
             Self::Lambda => OrbitType::CuPassingConfined,
             Self::Mu => OrbitType::Stagnated,
-            Self::Unclassified => OrbitType::Unclassified,
+            Self::Undefined | Self::Forbidden => OrbitType::Undefined,
         }
     }
 }

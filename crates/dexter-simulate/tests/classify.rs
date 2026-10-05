@@ -29,7 +29,7 @@ fn orbit_alpha() {
     let initial = InitialConditions::mixed(0.0, psi0, 1.0, 0.0, pzeta0, MU);
 
     let mut particle = Particle::new(&initial);
-    assert_eq!(particle.orbit_type(), OrbitType::Undefined);
+    assert_eq!(particle.orbit_type(), OrbitType::Unclassified);
 
     particle.classify(machine);
 
@@ -53,7 +53,7 @@ fn orbit_beta() {
     let initial = InitialConditions::mixed(0.0, psi0, 1.0, 0.0, pzeta0, MU);
 
     let mut particle = Particle::new(&initial);
-    assert_eq!(particle.orbit_type(), OrbitType::Undefined);
+    assert_eq!(particle.orbit_type(), OrbitType::Unclassified);
 
     particle.classify(machine);
 
@@ -76,7 +76,7 @@ fn orbit_gamma() {
     let initial = InitialConditions::mixed(0.0, psi0, 1.0, 0.0, pzeta0, MU);
 
     let mut particle = Particle::new(&initial);
-    assert_eq!(particle.orbit_type(), OrbitType::Undefined);
+    assert_eq!(particle.orbit_type(), OrbitType::Unclassified);
 
     particle.classify(machine);
 
@@ -100,7 +100,7 @@ fn orbit_delta() {
     let initial = InitialConditions::mixed(0.0, psi0, PI, 0.0, pzeta0, MU);
 
     let mut particle = Particle::new(&initial);
-    assert_eq!(particle.orbit_type(), OrbitType::Undefined);
+    assert_eq!(particle.orbit_type(), OrbitType::Unclassified);
 
     particle.classify(machine);
 
@@ -124,7 +124,7 @@ fn orbit_epsilon() {
     let initial = InitialConditions::mixed(0.0, psi0, PI, 0.0, pzeta0, MU);
 
     let mut particle = Particle::new(&initial);
-    assert_eq!(particle.orbit_type(), OrbitType::Undefined);
+    assert_eq!(particle.orbit_type(), OrbitType::Unclassified);
 
     particle.classify(machine);
 
@@ -147,7 +147,7 @@ fn orbit_zeta() {
     let initial = InitialConditions::mixed(0.0, psi0, PI, 0.0, pzeta0, MU);
 
     let mut particle = Particle::new(&initial);
-    assert_eq!(particle.orbit_type(), OrbitType::Undefined);
+    assert_eq!(particle.orbit_type(), OrbitType::Unclassified);
 
     particle.classify(machine);
 
@@ -170,7 +170,7 @@ fn orbit_eta() {
     let initial = InitialConditions::mixed(0.0, psi0, 1.0, 0.0, pzeta0, MU);
 
     let mut particle = Particle::new(&initial);
-    assert_eq!(particle.orbit_type(), OrbitType::Undefined);
+    assert_eq!(particle.orbit_type(), OrbitType::Unclassified);
 
     particle.classify(machine);
 
@@ -193,7 +193,7 @@ fn orbit_theta() {
     let initial = InitialConditions::mixed(0.0, psi0, 1.0, 0.0, pzeta0, MU);
 
     let mut particle = Particle::new(&initial);
-    assert_eq!(particle.orbit_type(), OrbitType::Undefined);
+    assert_eq!(particle.orbit_type(), OrbitType::Unclassified);
 
     particle.classify(machine);
 
@@ -216,7 +216,7 @@ fn orbit_iota() {
     let initial = InitialConditions::mixed(0.0, psi0, 1.0, 0.0, pzeta0, MU);
 
     let mut particle = Particle::new(&initial);
-    assert_eq!(particle.orbit_type(), OrbitType::Undefined);
+    assert_eq!(particle.orbit_type(), OrbitType::Unclassified);
 
     particle.classify(machine);
 
@@ -239,7 +239,7 @@ fn orbit_kappa() {
     let initial = InitialConditions::mixed(0.0, psi0, 0.0, 0.0, pzeta0, MU);
 
     let mut particle = Particle::new(&initial);
-    assert_eq!(particle.orbit_type(), OrbitType::Undefined);
+    assert_eq!(particle.orbit_type(), OrbitType::Unclassified);
 
     particle.classify(machine);
 
@@ -262,7 +262,7 @@ fn orbit_lambda() {
     let initial = InitialConditions::mixed(0.0, psi0, 0.0, 0.0, pzeta0, MU);
 
     let mut particle = Particle::new(&initial);
-    assert_eq!(particle.orbit_type(), OrbitType::Undefined);
+    assert_eq!(particle.orbit_type(), OrbitType::Unclassified);
 
     particle.classify(machine);
 
@@ -285,7 +285,7 @@ fn orbit_mu() {
     let initial = InitialConditions::mixed(0.0, psi0, 1.0, 0.0, pzeta0, MU);
 
     let mut particle = Particle::new(&initial);
-    assert_eq!(particle.orbit_type(), OrbitType::Undefined);
+    assert_eq!(particle.orbit_type(), OrbitType::Unclassified);
 
     particle.classify(machine);
 
