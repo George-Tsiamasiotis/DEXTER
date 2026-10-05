@@ -11,3 +11,13 @@ Both are available in most Linux distributions. If compiled from source, both li
 
 ## Documentation
 Documentation can be found [here](https://dexter.tsiamasiotis.gr).
+
+## Installation
+
+With [`uv`](https://docs.astral.sh/uv/):
+
+``` sh
+uv init project
+cd project
+uv add dexter
+```

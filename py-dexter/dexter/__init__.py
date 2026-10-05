@@ -1,8 +1,12 @@
 import matplotlib
 import matplotlib.pyplot as plt
 
-matplotlib.use("gtk3agg")
-plt.rcParams["text.usetex"] = True
+try:
+    matplotlib.use("gtk3agg")
+    plt.rcParams["text.usetex"] = True
+except:
+    pass
+
 plt.rcParams["figure.dpi"] = 180
 plt.rcParams["savefig.dpi"] = 300
 plt.rcParams["figure.autolayout"] = False

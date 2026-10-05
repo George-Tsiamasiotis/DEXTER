@@ -1,14 +1,13 @@
 [project]
 name = "dexter"
-version = "0.2.0"
+version = "0.2.1"
 description = "Calculations and simulations in analytical and reconstructed configurations of toroidal fusion devices."
 readme = "README.md"
 authors = [
     { name = "George-Tsiamasiotis", email = "gt.develop@protonmail.com" }
 ]
-requires-python = ">=3.14"
+requires-python = ">=3.12"
 dependencies = [
-    "alpha-shapes>=1.1.1",
     "matplotlib>=3.11.2",
     "maturin>=1.15.0",
     "numpy>=2.5.1",

@@ -9,13 +9,17 @@ The data must be in [netCDF] format.
 
 The bulk computations are implemented in *[Rust]*. The Rust code consists of standalone *[crates]* that can be used independently and as is.
 
-The Python interface directly exposes all underlying objects and routines in the form of a single python package:
+The Python interface directly exposes all underlying objects and routines in the form of a single python package while also providing plotting methods and scripts for handling and converting netCDF files.
 
-```python
->>> # TODO:
+## Installation
+
+With [`uv`](https://docs.astral.sh/uv/):
+
+``` sh
+uv init project
+cd project
+uv add dexter
 ```
-
-while also providing plotting methods and scripts for handling and converting netCDF files.
 
 [netCDF]: https://www.unidata.ucar.edu/software/netcdf
 [Rust]: https://rust-lang.org/
