@@ -44,7 +44,7 @@ impl PyMagneticFlux {
 
     #[getter]
     pub fn kind(&self) -> String {
-        self.0.kind().into()
+        format!("{:?}", self.0.kind())
     }
 }
 

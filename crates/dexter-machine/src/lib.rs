@@ -4,7 +4,7 @@
 //!
 //! + [`Machine`]: Contains all information about the magnetic field, geometry and perturbations of a
 //!   device.
-//! + [`MagneticFlux`]: Representation of the toroidal or poloidal magnetic flux.
+//! + [`MagneticFlux`], [`MagneticFluxKind`]: Representation of the toroidal or poloidal magnetic flux.
 //!
 //! ---
 //!
@@ -86,7 +86,7 @@ pub use rsl_interpolation::{Accelerator, Accelerator2d};
 
 pub mod extract;
 
-pub use flux::MagneticFlux;
+pub use flux::{MagneticFlux, MagneticFluxKind};
 pub use machine::{Machine, MachineBuilder};
 
 pub use error::{EvalError, MachineError, NcError};

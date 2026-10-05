@@ -2,6 +2,15 @@
 
 use crate::EvalError;
 
+/// The kind of a magnetic flux coordinate.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum MagneticFluxKind {
+    /// Toroidal magnetic flux `ψ`.
+    Toroidal,
+    /// Poloidal magnetic flux `ψp`.
+    Poloidal,
+}
+
 /// Representation of the magnetic flux and its kind.
 #[derive(Clone, Copy, PartialEq)]
 pub enum MagneticFlux {
@@ -37,12 +46,12 @@ impl MagneticFlux {
         }
     }
 
-    /// Returns the kind of `self` ("Toroidal", "Poloidal") as a `Box<str>`.
+    /// Returns the kind of `self`.
     #[must_use]
-    pub fn kind(&self) -> Box<str> {
+    pub fn kind(&self) -> MagneticFluxKind {
         match *self {
-            Self::Toroidal(_) => "Toroidal".into(),
-            Self::Poloidal(_) => "Poloidal".into(),
+            Self::Toroidal(_) => MagneticFluxKind::Toroidal,
+            Self::Poloidal(_) => MagneticFluxKind::Poloidal,
         }
     }
 
