@@ -306,7 +306,7 @@ dependencies = [
 
 [[package]]
 name = "dexter"
-version = "0.2.1"
+version = "0.2.2-pre.1"
 dependencies = [
  "dexter-comspace",
  "dexter-machine",
@@ -315,14 +315,14 @@ dependencies = [
 
 [[package]]
 name = "dexter-common"
-version = "0.2.1"
+version = "0.2.2-pre.1"
 dependencies = [
  "rsl-interpolation",
 ]
 
 [[package]]
 name = "dexter-comspace"
-version = "0.2.1"
+version = "0.2.2-pre.1"
 dependencies = [
  "dexter-machine",
  "embed-doc-image",
@@ -334,7 +334,7 @@ dependencies = [
 
 [[package]]
 name = "dexter-machine"
-version = "0.2.1"
+version = "0.2.2-pre.1"
 dependencies = [
  "approx",
  "criterion",
@@ -348,7 +348,7 @@ dependencies = [
 
 [[package]]
 name = "dexter-simulate"
-version = "0.2.1"
+version = "0.2.2-pre.1"
 dependencies = [
  "approx",
  "colored",
