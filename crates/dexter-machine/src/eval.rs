@@ -47,6 +47,10 @@ pub trait Geometry: MachineObject + Debug + Send + Sync {
 
     /// Calculates the radial coordinate `r(ψ/ψp)` in **\[m\]**.
     ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
+    ///
     /// # Example
     ///
     /// ```
@@ -66,13 +70,13 @@ pub trait Geometry: MachineObject + Debug + Send + Sync {
     /// let r_of_psip: f64 = geometry.eval_r(psip, acc)?;
     /// # Ok::<_, MachineError>(())
     /// ```
+    fn eval_r(&self, flux: MagneticFlux, acc: &mut Accelerator) -> Result<f64, EvalError>;
+
+    /// Calculates the toroidal flux `ψ(r)` from the radial coordinate `r` **in \[m\]**.
     ///
     /// # Errors
     ///
     /// Returns an [`EvalError`] if the evaluation fails for any reason.
-    fn eval_r(&self, flux: MagneticFlux, acc: &mut Accelerator) -> Result<f64, EvalError>;
-
-    /// Calculates the toroidal flux `ψ(r)` from the radial coordinate `r` **in \[m\]**.
     ///
     /// # Example
     ///
@@ -90,13 +94,13 @@ pub trait Geometry: MachineObject + Debug + Send + Sync {
     /// let psi_of_r: MagneticFlux = geometry.eval_psi_of_r(0.02, acc)?;
     /// # Ok::<_, MachineError>(())
     /// ```
+    fn eval_psi_of_r(&self, r: f64, acc: &mut Accelerator) -> Result<MagneticFlux, EvalError>;
+
+    /// Calculates the poloidal flux `ψp(r)` from the radial coordinate `r` **in \[m\]**.
     ///
     /// # Errors
     ///
     /// Returns an [`EvalError`] if the evaluation fails for any reason.
-    fn eval_psi_of_r(&self, r: f64, acc: &mut Accelerator) -> Result<MagneticFlux, EvalError>;
-
-    /// Calculates the poloidal flux `ψp(r)` from the radial coordinate `r` **in \[m\]**.
     ///
     /// # Example
     ///
@@ -114,13 +118,13 @@ pub trait Geometry: MachineObject + Debug + Send + Sync {
     /// let psip_of_r: MagneticFlux = geometry.eval_psip_of_r(0.02, acc)?;
     /// # Ok::<_, MachineError>(())
     /// ```
+    fn eval_psip_of_r(&self, r: f64, acc: &mut Accelerator) -> Result<MagneticFlux, EvalError>;
+
+    /// Calculates `R(ψ/ψp, θ)` **in \[m\]**.
     ///
     /// # Errors
     ///
     /// Returns an [`EvalError`] if the evaluation fails for any reason.
-    fn eval_psip_of_r(&self, r: f64, acc: &mut Accelerator) -> Result<MagneticFlux, EvalError>;
-
-    /// Calculates `R(ψ/ψp, θ)` **in \[m\]**.
     ///
     /// # Example
     ///
@@ -142,10 +146,6 @@ pub trait Geometry: MachineObject + Debug + Send + Sync {
     /// let rlab_of_psip = geometry.eval_rlab(psip, 3.14, acc)?;
     /// # Ok::<_, MachineError>(())
     /// ```
-    ///
-    /// # Errors
-    ///
-    /// Returns an [`EvalError`] if the evaluation fails for any reason.
     fn eval_rlab(
         &self,
         flux: MagneticFlux,
@@ -154,6 +154,10 @@ pub trait Geometry: MachineObject + Debug + Send + Sync {
     ) -> Result<f64, EvalError>;
 
     /// Calculates `Z(ψ/ψp, θ)` **in \[m\]**.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
     ///
     /// # Example
     ///
@@ -175,10 +179,6 @@ pub trait Geometry: MachineObject + Debug + Send + Sync {
     /// let zlab_of_psip = geometry.eval_zlab(psip, 3.14, acc)?;
     /// # Ok::<_, MachineError>(())
     /// ```
-    ///
-    /// # Errors
-    ///
-    /// Returns an [`EvalError`] if the evaluation fails for any reason.
     fn eval_zlab(
         &self,
         flux: MagneticFlux,
@@ -187,6 +187,10 @@ pub trait Geometry: MachineObject + Debug + Send + Sync {
     ) -> Result<f64, EvalError>;
 
     /// Calculates `J(ψ/ψp, θ)`.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
     ///
     /// # Example
     ///
@@ -208,10 +212,6 @@ pub trait Geometry: MachineObject + Debug + Send + Sync {
     /// let j_of_psip = geometry.eval_jacobian(psip, 3.14, acc)?;
     /// # Ok::<_, MachineError>(())
     /// ```
-    ///
-    /// # Errors
-    ///
-    /// Returns an [`EvalError`] if the evaluation fails for any reason.
     fn eval_jacobian(
         &self,
         flux: MagneticFlux,
@@ -242,6 +242,10 @@ pub trait Qfactor: MachineObject + Debug + Send + Sync {
 
     /// Calculates the safety factor `q(ψ/ψp)`.
     ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
+    ///
     /// # Example
     ///
     /// ```
@@ -260,13 +264,13 @@ pub trait Qfactor: MachineObject + Debug + Send + Sync {
     /// let q_of_psip = qfactor.eval_q(psip, acc)?;
     /// # Ok::<_, MachineError>(())
     /// ```
-    ///
-    /// # Errors
-    ///
-    /// Returns an [`EvalError`] if the evaluation fails for any reason.
     fn eval_q(&self, flux: MagneticFlux, acc: &mut Accelerator) -> Result<f64, EvalError>;
 
     /// Converts a [`MagneticFlux`] to one of the other variant.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the conversion fails for any reason.
     ///
     /// # Example
     ///
@@ -286,10 +290,6 @@ pub trait Qfactor: MachineObject + Debug + Send + Sync {
     /// let psi_of_psip: MagneticFlux = qfactor.eval_other(psip, acc)?;
     /// # Ok::<_, MachineError>(())
     /// ```
-    ///
-    /// # Errors
-    ///
-    /// Returns an [`EvalError`] if the conversion fails for any reason.
     fn eval_other(
         &self,
         flux: MagneticFlux,
@@ -297,6 +297,10 @@ pub trait Qfactor: MachineObject + Debug + Send + Sync {
     ) -> Result<MagneticFlux, EvalError>;
 
     /// Calculates `ψ(q)`.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
     ///
     /// # Example
     ///
@@ -312,13 +316,13 @@ pub trait Qfactor: MachineObject + Debug + Send + Sync {
     /// let psi_of_q: MagneticFlux = qfactor.eval_psi_of_q(1.2, acc)?;
     /// # Ok::<_, MachineError>(())
     /// ```
+    fn eval_psi_of_q(&self, q: f64, acc: &mut Accelerator) -> Result<MagneticFlux, EvalError>;
+
+    /// Calculates `ψp(q)`.
     ///
     /// # Errors
     ///
     /// Returns an [`EvalError`] if the evaluation fails for any reason.
-    fn eval_psi_of_q(&self, q: f64, acc: &mut Accelerator) -> Result<MagneticFlux, EvalError>;
-
-    /// Calculates `ψp(q)`.
     ///
     /// # Example
     ///
@@ -334,10 +338,6 @@ pub trait Qfactor: MachineObject + Debug + Send + Sync {
     /// let psip_of_q: MagneticFlux = qfactor.eval_psip_of_q(1.2, acc)?;
     /// # Ok::<_, MachineError>(())
     /// ```
-    ///
-    /// # Errors
-    ///
-    /// Returns an [`EvalError`] if the evaluation fails for any reason.
     fn eval_psip_of_q(&self, q: f64, acc: &mut Accelerator) -> Result<MagneticFlux, EvalError>;
 
     /// Calculates the derivative of the **other** [`MagneticFlux`] with respect to `flux`.
@@ -351,6 +351,10 @@ pub trait Qfactor: MachineObject + Debug + Send + Sync {
     /// This method is useful for ensuring that `dψ/dψp = q` and `dψp/dψ = ι`. The corresponding
     /// methods [`Qfactor::eval_q`] and [`Qfactor::eval_iota`] should be used in calculations as
     /// they are faster and more accurate.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the conversion fails for any reason.
     ///
     /// # Example
     ///
@@ -376,10 +380,6 @@ pub trait Qfactor: MachineObject + Debug + Send + Sync {
     /// assert_relative_eq!(dpsip_dpsi, i);
     /// # Ok::<_, MachineError>(())
     /// ```
-    ///
-    /// # Errors
-    ///
-    /// Returns an [`EvalError`] if the conversion fails for any reason.
     fn eval_deriv_of_other(
         &self,
         flux: MagneticFlux,
@@ -397,6 +397,10 @@ pub trait Qfactor: MachineObject + Debug + Send + Sync {
     /// This method is useful for ensuring that `dψ/dψp = q` and `dψp/dψ = ι`. The corresponding
     /// methods [`Qfactor::eval_q`] and [`Qfactor::eval_iota`] should be used in calculations as
     /// they are faster and more accurate.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the conversion fails for any reason.
     ///
     /// # Example
     ///
@@ -422,10 +426,6 @@ pub trait Qfactor: MachineObject + Debug + Send + Sync {
     /// assert_relative_eq!(dpsip_dpsi, i);
     /// # Ok::<_, MachineError>(())
     /// ```
-    ///
-    /// # Errors
-    ///
-    /// Returns an [`EvalError`] if the conversion fails for any reason.
     fn eval_deriv_wrt_other(
         &self,
         flux: MagneticFlux,
@@ -433,6 +433,10 @@ pub trait Qfactor: MachineObject + Debug + Send + Sync {
     ) -> Result<f64, EvalError>;
 
     /// Calculates the rotational number `ι(ψ/ψp) = 1/q(ψ/ψp)`.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
     ///
     /// # Example
     ///
@@ -452,10 +456,6 @@ pub trait Qfactor: MachineObject + Debug + Send + Sync {
     /// let iota_of_psip = qfactor.eval_iota(psip, acc)?;
     /// # Ok::<_, MachineError>(())
     /// ```
-    ///
-    /// # Errors
-    ///
-    /// Returns an [`EvalError`] if the evaluation fails for any reason.
     fn eval_iota(&self, flux: MagneticFlux, acc: &mut Accelerator) -> Result<f64, EvalError> {
         Ok(self.eval_q(flux, acc)?.recip())
     }
@@ -464,6 +464,10 @@ pub trait Qfactor: MachineObject + Debug + Send + Sync {
 /// Plasma current related quantities computation.
 pub trait Current: MachineObject + Debug + Send + Sync {
     /// Calculates the poloidal current `g(ψ/ψp)`.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
     ///
     /// # Example
     ///
@@ -482,13 +486,13 @@ pub trait Current: MachineObject + Debug + Send + Sync {
     /// let g_of_psip = current.eval_g(psip, acc)?;
     /// # Ok::<_, MachineError>(())
     /// ```
+    fn eval_g(&self, flux: MagneticFlux, acc: &mut Accelerator) -> Result<f64, EvalError>;
+
+    /// Calculates the toroidal current `I(ψ/ψp)`.
     ///
     /// # Errors
     ///
     /// Returns an [`EvalError`] if the evaluation fails for any reason.
-    fn eval_g(&self, flux: MagneticFlux, acc: &mut Accelerator) -> Result<f64, EvalError>;
-
-    /// Calculates the toroidal current `I(ψ/ψp)`.
     ///
     /// # Example
     ///
@@ -507,13 +511,13 @@ pub trait Current: MachineObject + Debug + Send + Sync {
     /// let i_of_psip = current.eval_i(psip, acc)?;
     /// # Ok::<_, MachineError>(())
     /// ```
+    fn eval_i(&self, flux: MagneticFlux, acc: &mut Accelerator) -> Result<f64, EvalError>;
+
+    /// Calculates the poloidal current's derivative `dg/d(ψ/ψp)`.
     ///
     /// # Errors
     ///
     /// Returns an [`EvalError`] if the evaluation fails for any reason.
-    fn eval_i(&self, flux: MagneticFlux, acc: &mut Accelerator) -> Result<f64, EvalError>;
-
-    /// Calculates the poloidal current's derivative `dg/d(ψ/ψp)`.
     ///
     /// # Example
     ///
@@ -532,13 +536,13 @@ pub trait Current: MachineObject + Debug + Send + Sync {
     /// let dg_dpsip = current.eval_g_deriv(psip, acc)?;
     /// # Ok::<_, MachineError>(())
     /// ```
+    fn eval_g_deriv(&self, flux: MagneticFlux, acc: &mut Accelerator) -> Result<f64, EvalError>;
+
+    /// Calculates the toroidal current's derivative `dI/d(ψ/ψp)`.
     ///
     /// # Errors
     ///
     /// Returns an [`EvalError`] if the evaluation fails for any reason.
-    fn eval_g_deriv(&self, flux: MagneticFlux, acc: &mut Accelerator) -> Result<f64, EvalError>;
-
-    /// Calculates the toroidal current's derivative `dI/d(ψ/ψp)`.
     ///
     /// # Example
     ///
@@ -557,16 +561,16 @@ pub trait Current: MachineObject + Debug + Send + Sync {
     /// let di_dpsip = current.eval_i_deriv(psip, acc)?;
     /// # Ok::<_, MachineError>(())
     /// ```
-    ///
-    /// # Errors
-    ///
-    /// Returns an [`EvalError`] if the evaluation fails for any reason.
     fn eval_i_deriv(&self, flux: MagneticFlux, acc: &mut Accelerator) -> Result<f64, EvalError>;
 }
 
 /// Magnetic field related quantities computation.
 pub trait Bfield: MachineObject + Debug + Send + Sync {
     /// Calculates `B(ψ/ψp, θ)`.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
     ///
     /// # Example
     ///
@@ -586,10 +590,6 @@ pub trait Bfield: MachineObject + Debug + Send + Sync {
     /// let b_of_psip = bfield.eval_b(psip, 3.14, acc)?;
     /// # Ok::<_, MachineError>(())
     /// ```
-    ///
-    /// # Errors
-    ///
-    /// Returns an [`EvalError`] if the evaluation fails for any reason.
     fn eval_b(
         &self,
         flux: MagneticFlux,
@@ -598,6 +598,10 @@ pub trait Bfield: MachineObject + Debug + Send + Sync {
     ) -> Result<f64, EvalError>;
 
     /// Calculates `dB(ψ/ψp, θ)/d(ψ/ψp)`.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
     ///
     /// # Example
     ///
@@ -617,10 +621,6 @@ pub trait Bfield: MachineObject + Debug + Send + Sync {
     /// let db_dpsip = bfield.eval_deriv_flux(psip, 3.14, acc)?;
     /// # Ok::<_, MachineError>(())
     /// ```
-    ///
-    /// # Errors
-    ///
-    /// Returns an [`EvalError`] if the evaluation fails for any reason.
     fn eval_deriv_flux(
         &self,
         flux: MagneticFlux,
@@ -629,6 +629,10 @@ pub trait Bfield: MachineObject + Debug + Send + Sync {
     ) -> Result<f64, EvalError>;
 
     /// Calculates `dB(ψ/ψp, θ)/dθ`.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
     ///
     /// # Example
     ///
@@ -648,10 +652,6 @@ pub trait Bfield: MachineObject + Debug + Send + Sync {
     /// let db_of_psip_dtheta = bfield.eval_deriv_theta(psip, 3.14, acc)?;
     /// # Ok::<_, MachineError>(())
     /// ```
-    ///
-    /// # Errors
-    ///
-    /// Returns an [`EvalError`] if the evaluation fails for any reason.
     fn eval_deriv_theta(
         &self,
         flux: MagneticFlux,
@@ -724,6 +724,10 @@ pub trait Mode: MachineObject + DynModeClone + Debug + Send + Sync {
 
     /// Calculates the mode's amplitude `α(ψ/ψp)`.
     ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
+    ///
     /// # Example
     ///
     /// ```
@@ -737,10 +741,6 @@ pub trait Mode: MachineObject + DynModeClone + Debug + Send + Sync {
     /// let a_of_psi = mode.eval_amplitude(psi, 0.2, 0.3, 0.0, &mut cache)?;
     /// # Ok::<_, MachineError>(())
     /// ```
-    ///
-    /// # Errors
-    ///
-    /// Returns an [`EvalError`] if the evaluation fails for any reason.
     fn eval_amplitude(
         &self,
         flux: MagneticFlux,
@@ -751,6 +751,10 @@ pub trait Mode: MachineObject + DynModeClone + Debug + Send + Sync {
     ) -> Result<f64, EvalError>;
 
     /// Calculates the mode's phase `φ(ψ/ψp)`.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
     ///
     /// # Example
     ///
@@ -765,10 +769,6 @@ pub trait Mode: MachineObject + DynModeClone + Debug + Send + Sync {
     /// let phase_of_psip = mode.eval_phase(psip, 0.2, 0.3, 0.0, &mut cache)?;
     /// # Ok::<_, MachineError>(())
     /// ```
-    ///
-    /// # Errors
-    ///
-    /// Returns an [`EvalError`] if the evaluation fails for any reason.
     fn eval_phase(
         &self,
         flux: MagneticFlux,
@@ -779,6 +779,10 @@ pub trait Mode: MachineObject + DynModeClone + Debug + Send + Sync {
     ) -> Result<f64, EvalError>;
 
     /// Calculates the mode's value `m(ψ/ψp, θ, ζ, t)`.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
     ///
     /// # Example
     ///
@@ -793,10 +797,6 @@ pub trait Mode: MachineObject + DynModeClone + Debug + Send + Sync {
     /// let m_of_psip = mode.eval_m(psip, 0.2, 0.3, 0.0, &mut cache)?;
     /// # Ok::<_, MachineError>(())
     /// ```
-    ///
-    /// # Errors
-    ///
-    /// Returns an [`EvalError`] if the evaluation fails for any reason.
     fn eval_m(
         &self,
         flux: MagneticFlux,
@@ -807,6 +807,10 @@ pub trait Mode: MachineObject + DynModeClone + Debug + Send + Sync {
     ) -> Result<f64, EvalError>;
 
     /// Calculates the mode's derivative with respect to the magnetic flux `dm(ψ/ψp, θ, ζ, t)/d(ψ/ψp)`.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
     ///
     /// # Example
     ///
@@ -821,10 +825,6 @@ pub trait Mode: MachineObject + DynModeClone + Debug + Send + Sync {
     /// let dm_dpsi = mode.eval_deriv_flux(psi, 0.2, 0.3, 0.0, &mut cache)?;
     /// # Ok::<_, MachineError>(())
     /// ```
-    ///
-    /// # Errors
-    ///
-    /// Returns an [`EvalError`] if the evaluation fails for any reason.
     fn eval_deriv_flux(
         &self,
         flux: MagneticFlux,
@@ -835,6 +835,10 @@ pub trait Mode: MachineObject + DynModeClone + Debug + Send + Sync {
     ) -> Result<f64, EvalError>;
 
     /// Calculates the mode's derivative with respect to `θ`, `dm(ψ/ψp, θ, ζ, t)/dθ`.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
     ///
     /// # Example
     ///
@@ -849,10 +853,6 @@ pub trait Mode: MachineObject + DynModeClone + Debug + Send + Sync {
     /// let dm_dtheta = mode.eval_deriv_theta(psi, 0.2, 0.3, 0.0, &mut cache)?;
     /// # Ok::<_, MachineError>(())
     /// ```
-    ///
-    /// # Errors
-    ///
-    /// Returns an [`EvalError`] if the evaluation fails for any reason.
     fn eval_deriv_theta(
         &self,
         flux: MagneticFlux,
@@ -863,6 +863,10 @@ pub trait Mode: MachineObject + DynModeClone + Debug + Send + Sync {
     ) -> Result<f64, EvalError>;
 
     /// Calculates the mode's derivative with respect to `ζ`, `dm(ψ/ψp, θ, ζ, t)/dζ`.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
     ///
     /// # Example
     ///
@@ -877,10 +881,6 @@ pub trait Mode: MachineObject + DynModeClone + Debug + Send + Sync {
     /// let dm_dzeta = mode.eval_deriv_zeta(psip, 0.2, 0.3, 0.0, &mut cache)?;
     /// # Ok::<_, MachineError>(())
     /// ```
-    ///
-    /// # Errors
-    ///
-    /// Returns an [`EvalError`] if the evaluation fails for any reason.
     fn eval_deriv_zeta(
         &self,
         flux: MagneticFlux,
@@ -891,6 +891,10 @@ pub trait Mode: MachineObject + DynModeClone + Debug + Send + Sync {
     ) -> Result<f64, EvalError>;
 
     /// Calculates the mode's derivative with respect to `t`, `dm(ψ/ψp, θ, ζ, t)/dt`.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
     ///
     /// # Example
     ///
@@ -905,10 +909,6 @@ pub trait Mode: MachineObject + DynModeClone + Debug + Send + Sync {
     /// let dm_dt = mode.eval_deriv_t(psip, 0.2, 0.3, 0.0, &mut cache)?;
     /// # Ok::<_, MachineError>(())
     /// ```
-    ///
-    /// # Errors
-    ///
-    /// Returns an [`EvalError`] if the evaluation fails for any reason.
     fn eval_deriv_t(
         &self,
         flux: MagneticFlux,

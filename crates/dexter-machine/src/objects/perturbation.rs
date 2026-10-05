@@ -105,6 +105,10 @@ impl Perturbation {
 impl Perturbation {
     /// Calculates the Perturbation's value as a function of `(ψ, θ, ζ, t)`.
     ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if any of the evaluations fail for any reason.
+    ///
     /// # Example
     /// ```
     /// # use dexter_machine::*;
@@ -119,10 +123,6 @@ impl Perturbation {
     /// let p_of_psi = perturbation.eval_p(psi, 3.14, 3.14, 0.0, &mut caches)?;
     /// # Ok::<_, MachineError>(())
     /// ```
-    ///
-    /// # Errors
-    ///
-    /// Returns an [`EvalError`] if any of the evaluations fail for any reason.
     pub fn eval_p(
         &self,
         flux: MagneticFlux,
@@ -143,6 +143,10 @@ impl Perturbation {
 
     /// Calculates the Perturbation's derivative with respect to `ψ`, as a function of `(ψ, θ, ζ, t)`.
     ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if any of the evaluations fail for any reason.
+    ///
     /// # Example
     /// ```
     /// # use dexter_machine::*;
@@ -157,10 +161,6 @@ impl Perturbation {
     /// let dp_dpsip = perturbation.eval_deriv_flux(psip, 3.14, 3.14, 0.0, &mut caches)?;
     /// # Ok::<_, MachineError>(())
     /// ```
-    ///
-    /// # Errors
-    ///
-    /// Returns an [`EvalError`] if any of the evaluations fail for any reason.
     pub fn eval_deriv_flux(
         &self,
         flux: MagneticFlux,
@@ -181,6 +181,10 @@ impl Perturbation {
 
     /// Calculates the Perturbation's derivative with respect to `θ`, as a function of `(ψ, θ, ζ, t)`.
     ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if any of the evaluations fail for any reason.
+    ///
     /// # Example
     /// ```
     /// # use dexter_machine::*;
@@ -195,10 +199,6 @@ impl Perturbation {
     /// let dp_theta = perturbation.eval_deriv_theta(psip, 3.14, 3.14, 0.0, &mut caches)?;
     /// # Ok::<_, MachineError>(())
     /// ```
-    ///
-    /// # Errors
-    ///
-    /// Returns an [`EvalError`] if any of the evaluations fail for any reason.
     pub fn eval_deriv_theta(
         &self,
         flux: MagneticFlux,
@@ -219,6 +219,10 @@ impl Perturbation {
 
     /// Calculates the Perturbation's derivative with respect to `ζ`, as a function of `(ψ, θ, ζ, t)`.
     ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if any of the evaluations fail for any reason.
+    ///
     /// # Example
     /// ```
     /// # use dexter_machine::*;
@@ -233,10 +237,6 @@ impl Perturbation {
     /// let dp_dzetta = perturbation.eval_deriv_zeta(psi, 3.14, 3.14, 0.0, &mut caches)?;
     /// # Ok::<_, MachineError>(())
     /// ```
-    ///
-    /// # Errors
-    ///
-    /// Returns an [`EvalError`] if any of the evaluations fail for any reason.
     pub fn eval_deriv_zeta(
         &self,
         flux: MagneticFlux,
@@ -257,6 +257,10 @@ impl Perturbation {
 
     /// Calculates the Perturbation's derivative with respect to `t`, as a function of `(ψp, θ, ζ, t)`.
     ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if any of the evaluations fail for any reason.
+    ///
     /// # Example
     /// ```
     /// # use dexter_machine::*;
@@ -271,10 +275,6 @@ impl Perturbation {
     /// let dp_dt = perturbation.eval_deriv_t(psip, 3.14, 3.14, 0.0, &mut caches)?;
     /// # Ok::<_, MachineError>(())
     /// ```
-    ///
-    /// # Errors
-    ///
-    /// Returns an [`EvalError`] if any of the evaluations fail for any reason.
     pub fn eval_deriv_t(
         &self,
         flux: MagneticFlux,

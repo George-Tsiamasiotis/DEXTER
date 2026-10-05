@@ -34,7 +34,7 @@ from dexter.types import (
 
 from dexter.utils import get_max_threads, set_num_threads
 
-from dexter.machine.flux import MagneticFlux
+from dexter.machine.flux import MagneticFlux, MagneticFluxArray
 from dexter.machine.geometries import GeometryObject, LarGeometry, NcGeometry
 from dexter.machine.qfactors import (
     QfactorObject,
@@ -49,6 +49,7 @@ from dexter.machine.perturbation import Perturbation
 from dexter.machine.machine import Machine
 
 from dexter.machine.plot import plot_current, plot_qfactor, plot_bfield, plot_mode
+
 from dexter.simulate.plot import (
     plot_evolution,
     plot_poloidal_drift,
@@ -58,20 +59,14 @@ from dexter.simulate.plot import (
 
 from dexter.simulate.initial import (
     InitialConditions,
-    MagneticFluxArray,
     QueueInitialConditions,
 )
 from dexter.simulate.params import SteppingMethod, SolverParams, IntersectParams
 from dexter.simulate.particle import Particle
 from dexter.simulate.queue import Queue
 
-from dexter.simulate.energy import (
-    create_poloidal_grid,
-    energy_of_psi_grid,
-    energy_of_psip_grid,
-)
-
 from dexter.comspace.energy_pzeta_plane import EnergyPzetaPlane
+from dexter.comspace.gc_hamiltonian import GCHamiltonian, create_poloidal_grid
 
 __all__ = [
     # Type Aliases
@@ -129,9 +124,8 @@ __all__ = [
     "IntersectParams",
     "Particle",
     "Queue",
+    "GCHamiltonian",
     "create_poloidal_grid",
-    "energy_of_psi_grid",
-    "energy_of_psip_grid",
     # Simulate (plot)
     "plot_evolution",
     "plot_poloidal_drift",

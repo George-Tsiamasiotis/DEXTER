@@ -310,7 +310,7 @@ fn gc_mixed_boozer_equivalence() {
 
     let mixed_initial = InitialConditions::mixed(0.0, psip0, 0.0, 0.0, pzeta, 1e-6);
     let mut mixed_particle = Particle::new(&mixed_initial);
-    assert!(matches!(mixed_particle.integration_status(), IntegrationStatus::PartlyInitialized));
+    assert!(matches!(mixed_particle.integration_status(), IntegrationStatus::PartiallyInitialized));
     mixed_particle.integrate(machine, teval, &solver_params);
     dbg!(&mixed_particle);
 
@@ -388,7 +388,7 @@ fn gc_const_pzeta_toroidal_integration_uniQ_larC_larB_cosP() {
     let initial = InitialConditions::mixed(0.0, Toroidal(0.03), 0.0, 0.0, -0.03, 1e-6);
 
     let mut particle = Particle::new(&initial);
-    assert!(matches!(particle.integration_status(), IntegrationStatus::PartlyInitialized));
+    assert!(matches!(particle.integration_status(), IntegrationStatus::PartiallyInitialized));
 
     let teval = (0.0, 6e5);
     particle.integrate(machine, teval, &solver_params);

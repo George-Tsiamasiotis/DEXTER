@@ -69,19 +69,6 @@ const CLASSIFY_PBAR_STYLE: &str = concat!(
 /// The [`Queue::close`] progress bar chars (filled, current, to do).
 const CLASSIFY_PROGRESS_CHARS: &str = "#>-";
 
-mod orbit_type_colors {
-    pub(super) const UNDEFINED: &str = "#fc5a50";
-    pub(super) const TRAPPED_CONFINED: &str = "#ff000d";
-    pub(super) const TRAPPED_LOST: &str = "#9a0200";
-    pub(super) const COPASSING_CONFINED: &str = "#0165fc";
-    pub(super) const COPASSING_LOST: &str = "#040273";
-    pub(super) const CUPASSING_CONFINED: &str = "#01ff07";
-    pub(super) const CUPASSING_LOST: &str = "#02590f";
-    pub(super) const POTATO: &str = "#d1b26f";
-    pub(super) const STAGNATED: &str = "#82cafc";
-    pub(super) const UNCLASSIFIED: &str = "#be03fd";
-}
-
 // ===============================================================================================
 // ===============================================================================================
 
@@ -371,23 +358,11 @@ pub(crate) struct ClassifyPbar {
     potato: Arc<AtomicUsize>,
     stagnated: Arc<AtomicUsize>,
     undefined: Arc<AtomicUsize>,
-    unclassified_str: String,
-    trapped_lost_str: String,
-    trapped_confined_str: String,
-    copassing_lost_str: String,
-    copassing_confined_str: String,
-    cupassing_lost_str: String,
-    cupassing_confined_str: String,
-    potato_str: String,
-    stagnated_str: String,
-    undefined_str: String,
 }
 
 impl ClassifyPbar {
     /// Initialize the pre-configured progress bar.
     pub(crate) fn new(queue: &Queue) -> Self {
-        #[expect(clippy::wildcard_imports, reason = "colors")]
-        use orbit_type_colors::*;
         let style = ProgressStyle::with_template(CLASSIFY_PBAR_STYLE)
             .unwrap_or_else(|_| ProgressStyle::default_bar())
             .progress_chars(CLASSIFY_PROGRESS_CHARS);
@@ -406,16 +381,6 @@ impl ClassifyPbar {
             potato: Arc::default(),
             stagnated: Arc::default(),
             undefined: Arc::default(),
-            unclassified_str: "Unclassified".color(UNCLASSIFIED).to_string(),
-            trapped_lost_str: "Trapped-Lost".color(TRAPPED_LOST).to_string(),
-            trapped_confined_str: "Trapped-Confined".color(TRAPPED_CONFINED).to_string(),
-            copassing_lost_str: "CoPassing-Lost".color(COPASSING_LOST).to_string(),
-            copassing_confined_str: "CoPassing-Confined".color(COPASSING_CONFINED).to_string(),
-            cupassing_lost_str: "Cupassing-Lost".color(CUPASSING_LOST).to_string(),
-            cupassing_confined_str: "Cupassing-Confined".color(CUPASSING_CONFINED).to_string(),
-            potato_str: "Potato".color(POTATO).to_string(),
-            stagnated_str: "Stagnated".color(STAGNATED).to_string(),
-            undefined_str: "Undefined".color(UNDEFINED).to_string(),
         }
     }
 
@@ -451,37 +416,27 @@ impl ClassifyPbar {
     pub(crate) fn print_stats(&self) {
         self.pbar.set_message(format!(
             concat!(
-                "======== 📊 Stats ========\n",
-                "🪤 {}       = {}\n",
-                "🪤 {}   = {}\n",
-                "➕ {}     = {}\n",
-                "➕ {} = {}\n",
-                "➖ {}     = {}\n",
-                "➖ {} = {}\n",
-                "🥔 {}             = {}\n",
-                "🛏️  {}          = {}\n",
-                "❓ {}       = {}\n",
-                "❔ {}          = {}\n",
+                "========== 📊 Stats ==========\n",
+                "🪤 Trapped-Lost       = {}\n",
+                "🪤 Trapped-Confined   = {}\n",
+                "➕ CoPassing-Lost     = {}\n",
+                "➕ CoPassing-Confined = {}\n",
+                "➖ CuPassing-Lost     = {}\n",
+                "➖ CuPassing-Confined = {}\n",
+                "🥔 Potato             = {}\n",
+                "🛏️ Stagnated          = {}\n",
+                "❓ Unclassified      = {}\n",
+                "❔ Undefined         = {}\n",
             ),
-            self.trapped_lost_str,
             self.trapped_lost.load(SeqCst),
-            self.trapped_confined_str,
             self.trapped_confined.load(SeqCst),
-            self.copassing_lost_str,
             self.copassing_lost.load(SeqCst),
-            self.copassing_confined_str,
             self.copassing_confined.load(SeqCst),
-            self.cupassing_lost_str,
             self.cupassing_lost.load(SeqCst),
-            self.cupassing_confined_str,
             self.cupassing_confined.load(SeqCst),
-            self.potato_str,
             self.potato.load(SeqCst),
-            self.stagnated_str,
             self.stagnated.load(SeqCst),
-            self.unclassified_str,
             self.unclassified.load(SeqCst),
-            self.undefined_str,
             self.undefined.load(SeqCst),
         ));
     }

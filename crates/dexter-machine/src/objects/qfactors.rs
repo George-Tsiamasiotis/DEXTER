@@ -936,7 +936,7 @@ mod test_unity_qfactor {
 
 #[cfg(test)]
 mod test_parabolic_qfactor {
-    use crate::objects::qfactors::test_utils::test_eval_deriv_methods;
+    use crate::{MagneticFluxKind, objects::qfactors::test_utils::test_eval_deriv_methods};
 
     use super::*;
     use approx::{assert_abs_diff_eq, assert_relative_eq};
@@ -979,12 +979,14 @@ mod test_parabolic_qfactor {
         let flux = Toroidal(0.01);
         let q_of_psi = qfactor.eval_q(flux, acc).unwrap();
         let psi_inverse = qfactor.eval_psi_of_q(q_of_psi, acc).unwrap();
-        assert_relative_eq!(flux.psi().unwrap(), psi_inverse.value(), epsilon = 1e-12);
+        assert_eq!(flux.kind(), MagneticFluxKind::Toroidal);
+        assert_relative_eq!(flux.value(), psi_inverse.value(), epsilon = 1e-12);
 
         let flux = Poloidal(0.1);
         let q_of_psip = qfactor.eval_q(flux, acc).unwrap();
         let psip_inverse = qfactor.eval_psip_of_q(q_of_psip, acc).unwrap();
-        assert_relative_eq!(flux.psip().unwrap(), psip_inverse.value(), epsilon = 1e-12);
+        assert_eq!(flux.kind(), MagneticFluxKind::Poloidal);
+        assert_relative_eq!(flux.value(), psip_inverse.value(), epsilon = 1e-12);
     }
 
     #[test]

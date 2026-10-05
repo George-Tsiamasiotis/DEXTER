@@ -70,10 +70,11 @@ class EnergyPzetaPlane(_ReprStrImpl):
     ...     qfactor=dex.ParabolicQfactor(qaxis=1.1, qlast=3.5, lcfs=LCFS),
     ...     current=dex.LarCurrent(),
     ...     bfield=dex.LarBfield(),
-    >>> )
+    ... )
     >>>
     >>> plane = dex.EnergyPzetaPlane(machine, mu=2e-5)
-    >>> plane.plot()
+    >>> fig, ax = plane.show()
+
     ```
 
     """

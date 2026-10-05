@@ -32,7 +32,8 @@ nav = [
         "reference/simulate/plots.md",
     ]},
     {"COM Space" = [
-        "reference/comspace/energy.md",
+        "reference/comspace/helpers.md",
+        "reference/comspace/gc_hamiltonian.md",
         "reference/comspace/energy_pzeta_plane.md",
     ]},
 ]

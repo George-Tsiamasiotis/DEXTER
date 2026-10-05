@@ -2,6 +2,7 @@
 
 mod bfield;
 mod current;
+mod flux;
 mod geometry;
 mod mode;
 mod perturbation;
@@ -9,73 +10,8 @@ mod qfactor;
 
 pub use bfield::*;
 pub use current::*;
+pub use flux::*;
 pub use geometry::*;
 pub use mode::*;
 pub use perturbation::*;
 pub use qfactor::*;
-
-use crate::{impl_py_repr, wrapper_debug_export};
-use dexter::dexter_machine::*;
-use pyo3::{prelude::*, types::PyType};
-use std::ops::{Add, Div, Mul, Neg, Sub};
-
-// ===============================================================================================
-
-#[pyclass(name = "_PyMagneticFlux", frozen, immutable_type)]
-#[derive(PartialEq)]
-pub struct PyMagneticFlux(pub(crate) MagneticFlux);
-
-#[pymethods]
-impl PyMagneticFlux {
-    #[classmethod]
-    pub fn toroidal(_: &Bound<'_, PyType>, value: f64) -> PyResult<Self> {
-        Ok(Self(MagneticFlux::Toroidal(value)))
-    }
-
-    #[classmethod]
-    pub fn poloidal(_: &Bound<'_, PyType>, value: f64) -> PyResult<Self> {
-        Ok(Self(MagneticFlux::Poloidal(value)))
-    }
-
-    #[getter]
-    pub fn value(&self) -> f64 {
-        self.0.value()
-    }
-
-    #[getter]
-    pub fn kind(&self) -> String {
-        self.0.kind().into()
-    }
-}
-
-#[pymethods]
-impl PyMagneticFlux {
-    fn __add__(&self, scalar: f64) -> PyMagneticFlux {
-        PyMagneticFlux(self.0.add(scalar))
-    }
-
-    fn __sub__(&self, scalar: f64) -> PyMagneticFlux {
-        PyMagneticFlux(self.0.sub(scalar))
-    }
-
-    fn __neg__(&self) -> PyMagneticFlux {
-        PyMagneticFlux(self.0.neg())
-    }
-
-    fn __mul__(&self, scalar: f64) -> PyMagneticFlux {
-        PyMagneticFlux(self.0.mul(scalar))
-    }
-
-    fn __truediv__(&self, scalar: f64) -> PyMagneticFlux {
-        PyMagneticFlux(self.0.div(scalar))
-    }
-}
-
-impl From<MagneticFlux> for PyMagneticFlux {
-    fn from(value: MagneticFlux) -> Self {
-        Self(value)
-    }
-}
-
-wrapper_debug_export!(PyMagneticFlux);
-impl_py_repr!(PyMagneticFlux, simple);

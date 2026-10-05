@@ -1,10 +1,12 @@
+import numpy as np
+
 from collections.abc import Callable
 from typing import override
 
-from dexter.types import MagneticFluxKind
+from dexter.types import Array1, MagneticFluxKind, ArrayLike
 
-from dexter._core import _PyMagneticFlux
-from dexter._utils import _ReprStrImpl, _RustTypeWrapper
+from dexter._core import _PyMagneticFlux, _PyMagneticFluxArray
+from dexter._utils import _ReprStrImpl, _RustTypeWrapper, _into_pyarray1f64
 
 
 class MagneticFlux(_ReprStrImpl, _RustTypeWrapper):
@@ -121,3 +123,95 @@ class MagneticFlux(_ReprStrImpl, _RustTypeWrapper):
                 return MagneticFlux.Poloidal(_r.value)
             case _:
                 raise RuntimeError("unreachable")
+
+
+class MagneticFluxArray(_ReprStrImpl):
+    r"""A container of multiple magnetic flux values and their kind.
+
+    This type is instantiated through the [`Toroidal`][dexter.MagneticFluxArray.Toroidal] and
+    [`Poloidal`][dexter.MagneticFluxArray.Poloidal] class methods.
+
+    Attributes
+    ----------
+    values
+        The contained values as a 1D Array.
+    kind
+        The magnetic flux' kind.
+
+    """
+
+    _r: _PyMagneticFluxArray
+
+    def __init__(self) -> None:
+        raise RuntimeError("Cannot instantiate class")
+
+    @classmethod
+    def Toroidal(cls, array: ArrayLike) -> MagneticFluxArray:
+        r"""Defines an array of toroidal fluxes $\psi$.
+
+        Parameters
+        ----------
+        array
+            The values of the toroidal magnetic fluxes.
+
+        Example
+        -------
+        ```python title="Toroidal MagneticFluxArray creation"
+        >>> psi0s = dex.MagneticFluxArray.Toroidal(np.linspace(0, 0.05, 30))
+
+        ```
+        """
+        return cls._init(array, _PyMagneticFluxArray.toroidal)
+
+    @classmethod
+    def Poloidal(cls, array: ArrayLike) -> MagneticFluxArray:
+        r"""Defines an array of poloidal fluxes $\psi_p$.
+
+        Parameters
+        ----------
+        array
+            The values of the poloidal magnetic fluxes.
+
+        Example
+        -------
+        ```python title="Poloidal MagneticFluxArray creation"
+        >>> psip0s = dex.MagneticFluxArray.Poloidal([0.1, 0.2, 0.3])
+
+        ```
+        """
+        return cls._init(array, _PyMagneticFluxArray.poloidal)
+
+    @classmethod
+    def _init(
+        cls, array: ArrayLike, _method: Callable[[np.ndarray], _PyMagneticFluxArray]
+    ) -> MagneticFluxArray:
+        """Creates a `MagneticFluxArray` by calling the appropriate constructor."""
+        array = np.atleast_1d(np.asarray(array, dtype=np.float64))
+        array = _into_pyarray1f64(array)
+        if not np.all(np.isfinite(array)):
+            raise ValueError("NaN values encounter in MagneticFluxArray")
+
+        obj = MagneticFluxArray.__new__(MagneticFluxArray)
+        obj._r = _method(array)
+        return obj
+
+    @property
+    def kind(self) -> MagneticFluxKind:
+        return self._r.kind
+
+    @property
+    def values(self) -> Array1:
+        return self._r.values
+
+    def __len__(self) -> int:
+        """Returns the number of contained values."""
+        return self._r.__len__()
+
+    def __getitem__(self, index: int) -> MagneticFlux:
+        """Returns a [`MagneticFlux`][dexter.MagneticFlux] of the same kind and value of
+        `#!python self.values[index]`."""
+        _r = self._r[index]
+        if _r is None:
+            raise IndexError
+        else:
+            return MagneticFlux._wrap(_r)

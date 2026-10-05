@@ -22,11 +22,11 @@ fn queue_integrate_parQ_larC_larB_cosP() -> Result<(), SimulationError> {
 
     // Initial Conditions setup
     let particle_count = 10;
-    let psis = machine.qfactor().psi_last().value() * Array1::linspace(0.1, 0.5, particle_count);
-    let psis = toroidal_fluxes(&psis.to_vec());
+    let psi0_values =
+        machine.qfactor().psi_last().value() * Array1::linspace(0.1, 0.5, particle_count);
     let initial_conditions = QueueInitialConditions::boozer(
         &vec![0.0; particle_count],
-        &psis.to_vec(),
+        &MagneticFluxArray::Toroidal(psi0_values),
         &vec![0.0; particle_count],
         &vec![0.0; particle_count],
         &vec![1e-6; particle_count],

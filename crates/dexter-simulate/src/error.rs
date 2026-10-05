@@ -13,7 +13,7 @@ pub enum SimulationError {
 
     /// NaN encountered in initial conditions.
     #[error("NaN encountered in initial conditions")]
-    InvalidInitialConditions,
+    NanInitialConditions,
 
     /// Queue initial conditions arrays must have a length of at least 1.
     #[error("Queue initial conditions arrays must have a length of at least 1")]

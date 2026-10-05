@@ -123,23 +123,29 @@ impl InitialConditions {
     ///
     /// # Errors
     ///
-    /// Returns a [`SimulationError::EvalError`] if the missing coordinates cannot be calculated
-    /// due to a Domain Error. This can occur if the magnetic flux is out of bounds.
+    /// Returns a [`SimulationError::EvalError`] if:
     ///
-    /// Returns a [`SimulationError::EvalError`] if the missing coordinates cannot be calculated
-    /// due to an undefined evaluation. This can occur if the passed magnetic flux is 'bad'.
+    /// + `flux0` is not a [`Good`] flux coordinate for `machine`.
+    /// + if the missing coordinates cannot be calculated due to a Domain Error. This can occur
+    ///   if the magnetic flux is out of bounds.
+    /// + if the missing coordinates cannot be calculated due to an undefined evaluation. This can
+    ///   occur if the passed magnetic flux is 'bad'.
+    /// + if a NaN is encountered in the final values.
     ///
-    /// Returns a [`SimulationError::InvalidInitialConditions`] if a NaN is encountered in the
-    /// final values.
+    /// [`Good`]: dexter_machine::FluxCoordinateState::Good
     #[expect(clippy::min_ident_chars, reason = "poloidal current")]
+    #[expect(clippy::unwrap_in_result, reason = "checked")]
     pub(crate) fn finalize(&mut self, machine: Machine) -> Result<(), SimulationError> {
+        if !machine.is_good_flux(self.flux0.kind()) {
+            return Err(EvalError::InvalidMagneticFlux.into());
+        }
         // Not all `Current` objects perform bounds checks.
         let last = match self.flux0 {
             MagneticFlux::Toroidal(_) => machine.qfactor().psi_last(),
             MagneticFlux::Poloidal(_) => machine.qfactor().psip_last(),
         };
         if self.flux0.value() > last.value() {
-            return Err(SimulationError::EvalError(EvalError::AnalyticalDomainError));
+            return Err(EvalError::AnalyticalDomainError.into());
         }
 
         let acc = &mut Accelerator::new();
@@ -149,25 +155,31 @@ impl InitialConditions {
                 let psi0 = self.flux0;
                 let g = machine.current().eval_g(psi0, acc)?;
                 let psip0 = machine.qfactor().eval_other(psi0, acc)?;
-                let p = machine.perturbation().eval_p(
-                    psi0,
-                    self.theta0,
-                    self.zeta0,
-                    self.t0,
-                    &mut machine.perturbation().generate_caches(),
-                )?;
+                let p = machine
+                    .perturbation()
+                    .eval_p(
+                        psi0,
+                        self.theta0,
+                        self.zeta0,
+                        self.t0,
+                        &mut machine.perturbation().generate_caches(),
+                    )
+                    .expect("machine state checked");
                 self.pzeta0 = Some((self.rho0.expect("boozer to mixed") + p) * g - psip0.value())
             }
             CoordinateSet::BoozerPoloidal => {
                 let psip0 = self.flux0;
                 let g = machine.current().eval_g(psip0, acc)?;
-                let p = machine.perturbation().eval_p(
-                    psip0,
-                    self.theta0,
-                    self.zeta0,
-                    self.t0,
-                    &mut machine.perturbation().generate_caches(),
-                )?;
+                let p = machine
+                    .perturbation()
+                    .eval_p(
+                        psip0,
+                        self.theta0,
+                        self.zeta0,
+                        self.t0,
+                        &mut machine.perturbation().generate_caches(),
+                    )
+                    .expect("machine state checked");
                 self.pzeta0 = Some((self.rho0.expect("boozer to mixed") + p) * g - psip0.value())
             }
             // Calculate `rho0`
@@ -175,25 +187,31 @@ impl InitialConditions {
                 let psi0 = self.flux0;
                 let g = machine.current().eval_g(psi0, acc)?;
                 let psip0 = machine.qfactor().eval_other(psi0, acc)?;
-                let p = machine.perturbation().eval_p(
-                    psi0,
-                    self.theta0,
-                    self.zeta0,
-                    self.t0,
-                    &mut machine.perturbation().generate_caches(),
-                )?;
+                let p = machine
+                    .perturbation()
+                    .eval_p(
+                        psi0,
+                        self.theta0,
+                        self.zeta0,
+                        self.t0,
+                        &mut machine.perturbation().generate_caches(),
+                    )
+                    .expect("machine state checked");
                 self.rho0 = Some((self.pzeta0.expect("mixed to boozer") + psip0.value()) / g - p);
             }
             CoordinateSet::MixedPoloidal => {
                 let psip0 = self.flux0;
                 let g = machine.current().eval_g(psip0, acc)?;
-                let p = machine.perturbation().eval_p(
-                    psip0,
-                    self.theta0,
-                    self.zeta0,
-                    self.t0,
-                    &mut machine.perturbation().generate_caches(),
-                )?;
+                let p = machine
+                    .perturbation()
+                    .eval_p(
+                        psip0,
+                        self.theta0,
+                        self.zeta0,
+                        self.t0,
+                        &mut machine.perturbation().generate_caches(),
+                    )
+                    .expect("machine state checked");
                 self.rho0 = Some((self.pzeta0.expect("mixed to boozer") + psip0.value()) / g - p);
             }
         };
@@ -209,7 +227,7 @@ impl InitialConditions {
         {
             Ok(())
         } else {
-            Err(SimulationError::InvalidInitialConditions)
+            Err(SimulationError::NanInitialConditions)
         }
     }
 }

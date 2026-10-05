@@ -3,7 +3,7 @@
 Each class representing a dexter-machine trait also provides all possible getters of all
 implementors. The higher level wrappers are responsible for re-exporting the correct ones. An
 `InvalidVariant` Exception is raised when python accesses a field that the wrapped type does not
-have. It should not be visible to the user unless the call `._r` explicitly.
+have. It should not be visible to the user unless they access `._r` explicitly.
 """
 
 from typing import override
@@ -52,6 +52,24 @@ class _PyMagneticFlux:
     def __repr__(self) -> str: ...
     @override
     def __str__(self) -> str: ...
+
+class _PyMagneticFluxArray:
+
+    values: Array1
+    kind: MagneticFluxKind
+
+    @classmethod
+    def toroidal(cls, values: Array1) -> _PyMagneticFluxArray: ...
+    @classmethod
+    def poloidal(cls, values: Array1) -> _PyMagneticFluxArray: ...
+    def __len__(self) -> int: ...
+    def __getitem__(self, index: int) -> _PyMagneticFlux | None: ...
+    @override
+    def __repr__(self) -> str: ...
+    @override
+    def __str__(self) -> str: ...
+
+# ================================================================================================
 
 class _PyGeometry:  # Trait and all possible getters
     machine_type: MachineType
@@ -497,16 +515,6 @@ class _PyParticle:
     @override
     def __str__(self) -> str: ...
 
-class _PyMagneticFluxArray:
-    @classmethod
-    def toroidal(cls, array: Array1) -> _PyMagneticFluxArray: ...
-    @classmethod
-    def poloidal(cls, array: Array1) -> _PyMagneticFluxArray: ...
-    @override
-    def __repr__(self) -> str: ...
-    @override
-    def __str__(self) -> str: ...
-
 class _PyQueueInitialConditions:
     mu_array: Array1
 
@@ -609,26 +617,68 @@ class _PyQueue:
 def _py_create_poloidal_grid(
     theta_array: Array1, flux_array: Array1
 ) -> tuple[Array2, Array2]: ...
-def _py_energy_of_psi_grid(
-    qfactor: _PyQfactor,
-    current: _PyCurrent,
-    bfield: _PyBfield,
-    perturbation: _PyPerturbation,
-    pzeta: float,
-    mu: float,
-    theta_array: Array2,
-    psi_array: Array2,
-) -> Array2: ...
-def _py_energy_of_psip_grid(
-    qfactor: _PyQfactor,
-    current: _PyCurrent,
-    bfield: _PyBfield,
-    perturbation: _PyPerturbation,
-    pzeta: float,
-    mu: float,
-    theta_array: Array2,
-    psip_array: Array2,
-) -> Array2: ...
+
+class _PyGCHamiltonian:
+    def __init__(self) -> None: ...
+    @classmethod
+    def eval(
+        cls,
+        qfactor: _PyQfactor,
+        current: _PyCurrent,
+        bfield: _PyBfield,
+        theta: float,
+        flux: _PyMagneticFlux,
+        pzeta: float,
+        mu: float,
+    ) -> Array1: ...
+    @classmethod
+    def eval_psi_array(
+        cls,
+        qfactor: _PyQfactor,
+        current: _PyCurrent,
+        bfield: _PyBfield,
+        theta_array: Array1,
+        psi_array: Array1,
+        pzeta: float,
+        mu: float,
+    ) -> Array1: ...
+    @classmethod
+    def eval_psip_array(
+        cls,
+        qfactor: _PyQfactor,
+        current: _PyCurrent,
+        bfield: _PyBfield,
+        theta_array: Array1,
+        psip_array: Array1,
+        pzeta: float,
+        mu: float,
+    ) -> Array1: ...
+    @classmethod
+    def eval_psi_grid(
+        cls,
+        qfactor: _PyQfactor,
+        current: _PyCurrent,
+        bfield: _PyBfield,
+        theta_grid: Array2,
+        psi_grid: Array2,
+        pzeta: float,
+        mu: float,
+    ) -> Array2: ...
+    @classmethod
+    def eval_psip_grid(
+        cls,
+        qfactor: _PyQfactor,
+        current: _PyCurrent,
+        bfield: _PyBfield,
+        theta_grid: Array2,
+        psip_grid: Array2,
+        pzeta: float,
+        mu: float,
+    ) -> Array2: ...
+    @override
+    def __repr__(self) -> str: ...
+    @override
+    def __str__(self) -> str: ...
 
 # ================================================================================================
 

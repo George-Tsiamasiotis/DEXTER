@@ -4,7 +4,6 @@ mod initials;
 mod pbars;
 
 pub use initials::QueueInitialConditions;
-pub use initials::{poloidal_fluxes, toroidal_fluxes};
 
 use ndarray::Array1;
 use pbars::{ClassifyPbar, ClosePbar, IntegratePbar, IntersectPbar};
@@ -59,10 +58,10 @@ impl Queue {
     /// Initial conditions in Boozer coordinates.
     /// ```
     /// # use dexter_simulate::*;
-    /// use MagneticFlux::*;
+    /// use ndarray::*;
     /// let initial_conditions = QueueInitialConditions::boozer(
     ///     &[0.0, 0.1],
-    ///     &[Toroidal(0.15), Toroidal(0.3)],
+    ///     &MagneticFluxArray::Toroidal(array![0.15, 0.3]),
     ///     &[0.0, 0.1],
     ///     &[0.0, 0.0],
     ///     &[1e-3, 2e-3],
@@ -77,10 +76,10 @@ impl Queue {
     /// Initial conditions in Mixed coordinates.
     /// ```
     /// # use dexter_simulate::*;
-    /// use MagneticFlux::*;
+    /// # use ndarray::*;
     /// let initial_conditions = QueueInitialConditions::mixed(
     ///     &[0.0, 0.1],
-    ///     &[Toroidal(0.15), Toroidal(0.3)],
+    ///     &MagneticFluxArray::Poloidal(array![0.15, 0.3]),
     ///     &[0.0, 0.1],
     ///     &[0.0, 0.0],
     ///     &[-0.025, -0.027],
@@ -153,6 +152,7 @@ impl Queue {
     /// # use dexter_machine::{Interpolation1dType::Akima, Interpolation2dType::Bicubic};
     /// # use dexter_simulate::*;
     /// # use std::path::PathBuf;
+    /// # use ndarray::*;
     /// #
     /// let path = PathBuf::from("./netcdf.nc");
     /// let qfactor = NcQfactorBuilder::new(&path, Akima).build()?;
@@ -168,10 +168,10 @@ impl Queue {
     ///     .with_perturbation(&perturbation)
     ///     .build();
     ///
-    /// use MagneticFlux::*;
+    /// let psi0s = MagneticFluxArray::Toroidal(array![0.15, 0.3]);
     /// let initial_conditions = QueueInitialConditions::boozer(
     ///     &[0.0, 0.1],
-    ///     &[Toroidal(0.15), Toroidal(0.3)],
+    ///     &psi0s,
     ///     &[0.0, 0.1],
     ///     &[0.0, 0.0],
     ///     &[1e-4, 2e-4],
@@ -207,6 +207,7 @@ impl Queue {
     /// # use dexter_machine::*;
     /// # use dexter_simulate::*;
     /// # use std::path::PathBuf;
+    /// # use ndarray::*;
     /// #
     /// let lcfs = LastClosedFluxSurface::Toroidal(0.6);
     /// let qfactor = ParabolicQfactor::new(1.1, 4.2, lcfs);
@@ -221,10 +222,10 @@ impl Queue {
     ///     .with_perturbation(&perturbation)
     ///     .build();
     ///
-    /// use MagneticFlux::*;
+    /// let psi0s = MagneticFluxArray::Toroidal(array![0.15, 0.3]);
     /// let initial_conditions = QueueInitialConditions::boozer(
     ///     &[0.0, 0.1],
-    ///     &[Toroidal(0.15), Toroidal(0.3)],
+    ///     &psi0s,
     ///     &[0.0, 0.1],
     ///     &[0.0, 0.0],
     ///     &[1e-4, 2e-4],
@@ -269,17 +270,17 @@ impl Queue {
     /// # use dexter_machine::*;
     /// # use dexter_simulate::*;
     /// # use std::path::PathBuf;
-    /// #
+    /// # use ndarray::*;
     /// let lcfs = LastClosedFluxSurface::Toroidal(0.06);
     /// let qfactor = ParabolicQfactor::new(1.1, 4.2, lcfs);
     /// let current = LarCurrent::new();
     /// let bfield = LarBfield::new();
     /// let machine = MachineBuilder::new(&qfactor, &current, &bfield).build();
     ///
-    /// use MagneticFlux::*;
+    /// let psip0s = MagneticFluxArray::Poloidal(array![0.15, 0.3]);
     /// let initial_conditions = QueueInitialConditions::boozer(
     ///     &[0.0, 0.1],
-    ///     &[Toroidal(0.01), Toroidal(0.02)],
+    ///     &psip0s,
     ///     &[0.0, 0.1],
     ///     &[0.0, 0.0],
     ///     &[1e-5, 1e-5],
@@ -327,6 +328,7 @@ impl Queue {
     /// # use dexter_machine::*;
     /// # use dexter_simulate::*;
     /// # use std::path::PathBuf;
+    /// # use ndarray::*;
     /// #
     /// let lcfs = LastClosedFluxSurface::Toroidal(0.6);
     /// let qfactor = ParabolicQfactor::new(1.1, 4.2, lcfs);
@@ -334,10 +336,10 @@ impl Queue {
     /// let bfield = LarBfield::new();
     /// let machine = MachineBuilder::new(&qfactor, &current, &bfield).build();
     ///
-    /// use MagneticFlux::*;
+    /// let psip0s = MagneticFluxArray::Poloidal(array![0.15, 0.3]);
     /// let initial_conditions = QueueInitialConditions::boozer(
     ///     &[0.0, 0.1],
-    ///     &[Toroidal(0.15), Toroidal(0.3)],
+    ///     &psip0s,
     ///     &[0.0, 0.1],
     ///     &[0.0, 0.0],
     ///     &[1e-4, 2e-4],
@@ -383,6 +385,7 @@ impl Queue {
     /// # use dexter_machine::*;
     /// # use dexter_simulate::*;
     /// # use std::path::PathBuf;
+    /// # use ndarray::*;
     /// #
     /// let lcfs = LastClosedFluxSurface::Toroidal(0.6);
     /// let qfactor = ParabolicQfactor::new(1.1, 4.2, lcfs);
@@ -390,10 +393,10 @@ impl Queue {
     /// let bfield = LarBfield::new();
     /// let machine = MachineBuilder::new(&qfactor, &current, &bfield).build();
     ///
-    /// use MagneticFlux::*;
+    /// let psip0s = MagneticFluxArray::Poloidal(array![0.15, 0.3]);
     /// let initial_conditions = QueueInitialConditions::boozer(
     ///     &[0.0, 0.1],
-    ///     &[Toroidal(0.15), Toroidal(0.3)],
+    ///     &psip0s,
     ///     &[0.0, 0.1],
     ///     &[0.0, 0.0],
     ///     &[1e-4, 2e-4],
@@ -441,13 +444,13 @@ impl Queue {
     /// # use dexter_machine::*;
     /// # use dexter_simulate::*;
     /// # use std::path::PathBuf;
-    /// # use ndarray::Array1;
+    /// # use ndarray::*;
     /// #
     /// let num = 11;
-    /// let psi0s = toroidal_fluxes(&Array1::linspace(0.0, 0.05, num).to_vec());
+    /// let psip0s = MagneticFluxArray::Poloidal(Array1::linspace(0.0, 0.5, num));
     /// let initial_conditions = QueueInitialConditions::mixed(
     ///     &Array1::zeros(num).to_vec(),
-    ///     &psi0s.to_vec(),
+    ///     &psip0s,
     ///     &Array1::zeros(num).to_vec(),
     ///     &Array1::zeros(num).to_vec(),
     ///     &Array1::linspace(0.0, 1.0, num).to_vec(), // Pζ = 0.0, 0.1, ..., 0.9, 1.0

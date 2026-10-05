@@ -23,11 +23,11 @@ fn queue_classify_parQ_larC_larB_cosP() -> Result<(), SimulationError> {
 
     // Initial Conditions setup
     let particle_count = 10;
-    let psis = machine.qfactor().psi_last().value() * Array1::linspace(0.001, 0.5, particle_count);
-    let psis = toroidal_fluxes(&psis.to_vec());
+    let psi0s_values =
+        machine.qfactor().psi_last().value() * Array1::linspace(0.001, 0.5, particle_count);
     let initial_conditions = QueueInitialConditions::boozer(
         &vec![0.0; particle_count],
-        &psis.to_vec(),
+        &MagneticFluxArray::Toroidal(psi0s_values),
         &vec![0.0; particle_count],
         &vec![0.0; particle_count],
         &vec![1e-6; particle_count],

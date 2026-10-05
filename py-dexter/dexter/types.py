@@ -195,8 +195,9 @@ the direction of the corresponding angle.
 
 IntegrationStatus: TypeAlias = Literal[
     "Initialized",
-    "PartlyInitialized",
-    "InvalidInitialConditions",
+    "PartiallyInitialized",
+    "NanInitialConditions",
+    "BadMagneticFlux",
     "OutOfBoundsInitialization",
     "Integrated",
     "Intersected",
@@ -211,10 +212,9 @@ IntegrationStatus: TypeAlias = Literal[
 r"""The integration status of a Particle.
 
 - `Initialized`: Initialized by InitialConditions, not integrated.
-- `PartlyInitialized`: InitialConditions have not been fully calculated yet.
-- `InvalidInitialConditions`: Invalid InitialConditions. May occur when using Mixed variables
-    with objects that cannot define them, for example Mixed Toroidal coordinates when $g(\psi)$ is
-    not defined.
+- `PartiallyInitialized`: InitialConditions have not been fully calculated yet.
+- `NanInitialConditions`: Encountered `NaN` when finalizing the initial conditions.
+- `BadMagneticFlux`: Particle initialized with a 'bad' initial magnetic flux.
 - `OutOfBoundsInitialization`: InitialConditions where out of bounds.
 - `Integrated`: Reached the end of the integration successfully.
 - `Intersected`: Intersections calculation successful.
