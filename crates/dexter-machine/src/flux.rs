@@ -20,6 +20,27 @@ pub enum MagneticFlux {
     Poloidal(f64),
 }
 
+impl MagneticFluxKind {
+    /// Creates a [`MagneticFlux`] of `self`'s kind and value `value`.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use dexter_machine::*;
+    /// assert_eq!(
+    ///     MagneticFlux::Toroidal(0.1),
+    ///     MagneticFluxKind::Toroidal.to_magnetic_flux(0.1)
+    /// );
+    /// ```
+    #[must_use]
+    pub fn to_magnetic_flux(&self, value: f64) -> MagneticFlux {
+        match *self {
+            Self::Toroidal => MagneticFlux::Toroidal(value),
+            Self::Poloidal => MagneticFlux::Poloidal(value),
+        }
+    }
+}
+
 impl MagneticFlux {
     /// Returns the value of `self`, regardless the kind.
     #[must_use]
@@ -207,8 +228,21 @@ impl approx::UlpsEq for MagneticFlux {
 #[cfg(test)]
 mod test {
 
-    use crate::MagneticFlux::*;
+    use super::MagneticFlux::*;
+    use super::MagneticFluxKind;
     use approx::*;
+
+    #[test]
+    fn test_to_magnetic_flux() {
+        assert_eq!(
+            Toroidal(0.1),
+            MagneticFluxKind::Toroidal.to_magnetic_flux(0.1)
+        );
+        assert_eq!(
+            Poloidal(0.1),
+            MagneticFluxKind::Poloidal.to_magnetic_flux(0.1)
+        );
+    }
 
     #[test]
     fn add() {

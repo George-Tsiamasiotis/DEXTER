@@ -137,7 +137,6 @@ module_name_repetitions = "deny"
 modulo_arithmetic = "deny" # use `rem_euclid()`
 must_use_candidate = "deny"
 needless_bitwise_bool = "deny"
-needless_collect = "deny"
 needless_continue = "deny"
 needless_pass_by_ref_mut = "deny"
 needless_pass_by_value = "deny"

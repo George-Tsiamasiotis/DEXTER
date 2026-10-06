@@ -16,9 +16,12 @@ description = "Calculations in the Constants of Motion space"
 dexter-machine.workspace = true
 thiserror.workspace = true
 ndarray.workspace = true
+approx.workspace = true
 parabola.workspace = true
 rsl-interpolation.workspace = true
 embed-doc-image = { version = "0.1.4", optional = true}
+contour = "0.13.1"
+geo-types = "0.7.20"
 
 [lints]
 workspace = true
