@@ -23,9 +23,9 @@
 //! + [`EnergyPzetaPosition`]: A region of the E - Pζ plane defined by the classification curves.
 //! + [`OrbitType`]: A particle's orbit type. Can be calculated with [`EnergyPzetaPosition::orbit_type`].
 
+mod bifurcation;
 mod energy_grid;
 mod energy_pzeta_plane;
-mod stationary_curve;
 
 // ============== Re-exports
 
@@ -39,7 +39,7 @@ pub use energy_pzeta_plane::{
 
 pub use energy_grid::{create_poloidal_grid, energy_of_psi_grid, energy_of_psip_grid};
 
-pub use stationary_curve::{StationaryCurve, StationaryCurveSegment};
+pub use bifurcation::{StationaryCurve, StationaryCurveSegment};
 
 /// Crate configuration constants.
 pub mod constants {
