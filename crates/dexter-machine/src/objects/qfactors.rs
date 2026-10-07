@@ -14,7 +14,7 @@ use super::debug_assert_all_finite_values;
 use crate::Interpolation1dType;
 use crate::objects::nc_flux::{FluxCoordinateState, NcFlux};
 use crate::{EvalError, MachineError};
-use crate::{LastClosedFluxSurface, MachineObject, MachineType, Qfactor};
+use crate::{MachineObject, MachineType, Qfactor};
 use crate::{MagneticFlux, MagneticFlux::*};
 use dexter_common::{DynInterpolator, array1D_getter_impl, make_interp};
 
@@ -37,11 +37,11 @@ impl UnityQfactor {
     /// ```
     /// # use dexter_machine::*;
     /// // Define ψ=ψ_last=0.45
-    /// let lcfs = LastClosedFluxSurface::Toroidal(0.45);
+    /// let lcfs = MagneticFlux::Toroidal(0.45);
     /// let qfactor = UnityQfactor::new(lcfs);
     /// ```
     #[must_use]
-    pub fn new(lcfs: LastClosedFluxSurface) -> Self {
+    pub fn new(lcfs: MagneticFlux) -> Self {
         Self {
             psi_last: lcfs.value(),
             psip_last: lcfs.value(),
@@ -179,27 +179,27 @@ pub struct ParabolicQfactor {
 impl ParabolicQfactor {
     /// Creates a new `ParabolicQfactor`.
     ///
-    /// A `ParabolicQfactor` is defined with the help of the [`LastClosedFluxSurface`] helper struct,
+    /// A `ParabolicQfactor` is defined with the help of the [`MagneticFlux`] type,
     /// which changes the position where `qlast` is met.
     ///
     /// # Example
     /// ```
     /// # use dexter_machine::*;
     /// // Define q(ψ=ψ_last=0.45) = qlast = 3.8
-    /// let lcfs = LastClosedFluxSurface::Toroidal(0.45);
+    /// let lcfs = MagneticFlux::Toroidal(0.45);
     /// let qfactor = ParabolicQfactor::new(1.1, 3.8, lcfs);
     ///
     /// // Define q(ψp=ψp_last=0.19) = qlast = 4.2
-    /// let psip_last = LastClosedFluxSurface::Poloidal(0.19);
+    /// let psip_last = MagneticFlux::Poloidal(0.19);
     /// let qfactor = ParabolicQfactor::new(1.1, 4.2, psip_last);
     /// ```
     #[must_use]
-    pub fn new(qaxis: f64, qlast: f64, lcfs: LastClosedFluxSurface) -> Self {
+    pub fn new(qaxis: f64, qlast: f64, lcfs: MagneticFlux) -> Self {
         // Create two phony qfactors to calculate the other last value
         let psi_last: f64;
         let psip_last: f64;
         match lcfs {
-            LastClosedFluxSurface::Toroidal(_psi_last) => {
+            Toroidal(_psi_last) => {
                 let phony_q = Self {
                     qaxis,
                     qlast,
@@ -212,7 +212,7 @@ impl ParabolicQfactor {
                     Err(_) => unreachable!("Analytical formula, cannot fail"),
                 };
             }
-            LastClosedFluxSurface::Poloidal(_psip_last) => {
+            Poloidal(_psip_last) => {
                 let phony_q = Self {
                     qaxis,
                     qlast,
@@ -924,7 +924,7 @@ mod test_unity_qfactor {
 
     #[test]
     fn domain_error() {
-        let lcfs = LastClosedFluxSurface::Toroidal(0.1);
+        let lcfs = Toroidal(0.1);
         let qfactor = UnityQfactor::new(lcfs);
 
         let acc = &mut Accelerator::new();
@@ -944,7 +944,7 @@ mod test_parabolic_qfactor {
     #[test]
     /// Values calculated at a point where the ParabolicQfactor was defined correctly.
     fn instantiation_with_psi_last() {
-        let qfactor = ParabolicQfactor::new(1.1, 3.9, LastClosedFluxSurface::Toroidal(0.45));
+        let qfactor = ParabolicQfactor::new(1.1, 3.9, Toroidal(0.45));
         assert_abs_diff_eq!(qfactor.psi_last().value(), 0.45);
         assert_relative_eq!(
             qfactor.psip_last().value(),
@@ -959,11 +959,7 @@ mod test_parabolic_qfactor {
     #[test]
     /// Values calculated at a point where the ParabolicQfactor was defined correctly.
     fn instantiation_with_psip_last() {
-        let qfactor = ParabolicQfactor::new(
-            1.1,
-            3.9,
-            LastClosedFluxSurface::Poloidal(0.25921022097041035),
-        );
+        let qfactor = ParabolicQfactor::new(1.1, 3.9, Poloidal(0.25921022097041035));
         assert_abs_diff_eq!(qfactor.psip_last().value(), 0.25921022097041035);
         assert_relative_eq!(qfactor.psi_last().value(), 0.45, epsilon = 1e-12);
 
@@ -973,7 +969,7 @@ mod test_parabolic_qfactor {
 
     #[test]
     fn inverse_q() {
-        let qfactor = ParabolicQfactor::new(1.1, 3.9, LastClosedFluxSurface::Toroidal(0.45));
+        let qfactor = ParabolicQfactor::new(1.1, 3.9, Toroidal(0.45));
         let acc = &mut Accelerator::new();
 
         let flux = Toroidal(0.01);
@@ -989,7 +985,7 @@ mod test_parabolic_qfactor {
 
     #[test]
     fn eval_derivative_methods() {
-        let qfactor = ParabolicQfactor::new(1.1, 3.9, LastClosedFluxSurface::Toroidal(0.45));
+        let qfactor = ParabolicQfactor::new(1.1, 3.9, Toroidal(0.45));
         test_eval_deriv_methods(&qfactor);
     }
 }
@@ -1003,25 +999,25 @@ mod test_derivatives_closeness {
 
     #[test]
     fn unity_qfactor_dpsi_dpsip_q_closeness() {
-        let qfactor = UnityQfactor::new(LastClosedFluxSurface::Poloidal(0.45));
+        let qfactor = UnityQfactor::new(Poloidal(0.45));
         test_dpsi_dpsip_q_closeness(&qfactor);
     }
 
     #[test]
     fn unity_qfactor_dpsip_dpsi_iota_closeness() {
-        let qfactor = UnityQfactor::new(LastClosedFluxSurface::Toroidal(0.45));
+        let qfactor = UnityQfactor::new(Toroidal(0.45));
         test_dpsip_dpsi_iota_closeness(&qfactor);
     }
 
     #[test]
     fn parabolic_qfactor_dpsi_dpsip_q_closeness() {
-        let qfactor = ParabolicQfactor::new(1.1, 3.9, LastClosedFluxSurface::Toroidal(0.45));
+        let qfactor = ParabolicQfactor::new(1.1, 3.9, Toroidal(0.45));
         test_dpsi_dpsip_q_closeness(&qfactor);
     }
 
     #[test]
     fn parabolic_qfactor_dpsip_dpsi_iota_closeness() {
-        let qfactor = ParabolicQfactor::new(1.1, 3.9, LastClosedFluxSurface::Toroidal(0.45));
+        let qfactor = ParabolicQfactor::new(1.1, 3.9, Toroidal(0.45));
         test_dpsip_dpsi_iota_closeness(&qfactor);
     }
 

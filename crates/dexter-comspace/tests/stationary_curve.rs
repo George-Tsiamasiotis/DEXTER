@@ -14,7 +14,7 @@ use dexter_machine::{extract::TOROIDAL_TEST_NETCDF_PATH, *};
 
 #[test]
 fn lar_stationary_curve() {
-    let qfactor = UnityQfactor::new(LastClosedFluxSurface::Toroidal(0.45));
+    let qfactor = UnityQfactor::new(MagneticFlux::Toroidal(0.45));
     let current = LarCurrent::new();
     let bfield = LarBfield::new();
     let machine = MachineBuilder::new(&qfactor, &current, &bfield).build();
@@ -69,7 +69,7 @@ fn lar_stationary_curve() {
 
 #[test]
 fn toroidal_lar_netcdf_stationary_curve() {
-    let qfactor = UnityQfactor::new(LastClosedFluxSurface::Toroidal(0.45));
+    let qfactor = UnityQfactor::new(MagneticFlux::Toroidal(0.45));
     let current = LarCurrent::new();
     let bfield = NcBfieldBuilder::new(
         &PathBuf::from(TOROIDAL_TEST_NETCDF_PATH),
@@ -129,7 +129,7 @@ fn toroidal_lar_netcdf_stationary_curve() {
 
 #[test]
 fn poloidal_lar_netcdf_stationary_curve() {
-    let qfactor = UnityQfactor::new(LastClosedFluxSurface::Poloidal(0.45));
+    let qfactor = UnityQfactor::new(MagneticFlux::Poloidal(0.45));
     let current = LarCurrent::new();
     let bfield = NcBfieldBuilder::new(
         &PathBuf::from(POLOIDAL_TEST_NETCDF_PATH),

@@ -10,8 +10,8 @@ use ndarray::Axis;
 #[test]
 #[rustfmt::skip]
 fn different_stepping_methods() {
-    let lcfs = LastClosedFluxSurface::Toroidal(0.45);
-    let qfactor = UnityQfactor::new(LastClosedFluxSurface::Toroidal(0.5));
+    let lcfs = MagneticFlux::Toroidal(0.45);
+    let qfactor = UnityQfactor::new( MagneticFlux::Toroidal(0.5));
     let current = LarCurrent::new();
     let bfield = LarBfield::new();
     let perturbation = Perturbation::new(vec![

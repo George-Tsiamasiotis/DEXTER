@@ -25,7 +25,7 @@ fn empty_perturbation() {
 #[test]
 #[rustfmt::skip]
 fn cos_toroidal_lcfs_perturbation() {
-    let lcfs = LastClosedFluxSurface::Toroidal(0.45);
+    let lcfs = MagneticFlux::Toroidal(0.45);
     let per = Perturbation::new(vec![
         Box::new(FluteMode::new(1e-3, lcfs, 1, 1, 0.0)),
         Box::new(FluteMode::new(1e-3, lcfs, 1, 2, 0.0)),
@@ -55,7 +55,7 @@ fn cos_toroidal_lcfs_perturbation() {
 #[test]
 #[rustfmt::skip]
 fn cos_poloidal_lcfs_perturbation() {
-    let lcfs = LastClosedFluxSurface::Poloidal(0.45);
+    let lcfs = MagneticFlux::Poloidal(0.45);
     let per = Perturbation::new(vec![
         Box::new(FluteMode::new(1e-3, lcfs, 1, 1, 0.0)),
         Box::new(FluteMode::new(1e-3, lcfs, 1, 2, 0.0)),
@@ -113,7 +113,7 @@ fn nc_perturbation() {
 #[rustfmt::skip]
 fn mixed_perturbation() {
     let path = PathBuf::from(TEST_NETCDF_PATH);
-    let lcfs = LastClosedFluxSurface::Toroidal(0.45);
+    let lcfs = MagneticFlux::Toroidal(0.45);
     let typ = Interpolation1dType::Cubic;
     let nc_mode = NcFluteModeBuilder::new(&path, typ, 2, 1)
         .build()

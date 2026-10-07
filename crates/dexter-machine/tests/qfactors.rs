@@ -10,7 +10,7 @@ use ndarray::Array1;
 
 #[test]
 fn unity_qfactor() {
-    let qfactor = dbg!(UnityQfactor::new(LastClosedFluxSurface::Toroidal(0.45)));
+    let qfactor = dbg!(UnityQfactor::new(Toroidal(0.45)));
 
     assert_eq!(qfactor.psi_state(), FluxCoordinateState::Good);
     assert_eq!(qfactor.psip_state(), FluxCoordinateState::Good);
@@ -36,11 +36,7 @@ fn unity_qfactor() {
 
 #[test]
 fn parabolic_qfactor() {
-    let qfactor = dbg!(ParabolicQfactor::new(
-        1.1,
-        3.8,
-        LastClosedFluxSurface::Toroidal(0.45)
-    ));
+    let qfactor = dbg!(ParabolicQfactor::new(1.1, 3.8, Toroidal(0.45)));
 
     assert_eq!(qfactor.psi_state(), FluxCoordinateState::Good);
     assert_eq!(qfactor.psip_state(), FluxCoordinateState::Good);

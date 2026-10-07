@@ -10,7 +10,7 @@ use std::path::PathBuf;
 #[test]
 #[rustfmt::skip]
 fn flute_mode_toroidal_lcfs() {
-    let lcfs = LastClosedFluxSurface::Toroidal(0.45);
+    let lcfs = MagneticFlux::Toroidal(0.45);
     let mode = dbg!(FluteMode::new(1e-3, lcfs, 3, 2, PI));
     assert_eq!(mode.psi_state(), FluxCoordinateState::Good);
     assert_eq!(mode.psip_state(), FluxCoordinateState::Bad);
@@ -51,7 +51,7 @@ fn flute_mode_toroidal_lcfs() {
 #[test]
 #[rustfmt::skip]
 fn flute_mode_poloidal_lcfs() {
-    let lcfs = LastClosedFluxSurface::Poloidal(0.45);
+    let lcfs = MagneticFlux::Poloidal(0.45);
     let mode = dbg!(FluteMode::new(1e-3, lcfs, 3, 2, PI));
     assert_eq!(mode.psi_state(), FluxCoordinateState::Bad);
     assert_eq!(mode.psip_state(), FluxCoordinateState::Good);

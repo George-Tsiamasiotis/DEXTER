@@ -38,7 +38,7 @@ pub enum EvalError {
     /// Analytical evaluation method received an out-of-bounds input.
     ///
     /// The bounds check is enforced by the definition of the machine object's
-    /// [`LastClosedFluxSurface`](crate::LastClosedFluxSurface), rather than the formula itself.
+    /// Last Closed Flux Surface, rather than the formula itself.
     #[error("Analytical calculation domain error")]
     AnalyticalDomainError,
 

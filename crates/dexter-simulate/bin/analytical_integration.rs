@@ -1,15 +1,14 @@
 //! Integration of a particle for a long time, useful for profiling.
 
 use dexter_machine::{
-    FluteMode, LarBfield, LarCurrent, LastClosedFluxSurface, MachineBuilder, ParabolicQfactor,
-    Perturbation,
+    FluteMode, LarBfield, LarCurrent, MachineBuilder, ParabolicQfactor, Perturbation,
 };
 use dexter_simulate::{
     InitialConditions, IntegrationStatus, MagneticFlux, Particle, SolverParams, SteppingMethod,
 };
 
 fn main() {
-    let lcfs = LastClosedFluxSurface::Toroidal(0.45);
+    let lcfs = MagneticFlux::Toroidal(0.45);
     let qfactor = ParabolicQfactor::new(1.1, 3.9, lcfs);
     let current = LarCurrent::new();
     let bfield = LarBfield::new();

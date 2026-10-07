@@ -9,7 +9,7 @@ use ndarray::Array1;
 
 #[test]
 fn queue_classify_parQ_larC_larB_cosP() -> Result<(), SimulationError> {
-    let lcfs = LastClosedFluxSurface::Toroidal(0.45);
+    let lcfs = MagneticFlux::Toroidal(0.45);
     let qfactor = ParabolicQfactor::new(1.1, 1.9, lcfs);
     let current = LarCurrent::new();
     let bfield = LarBfield::new();

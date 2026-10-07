@@ -5,7 +5,7 @@ use dexter_simulate::*;
 
 fn main() {
     use MagneticFlux::*;
-    let lcfs = LastClosedFluxSurface::Toroidal(0.45);
+    let lcfs = Toroidal(0.45);
     let qfactor = UnityQfactor::new(lcfs);
     let current = LarCurrent::new();
     let bfield = LarBfield::new();

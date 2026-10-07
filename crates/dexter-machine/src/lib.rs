@@ -91,7 +91,7 @@ pub use machine::{Machine, MachineBuilder};
 
 pub use error::{EvalError, MachineError, NcError};
 
-pub use objects::{LastClosedFluxSurface, MachineType};
+pub use objects::MachineType;
 
 pub use objects::nc_flux::FluxCoordinateState;
 

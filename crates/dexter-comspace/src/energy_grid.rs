@@ -219,7 +219,7 @@ mod test {
 
     #[test]
     fn gcmotion_check() {
-        let qfactor = UnityQfactor::new(LastClosedFluxSurface::Toroidal(0.1));
+        let qfactor = UnityQfactor::new(Toroidal(0.1));
         let current = LarCurrent::new();
         let bfield = LarBfield::new();
         let machine = MachineBuilder::new(&qfactor, &current, &bfield).build();

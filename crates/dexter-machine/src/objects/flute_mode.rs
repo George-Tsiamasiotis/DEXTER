@@ -5,8 +5,7 @@ use rsl_interpolation::Accelerator;
 use std::f64::consts::TAU;
 
 use crate::{
-    DynModeCache, EvalError, FluxCoordinateState, LastClosedFluxSurface, MachineObject,
-    MachineType, Mode, ModeCache,
+    DynModeCache, EvalError, FluxCoordinateState, MachineObject, MachineType, Mode, ModeCache,
 };
 use crate::{MagneticFlux, MagneticFlux::*};
 use crate::{debug_assert_is_finite, debug_assert_non_negative_flux, mode_cache_getters_impl};
@@ -34,7 +33,7 @@ pub struct FluteMode {
     /// The modes's phase.
     phase: f64,
     /// The last closed flux surface.
-    lcfs: LastClosedFluxSurface,
+    lcfs: MagneticFlux,
     /// The value of the last closed toroidal flux surface, if the mode was defined through the
     /// toroidal flux.
     psi_last: Option<f64>,
@@ -49,19 +48,19 @@ impl FluteMode {
     /// # Example
     /// ```
     /// # use dexter_machine::*;
-    /// let lcfs = LastClosedFluxSurface::Toroidal(0.45);
+    /// let lcfs = MagneticFlux::Toroidal(0.45);
     /// let mode = FluteMode::new(1e-3, lcfs, 3, 2, 0.0);
     /// ```
     #[must_use]
-    pub fn new(epsilon: f64, lcfs: LastClosedFluxSurface, m: i64, n: i64, phase: f64) -> Self {
+    pub fn new(epsilon: f64, lcfs: MagneticFlux, m: i64, n: i64, phase: f64) -> Self {
         let psi_last: Option<f64>;
         let psip_last: Option<f64>;
         match lcfs {
-            LastClosedFluxSurface::Toroidal(last) => {
+            Toroidal(last) => {
                 psi_last = Some(last);
                 psip_last = None;
             }
-            LastClosedFluxSurface::Poloidal(last) => {
+            Poloidal(last) => {
                 psi_last = None;
                 psip_last = Some(last)
             }
@@ -80,7 +79,7 @@ impl FluteMode {
 
     /// Returns the mode's last closed flux surface.
     #[must_use]
-    pub fn lcfs(&self) -> LastClosedFluxSurface {
+    pub fn lcfs(&self) -> MagneticFlux {
         self.lcfs
     }
 
@@ -214,9 +213,7 @@ impl Mode for FluteMode {
 
     fn generate_cache(&self) -> DynModeCache {
         let lcfs_root = match self.lcfs {
-            LastClosedFluxSurface::Toroidal(last) | LastClosedFluxSurface::Poloidal(last) => {
-                last.sqrt()
-            }
+            Toroidal(last) | Poloidal(last) => last.sqrt(),
         };
         Box::new(FluteModeCache {
             params: [
@@ -438,7 +435,7 @@ mod flute_mode_values {
     #[test]
     #[rustfmt::skip]
     fn desmos_values_toroidal_lcfs() -> Result<(), EvalError> {
-        let lcfs = LastClosedFluxSurface::Toroidal(0.45);
+        let lcfs = Toroidal(0.45);
         let har = dbg!(FluteMode::new(10.0, lcfs, 3, 2, 1.0));
         assert_eq!(har.psi_state(), FluxCoordinateState::Good);
         assert_eq!(har.psip_state(), FluxCoordinateState::Bad);
@@ -474,7 +471,7 @@ mod flute_mode_values {
     #[test]
     #[rustfmt::skip]
     fn desmos_values_poloidal_lcfs() -> Result<(), EvalError> {
-        let lcfs = LastClosedFluxSurface::Poloidal(0.45);
+        let lcfs = Poloidal(0.45);
         let har = dbg!(FluteMode::new(10.0, lcfs, 3, 2, 1.0));
         assert_eq!(har.psi_state(), FluxCoordinateState::Bad);
         assert_eq!(har.psip_state(), FluxCoordinateState::Good);
@@ -516,7 +513,7 @@ mod flute_mode_cache {
 
     #[test]
     fn counts() {
-        let lcfs = LastClosedFluxSurface::Toroidal(0.45);
+        let lcfs = Toroidal(0.45);
         let mode = dbg!(FluteMode::new(10.0, lcfs, 3, 2, 1.0));
         let c = &mut mode.generate_cache();
         let t = 0.0; // not checked

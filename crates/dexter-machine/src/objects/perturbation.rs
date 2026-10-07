@@ -41,7 +41,7 @@ impl Perturbation {
     /// # use dexter_machine::*;
     /// # use std::path::PathBuf;
     /// // from analytical flute modes
-    /// let lcfs = LastClosedFluxSurface::Toroidal(0.45);
+    /// let lcfs = MagneticFlux::Toroidal(0.45);
     /// let perturbation = Perturbation::new(vec![
     ///     Box::new(FluteMode::new(1e-3, lcfs, 1, 2, 0.0)),
     ///     Box::new(FluteMode::new(1e-3, lcfs, 1, 3, 0.0)),
@@ -83,7 +83,7 @@ impl Perturbation {
     /// ```
     /// # use dexter_machine::*;
     /// # use std::path::PathBuf;
-    /// let lcfs = LastClosedFluxSurface::Toroidal(0.45);
+    /// let lcfs = MagneticFlux::Toroidal(0.45);
     /// let perturbation = Perturbation::new(vec![
     ///     Box::new(FluteMode::new(1e-3, lcfs, 1, 2, 0.0)),
     ///     Box::new(FluteMode::new(1e-3, lcfs, 1, 3, 0.0)),
@@ -108,7 +108,7 @@ impl Perturbation {
     /// # Example
     /// ```
     /// # use dexter_machine::*;
-    /// let lcfs = LastClosedFluxSurface::Toroidal(0.45);
+    /// let lcfs = MagneticFlux::Toroidal(0.45);
     /// let perturbation = Perturbation::new(vec![
     ///     Box::new(FluteMode::new(1e-3, lcfs, 1, 2, 0.0)),
     ///     Box::new(FluteMode::new(1e-3, lcfs, 1, 3, 0.0)),
@@ -146,7 +146,7 @@ impl Perturbation {
     /// # Example
     /// ```
     /// # use dexter_machine::*;
-    /// let lcfs = LastClosedFluxSurface::Poloidal(0.45);
+    /// let lcfs = MagneticFlux::Poloidal(0.45);
     /// let perturbation = Perturbation::new(vec![
     ///     Box::new(FluteMode::new(1e-3, lcfs, 1, 2, 0.0)),
     ///     Box::new(FluteMode::new(1e-3, lcfs, 1, 3, 0.0)),
@@ -184,7 +184,7 @@ impl Perturbation {
     /// # Example
     /// ```
     /// # use dexter_machine::*;
-    /// let lcfs = LastClosedFluxSurface::Poloidal(0.45);
+    /// let lcfs = MagneticFlux::Poloidal(0.45);
     /// let perturbation = Perturbation::new(vec![
     ///     Box::new(FluteMode::new(1e-3, lcfs, 1, 2, 0.0)),
     ///     Box::new(FluteMode::new(1e-3, lcfs, 1, 3, 0.0)),
@@ -222,7 +222,7 @@ impl Perturbation {
     /// # Example
     /// ```
     /// # use dexter_machine::*;
-    /// let lcfs = LastClosedFluxSurface::Toroidal(0.45);
+    /// let lcfs = MagneticFlux::Toroidal(0.45);
     /// let perturbation = Perturbation::new(vec![
     ///     Box::new(FluteMode::new(1e-3, lcfs, 1, 2, 0.0)),
     ///     Box::new(FluteMode::new(1e-3, lcfs, 1, 3, 0.0)),
@@ -260,7 +260,7 @@ impl Perturbation {
     /// # Example
     /// ```
     /// # use dexter_machine::*;
-    /// let lcfs = LastClosedFluxSurface::Poloidal(0.45);
+    /// let lcfs = MagneticFlux::Poloidal(0.45);
     /// let perturbation = Perturbation::new(vec![
     ///     Box::new(FluteMode::new(1e-3, lcfs, 1, 2, 0.0)),
     ///     Box::new(FluteMode::new(1e-3, lcfs, 1, 3, 0.0)),
@@ -326,7 +326,7 @@ mod perturbation_evals {
     use super::*;
 
     fn create_flute_mode_perturbation() -> Perturbation {
-        let lcfs = LastClosedFluxSurface::Toroidal(0.45);
+        let lcfs = Toroidal(0.45);
         Perturbation::new(vec![
             Box::new(FluteMode::new(1.0, lcfs, 2, 3, 4.0)),
             Box::new(FluteMode::new(5.0, lcfs, 6, 7, 8.0)),

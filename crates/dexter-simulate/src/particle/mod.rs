@@ -208,7 +208,7 @@ impl Particle {
     /// ```
     /// # use dexter_machine::*;
     /// # use dexter_simulate::*;
-    /// let lcfs = LastClosedFluxSurface::Toroidal(0.05);
+    /// let lcfs = MagneticFlux::Toroidal(0.05);
     /// let qfactor = ParabolicQfactor::new(1.1, 3.9, lcfs);
     /// let current = LarCurrent::new();
     /// let bfield = LarBfield::new();
@@ -254,7 +254,7 @@ impl Particle {
     /// ```
     /// # use dexter_machine::*;
     /// # use dexter_simulate::*;
-    /// let lcfs = LastClosedFluxSurface::Toroidal(0.1);
+    /// let lcfs = MagneticFlux::Toroidal(0.1);
     /// let qfactor = UnityQfactor::new(lcfs);
     /// let current = LarCurrent::new();
     /// let bfield = LarBfield::new();
@@ -317,7 +317,7 @@ impl Particle {
     /// ```
     /// # use dexter_machine::*;
     /// # use dexter_simulate::*;
-    /// let lcfs = LastClosedFluxSurface::Toroidal(0.05);
+    /// let lcfs = MagneticFlux::Toroidal(0.05);
     /// let qfactor = ParabolicQfactor::new(1.1, 3.9, lcfs);
     /// let current = LarCurrent::new();
     /// let bfield = LarBfield::new();
@@ -362,7 +362,7 @@ impl Particle {
     /// ```
     /// # use dexter_machine::*;
     /// # use dexter_simulate::*;
-    /// let lcfs = LastClosedFluxSurface::Toroidal(0.03);
+    /// let lcfs = MagneticFlux::Toroidal(0.03);
     /// let qfactor = ParabolicQfactor::new(1.1, 3.9, lcfs);
     /// let current = LarCurrent::new();
     /// let bfield = LarBfield::new();

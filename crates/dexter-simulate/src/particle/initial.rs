@@ -293,7 +293,7 @@ mod test {
 
     #[test]
     fn boozer_initial_conditions() {
-        let lcfs = LastClosedFluxSurface::Toroidal(0.05);
+        let lcfs = Toroidal(0.05);
         let qfactor = ParabolicQfactor::new(1.1, 3.9, lcfs);
         let current = LarCurrent::new();
         let bfield = LarBfield::new();
@@ -328,7 +328,7 @@ mod test {
 
     #[test]
     fn mixed_toroidal_initial_conditions() {
-        let lcfs = LastClosedFluxSurface::Toroidal(0.05);
+        let lcfs = Toroidal(0.05);
         let qfactor = ParabolicQfactor::new(1.1, 3.9, lcfs);
         let current = LarCurrent::new();
         let bfield = LarBfield::new();
