@@ -72,6 +72,7 @@ from dexter.simulate.energy import (
 )
 
 from dexter.comspace.energy_pzeta_plane import EnergyPzetaPlane
+from dexter.comspace.stationary_curve import StationaryCurve, StationaryCurveSegment
 
 __all__ = [
     # Type Aliases
@@ -139,4 +140,6 @@ __all__ = [
     "plot_rz_poincare",
     # Comspace
     "EnergyPzetaPlane",
+    "StationaryCurve",
+    "StationaryCurveSegment",
 ]

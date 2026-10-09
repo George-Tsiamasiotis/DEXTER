@@ -34,6 +34,7 @@ nav = [
     {"COM Space" = [
         "reference/comspace/energy.md",
         "reference/comspace/energy_pzeta_plane.md",
+        "reference/comspace/bifurcation_analysis.md",
     ]},
 ]
 

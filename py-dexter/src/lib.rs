@@ -41,5 +41,7 @@ fn _core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(simulate::energy_of_psip_grid, m)?)?;
     m.add_class::<comspace::PyParabola>()?;
     m.add_class::<comspace::PyEnergyPzetaPlane>()?;
+    m.add_class::<comspace::PyStationaryCurveSegment>()?;
+    m.add_class::<comspace::PyStationaryCurve>()?;
     Ok(())
 }

@@ -50,9 +50,9 @@ pub mod constants {
 
     /// The density of the `θ` array when constructing the grid for the calculation of the
     /// [`StationaryCurve`][crate::StationaryCurve].
-    pub const SC_CONTOUR_THETA_POINTS: usize = 200;
+    pub const SC_CONTOUR_THETA_POINTS: usize = 300;
 
     /// The density of the flux array when constructing the grid for the calculation of the
     /// [`StationaryCurve`][crate::StationaryCurve].
-    pub const SC_CONTOUR_FLUX_POINTS: usize = 100;
+    pub const SC_CONTOUR_FLUX_POINTS: usize = 300;
 }

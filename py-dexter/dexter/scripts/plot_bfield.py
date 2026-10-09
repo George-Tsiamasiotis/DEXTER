@@ -30,7 +30,8 @@ parser.add_argument(
 args = parser.parse_args()
 
 machine = Machine.FromNetcdf(args.nc_file, "Linear", args.interpolation_type)
+print(machine.bfield)
 
-plot_bfield(machine, show=True)
+plot_bfield(machine, levels=args.levels, show=True)
 
 raise SystemExit

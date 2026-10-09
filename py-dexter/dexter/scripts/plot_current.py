@@ -45,6 +45,7 @@ parser.add_argument(
 args = parser.parse_args()
 
 machine = Machine.FromNetcdf(args.nc_file, args.interpolation_type, "Bilinear")
+print(machine.current)
 
 plot_current(machine, flux=args.flux, points=args.points, data=args.d, show=True)
 

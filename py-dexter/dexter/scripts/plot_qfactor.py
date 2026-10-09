@@ -36,6 +36,7 @@ parser.add_argument(
 args = parser.parse_args()
 
 machine = Machine.FromNetcdf(args.nc_file, args.interpolation_type, "Bilinear")
+print(machine.qfactor)
 
 plot_qfactor(machine, points=args.points, data=args.d, show=True)
 

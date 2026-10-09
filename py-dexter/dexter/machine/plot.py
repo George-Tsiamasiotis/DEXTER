@@ -29,6 +29,7 @@ from dexter.machine.base import MachineObject
 from dexter.machine.qfactors import NcQfactor
 from dexter.machine.currents import NcCurrent
 from dexter.machine.modes import FluteMode, ModeObject
+from dexter.comspace.stationary_curve import StationaryCurve
 from dexter.types import Array1, Array2, MagneticFluxKind
 
 TAU = 2 * np.pi
@@ -546,14 +547,28 @@ def plot_bfield(
     axbt.contour(csbt, colors="k", linewidths=LEVEL_LINE_WIDTH)
     axsc.contour(csbt, colors="k", linewidths=LEVEL_LINE_WIDTH)
 
-    axsc.contour(
+    axsc.contour(  # Stationary curve from matplotlib
         cssc,
         levels=[0],
-        colors=SC_COLOR,
+        colors="r",
         linewidths=2 * LEVEL_LINE_WIDTH,
         linestyle="solid",
         negative_linestyles="solid",
     )
+    curve = StationaryCurve(machine)  # stationary curve from rust
+    segments = curve.segments()
+    for seg in segments:
+        lab_eval_args = {flux_arg_name: seg.flux, "theta": seg.theta}
+        rlab_seg = geometry.eval_rlab(**lab_eval_args)
+        zlab_seg = geometry.eval_zlab(**lab_eval_args)
+        axsc.plot(
+            rlab_seg,
+            zlab_seg,
+            color=SC_COLOR,
+            linewidth=2 * LEVEL_LINE_WIDTH,
+            zorder=2,
+        )
+
     axsc.plot([], [], color=SC_COLOR, label=r"$dB(R,Z)/d\theta$")
     axsc.legend(loc="upper right", prop={"size": 7})
 

@@ -663,3 +663,30 @@ class _PyEnergyPzetaPlane:
     def __repr__(self) -> str: ...
     @override
     def __str__(self) -> str: ...
+
+# ================================================================================================
+
+class _PyStationaryCurveSegment:
+    theta: Array1
+    flux: Array1
+
+    def __len__(self) -> int: ...
+    @override
+    def __repr__(self) -> str: ...
+    @override
+    def __str__(self) -> str: ...
+
+class _PyStationaryCurve:
+    flux_kind: MagneticFluxKind
+    segments: list[_PyStationaryCurveSegment]
+
+    def __init__(
+        self,
+        qfactor: _PyQfactor,
+        current: _PyCurrent,
+        bfield: _PyBfield,
+    ) -> None: ...
+    @override
+    def __repr__(self) -> str: ...
+    @override
+    def __str__(self) -> str: ...

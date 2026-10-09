@@ -68,5 +68,6 @@ mode = NcFluteMode(
 )
 
 plot_mode(mode, flux=args.flux, points=args.points, data=args.d, show=True)
+print(mode)
 
 raise SystemExit
