@@ -6,7 +6,7 @@ use criterion::{Criterion, criterion_group, criterion_main};
 use dexter_machine::extract::TEST_NETCDF_PATH;
 use dexter_machine::*;
 
-use std::hint::black_box;
+use std::hint::black_box as bb;
 use std::path::PathBuf;
 
 fn qfactor_evals(c: &mut Criterion) {
@@ -26,13 +26,13 @@ fn qfactor_evals(c: &mut Criterion) {
     let mut group = c.benchmark_group("Qfactor q(ψ) evaluation");
 
     group.bench_with_input("Unity", &psi, |b, &psi| {
-        b.iter(|| unity.eval_q(black_box(psi), black_box(acc)).unwrap());
+        b.iter(|| unity.eval_q(bb(psi), bb(acc)).unwrap());
     });
     group.bench_with_input("Parabolic", &psi, |b, &psi| {
-        b.iter(|| parabolic.eval_q(black_box(psi), black_box(acc)).unwrap());
+        b.iter(|| parabolic.eval_q(bb(psi), bb(acc)).unwrap());
     });
     group.bench_with_input("NcQfactor", &psi, |b, &psi| {
-        b.iter(|| nc_qfactor.eval_q(black_box(psi), black_box(acc)).unwrap());
+        b.iter(|| nc_qfactor.eval_q(bb(psi), bb(acc)).unwrap());
     });
     group.finish();
 
@@ -41,21 +41,13 @@ fn qfactor_evals(c: &mut Criterion) {
     let mut group = c.benchmark_group("Qfactor ψ(ψp) evaluation");
 
     group.bench_with_input("Unity", &psi, |b, &psi| {
-        b.iter(|| unity.eval_other(black_box(psi), black_box(acc)).unwrap());
+        b.iter(|| unity.eval_other(bb(psi), bb(acc)).unwrap());
     });
     group.bench_with_input("Parabolic", &psi, |b, &psi| {
-        b.iter(|| {
-            parabolic
-                .eval_other(black_box(psi), black_box(acc))
-                .unwrap()
-        });
+        b.iter(|| parabolic.eval_other(bb(psi), bb(acc)).unwrap());
     });
     group.bench_with_input("NcQfactor", &psi, |b, &psi| {
-        b.iter(|| {
-            nc_qfactor
-                .eval_other(black_box(psi), black_box(acc))
-                .unwrap()
-        });
+        b.iter(|| nc_qfactor.eval_other(bb(psi), bb(acc)).unwrap());
     });
     group.finish();
 }

@@ -364,6 +364,9 @@ class Bfield(_ReprStrImpl):
         self._eval_b = _flux_eval_wrap2d(self._r.eval_b)
         self._eval_deriv_flux = _flux_eval_wrap2d(self._r.eval_deriv_flux)
         self._eval_deriv_theta = _flux_eval_wrap2d(self._r.eval_deriv_theta)
+        self._eval_deriv_flux2 = _flux_eval_wrap2d(self._r.eval_deriv_flux2)
+        self._eval_deriv_theta2 = _flux_eval_wrap2d(self._r.eval_deriv_theta2)
+        self._eval_deriv_mixed = _flux_eval_wrap2d(self._r.eval_deriv_mixed)
 
     def eval_b(
         self,
@@ -391,6 +394,33 @@ class Bfield(_ReprStrImpl):
     ) -> Array:
         r"""Calculates $dB(\psi/\psi_p, \theta)/d\theta$."""
         return self._eval_deriv_theta(theta, psi, psip)[()]
+
+    def eval_deriv_flux2(
+        self,
+        theta: ArrayLike,
+        psi: ArrayLike | None = None,
+        psip: ArrayLike | None = None,
+    ) -> Array:
+        r"""Calculates $d^2B(\psi/\psi_p, \theta)/d(\psi/\psi_p)^2$."""
+        return self._eval_deriv_flux2(theta, psi, psip)[()]
+
+    def eval_deriv_theta2(
+        self,
+        theta: ArrayLike,
+        psi: ArrayLike | None = None,
+        psip: ArrayLike | None = None,
+    ) -> Array:
+        r"""Calculates $d^2B(\psi/\psi_p, \theta)/d\theta^2$."""
+        return self._eval_deriv_theta2(theta, psi, psip)[()]
+
+    def eval_deriv_mixed(
+        self,
+        theta: ArrayLike,
+        psi: ArrayLike | None = None,
+        psip: ArrayLike | None = None,
+    ) -> Array:
+        r"""Calculates $d^2B(\psi/\psi_p, \theta)/d(\psi/\psi_p)d\theta^2$."""
+        return self._eval_deriv_mixed(theta, psi, psip)[()]
 
 
 class Mode(_ReprStrImpl):

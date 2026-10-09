@@ -62,6 +62,21 @@ def _test_bfield_base(bfield: dex.BfieldObject):
         bfield.eval_deriv_theta(psip=flux, theta=theta)
         bfield.eval_deriv_theta(psip=fluxes, theta=thetas)
 
+        bfield.eval_deriv_flux2(psi=flux, theta=theta)
+        bfield.eval_deriv_flux2(psi=fluxes, theta=thetas)
+        bfield.eval_deriv_flux2(psip=flux, theta=theta)
+        bfield.eval_deriv_flux2(psip=fluxes, theta=thetas)
+
+        bfield.eval_deriv_theta2(psi=flux, theta=theta)
+        bfield.eval_deriv_theta2(psi=fluxes, theta=thetas)
+        bfield.eval_deriv_theta2(psip=flux, theta=theta)
+        bfield.eval_deriv_theta2(psip=fluxes, theta=thetas)
+
+        bfield.eval_deriv_mixed(psi=flux, theta=theta)
+        bfield.eval_deriv_mixed(psi=fluxes, theta=thetas)
+        bfield.eval_deriv_mixed(psip=flux, theta=theta)
+        bfield.eval_deriv_mixed(psip=fluxes, theta=thetas)
+
     except Exception as e:
         if not "[D] EvalError" in str(e):
             raise RuntimeError(

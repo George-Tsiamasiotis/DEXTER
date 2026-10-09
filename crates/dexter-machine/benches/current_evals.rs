@@ -6,7 +6,7 @@ use criterion::{Criterion, criterion_group, criterion_main};
 use dexter_machine::extract::TEST_NETCDF_PATH;
 use dexter_machine::*;
 
-use std::hint::black_box;
+use std::hint::black_box as bb;
 use std::path::PathBuf;
 
 fn current_evals(c: &mut Criterion) {
@@ -24,10 +24,10 @@ fn current_evals(c: &mut Criterion) {
     let mut group = c.benchmark_group("Current g(ψ) evaluation");
 
     group.bench_with_input("LarCurrent", &psi, |b, &psi| {
-        b.iter(|| lar_current.eval_g(black_box(psi), black_box(acc)).unwrap());
+        b.iter(|| lar_current.eval_g(bb(psi), bb(acc)).unwrap());
     });
     group.bench_with_input("NcCurrent", &psi, |b, &psi| {
-        b.iter(|| nc_current.eval_g(black_box(psi), black_box(acc)).unwrap());
+        b.iter(|| nc_current.eval_g(bb(psi), bb(acc)).unwrap());
     });
     group.finish();
 
@@ -36,10 +36,10 @@ fn current_evals(c: &mut Criterion) {
     let mut group = c.benchmark_group("Current I(ψ) evaluation");
 
     group.bench_with_input("LarCurrent", &psi, |b, &psi| {
-        b.iter(|| lar_current.eval_i(black_box(psi), black_box(acc)).unwrap());
+        b.iter(|| lar_current.eval_i(bb(psi), bb(acc)).unwrap());
     });
     group.bench_with_input("NcCurrent", &psi, |b, &psi| {
-        b.iter(|| nc_current.eval_i(black_box(psi), black_box(acc)).unwrap());
+        b.iter(|| nc_current.eval_i(bb(psi), bb(acc)).unwrap());
     });
     group.finish();
 
@@ -48,18 +48,10 @@ fn current_evals(c: &mut Criterion) {
     let mut group = c.benchmark_group("Current dg(ψ)/dψ evaluation");
 
     group.bench_with_input("LarCurrent", &psi, |b, &psi| {
-        b.iter(|| {
-            lar_current
-                .eval_g_deriv(black_box(psi), black_box(acc))
-                .unwrap()
-        });
+        b.iter(|| lar_current.eval_g_deriv(bb(psi), bb(acc)).unwrap());
     });
     group.bench_with_input("NcCurrent", &psi, |b, &psi| {
-        b.iter(|| {
-            nc_current
-                .eval_g_deriv(black_box(psi), black_box(acc))
-                .unwrap()
-        });
+        b.iter(|| nc_current.eval_g_deriv(bb(psi), bb(acc)).unwrap());
     });
     group.finish();
 
@@ -68,18 +60,10 @@ fn current_evals(c: &mut Criterion) {
     let mut group = c.benchmark_group("Current dI(ψ)/dψ evaluation");
 
     group.bench_with_input("LarCurrent", &psi, |b, &psi| {
-        b.iter(|| {
-            lar_current
-                .eval_i_deriv(black_box(psi), black_box(acc))
-                .unwrap()
-        });
+        b.iter(|| lar_current.eval_i_deriv(bb(psi), bb(acc)).unwrap());
     });
     group.bench_with_input("NcCurrent", &psi, |b, &psi| {
-        b.iter(|| {
-            nc_current
-                .eval_i_deriv(black_box(psi), black_box(acc))
-                .unwrap()
-        });
+        b.iter(|| nc_current.eval_i_deriv(bb(psi), bb(acc)).unwrap());
     });
     group.finish();
 }

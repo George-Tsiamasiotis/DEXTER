@@ -192,6 +192,24 @@ class _PyBfield:  # Trait and all possible getters
         psi: float,
         psip: float,
     ) -> float: ...
+    def eval_deriv_flux2(
+        self,
+        theta: float,
+        psi: float,
+        psip: float,
+    ) -> float: ...
+    def eval_deriv_theta2(
+        self,
+        theta: float,
+        psi: float,
+        psip: float,
+    ) -> float: ...
+    def eval_deriv_mixed(
+        self,
+        theta: float,
+        psi: float,
+        psip: float,
+    ) -> float: ...
     def get_array(self, name: str) -> Array1 | None: ...
     def get_array2d(self, name: str) -> Array2: ...
     @override

@@ -112,6 +112,56 @@ impl Bfield for LarBfield {
             }
         }
     }
+
+    fn eval_deriv_flux2(
+        &self,
+        flux: MagneticFlux,
+        theta: f64,
+        _: &mut Accelerator2d,
+    ) -> Result<f64, EvalError> {
+        debug_assert_non_negative_flux!(flux);
+        match flux {
+            Toroidal(psi) => Ok(debug_assert_is_finite!(
+                theta.cos() / (2.0 * psi).powi(3).sqrt()
+            )),
+            Poloidal(_) => {
+                cold_path();
+                Err(EvalError::UndefinedEvaluation("d2B(ψp, θ)/dψp2".into()))
+            }
+        }
+    }
+
+    fn eval_deriv_theta2(
+        &self,
+        flux: MagneticFlux,
+        theta: f64,
+        _: &mut Accelerator2d,
+    ) -> Result<f64, EvalError> {
+        debug_assert_non_negative_flux!(flux);
+        match flux {
+            Toroidal(psi) => Ok(debug_assert_is_finite!((2.0 * psi).sqrt() * theta.cos())),
+            Poloidal(_) => {
+                cold_path();
+                Err(EvalError::UndefinedEvaluation("d2B(ψp, θ)/dθ2".into()))
+            }
+        }
+    }
+
+    fn eval_deriv_mixed(
+        &self,
+        flux: MagneticFlux,
+        theta: f64,
+        _: &mut Accelerator2d,
+    ) -> Result<f64, EvalError> {
+        debug_assert_non_negative_flux!(flux);
+        match flux {
+            Toroidal(psi) => Ok(debug_assert_is_finite!(theta.sin() / (2.0 * psi).sqrt())),
+            Poloidal(_) => {
+                cold_path();
+                Err(EvalError::UndefinedEvaluation("d2B(ψp, θ)/dψpdθ".into()))
+            }
+        }
+    }
 }
 
 impl std::fmt::Debug for LarBfield {
@@ -457,6 +507,93 @@ impl Bfield for NcBfield {
             interp.eval_deriv_y(xa, ya, za, val, theta, acc)?
         ))
     }
+
+    fn eval_deriv_flux2(
+        &self,
+        flux: MagneticFlux,
+        theta: f64,
+        acc: &mut Accelerator2d,
+    ) -> Result<f64, EvalError> {
+        debug_assert_non_negative_flux!(flux);
+        debug_assert_is_2pi_modulo!(theta);
+        let interp_opt = match flux {
+            Toroidal(_) => self.b_of_psi_interp.as_ref(),
+            Poloidal(_) => self.b_of_psip_interp.as_ref(),
+        };
+        let Some(interp) = interp_opt else {
+            cold_path();
+            let msg = format!("d2B({}, θ)/d{}2", flux.symbol(), flux.symbol());
+            return Err(EvalError::UndefinedEvaluation(msg));
+        };
+        // This cannot panic. If `interp` is `Some` then the corresponding values exist.
+        let (val, xa) = match flux {
+            Toroidal(val) => (val, self.psi.uvalues()),
+            Poloidal(val) => (val, self.psip.uvalues()),
+        };
+        let ya = &self.theta_values_padded;
+        let za = &self.b_values_fortran_flat_padded;
+        Ok(debug_assert_is_finite!(
+            interp.eval_deriv_xx(xa, ya, za, val, theta, acc)?
+        ))
+    }
+
+    fn eval_deriv_theta2(
+        &self,
+        flux: MagneticFlux,
+        theta: f64,
+        acc: &mut Accelerator2d,
+    ) -> Result<f64, EvalError> {
+        debug_assert_non_negative_flux!(flux);
+        debug_assert_is_2pi_modulo!(theta);
+        let interp_opt = match flux {
+            Toroidal(_) => self.b_of_psi_interp.as_ref(),
+            Poloidal(_) => self.b_of_psip_interp.as_ref(),
+        };
+        let Some(interp) = interp_opt else {
+            cold_path();
+            let msg = format!("d2B({}, θ)/dθ2", flux.symbol());
+            return Err(EvalError::UndefinedEvaluation(msg));
+        };
+        // This cannot panic. If `interp` is `Some` then the corresponding values exist.
+        let (val, xa) = match flux {
+            Toroidal(val) => (val, self.psi.uvalues()),
+            Poloidal(val) => (val, self.psip.uvalues()),
+        };
+        let ya = &self.theta_values_padded;
+        let za = &self.b_values_fortran_flat_padded;
+        Ok(debug_assert_is_finite!(
+            interp.eval_deriv_yy(xa, ya, za, val, theta, acc)?
+        ))
+    }
+
+    fn eval_deriv_mixed(
+        &self,
+        flux: MagneticFlux,
+        theta: f64,
+        acc: &mut Accelerator2d,
+    ) -> Result<f64, EvalError> {
+        debug_assert_non_negative_flux!(flux);
+        debug_assert_is_2pi_modulo!(theta);
+        let interp_opt = match flux {
+            Toroidal(_) => self.b_of_psi_interp.as_ref(),
+            Poloidal(_) => self.b_of_psip_interp.as_ref(),
+        };
+        let Some(interp) = interp_opt else {
+            cold_path();
+            let msg = format!("d2B({}, θ)/d{}dθ", flux.symbol(), flux.symbol());
+            return Err(EvalError::UndefinedEvaluation(msg));
+        };
+        // This cannot panic. If `interp` is `Some` then the corresponding values exist.
+        let (val, xa) = match flux {
+            Toroidal(val) => (val, self.psi.uvalues()),
+            Poloidal(val) => (val, self.psip.uvalues()),
+        };
+        let ya = &self.theta_values_padded;
+        let za = &self.b_values_fortran_flat_padded;
+        Ok(debug_assert_is_finite!(
+            interp.eval_deriv_xy(xa, ya, za, val, theta, acc)?
+        ))
+    }
 }
 
 /// Getters.
@@ -605,6 +742,9 @@ mod test_toroidal_nc_evals {
         assert!(b.eval_b(flux, t, acc).unwrap().is_finite());
         assert!(b.eval_deriv_flux(flux, t, acc).unwrap().is_finite());
         assert!(b.eval_deriv_theta(flux, t, acc).unwrap().is_finite());
+        assert!(b.eval_deriv_flux2(flux, t, acc).unwrap().is_finite());
+        assert!(b.eval_deriv_theta2(flux, t, acc).unwrap().is_finite());
+        assert!(b.eval_deriv_mixed(flux, t, acc).unwrap().is_finite());
     }
 
     #[test]
@@ -617,6 +757,9 @@ mod test_toroidal_nc_evals {
         matches!(b.eval_b(flux, t, acc), Err(err(..)));
         matches!(b.eval_deriv_flux(flux, t, acc), Err(err(..)));
         matches!(b.eval_deriv_theta(flux, t, acc), Err(err(..)));
+        matches!(b.eval_deriv_flux2(flux, t, acc), Err(err(..)));
+        matches!(b.eval_deriv_theta2(flux, t, acc), Err(err(..)));
+        matches!(b.eval_deriv_mixed(flux, t, acc), Err(err(..)));
     }
 }
 
@@ -651,6 +794,9 @@ mod test_poloidal_nc_evals {
         assert!(b.eval_b(flux, t, acc).unwrap().is_finite());
         assert!(b.eval_deriv_flux(flux, t, acc).unwrap().is_finite());
         assert!(b.eval_deriv_theta(flux, t, acc).unwrap().is_finite());
+        assert!(b.eval_deriv_flux2(flux, t, acc).unwrap().is_finite());
+        assert!(b.eval_deriv_theta2(flux, t, acc).unwrap().is_finite());
+        assert!(b.eval_deriv_mixed(flux, t, acc).unwrap().is_finite());
     }
 
     #[test]
@@ -663,6 +809,9 @@ mod test_poloidal_nc_evals {
         matches!(b.eval_b(flux, t, acc), Err(err(..)));
         matches!(b.eval_deriv_flux(flux, t, acc), Err(err(..)));
         matches!(b.eval_deriv_theta(flux, t, acc), Err(err(..)));
+        matches!(b.eval_deriv_flux2(flux, t, acc), Err(err(..)));
+        matches!(b.eval_deriv_theta2(flux, t, acc), Err(err(..)));
+        matches!(b.eval_deriv_mixed(flux, t, acc), Err(err(..)));
     }
 }
 

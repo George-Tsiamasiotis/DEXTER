@@ -23,6 +23,9 @@ fn lar_bfield() {
     let _: f64 = bfield.eval_b(psi, theta, acc).unwrap();
     let _: f64 = bfield.eval_deriv_flux(psi, theta, acc).unwrap();
     let _: f64 = bfield.eval_deriv_theta(psi, theta, acc).unwrap();
+    let _: f64 = bfield.eval_deriv_flux2(psi, theta, acc).unwrap();
+    let _: f64 = bfield.eval_deriv_theta2(psi, theta, acc).unwrap();
+    let _: f64 = bfield.eval_deriv_mixed(psi, theta, acc).unwrap();
 
     assert!(matches!(
         bfield.eval_b(psip, theta, acc),
@@ -34,6 +37,18 @@ fn lar_bfield() {
     ));
     assert!(matches!(
         bfield.eval_deriv_theta(psip, theta, acc),
+        Err(EvalError::UndefinedEvaluation(..))
+    ));
+    assert!(matches!(
+        bfield.eval_deriv_flux2(psip, theta, acc),
+        Err(EvalError::UndefinedEvaluation(..))
+    ));
+    assert!(matches!(
+        bfield.eval_deriv_theta2(psip, theta, acc),
+        Err(EvalError::UndefinedEvaluation(..))
+    ));
+    assert!(matches!(
+        bfield.eval_deriv_mixed(psip, theta, acc),
         Err(EvalError::UndefinedEvaluation(..))
     ));
 }
@@ -77,6 +92,12 @@ fn nc_bfield_no_pad() {
     let _: f64 = bfield.eval_deriv_flux(psip, theta, acc).unwrap();
     let _: f64 = bfield.eval_deriv_theta(psi, theta, acc).unwrap();
     let _: f64 = bfield.eval_deriv_theta(psip, theta, acc).unwrap();
+    let _: f64 = bfield.eval_deriv_flux2(psi, theta, acc).unwrap();
+    let _: f64 = bfield.eval_deriv_flux2(psip, theta, acc).unwrap();
+    let _: f64 = bfield.eval_deriv_theta2(psi, theta, acc).unwrap();
+    let _: f64 = bfield.eval_deriv_theta2(psip, theta, acc).unwrap();
+    let _: f64 = bfield.eval_deriv_mixed(psi, theta, acc).unwrap();
+    let _: f64 = bfield.eval_deriv_mixed(psip, theta, acc).unwrap();
 }
 
 #[test]

@@ -6,7 +6,7 @@ use criterion::{Criterion, criterion_group, criterion_main};
 use dexter_machine::extract::TEST_NETCDF_PATH;
 use dexter_machine::*;
 
-use std::hint::black_box;
+use std::hint::black_box as bb;
 use std::path::PathBuf;
 
 fn mode_evals(c: &mut Criterion) {
@@ -33,11 +33,11 @@ fn mode_evals(c: &mut Criterion) {
             b.iter(|| {
                 flute_mode
                     .eval_m(
-                        black_box(psi),
-                        black_box(theta),
-                        black_box(zeta),
-                        black_box(t),
-                        black_box(&mut flute_mode_cache),
+                        bb(psi),
+                        bb(theta),
+                        bb(zeta),
+                        bb(t),
+                        bb(&mut flute_mode_cache),
                     )
                     .unwrap()
             });
@@ -50,11 +50,11 @@ fn mode_evals(c: &mut Criterion) {
             b.iter(|| {
                 nc_flute_mode
                     .eval_m(
-                        black_box(psi),
-                        black_box(theta),
-                        black_box(zeta),
-                        black_box(t),
-                        black_box(&mut nc_flute_mode_cache),
+                        bb(psi),
+                        bb(theta),
+                        bb(zeta),
+                        bb(t),
+                        bb(&mut nc_flute_mode_cache),
                     )
                     .unwrap()
             });
@@ -73,11 +73,11 @@ fn mode_evals(c: &mut Criterion) {
             b.iter(|| {
                 flute_mode
                     .eval_deriv_flux(
-                        black_box(psi),
-                        black_box(theta),
-                        black_box(zeta),
-                        black_box(t),
-                        black_box(&mut flute_mode_cache),
+                        bb(psi),
+                        bb(theta),
+                        bb(zeta),
+                        bb(t),
+                        bb(&mut flute_mode_cache),
                     )
                     .unwrap()
             });
@@ -90,11 +90,11 @@ fn mode_evals(c: &mut Criterion) {
             b.iter(|| {
                 nc_flute_mode
                     .eval_deriv_flux(
-                        black_box(psi),
-                        black_box(theta),
-                        black_box(zeta),
-                        black_box(t),
-                        black_box(&mut nc_flute_mode_cache),
+                        bb(psi),
+                        bb(theta),
+                        bb(zeta),
+                        bb(t),
+                        bb(&mut nc_flute_mode_cache),
                     )
                     .unwrap()
             });
@@ -113,11 +113,11 @@ fn mode_evals(c: &mut Criterion) {
             b.iter(|| {
                 flute_mode
                     .eval_deriv_theta(
-                        black_box(psi),
-                        black_box(theta),
-                        black_box(zeta),
-                        black_box(t),
-                        black_box(&mut flute_mode_cache),
+                        bb(psi),
+                        bb(theta),
+                        bb(zeta),
+                        bb(t),
+                        bb(&mut flute_mode_cache),
                     )
                     .unwrap()
             });
@@ -130,11 +130,11 @@ fn mode_evals(c: &mut Criterion) {
             b.iter(|| {
                 nc_flute_mode
                     .eval_deriv_theta(
-                        black_box(psi),
-                        black_box(theta),
-                        black_box(zeta),
-                        black_box(t),
-                        black_box(&mut nc_flute_mode_cache),
+                        bb(psi),
+                        bb(theta),
+                        bb(zeta),
+                        bb(t),
+                        bb(&mut nc_flute_mode_cache),
                     )
                     .unwrap()
             });
@@ -153,11 +153,11 @@ fn mode_evals(c: &mut Criterion) {
             b.iter(|| {
                 flute_mode
                     .eval_deriv_zeta(
-                        black_box(psi),
-                        black_box(theta),
-                        black_box(zeta),
-                        black_box(t),
-                        black_box(&mut flute_mode_cache),
+                        bb(psi),
+                        bb(theta),
+                        bb(zeta),
+                        bb(t),
+                        bb(&mut flute_mode_cache),
                     )
                     .unwrap()
             });
@@ -170,11 +170,11 @@ fn mode_evals(c: &mut Criterion) {
             b.iter(|| {
                 nc_flute_mode
                     .eval_deriv_zeta(
-                        black_box(psi),
-                        black_box(theta),
-                        black_box(zeta),
-                        black_box(t),
-                        black_box(&mut nc_flute_mode_cache),
+                        bb(psi),
+                        bb(theta),
+                        bb(zeta),
+                        bb(t),
+                        bb(&mut nc_flute_mode_cache),
                     )
                     .unwrap()
             });
