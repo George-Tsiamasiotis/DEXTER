@@ -39,6 +39,15 @@ impl MagneticFluxKind {
             Self::Poloidal => MagneticFlux::Poloidal(value),
         }
     }
+
+    /// Returns the symbol of `self` ("ψ" or "ψp") as a `Box<str>`.
+    #[must_use]
+    pub fn symbol(&self) -> Box<str> {
+        match *self {
+            Self::Toroidal => "ψ".into(),
+            Self::Poloidal => "ψp".into(),
+        }
+    }
 }
 
 impl MagneticFlux {

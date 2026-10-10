@@ -555,7 +555,7 @@ def plot_bfield(
         linestyle="solid",
         negative_linestyles="solid",
     )
-    curve = StationaryCurve(machine)  # stationary curve from rust
+    curve = StationaryCurve(machine)
     segments = curve.segments()
     for seg in segments:
         lab_eval_args = {flux_arg_name: seg.flux, "theta": seg.theta}
@@ -568,6 +568,16 @@ def plot_bfield(
             linewidth=2 * LEVEL_LINE_WIDTH,
             zorder=2,
         )
+        # axsc.scatter(  # contour points
+        #     rlab_seg,
+        #     zlab_seg,
+        #     marker="x",
+        #     c="k",
+        #     s=5,
+        #     linewidths=0.4,
+        #     alpha=0.8,
+        #     zorder=1,
+        # )
 
     axsc.plot([], [], color=SC_COLOR, label=r"$dB(R,Z)/d\theta$")
     axsc.legend(loc="upper right", prop={"size": 7})
@@ -582,7 +592,7 @@ def plot_bfield(
     for ax in [axbb, axbf, axbt, axsc]:
         ax.plot(geometry.rlab_last, geometry.zlab_last, color=LAST_COLOR)
         ax.scatter(*axis_point, marker="+", c="k", s=40, zorder=10)
-        ax.set_aspect("equal")
+        ax.axis("equal")
         ax.margins(*MARGINS)
 
     for lower_ax in axes[1, :]:

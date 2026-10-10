@@ -63,7 +63,7 @@ fn check_lar_stationary_curve(curve: StationaryCurve, flux_last: f64) {
     let theta = seg1.theta();
     let flux = seg1.flux();
 
-    assert!(theta.iter().all(|t| (*t - PI).abs() <= 1e-5));
+    assert!(theta.iter().all(|t| (*t - PI).abs() <= 1e-13));
 
     assert!(flux[0] >= flux_last - 1.5 * psi_step);
     assert!(flux[flux.len() - 1] < flux_last - 1.5 * psi_step);
@@ -75,7 +75,7 @@ fn check_lar_stationary_curve(curve: StationaryCurve, flux_last: f64) {
     let theta = seg2.theta();
     let flux = seg2.flux();
 
-    assert!(theta.iter().all(|t| t.abs() <= 1e-5));
+    assert!(theta.iter().all(|t| t.abs() <= 1e-13));
 
     assert!(flux[0] < flux_last - 1.5 * psi_step);
     assert!(flux[flux.len() - 1] > flux_last - 1.5 * psi_step);

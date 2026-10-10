@@ -18,6 +18,8 @@ ndarray = "0.17.2"
 thiserror = "2.0.21"
 criterion = "0.8.2"
 parabola = "0.1.2"
+colored = "3.1.1"
+rayon = "1.12.0"
 rsl-interpolation = { git = "https://github.com/George-Tsiamasiotis/rsl-interpolation", branch = "dev", features = ["openblas-system"] }
 
 dexter = { path = "crates/dexter" }
@@ -29,7 +31,7 @@ dexter-simulate = { path = "crates/dexter-simulate" }
 [workspace.package]
 authors = ["George Tsiamasiotis"]
 edition = "2024"
-version = "0.2.2-pre.5"
+version = "0.2.2-pre.6"
 rust-version = "1.97.1"
 license = "GPL-3.0-only"
 homepage = "https://github.com/George-Tsiamasiotis/DEXTER"
