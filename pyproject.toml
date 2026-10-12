@@ -1,6 +1,6 @@
 [project]
 name = "dexter"
-version = "0.2.2-pre.1"
+version = "0.2.2-pre.2"
 description = "Calculations and simulations in analytical and reconstructed configurations of toroidal fusion devices."
 readme = "README.md"
 authors = [
@@ -46,13 +46,14 @@ test = [
 ]
 docs = [
     "mkdocstrings-python>=2.0.9",
-    "zensical>=0.0.67",
+    "zensical==0.0.69",
 ]
 
 [tool.pytest.ini_options]
 testpaths = [ # Run from workspace root
     "./py-dexter/pytests",
     "./py-dexter/dexter/machine/*",
+    "./py-dexter/dexter/comspace/*",
     "./py-dexter/dexter/simulate/*",
 ]
 addopts = """

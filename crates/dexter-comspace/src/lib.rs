@@ -1,9 +1,15 @@
 //! Calculations on the Constants of Motion (COMs) space.
 //!
-//! ### Energy grid calculation
-//! + [`create_poloidal_grid`]: Creates a `(θ, ψ/ψp)` meshgrid from the two 1D arrays.
-//! + [`energy_of_psi_grid`]: Calculates the energy on a 2D meshgrid of the `θ` and `ψ` arrays.
-//! + [`energy_of_psip_grid`]: Calculates the energy on a 2D meshgrid of the `θ` and `ψp` arrays.
+//! ### [`Guiding Center Hamiltonian`][GCHamiltonian]
+//!
+//! The guiding center Hamiltonian.
+//!
+//! + [`GCHamiltonian::eval`]: Evaluates the Hamiltonian in a `(θ, ψ/ψp; Pζ, μ)` point.
+//! + [`GCHamiltonian::eval_psi_array`]: Evaluates the Hamiltonian in a `([θ], [ψ]; Pζ, μ)` 1D array.
+//! + [`GCHamiltonian::eval_psip_array`]: Evaluates the Hamiltonian in a `([θ], [ψp]; Pζ, μ)` 1D array.
+//! + [`GCHamiltonian::eval_psi_grid`]: Evaluates the Hamiltonian in a `([θ], [ψ]; Pζ, μ)` 2D grid.
+//! + [`GCHamiltonian::eval_psip_grid`]: Evaluates the Hamiltonian in a `([θ], [ψp]; Pζ, μ)` 2D grid.
+//!
 //!
 //! ### Calculations on the E - Pζ plane
 //!
@@ -17,9 +23,14 @@
 //!
 //! + [`EnergyPzetaPosition`]: A region of the E - Pζ plane defined by the classification curves.
 //! + [`OrbitType`]: A particle's orbit type. Can be calculated with [`EnergyPzetaPosition::orbit_type`].
+//!
+//! # Free functions
+//!
+//! + [`create_poloidal_grid`]: Creates a `(θ, ψ/ψp)` meshgrid from the two 1D arrays.
 
-mod energy_grid;
 mod energy_pzeta_plane;
+mod error;
+mod gc_hamiltonian;
 
 // ============== Re-exports
 
@@ -27,11 +38,14 @@ pub use parabola::Point;
 
 // ============== Public API
 
+pub use error::COMError;
+
+pub use gc_hamiltonian::GCHamiltonian;
+pub use gc_hamiltonian::create_poloidal_grid;
+
 pub use energy_pzeta_plane::{
     EnergyPzetaPlane, EnergyPzetaPosition, OrbitType, TrappedPassingBoundary,
 };
-
-pub use energy_grid::{create_poloidal_grid, energy_of_psi_grid, energy_of_psip_grid};
 
 /// Crate configuration constants.
 pub mod constants {

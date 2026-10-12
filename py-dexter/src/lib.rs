@@ -36,9 +36,8 @@ fn _core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<simulate::PyMagneticFluxArray>()?;
     m.add_class::<simulate::PyQueueInitialConditions>()?;
     m.add_class::<simulate::PyQueue>()?;
-    m.add_function(wrap_pyfunction!(simulate::create_poloidal_grid, m)?)?;
-    m.add_function(wrap_pyfunction!(simulate::energy_of_psi_grid, m)?)?;
-    m.add_function(wrap_pyfunction!(simulate::energy_of_psip_grid, m)?)?;
+    m.add_function(wrap_pyfunction!(py_create_poloidal_grid, m)?)?;
+    m.add_class::<comspace::PyGCHamiltonian>()?;
     m.add_class::<comspace::PyParabola>()?;
     m.add_class::<comspace::PyEnergyPzetaPlane>()?;
     Ok(())

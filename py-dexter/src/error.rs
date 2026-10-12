@@ -1,3 +1,6 @@
+//! Top level error type returned to Python.
+
+use dexter::dexter_comspace::*;
 use dexter::dexter_machine::*;
 use dexter::dexter_simulate::*;
 use numpy::AsSliceError;
@@ -25,6 +28,7 @@ pub enum DexterError {
     InvalidDirectionality,
     MachineError(String),
     EvalError(String),
+    COMError(String),
     SimulationError(String),
     NumpyRustError(String),
 }
@@ -86,6 +90,7 @@ impl std::fmt::Display for DexterError {
             ),
             Self::MachineError(err) => write!(f, "[D] MachineError: '{err}'"),
             Self::EvalError(err) => write!(f, "[D] EvalError: '{err}'"),
+            Self::COMError(err) => write!(f, "[D] COMError: '{err}'"),
             Self::SimulationError(err) => write!(f, "[D] SimulationError: '{err}'"),
             Self::NumpyRustError(err) => write!(f, "[D] NumpyRustError: '{err}'"),
         }
@@ -117,5 +122,6 @@ macro_rules! impl_to_dexter_error {
 impl_to_dexter_error!(PyErr, PyErr);
 impl_to_dexter_error!(MachineError, MachineError);
 impl_to_dexter_error!(EvalError, EvalError);
+impl_to_dexter_error!(COMError, COMError);
 impl_to_dexter_error!(SimulationError, SimulationError);
 impl_to_dexter_error!(AsSliceError, NumpyRustError);

@@ -1,6 +1,9 @@
 //! Definitions of `Machine` and `MachineBuilder`.
 
-use crate::{Bfield, Current, Geometry, Perturbation, Qfactor};
+use crate::{
+    Bfield, Current, FluxCoordinateState, Geometry, MagneticFlux, MagneticFluxKind, Perturbation,
+    Qfactor,
+};
 
 /// To be used when no perturbation is passed, to avoid calling `unwrap()` every time.
 const ZERO_PERTURBATION: &Perturbation = &Perturbation::zero();
@@ -142,14 +145,85 @@ pub struct Machine<'obj> {
 
 impl<'obj> Machine<'obj> {
     /// Constructs a `Machine` from a [`MachineBuilder`].
+    ///
+    /// # Panics
+    ///
+    /// This constructor panics of the `qfactor`, `current` and `bfield` objects do not have a
+    /// common `good` flux coordinate.
     #[must_use]
     pub(crate) fn build(builder: MachineBuilder<'obj>) -> Self {
+        let geometry = builder.geometry;
+        let qfactor = builder.qfactor;
+        let current = builder.current;
+        let bfield = builder.bfield;
+        let perturbation = builder.perturbation.unwrap_or(ZERO_PERTURBATION);
+
+        use FluxCoordinateState::*;
+        match (
+            qfactor.psi_state(),
+            current.psi_state(),
+            bfield.psi_state(),
+            qfactor.psip_state(),
+            current.psip_state(),
+            bfield.psip_state(),
+        ) {
+            (Good, Good, Good, _, _, _) | (_, _, _, Good, Good, Good) => (),
+            _ => panic!(
+                "'qfactor', 'current' and 'bfield' must have a common 'good' flux coordinate"
+            ),
+        };
+
         Machine {
-            geometry: builder.geometry,
-            qfactor: builder.qfactor,
-            current: builder.current,
-            bfield: builder.bfield,
-            perturbation: builder.perturbation.unwrap_or(ZERO_PERTURBATION),
+            geometry,
+            qfactor,
+            current,
+            bfield,
+            perturbation,
+        }
+    }
+
+    /// Returns the toroidal Last Closed Flux Surface.
+    #[must_use]
+    pub fn psi_last(&self) -> MagneticFlux {
+        self.qfactor.psi_last()
+    }
+
+    /// Returns the poloidal Last Closed Flux Surface.
+    #[must_use]
+    pub fn psip_last(&self) -> MagneticFlux {
+        self.qfactor.psip_last()
+    }
+
+    /// Returns the [`FluxCoordinateState`] of the `psi` coordinate of the machine.
+    #[must_use]
+    pub fn psi_state(&self) -> FluxCoordinateState {
+        self.qfactor.psi_state()
+    }
+
+    /// Returns the [`FluxCoordinateState`] of the `psip` coordinate of the machine.
+    #[must_use]
+    pub fn psip_state(&self) -> FluxCoordinateState {
+        self.qfactor.psip_state()
+    }
+
+    /// Returns [`Toroidal`] if `self.psi_state()` is [`Good`], else [`Poloidal`].
+    ///
+    /// Note that `psi` is checked first, so if `psi` is [`Good`], [`Toroidal`] is returned even
+    /// if `psip` is [`Good`] as well.
+    ///
+    /// By construction of the `Machine` object, it is guaranteed that at least one of the flux
+    /// will be [`Good`].
+    ///
+    /// [`Toroidal`]: MagneticFluxKind::Toroidal
+    /// [`Poloidal`]: MagneticFluxKind::Poloidal
+    /// [`Good`]: FluxCoordinateState::Good
+    #[must_use]
+    pub fn good_flux(&self) -> MagneticFluxKind {
+        use FluxCoordinateState::*;
+        match (self.psi_state(), self.psip_state()) {
+            (Good, _) => MagneticFluxKind::Toroidal,
+            (_, Good) => MagneticFluxKind::Poloidal,
+            _ => unreachable!("states are checked at `Machine::build`"),
         }
     }
 
