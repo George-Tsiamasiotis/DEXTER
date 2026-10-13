@@ -66,7 +66,7 @@ from dexter.simulate.particle import Particle
 from dexter.simulate.queue import Queue
 
 from dexter.comspace.energy_pzeta_plane import EnergyPzetaPlane
-from dexter.comspace.gc_hamiltonian import GCHamiltonian, create_poloidal_grid
+from dexter.comspace.gc_hamiltonian import GCHamiltonian
 
 __all__ = [
     # Type Aliases
@@ -125,7 +125,6 @@ __all__ = [
     "Particle",
     "Queue",
     "GCHamiltonian",
-    "create_poloidal_grid",
     # Simulate (plot)
     "plot_evolution",
     "plot_poloidal_drift",

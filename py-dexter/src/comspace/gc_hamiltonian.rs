@@ -5,7 +5,6 @@ use dexter::dexter_comspace::*;
 use dexter::dexter_machine::*;
 
 use numpy::PyReadonlyArray1;
-use numpy::PyReadonlyArray2;
 use numpy::{IntoPyArray, PyArray1, PyArray2};
 use pyo3::prelude::*;
 use pyo3::types::PyType;
@@ -38,115 +37,40 @@ impl PyGCHamiltonian {
     }
 
     #[classmethod]
-    pub fn eval_psi_array<'py>(
+    pub fn eval_array<'py>(
         _: &Bound<'_, PyType>,
         py: Python<'py>,
         qfactor: &PyQfactor,
         current: &PyCurrent,
         bfield: &PyBfield,
         theta_array: PyReadonlyArray1<f64>,
-        psi_array: PyReadonlyArray1<f64>,
+        flux_array: &PyMagneticFluxArray,
         pzeta: f64,
         mu: f64,
     ) -> Result<Bound<'py, PyArray1<f64>>> {
         let machine = MachineBuilder::new(qfactor.inner(), current.inner(), bfield.inner()).build();
-        let grid = GCHamiltonian::eval_psi_array(
-            machine,
-            &theta_array.as_array(),
-            &psi_array.as_array(),
-            pzeta,
-            mu,
-        )?;
-        Ok(grid.into_pyarray(py))
+        let array =
+            GCHamiltonian::eval_array(machine, &theta_array.as_array(), &flux_array.0, pzeta, mu)?;
+        Ok(array.into_pyarray(py))
     }
 
     #[classmethod]
-    pub fn eval_psip_array<'py>(
+    pub fn eval_grid<'py>(
         _: &Bound<'_, PyType>,
         py: Python<'py>,
         qfactor: &PyQfactor,
         current: &PyCurrent,
         bfield: &PyBfield,
         theta_array: PyReadonlyArray1<f64>,
-        psip_array: PyReadonlyArray1<f64>,
-        pzeta: f64,
-        mu: f64,
-    ) -> Result<Bound<'py, PyArray1<f64>>> {
-        let machine = MachineBuilder::new(qfactor.inner(), current.inner(), bfield.inner()).build();
-        let grid = GCHamiltonian::eval_psip_array(
-            machine,
-            &theta_array.as_array(),
-            &psip_array.as_array(),
-            pzeta,
-            mu,
-        )?;
-        Ok(grid.into_pyarray(py))
-    }
-
-    #[classmethod]
-    pub fn eval_psi_grid<'py>(
-        _: &Bound<'_, PyType>,
-        py: Python<'py>,
-        qfactor: &PyQfactor,
-        current: &PyCurrent,
-        bfield: &PyBfield,
-        theta_grid: PyReadonlyArray2<f64>,
-        psi_grid: PyReadonlyArray2<f64>,
+        flux_array: &PyMagneticFluxArray,
         pzeta: f64,
         mu: f64,
     ) -> Result<Bound<'py, PyArray2<f64>>> {
         let machine = MachineBuilder::new(qfactor.inner(), current.inner(), bfield.inner()).build();
-        let grid = GCHamiltonian::eval_psi_grid(
-            machine,
-            &theta_grid.as_array(),
-            &psi_grid.as_array(),
-            pzeta,
-            mu,
-        )?;
+        let grid =
+            GCHamiltonian::eval_grid(machine, &theta_array.as_array(), &flux_array.0, pzeta, mu)?;
         Ok(grid.into_pyarray(py))
     }
-
-    #[classmethod]
-    pub fn eval_psip_grid<'py>(
-        _: &Bound<'_, PyType>,
-        py: Python<'py>,
-        qfactor: &PyQfactor,
-        current: &PyCurrent,
-        bfield: &PyBfield,
-        theta_grid: PyReadonlyArray2<f64>,
-        psip_grid: PyReadonlyArray2<f64>,
-        pzeta: f64,
-        mu: f64,
-    ) -> Result<Bound<'py, PyArray2<f64>>> {
-        let machine = MachineBuilder::new(qfactor.inner(), current.inner(), bfield.inner()).build();
-        let grid = GCHamiltonian::eval_psip_grid(
-            machine,
-            &theta_grid.as_array(),
-            &psip_grid.as_array(),
-            pzeta,
-            mu,
-        )?;
-        Ok(grid.into_pyarray(py))
-    }
-}
-
-// ===============================================================================================
-
-#[pyfunction]
-#[pyo3(name = "_py_create_poloidal_grid")]
-pub fn py_create_poloidal_grid<'py>(
-    py: Python<'py>,
-    theta_array: PyReadonlyArray1<f64>,
-    flux_array: PyReadonlyArray1<f64>,
-) -> (Bound<'py, PyArray2<f64>>, Bound<'py, PyArray2<f64>>) {
-    let theta_array = theta_array.as_array();
-    let flux_array = flux_array.as_array();
-    let (theta_grid, flux_grid) = create_poloidal_grid(&theta_array, &flux_array);
-
-    (
-        theta_grid.to_owned().into_pyarray(py),
-        flux_grid.to_owned().into_pyarray(py),
-    )
 }
 
 // ===============================================================================================

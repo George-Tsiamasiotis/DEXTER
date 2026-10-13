@@ -345,6 +345,10 @@ class Particle(_ReprStrImpl, _RustTypeWrapper):
 
         This routine only works for LAR-like equilibria.
 
+        !!! hint
+
+            See the "$E-P_\zeta$ *Positions*" section on the ***Diagrams*** tab for explanation.
+
         Parameters
         ----------
         machine
