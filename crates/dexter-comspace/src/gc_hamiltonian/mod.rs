@@ -8,8 +8,6 @@ mod array;
 
 use std::f64::consts::TAU;
 
-pub use array::create_poloidal_grid;
-
 // ===============================================================================================
 
 use dexter_machine::{Accelerator2d, EvalError, Machine, MagneticFlux};

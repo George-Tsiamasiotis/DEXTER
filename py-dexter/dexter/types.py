@@ -250,7 +250,9 @@ EnergyPzetaPosition = Literal[
 r"""The position of an $(E, P_\zeta)$ point on the $(E, P_\zeta)$ plane, relative to the orbit
 classification curves.
 
-See the diagram for explanation.
+!!! hint
+
+    See the "$E-P_\zeta$ *Positions*" section on the ***Diagrams*** tab for explanation.
 """
 
 OrbitType: TypeAlias = Literal[
@@ -287,4 +289,8 @@ r"""A particle's orbit type, calculated through the [`dexter.Particle.close()`] 
     parallel velocity but does not circle the magnetic axis. In the $(E, P_\zeta)$ plane,
     those lie to the right of the trapped-passing boundary and above the magnetic axis parabola.
 - `Undefined`: Not falling under any of the other categories.
+
+!!! hint
+
+    See the "$E-P_\zeta$ *Positions*" section on the ***Diagrams*** tab for explanation.
 """

@@ -27,4 +27,5 @@ workspace = true
 features = ["doc-images"]
 
 [features]
+default = ["doc-images"]
 doc-images = ["dep:embed-doc-image"]

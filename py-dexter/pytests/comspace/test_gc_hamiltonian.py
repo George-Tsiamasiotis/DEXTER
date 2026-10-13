@@ -17,23 +17,32 @@ def test_gc_hamiltonian_eval(lar_machine: dex.Machine):
 def test_gc_hamiltonian_eval_array(nc_machine: dex.Machine):
     h = dex.GCHamiltonian()
 
-    theta = np.linspace(0, np.pi, 10)
-    flux = np.linspace(0, 0.01, 10)
-    h1 = h.eval_psi_array(nc_machine, theta, flux, -0.01, 1e-4)
-    h2 = h.eval_psip_array(nc_machine, theta, flux, -0.01, 1e-4)
-    assert np.all(np.isfinite(h1))
-    assert np.all(np.isfinite(h2))
-    assert not np.all(np.isclose(h1, h2))
+    theta_array = np.linspace(0, np.pi, 10)
+    psi_array = dex.MagneticFluxArray.Toroidal(np.linspace(0, 0.01, 10))
+
+    psip_array = dex.MagneticFluxArray.Poloidal(
+        [nc_machine.qfactor.eval_other(psi.value) for psi in psi_array]
+    )
+
+    h_psi = h.eval_array(nc_machine, theta_array, psi_array, -0.01, 1e-4)
+    h_psip = h.eval_array(nc_machine, theta_array, psip_array, -0.01, 1e-4)
+    assert np.all(np.isfinite(h_psi))
+    assert np.all(np.isfinite(h_psip))
+    assert np.all(np.isclose(h_psi, h_psip))
 
 
 def test_gc_hamiltonian_eval_grid(nc_machine: dex.Machine):
     h = dex.GCHamiltonian()
 
-    theta = np.linspace(0, np.pi, 4)
-    flux = np.linspace(0, 0.01, 4)
-    theta, flux = dex.create_poloidal_grid(theta, flux)
-    h1 = h.eval_psi_grid(nc_machine, theta, flux, -0.01, 1e-4)
-    h2 = h.eval_psip_grid(nc_machine, theta, flux, -0.01, 1e-4)
-    assert np.all(np.isfinite(h1))
-    assert np.all(np.isfinite(h2))
-    assert not np.all(np.isclose(h1, h2))
+    theta_array = np.linspace(0, np.pi, 4)
+    psi_array = dex.MagneticFluxArray.Toroidal(np.linspace(0, 0.01, 5))
+
+    psip_array = dex.MagneticFluxArray.Poloidal(
+        [nc_machine.qfactor.eval_other(psi.value) for psi in psi_array]
+    )
+
+    h_psi = h.eval_grid(nc_machine, theta_array, psi_array, -0.01, 1e-4)
+    h_psip = h.eval_grid(nc_machine, theta_array, psip_array, -0.01, 1e-4)
+    assert np.all(np.isfinite(h_psi))
+    assert np.all(np.isfinite(h_psip))
+    assert np.all(np.isclose(h_psi, h_psip))

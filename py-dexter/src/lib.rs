@@ -36,7 +36,6 @@ fn _core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<simulate::PyParticle>()?;
     m.add_class::<simulate::PyQueueInitialConditions>()?;
     m.add_class::<simulate::PyQueue>()?;
-    m.add_function(wrap_pyfunction!(py_create_poloidal_grid, m)?)?;
     m.add_class::<comspace::PyGCHamiltonian>()?;
     m.add_class::<comspace::PyParabola>()?;
     m.add_class::<comspace::PyEnergyPzetaPlane>()?;

@@ -20,12 +20,13 @@ from math import floor, log10
 from typing import cast
 from pint.facets.plain import PlainQuantity
 
+from dexter.machine.flux import MagneticFluxArray
 from dexter.machine.machine import Machine
 from dexter.machine.geometries import GeometryObject
 from dexter.simulate.params import IntersectParams
 from dexter.simulate.particle import Particle
 from dexter.simulate.queue import Queue
-from dexter.comspace.gc_hamiltonian import create_poloidal_grid, GCHamiltonian
+from dexter.comspace.gc_hamiltonian import GCHamiltonian
 from dexter._utils import tex_unit
 from dexter.machine.plot import _resolve_magnetic_flux_kind
 from dexter.types import Array2, ArrayShape, Locator, Array1, OrbitType
@@ -232,11 +233,11 @@ def plot_poloidal_drift(
         if particle.steps_stored == 0:
             continue
         if flux == "Toroidal":
-            flux_array = particle.psi_array
+            particle_flux_array = particle.psi_array
         else:
-            flux_array = particle.psip_array
+            particle_flux_array = particle.psip_array
         particle_eval_arg = {
-            flux_arg_name: flux_array,
+            flux_arg_name: particle_flux_array,
             "theta": particle.theta_array % TAU,
         }
         prlab = geometry.eval_rlab(**particle_eval_arg)
@@ -259,19 +260,18 @@ def plot_poloidal_drift(
     mus = np.asarray([particle.initial_conditions.mu0 for particle in particles])
     if np.all(pzetas == pzetas[0]) and np.all(mus == mus[0]):
 
-        hamiltonian = GCHamiltonian()
         if flux == "Toroidal":
-            energy_function = hamiltonian.eval_psi_grid
             eval_flux_of_r_function = geometry.eval_psi_of_r
         else:
-            energy_function = hamiltonian.eval_psip_grid
             eval_flux_of_r_function = geometry.eval_psip_of_r
 
         r_array = np.linspace(0, machine.rlast, array_shape[1]) * 0.99999
-        flux_array: Array1 = eval_flux_of_r_function(r_array)  # pyright: ignore
-        theta_grid, flux_grid = create_poloidal_grid(
-            theta_array=np.linspace(0, TAU, array_shape[0]),
-            flux_array=flux_array,
+        flux_values: Array1 = cast(Array1, eval_flux_of_r_function(r_array))
+        flux_array: MagneticFluxArray = MagneticFluxArray.Toroidal(flux_values)
+        theta_array = np.linspace(0, TAU, array_shape[0])
+        theta_grid, flux_grid = np.meshgrid(
+            theta_array,
+            flux_values,
         )
         grid_eval_arg = {"theta": theta_grid, flux_arg_name: flux_grid}
         rlab_grid = geometry.eval_rlab(**grid_eval_arg)
@@ -279,10 +279,10 @@ def plot_poloidal_drift(
         energy_grid = cast(
             Array2,
             machine.quantity(
-                energy_function(
+                GCHamiltonian.eval_grid(
                     machine,
-                    theta_grid,
-                    flux_grid,
+                    theta_array,
+                    flux_array,
                     pzetas[0],
                     mus[0],
                 ),

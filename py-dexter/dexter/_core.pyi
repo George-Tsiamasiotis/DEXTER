@@ -614,10 +614,6 @@ class _PyQueue:
 
 # ================================================================================================
 
-def _py_create_poloidal_grid(
-    theta_array: Array1, flux_array: Array1
-) -> tuple[Array2, Array2]: ...
-
 class _PyGCHamiltonian:
     def __init__(self) -> None: ...
     @classmethod
@@ -632,46 +628,24 @@ class _PyGCHamiltonian:
         mu: float,
     ) -> Array1: ...
     @classmethod
-    def eval_psi_array(
+    def eval_array(
         cls,
         qfactor: _PyQfactor,
         current: _PyCurrent,
         bfield: _PyBfield,
         theta_array: Array1,
-        psi_array: Array1,
+        flux_array: _PyMagneticFluxArray,
         pzeta: float,
         mu: float,
     ) -> Array1: ...
     @classmethod
-    def eval_psip_array(
+    def eval_grid(
         cls,
         qfactor: _PyQfactor,
         current: _PyCurrent,
         bfield: _PyBfield,
         theta_array: Array1,
-        psip_array: Array1,
-        pzeta: float,
-        mu: float,
-    ) -> Array1: ...
-    @classmethod
-    def eval_psi_grid(
-        cls,
-        qfactor: _PyQfactor,
-        current: _PyCurrent,
-        bfield: _PyBfield,
-        theta_grid: Array2,
-        psi_grid: Array2,
-        pzeta: float,
-        mu: float,
-    ) -> Array2: ...
-    @classmethod
-    def eval_psip_grid(
-        cls,
-        qfactor: _PyQfactor,
-        current: _PyCurrent,
-        bfield: _PyBfield,
-        theta_grid: Array2,
-        psip_grid: Array2,
+        flux_array: _PyMagneticFluxArray,
         pzeta: float,
         mu: float,
     ) -> Array2: ...
