@@ -242,7 +242,17 @@ def plot_poloidal_drift(
         prlab = geometry.eval_rlab(**particle_eval_arg)
         pzlab = geometry.eval_zlab(**particle_eval_arg)
         color = orbit_color(particle.orbit_type)
-        ax.plot(prlab, pzlab, c=color, linewidth=1.2, zorder=10)
+        markersize = 3 if len(particles) == 1 else 2
+        ax.plot(
+            prlab,
+            pzlab,
+            c=color,
+            linewidth=0,
+            marker=".",
+            markeredgewidth=0,
+            markersize=markersize,
+            zorder=10,
+        )
 
     # Plot energy contour only if all particles have the same Pζ and μ
     pzetas = np.asarray([particle.initial_conditions.pzeta0 for particle in particles])

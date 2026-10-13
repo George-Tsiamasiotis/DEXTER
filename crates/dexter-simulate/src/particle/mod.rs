@@ -60,10 +60,9 @@ pub enum IntegrationStatus {
     /// Initialized by [`InitialConditions`], not integrated.
     Initialized,
     /// [`InitialConditions`] have not been fully calculated yet.
-    PartlyInitialized,
-    /// Invalid [`InitialConditions`]. May occur when using Mixed variables with objects that
-    /// cannot define them.
-    InvalidInitialConditions,
+    PartiallyInitialized,
+    /// Encountered `NaN` when finalizing the initial conditions.
+    NanInitialConditions,
     /// Particle initialized with a 'bad' initial magnetic flux.
     BadMagneticFlux,
     /// [`InitialConditions`] were out of bounds.
@@ -152,7 +151,7 @@ impl Particle {
         use CoordinateSet::*;
         let integration_status = match initial_conditions.coordinate_set() {
             BoozerToroidal | BoozerPoloidal => IntegrationStatus::Initialized, // Always succeeds
-            MixedToroidal | MixedPoloidal => IntegrationStatus::PartlyInitialized, // Needs `finalize()`
+            MixedToroidal | MixedPoloidal => IntegrationStatus::PartiallyInitialized, // Needs `finalize()`
         };
         Self {
             initial_conditions: initial_conditions.to_owned(),
@@ -187,13 +186,13 @@ impl Particle {
                 // Magnetic flux ψ0/ψp0 is out of bounds
                 self.integration_status = IntegrationStatus::OutOfBoundsInitialization
             }
-            Err(EvalError(UndefinedEvaluation(..))) => {
+            Err(EvalError(UndefinedEvaluation(..))) | Err(EvalError(InvalidMagneticFlux)) => {
                 // Instantiated with 'bad' magnetic flux
                 self.integration_status = IntegrationStatus::BadMagneticFlux
             }
-            Err(InvalidInitialConditions) => {
+            Err(NanInitialConditions) => {
                 // NaN encountered
-                self.integration_status = IntegrationStatus::InvalidInitialConditions
+                self.integration_status = IntegrationStatus::NanInitialConditions
             }
             Err(_) => unreachable!(),
         }

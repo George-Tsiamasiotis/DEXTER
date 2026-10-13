@@ -22,6 +22,7 @@ fn _core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(common::get_max_threads, m)?)?;
     m.add_function(wrap_pyfunction!(common::set_num_threads, m)?)?;
     m.add_class::<machine::PyMagneticFlux>()?;
+    m.add_class::<machine::PyMagneticFluxArray>()?;
     m.add_class::<machine::PyGeometry>()?;
     m.add_class::<machine::PyQfactor>()?;
     m.add_class::<machine::PyCurrent>()?;
@@ -33,7 +34,6 @@ fn _core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<simulate::PySolverParams>()?;
     m.add_class::<simulate::PyIntersectParams>()?;
     m.add_class::<simulate::PyParticle>()?;
-    m.add_class::<simulate::PyMagneticFluxArray>()?;
     m.add_class::<simulate::PyQueueInitialConditions>()?;
     m.add_class::<simulate::PyQueue>()?;
     m.add_function(wrap_pyfunction!(py_create_poloidal_grid, m)?)?;

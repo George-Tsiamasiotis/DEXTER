@@ -1,3 +1,4 @@
+import numpy as np
 import dexter as dex
 import pytest
 
@@ -109,3 +110,17 @@ def test_flux_eval_wrappers(nc_machine_perturbed: dex.Machine):
         perturbation.eval_p(psi=flux, psip=flux, theta=theta, zeta=zeta, t=t)
     with pytest.raises(TypeError):
         perturbation.eval_p(theta=theta, zeta=zeta, t=t)
+
+
+def test_magnetic_flux_array():
+    psis = dex.MagneticFluxArray.Toroidal([0.1, 0.3])
+    assert psis.kind == "Toroidal"
+    assert np.all(np.isclose(psis.values, np.asarray([0.1, 0.3])))
+    assert len(psis) == 2
+    assert psis[1] == dex.MagneticFlux.Toroidal(0.3)
+
+    psips = dex.MagneticFluxArray.Poloidal(np.linspace(0, 10, 11))
+    assert psips.kind == "Poloidal"
+    assert np.all(np.isclose(psips.values, np.linspace(0, 10, 11)))
+    assert len(psips) == 11
+    assert psips[5] == dex.MagneticFlux.Poloidal(5)

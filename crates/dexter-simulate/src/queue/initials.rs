@@ -1,20 +1,18 @@
 //! Queue Initial Conditions for batch Particle initialization.
 
+use dexter_machine::{MagneticFluxArray, MagneticFluxKind};
 use ndarray::{Array1, ArrayView1};
 
-use crate::{CoordinateSet, InitialConditions, MagneticFlux, Particle, SimulationError};
+use crate::{CoordinateSet, InitialConditions, Particle, SimulationError};
 
 /// Sets of initial conditions for initializing a [`Queue`](crate::Queue`).
-///
-/// The [`toroidal_fluxes`] and [`poloidal_fluxes`] helper functions can be used to create the
-/// initial fluxes array.
 #[non_exhaustive]
 #[derive(Clone)]
 pub struct QueueInitialConditions {
     /// The initial times `t0`.
     t0: Array1<f64>,
     /// The initial `fluxes`.
-    flux0: Array1<MagneticFlux>,
+    flux0: MagneticFluxArray,
     /// The initial `thetas`.
     theta0: Array1<f64>,
     /// The initial `zetas`.
@@ -32,13 +30,18 @@ pub struct QueueInitialConditions {
 impl QueueInitialConditions {
     /// Creates a new [`QueueInitialConditions`] in Boozer coordinates.
     ///
+    /// # Errors
+    ///
+    /// Returns a [`SimulationError`] if the inputs do not have the same length or are empty.
+    ///
     /// # Example
     /// ```
     /// # use dexter_simulate::*;
-    /// use MagneticFlux::*;
+    /// use ndarray::*;
+    /// let psi0s = MagneticFluxArray::Toroidal(array![0.15, 0.3]);
     /// let initial_conditions = QueueInitialConditions::boozer(
     ///     &[0.0, 0.1],
-    ///     &[Toroidal(0.15), Toroidal(0.3)],
+    ///     &psi0s,
     ///     &[0.0, 0.1],
     ///     &[0.0, 0.0],
     ///     &[1e-3, 2e-3],
@@ -46,13 +49,9 @@ impl QueueInitialConditions {
     /// )?;
     /// # Ok::<_, SimulationError>(())
     /// ```
-    ///
-    /// # Errors
-    ///
-    /// Returns a [`SimulationError`] if the inputs do not have the same length or are empty.
     pub fn boozer(
         t0: &[f64],
-        flux0: &[MagneticFlux],
+        flux0: &MagneticFluxArray,
         theta0: &[f64],
         zeta0: &[f64],
         rho0: &[f64],
@@ -67,17 +66,17 @@ impl QueueInitialConditions {
         {
             return Err(SimulationError::QueueInitialConditionsMismatch);
         }
-        let coordinate_set = match flux0
-            .first()
-            .copied()
-            .ok_or(SimulationError::QueueInitialConditionsEmptyInput)?
-        {
-            MagneticFlux::Toroidal(_) => CoordinateSet::BoozerToroidal,
-            MagneticFlux::Poloidal(_) => CoordinateSet::BoozerPoloidal,
+        if len == 0 {
+            return Err(SimulationError::QueueInitialConditionsEmptyInput);
+        }
+        let coordinate_set = match flux0.kind() {
+            MagneticFluxKind::Toroidal => CoordinateSet::BoozerToroidal,
+            MagneticFluxKind::Poloidal => CoordinateSet::BoozerPoloidal,
         };
+
         Ok(Self {
             t0: Array1::from(t0.to_vec()),
-            flux0: Array1::from(flux0.to_vec()),
+            flux0: flux0.clone(),
             theta0: Array1::from(theta0.to_vec()),
             zeta0: Array1::from(zeta0.to_vec()),
             mu0: Array1::from(mu0.to_vec()),
@@ -89,13 +88,18 @@ impl QueueInitialConditions {
 
     /// Creates a new [`QueueInitialConditions`] in Mixed coordinates.
     ///
+    /// # Errors
+    ///
+    /// Returns a [`SimulationError`] if the inputs do not have the same length or are empty.
+    ///
     /// # Example
     /// ```
     /// # use dexter_simulate::*;
-    /// use MagneticFlux::*;
+    /// use ndarray::*;
+    /// let psip0s = MagneticFluxArray::Poloidal(array![0.15, 0.3]);
     /// let initial_conditions = QueueInitialConditions::mixed(
     ///     &[0.0, 0.1],
-    ///     &[Toroidal(0.15), Toroidal(0.3)],
+    ///     &psip0s,
     ///     &[0.0, 0.1],
     ///     &[0.0, 0.0],
     ///     &[-0.025, 0.027],
@@ -103,13 +107,9 @@ impl QueueInitialConditions {
     /// )?;
     /// # Ok::<_, SimulationError>(())
     /// ```
-    ///
-    /// # Errors
-    ///
-    /// Returns a [`SimulationError`] if the inputs do not have the same length or are empty.
     pub fn mixed(
         t0: &[f64],
-        flux0: &[MagneticFlux],
+        flux0: &MagneticFluxArray,
         theta0: &[f64],
         zeta0: &[f64],
         pzeta0: &[f64],
@@ -124,17 +124,17 @@ impl QueueInitialConditions {
         {
             return Err(SimulationError::QueueInitialConditionsMismatch);
         }
-        let coordinate_set = match flux0
-            .first()
-            .copied()
-            .ok_or(SimulationError::QueueInitialConditionsEmptyInput)?
-        {
-            MagneticFlux::Toroidal(_) => CoordinateSet::MixedToroidal,
-            MagneticFlux::Poloidal(_) => CoordinateSet::MixedPoloidal,
+        if len == 0 {
+            return Err(SimulationError::QueueInitialConditionsEmptyInput);
+        }
+        let coordinate_set = match flux0.kind() {
+            MagneticFluxKind::Toroidal => CoordinateSet::MixedToroidal,
+            MagneticFluxKind::Poloidal => CoordinateSet::MixedPoloidal,
         };
+
         Ok(Self {
             t0: Array1::from(t0.to_vec()),
-            flux0: Array1::from(flux0.to_vec()),
+            flux0: flux0.clone(),
             theta0: Array1::from(theta0.to_vec()),
             zeta0: Array1::from(zeta0.to_vec()),
             mu0: Array1::from(mu0.to_vec()),
@@ -166,19 +166,29 @@ impl QueueInitialConditions {
         for particle in particles {
             let initial = particle.initial_conditions();
             t0.push(initial.t0);
-            flux0.push(initial.flux0);
+            flux0.push(initial.flux0.value());
             theta0.push(initial.theta0);
             zeta0.push(initial.zeta0);
             mu0.push(initial.mu0);
             match initial.coordinate_set() {
                 CoordinateSet::BoozerToroidal | CoordinateSet::BoozerPoloidal => {
-                    rho0.push(initial.rho0.expect("is defined"))
+                    rho0.push(initial.rho0.expect("always some in boozer"))
                 }
                 CoordinateSet::MixedToroidal | CoordinateSet::MixedPoloidal => {
-                    pzeta0.push(initial.pzeta0.expect("is defined"))
+                    pzeta0.push(initial.pzeta0.expect("always some in mixed"))
                 }
             }
         }
+
+        // `particles` is never empty
+        let flux0 = match particles[0].initial_conditions().coordinate_set() {
+            CoordinateSet::BoozerToroidal | CoordinateSet::MixedToroidal => {
+                MagneticFluxArray::Toroidal(Array1::from_vec(flux0))
+            }
+            CoordinateSet::BoozerPoloidal | CoordinateSet::MixedPoloidal => {
+                MagneticFluxArray::Poloidal(Array1::from_vec(flux0))
+            }
+        };
 
         // Sanity check
         let len = t0.len();
@@ -194,7 +204,7 @@ impl QueueInitialConditions {
 
         Self {
             t0: Array1::from(t0),
-            flux0: Array1::from(flux0),
+            flux0,
             theta0: Array1::from(theta0),
             zeta0: Array1::from(zeta0),
             mu0: Array1::from(mu0),
@@ -210,40 +220,53 @@ impl QueueInitialConditions {
     pub fn to_particles(&self) -> Vec<Particle> {
         let mut particles = Vec::with_capacity(self.len());
         for index in 0..self.len() {
-            particles.push(self.particle_from_index(index));
+            let Some(particle) = self.particle_from_index(index) else {
+                unreachable!("index is in-bounds")
+            };
+            particles.push(particle);
         }
         particles
     }
 
     /// Creates a [`Particle`] by picking the [`InitialConditions`] at the `index` position of the arrays.
+    ///
+    /// Returns `None` if `index` is greater than `self.len()`.
     #[must_use]
-    pub fn particle_from_index(&self, index: usize) -> Particle {
-        Particle::new(&self.initial_from_index(index))
+    pub fn particle_from_index(&self, index: usize) -> Option<Particle> {
+        self.initial_from_index(index)
+            .map(|initial| Particle::new(&initial))
     }
 
     /// Creates an [`InitialConditions`] from the `index` position of the arrays.
-    #[expect(clippy::missing_panics_doc, reason = "safe")]
+    ///
+    /// Returns `None` if `index` is greater than `self.len()`.
     #[must_use]
-    pub fn initial_from_index(&self, index: usize) -> InitialConditions {
+    #[expect(clippy::missing_panics_doc, reason = "safe")]
+    #[expect(clippy::unwrap_in_result, reason = "safe")]
+    pub fn initial_from_index(&self, index: usize) -> Option<InitialConditions> {
+        if index >= self.len() {
+            return None;
+        };
         use CoordinateSet::*;
-        match self.coordinate_set {
+        let initial = match self.coordinate_set {
             BoozerToroidal | BoozerPoloidal => InitialConditions::boozer(
                 self.t0[[index]],
-                self.flux0[[index]],
+                self.flux0.get(index).expect("length checked"),
                 self.theta0[[index]],
                 self.zeta0[[index]],
-                self.rho0.as_ref().expect("always `Some` in `boozer`")[[index]],
+                self.rho0.as_ref().expect("always some in boozer")[[index]],
                 self.mu0[[index]],
             ),
             MixedToroidal | MixedPoloidal => InitialConditions::mixed(
                 self.t0[[index]],
-                self.flux0[[index]],
+                self.flux0.get(index).expect("length checked"),
                 self.theta0[[index]],
                 self.zeta0[[index]],
-                self.pzeta0.as_ref().expect("always `Some` in `mixed`")[[index]],
+                self.pzeta0.as_ref().expect("always some in mixed")[[index]],
                 self.mu0[[index]],
             ),
-        }
+        };
+        Some(initial)
     }
 
     /// Returns the number of [`InitialConditions`] sets.
@@ -259,34 +282,6 @@ impl QueueInitialConditions {
     }
 }
 
-/// Helper function to create an array of `ψ0`s, to be passed to
-/// [`QueueInitialConditions`]' constructors.
-///
-/// # Example
-/// ```
-/// # use dexter_simulate::*;
-/// # use ndarray::Array1;
-/// let psi0s = toroidal_fluxes(&Array1::linspace(0.0, 0.45, 100).to_vec());
-/// ```
-#[must_use]
-pub fn toroidal_fluxes(values: &[f64]) -> Array1<MagneticFlux> {
-    Array1::from_iter(values.iter().map(|value| MagneticFlux::Toroidal(*value)))
-}
-
-/// Helper function to create an array of `ψp0`s, to be passed to
-/// [`QueueInitialConditions`]' constructors.
-///
-/// # Example
-/// ```
-/// # use dexter_simulate::*;
-/// # use ndarray::Array1;
-/// let psip0s = poloidal_fluxes(&Array1::linspace(0.0, 0.45, 100).to_vec());
-/// ```
-#[must_use]
-pub fn poloidal_fluxes(values: &[f64]) -> Array1<MagneticFlux> {
-    Array1::from_iter(values.iter().map(|value| MagneticFlux::Poloidal(*value)))
-}
-
 /// Getters.
 impl QueueInitialConditions {
     /// Returns the initial times array.
@@ -295,10 +290,10 @@ impl QueueInitialConditions {
         self.t0.clone()
     }
 
-    /// Returns the initial [`MagneticFlux`] array.
+    /// Returns a reference to the initial [`MagneticFluxArray`].
     #[must_use]
-    pub fn flux_array(&self) -> Array1<MagneticFlux> {
-        self.flux0.clone()
+    pub fn flux_array(&self) -> &MagneticFluxArray {
+        &self.flux0
     }
 
     /// Returns the initial `θ` array.
@@ -348,16 +343,15 @@ impl std::fmt::Debug for QueueInitialConditions {
 
 #[cfg(test)]
 mod test {
-    use crate::IntegrationStatus;
-
     use super::*;
-    use MagneticFlux::*;
+    use crate::{IntegrationStatus, MagneticFlux};
+    use ndarray::array;
 
     #[test]
     fn queue_boozer_initial_conditions_creation() {
         let initial = QueueInitialConditions::boozer(
             &[0.0, 0.0],
-            &[Toroidal(0.1), Toroidal(0.2)],
+            &MagneticFluxArray::Toroidal(array![0.1, 0.2]),
             &[0.0, 1.0],
             &[2.0, 3.0],
             &[3.0, 4.0],
@@ -371,7 +365,7 @@ mod test {
 
         let _ = QueueInitialConditions::boozer(
             &[0.0, 1.0, 2.0],
-            &[Toroidal(0.1), Toroidal(0.2)],
+            &MagneticFluxArray::Toroidal(array![0.1, 0.2]),
             &[1.0, 2.0],
             &[2.0, 3.0],
             &[3.0, 4.0],
@@ -384,7 +378,7 @@ mod test {
     fn queue_mixed_initial_conditions_creation() {
         let initial = QueueInitialConditions::mixed(
             &[0.0, 0.0],
-            &[Toroidal(0.1), Toroidal(0.2)],
+            &MagneticFluxArray::Toroidal(array![0.1, 0.2]),
             &[0.0, 1.0],
             &[2.0, 3.0],
             &[3.0, 4.0],
@@ -398,7 +392,7 @@ mod test {
 
         let _ = QueueInitialConditions::mixed(
             &[0.0, 1.0, 2.0],
-            &[Toroidal(0.1), Toroidal(0.2)],
+            &MagneticFluxArray::Toroidal(array![0.1, 0.2]),
             &[1.0, 2.0],
             &[2.0, 3.0],
             &[3.0, 4.0],
@@ -411,7 +405,7 @@ mod test {
     fn queue_boozer_initial_conditions_data_extraction() {
         let initial = QueueInitialConditions::boozer(
             &[0.0, 1.0],
-            &[Toroidal(0.1), Toroidal(0.2)],
+            &MagneticFluxArray::Toroidal(array![0.1, 0.2]),
             &[1.0, 2.0],
             &[2.0, 3.0],
             &[3.0, 4.0],
@@ -432,7 +426,7 @@ mod test {
     fn queue_mixed_initial_conditions_data_extraction() {
         let initial = QueueInitialConditions::mixed(
             &[0.0, 1.0],
-            &[Toroidal(0.1), Toroidal(0.2)],
+            &MagneticFluxArray::Toroidal(array![0.1, 0.2]),
             &[1.0, 2.0],
             &[2.0, 3.0],
             &[3.0, 4.0],
@@ -453,7 +447,7 @@ mod test {
     fn queue_boozer_initial_conditions_to_particles() {
         let initial = QueueInitialConditions::boozer(
             &[0.0, 1.0],
-            &[Toroidal(0.1), Toroidal(0.2)],
+            &MagneticFluxArray::Toroidal(array![0.1, 0.2]),
             &[1.0, 2.0],
             &[2.0, 3.0],
             &[3.0, 4.0],
@@ -475,7 +469,7 @@ mod test {
     fn queue_mixed_initial_conditions_to_particles() {
         let initial = QueueInitialConditions::mixed(
             &[0.0, 1.0],
-            &[Toroidal(0.1), Toroidal(0.2)],
+            &MagneticFluxArray::Toroidal(array![0.1, 0.2]),
             &[1.0, 2.0],
             &[2.0, 3.0],
             &[3.0, 4.0],
@@ -487,21 +481,15 @@ mod test {
         particles.iter().for_each(|particle| {
             assert_eq!(
                 particle.integration_status(),
-                IntegrationStatus::PartlyInitialized
+                IntegrationStatus::PartiallyInitialized
             )
         });
         assert_eq!(particles.len(), initial.len());
     }
 
     #[test]
-    fn fluxes_queue_init_helpers() {
-        let _: Array1<MagneticFlux> = toroidal_fluxes(&[0.1, 0.2]);
-        let _: Array1<MagneticFlux> = poloidal_fluxes(&[0.1, 0.2]);
-    }
-
-    #[test]
     fn from_boozer_particles() {
-        let psi0 = Toroidal(0.001);
+        let psi0 = MagneticFlux::Toroidal(0.001);
         let initial1 = InitialConditions::boozer(0.0, psi0, 1.0, 0.0, 0.1, 0.0);
         let initial2 = InitialConditions::boozer(0.0, psi0, 2.0, 0.0, 0.1, 0.0);
         let particle1 = Particle::new(&initial1);
@@ -516,7 +504,7 @@ mod test {
 
     #[test]
     fn from_mixed_particles() {
-        let psi0 = Toroidal(0.001);
+        let psi0 = MagneticFlux::Toroidal(0.001);
         let initial1 = InitialConditions::mixed(0.0, psi0, 1.0, 0.0, 0.0, 0.0);
         let initial2 = InitialConditions::mixed(0.0, psi0, 2.0, 0.0, 0.0, 0.0);
         let particle1 = Particle::new(&initial1);
@@ -532,7 +520,7 @@ mod test {
     #[test]
     #[should_panic]
     fn from_boozer_mixed_particles() {
-        let psi0 = Toroidal(0.001);
+        let psi0 = MagneticFlux::Toroidal(0.001);
         let initial1 = InitialConditions::mixed(0.0, psi0, 1.0, 0.0, 0.0, 0.0);
         let initial2 = InitialConditions::boozer(0.0, psi0, 2.0, 0.0, 0.1, 0.0);
         let particle1 = Particle::new(&initial1);

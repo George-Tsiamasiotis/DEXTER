@@ -25,11 +25,11 @@ fn queue_intersect_const_theta_parQ_larC_larB_cosP() -> Result<(), SimulationErr
 
     // Initial Conditions setup
     let particle_count = 10;
-    let psis = machine.qfactor().psi_last().value() * Array1::linspace(0.1, 0.5, particle_count);
-    let psis = toroidal_fluxes(&psis.to_vec());
+    let psi0_values =
+        machine.qfactor().psi_last().value() * Array1::linspace(0.1, 0.5, particle_count);
     let initial_conditions = QueueInitialConditions::boozer(
         &vec![0.0; particle_count],
-        &psis.to_vec(),
+        &MagneticFluxArray::Toroidal(psi0_values),
         &vec![0.0; particle_count],
         &vec![0.0; particle_count],
         &vec![1e-6; particle_count],
@@ -91,11 +91,11 @@ fn queue_poloidal_intersect_const_zeta_ncdQ_ncdC_ncdB_ncdP() -> Result<(), Simul
 
     // Initial Conditions setup
     let particle_count = 10;
-    let psips = machine.qfactor().psip_last().value() * Array1::linspace(0.1, 0.3, particle_count);
-    let psips = poloidal_fluxes(&psips.to_vec());
+    let psip0_values =
+        machine.qfactor().psip_last().value() * Array1::linspace(0.1, 0.3, particle_count);
     let initial_conditions = QueueInitialConditions::boozer(
         &vec![0.0; particle_count],
-        &psips.to_vec(),
+        &MagneticFluxArray::Poloidal(psip0_values),
         &vec![0.0; particle_count],
         &vec![0.0; particle_count],
         &vec![1e-6; particle_count],

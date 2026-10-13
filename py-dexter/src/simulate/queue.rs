@@ -252,7 +252,7 @@ impl PyQueue {
         Ok(array.into_pyarray(py))
     }
 
-    pub fn __len__(&mut self) -> usize {
+    pub fn __len__(&self) -> usize {
         self.0.particle_count()
     }
 

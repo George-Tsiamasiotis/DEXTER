@@ -1,6 +1,8 @@
-//! Defines the `MagneticFlux`.
+//! Defines the `MagneticFluxKind` and `MagneticFlux` enums.
 
-use crate::EvalError;
+use rsl_interpolation::Accelerator;
+
+use crate::{EvalError, Qfactor};
 
 /// The kind of a magnetic flux coordinate.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -9,6 +11,36 @@ pub enum MagneticFluxKind {
     Toroidal,
     /// Poloidal magnetic flux `ψp`.
     Poloidal,
+}
+
+impl MagneticFluxKind {
+    /// Creates a [`MagneticFlux`] of `self`'s kind and value `value`.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use dexter_machine::*;
+    /// assert_eq!(
+    ///     MagneticFluxKind::Toroidal.to_magnetic_flux(0.1),
+    ///     MagneticFlux::Toroidal(0.1),
+    /// );
+    /// ```
+    #[must_use]
+    pub fn to_magnetic_flux(&self, value: f64) -> MagneticFlux {
+        match *self {
+            Self::Toroidal => MagneticFlux::Toroidal(value),
+            Self::Poloidal => MagneticFlux::Poloidal(value),
+        }
+    }
+
+    /// Returns the symbol of `self` ("ψ" or "ψp") as a `Box<str>`.
+    #[must_use]
+    pub fn symbol(&self) -> Box<str> {
+        match *self {
+            Self::Toroidal => "ψ".into(),
+            Self::Poloidal => "ψp".into(),
+        }
+    }
 }
 
 /// Representation of the magnetic flux and its kind.
@@ -21,7 +53,7 @@ pub enum MagneticFlux {
 }
 
 impl MagneticFlux {
-    /// Returns the value of `self`, regardless the kind.
+    /// Returns the value of `self`, regardless of the kind.
     #[must_use]
     pub fn value(&self) -> f64 {
         match *self {
@@ -55,37 +87,45 @@ impl MagneticFlux {
         }
     }
 
-    /// Returns the flux's value if it is a [`MagneticFlux::Toroidal`] variant.
+    /// Creates a new `MagneticFlux` where the inner value has been converted to the other magnetic
+    /// flux through [`Qfactor::eval_other`][crate::Qfactor::eval_other].
     ///
     /// # Errors
     ///
-    /// Returns an [`EvalError`] if `self` is a [`MagneticFlux::Poloidal`] variant.
-    pub fn psi(&self) -> Result<f64, EvalError> {
-        match *self {
-            Self::Toroidal(psi) => Ok(psi),
-            Self::Poloidal(_) => Err(EvalError::InvalidMagneticFlux),
-        }
+    /// Returns an [`EvalError`] if the contained value is out-of-bounds or the conversion is not defined.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use dexter_machine::*;
+    /// # use rsl_interpolation::*;
+    /// # let acc = &mut Accelerator::new();
+    /// let qfactor = ParabolicQfactor::new(1.1, 3.9, MagneticFlux::Toroidal(0.5));
+    /// let psi = MagneticFlux::Toroidal(0.1);
+    /// let psip = psi.to_other(&qfactor)?;
+    /// assert_eq!(psip.kind(), MagneticFluxKind::Poloidal);
+    /// assert_eq!(psip, qfactor.eval_other(psi, acc)?);
+    /// # Ok::<_, EvalError>(())
+    /// ```
+    pub fn to_other(&self, qfactor: &dyn Qfactor) -> Result<Self, EvalError> {
+        qfactor.eval_other(*self, &mut Accelerator::new())
     }
 
-    /// Returns the flux's value if it is a [`MagneticFlux::Poloidal`] variant.
+    /// Converts the magnetic flux into the other kind through
+    /// [`Qfactor::eval_other`][crate::Qfactor::eval_other].
     ///
     /// # Errors
     ///
-    /// Returns an [`EvalError`] if `self` is a [`MagneticFlux::Toroidal`] variant.
-    pub fn psip(&self) -> Result<f64, EvalError> {
-        match *self {
-            Self::Toroidal(_) => Err(EvalError::InvalidMagneticFlux),
-            Self::Poloidal(psip) => Ok(psip),
-        }
+    /// Returns an [`EvalError`] if the contained value is out-of-bounds or the conversion is not defined.
+    pub fn into_other(mut self, qfactor: &dyn Qfactor) -> Result<Self, EvalError> {
+        self = self.to_other(qfactor)?;
+        Ok(self)
     }
 }
 
 impl std::fmt::Debug for MagneticFlux {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match *self {
-            Self::Toroidal(psi0) => write!(f, "ψ0: {psi0}"),
-            Self::Poloidal(psip0) => write!(f, "ψp0: {psip0}"),
-        }
+        write!(f, "{}: {}", self.symbol(), self.value())
     }
 }
 
@@ -207,8 +247,21 @@ impl approx::UlpsEq for MagneticFlux {
 #[cfg(test)]
 mod test {
 
-    use crate::MagneticFlux::*;
+    use super::*;
+    use crate::{MagneticFlux::*, ParabolicQfactor};
     use approx::*;
+
+    #[test]
+    fn magnetic_flux_kind_to_magnetic_flux() {
+        assert_eq!(
+            MagneticFluxKind::Toroidal.to_magnetic_flux(0.1),
+            Toroidal(0.1)
+        );
+        assert_eq!(
+            MagneticFluxKind::Poloidal.to_magnetic_flux(0.2),
+            Poloidal(0.2)
+        );
+    }
 
     #[test]
     fn add() {
@@ -268,5 +321,20 @@ mod test {
         assert_ulps_ne!(Toroidal(0.01), Toroidal(0.02));
         assert_ulps_ne!(Poloidal(0.01), Poloidal(0.02));
         assert_ulps_ne!(Toroidal(0.01), Poloidal(0.01));
+    }
+
+    #[test]
+    fn to_other() {
+        let lcfs = Toroidal(1.0);
+        let qfactor = ParabolicQfactor::new(1.0, 2.0, lcfs); // q = ψ^2 + 1
+
+        let tor = Toroidal(0.3);
+        let other_pol = tor.to_other(&qfactor).unwrap();
+
+        let pol = Poloidal(other_pol.value());
+        let other_tor = pol.to_other(&qfactor).unwrap();
+
+        assert_relative_eq!(tor, other_tor);
+        assert_relative_eq!(pol, other_pol);
     }
 }

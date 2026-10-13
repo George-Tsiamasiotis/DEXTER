@@ -57,7 +57,7 @@ mod state;
 // ============== Re-exports
 
 pub use dexter_comspace::{EnergyPzetaPosition, OrbitType};
-pub use dexter_machine::MagneticFlux;
+pub use dexter_machine::{MagneticFlux, MagneticFluxArray};
 
 // ============== Public API
 
@@ -73,7 +73,6 @@ pub use particle::{
 };
 
 pub use queue::{Queue, QueueInitialConditions, Routine};
-pub use queue::{poloidal_fluxes, toroidal_fluxes};
 
 // ============== Configuration constants
 

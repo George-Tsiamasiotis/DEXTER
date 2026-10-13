@@ -34,7 +34,7 @@ from dexter.types import (
 
 from dexter.utils import get_max_threads, set_num_threads
 
-from dexter.machine.flux import MagneticFlux
+from dexter.machine.flux import MagneticFlux, MagneticFluxArray
 from dexter.machine.geometries import GeometryObject, LarGeometry, NcGeometry
 from dexter.machine.qfactors import (
     QfactorObject,
@@ -59,7 +59,6 @@ from dexter.simulate.plot import (
 
 from dexter.simulate.initial import (
     InitialConditions,
-    MagneticFluxArray,
     QueueInitialConditions,
 )
 from dexter.simulate.params import SteppingMethod, SolverParams, IntersectParams

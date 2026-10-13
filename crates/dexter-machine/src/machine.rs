@@ -194,16 +194,62 @@ impl<'obj> Machine<'obj> {
         self.qfactor.psip_last()
     }
 
-    /// Returns the [`FluxCoordinateState`] of the `psi` coordinate of the machine.
+    /// Returns the [`Good`] if `psi` is a good coordinate for `self.qfactor()`, `self.current()`
+    /// and `self.bfield()`, else [`Bad`].
+    ///
+    /// [`Good`]: FluxCoordinateState::Good
+    /// [`Bad`]: FluxCoordinateState::Bad
     #[must_use]
     pub fn psi_state(&self) -> FluxCoordinateState {
-        self.qfactor.psi_state()
+        use FluxCoordinateState::*;
+
+        // `false` if even one harmonic state is `Bad`
+        let mut pertubration_ok = true;
+        for index in 0..self.perturbation.count() {
+            if self.perturbation[index].psi_state() != Good {
+                pertubration_ok = false;
+                break;
+            }
+        }
+
+        if (self.qfactor.psi_state() == Good)
+            && (self.current.psi_state() == Good)
+            && (self.bfield.psi_state() == Good)
+            && pertubration_ok
+        {
+            Good
+        } else {
+            Bad
+        }
     }
 
-    /// Returns the [`FluxCoordinateState`] of the `psip` coordinate of the machine.
+    /// Returns the [`Good`] if `psip` is a good coordinate for `self.qfactor()`, `self.current()`
+    /// and `self.bfield()`, else [`Bad`].
+    ///
+    /// [`Good`]: FluxCoordinateState::Good
+    /// [`Bad`]: FluxCoordinateState::Bad
     #[must_use]
     pub fn psip_state(&self) -> FluxCoordinateState {
-        self.qfactor.psip_state()
+        use FluxCoordinateState::*;
+
+        // `false` if even one harmonic state is `Bad`
+        let mut pertubration_ok = true;
+        for index in 0..self.perturbation.count() {
+            if self.perturbation[index].psip_state() != Good {
+                pertubration_ok = false;
+                break;
+            }
+        }
+
+        if (self.qfactor.psip_state() == Good)
+            && (self.current.psip_state() == Good)
+            && (self.bfield.psip_state() == Good)
+            && pertubration_ok
+        {
+            Good
+        } else {
+            Bad
+        }
     }
 
     /// Returns [`Toroidal`] if `self.psi_state()` is [`Good`], else [`Poloidal`].
@@ -224,6 +270,15 @@ impl<'obj> Machine<'obj> {
             (Good, _) => MagneticFluxKind::Toroidal,
             (_, Good) => MagneticFluxKind::Poloidal,
             _ => unreachable!("states are checked at `Machine::build`"),
+        }
+    }
+
+    /// Returns `true` if `kind` is a [`Good`][`FluxCoordinateState::Good`] magnetic flux coordinate.
+    #[must_use]
+    pub fn is_good_flux(&self, kind: MagneticFluxKind) -> bool {
+        match kind {
+            MagneticFluxKind::Toroidal => self.psi_state() == FluxCoordinateState::Good,
+            MagneticFluxKind::Poloidal => self.psip_state() == FluxCoordinateState::Good,
         }
     }
 

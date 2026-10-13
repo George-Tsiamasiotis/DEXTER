@@ -3,7 +3,6 @@
 use crate::*;
 use dexter::dexter_simulate::*;
 
-use ndarray::Array1;
 use numpy::PyReadonlyArray1;
 use pyo3::{prelude::*, types::PyType};
 
@@ -87,26 +86,6 @@ impl PyInitialConditions {
 
 // ===============================================================================================
 
-#[pyclass(name = "_PyMagneticFluxArray", frozen, immutable_type)]
-pub struct PyMagneticFluxArray(Array1<MagneticFlux>);
-
-#[pymethods]
-impl PyMagneticFluxArray {
-    #[classmethod]
-    pub fn toroidal<'py>(_: &Bound<'py, PyType>, array: PyReadonlyArray1<f64>) -> PyResult<Self> {
-        let array = array.as_slice()?;
-        Ok(Self(toroidal_fluxes(array).into()))
-    }
-
-    #[classmethod]
-    pub fn poloidal<'py>(_: &Bound<'py, PyType>, array: PyReadonlyArray1<f64>) -> PyResult<Self> {
-        let array = array.as_slice()?;
-        Ok(Self(poloidal_fluxes(array).into()))
-    }
-}
-
-// ===============================================================================================
-
 #[pyclass(name = "_PyQueueInitialConditions", frozen, immutable_type)]
 pub struct PyQueueInitialConditions(pub QueueInitialConditions);
 
@@ -122,13 +101,9 @@ impl PyQueueInitialConditions {
         rho0: PyReadonlyArray1<f64>,
         mu0: PyReadonlyArray1<f64>,
     ) -> Result<Self> {
-        let flux0_standard_layout = flux0.0.as_standard_layout();
-        let flux0_slice = flux0_standard_layout
-            .as_slice()
-            .expect("probably is in standard layout");
         let initial = QueueInitialConditions::boozer(
             t0.as_slice()?,
-            flux0_slice,
+            &flux0.0,
             theta0.as_slice()?,
             zeta0.as_slice()?,
             rho0.as_slice()?,
@@ -147,13 +122,9 @@ impl PyQueueInitialConditions {
         pzeta0: PyReadonlyArray1<f64>,
         mu0: PyReadonlyArray1<f64>,
     ) -> Result<Self> {
-        let flux0_standard_layout = flux0.0.as_standard_layout();
-        let flux0_slice = flux0_standard_layout
-            .as_slice()
-            .expect("probably is in standard layout");
         let initial = QueueInitialConditions::mixed(
             t0.as_slice()?,
-            flux0_slice,
+            &flux0.0,
             theta0.as_slice()?,
             zeta0.as_slice()?,
             pzeta0.as_slice()?,
@@ -166,9 +137,6 @@ impl PyQueueInitialConditions {
 // ===============================================================================================
 
 wrapper_debug_export!(PyInitialConditions);
-wrapper_debug_export!(PyMagneticFluxArray);
 wrapper_debug_export!(PyQueueInitialConditions);
-
 impl_py_repr!(PyInitialConditions, pretty);
-impl_py_repr!(PyMagneticFluxArray, pretty);
 impl_py_repr!(PyQueueInitialConditions, pretty);
