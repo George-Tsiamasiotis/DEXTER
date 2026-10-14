@@ -7,7 +7,11 @@
 //! + [`GCHamiltonian::eval`]: Evaluates the Hamiltonian in a `(θ, ψ/ψp; Pζ, μ)` point.
 //! + [`GCHamiltonian::eval_array`]: Evaluates the Hamiltonian in a `([θ], [ψ/ψp]; Pζ, μ)` 1D array.
 //! + [`GCHamiltonian::eval_grid`]: Evaluates the Hamiltonian in a `([θ], [ψ/ψp]; Pζ, μ)` 2D grid.
+//! + [`GCHamiltonian::eval_theta_dot_array`]: Evaluates `dot(θ)` in a `([θ], [ψ/ψp]; Pζ, μ)` 1D array.
 //!
+//! #### Stationary Curve
+//!
+//! + [`ParametrizedSegment`]: A 2D parametrized curve.
 //!
 //! ### Calculations on the E - Pζ plane
 //!
@@ -35,6 +39,7 @@ pub use parabola::Point;
 pub use error::COMError;
 
 pub use gc_hamiltonian::GCHamiltonian;
+pub use gc_hamiltonian::ParametrizedSegment;
 
 pub use energy_pzeta_plane::{
     EnergyPzetaPlane, EnergyPzetaPosition, OrbitType, TrappedPassingBoundary,

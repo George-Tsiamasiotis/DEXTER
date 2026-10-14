@@ -66,7 +66,7 @@ from dexter.simulate.particle import Particle
 from dexter.simulate.queue import Queue
 
 from dexter.comspace.energy_pzeta_plane import EnergyPzetaPlane
-from dexter.comspace.gc_hamiltonian import GCHamiltonian
+from dexter.comspace.gc_hamiltonian import GCHamiltonian, ParametrizedSegment
 
 __all__ = [
     # Type Aliases
@@ -124,12 +124,13 @@ __all__ = [
     "IntersectParams",
     "Particle",
     "Queue",
-    "GCHamiltonian",
     # Simulate (plot)
     "plot_evolution",
     "plot_poloidal_drift",
     "plot_pzeta_poincare",
     "plot_rz_poincare",
     # Comspace
+    "GCHamiltonian",
+    "ParametrizedSegment",
     "EnergyPzetaPlane",
 ]

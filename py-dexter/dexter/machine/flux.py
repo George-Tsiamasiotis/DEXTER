@@ -125,7 +125,7 @@ class MagneticFlux(_ReprStrImpl, _RustTypeWrapper):
                 raise RuntimeError("unreachable")
 
 
-class MagneticFluxArray(_ReprStrImpl):
+class MagneticFluxArray(_ReprStrImpl, _RustTypeWrapper):
     r"""A container of multiple magnetic flux values and their kind.
 
     This type is instantiated through the [`Toroidal`][dexter.MagneticFluxArray.Toroidal] and

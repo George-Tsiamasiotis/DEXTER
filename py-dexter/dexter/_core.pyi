@@ -649,10 +649,37 @@ class _PyGCHamiltonian:
         pzeta: float,
         mu: float,
     ) -> Array2: ...
+    @classmethod
+    def eval_theta_dot_array(
+        cls,
+        qfactor: _PyQfactor,
+        current: _PyCurrent,
+        bfield: _PyBfield,
+        theta_array: Array1,
+        flux_array: _PyMagneticFluxArray,
+        pzeta: float,
+        mu: float,
+    ) -> Array1: ...
     @override
     def __repr__(self) -> str: ...
     @override
     def __str__(self) -> str: ...
+
+class _PyParametrizedSegment:
+    kind: MagneticFluxKind
+
+    def __init__(self, flux: _PyMagneticFluxArray, theta: Array1) -> None: ...
+    def calculate_theta_dot(
+        self,
+        qfactor: _PyQfactor,
+        current: _PyCurrent,
+        bfield: _PyBfield,
+        pzeta: float,
+        mu: float,
+    ) -> None: ...
+    def flux_array(self) -> _PyMagneticFluxArray: ...
+    def get_array(self, name: str) -> Array1 | None: ...
+    def __len__(self) -> int: ...
 
 # ================================================================================================
 

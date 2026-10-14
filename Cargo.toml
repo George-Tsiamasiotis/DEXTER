@@ -29,7 +29,7 @@ dexter-simulate = { path = "crates/dexter-simulate" }
 [workspace.package]
 authors = ["George Tsiamasiotis"]
 edition = "2024"
-version = "0.2.2-pre.4"
+version = "0.2.2-pre.5"
 rust-version = "1.97.1"
 license = "GPL-3.0-only"
 homepage = "https://github.com/George-Tsiamasiotis/DEXTER"
