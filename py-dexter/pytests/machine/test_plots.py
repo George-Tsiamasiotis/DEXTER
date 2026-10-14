@@ -13,7 +13,7 @@ def test_plot_machine_numerical(nc_machine_perturbed: dex.Machine):
     machine = nc_machine_perturbed
     dex.plot_qfactor(machine, points=50, data=True, show=False)
     dex.plot_current(machine, points=50, data=True, show=False)
-    dex.plot_bfield(machine, levels=30, show=False)
+    dex.plot_bfield(machine, levels=30, contour_points=True, show=False)
 
 
 def test_plot_mode_analytical():

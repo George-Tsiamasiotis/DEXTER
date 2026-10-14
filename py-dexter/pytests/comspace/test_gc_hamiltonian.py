@@ -65,14 +65,14 @@ def test_gc_hamiltonian_eval_theta_dot_array(nc_machine: dex.Machine):
     assert np.all(np.isclose(h_psi, h_psip))
 
 
-def test_parametrized_segment(lar_machine: dex.Machine):
-    segment = dex.ParametrizedSegment(
-        dex.MagneticFluxArray.Toroidal([0.001, 0.002]),
-        theta=np.asarray([0.3, 0.4]),
-    )
-    assert np.all(segment.t_array == np.array([0.0, 1.0]))
-    assert np.all(segment.flux_array.values == np.array([0.001, 0.002]))
-    assert np.all(segment.theta_array == np.array([0.3, 0.4]))
+def test_parametrized_segment(
+    lar_machine: dex.Machine,
+    lar_stationary_curve: dex.StationaryCurve,
+):
+    segment = lar_stationary_curve.segments[0]
+    assert np.all(segment.t_array == np.linspace(0.0, len(segment) - 1, len(segment)))
+    assert np.all(np.isfinite(segment.flux_array.values))
+    assert np.all(np.isfinite(segment.theta_array))
     assert segment.theta_dot_array is None
 
     segment.calculate_theta_dot(lar_machine, -0.0123, 1e-5)

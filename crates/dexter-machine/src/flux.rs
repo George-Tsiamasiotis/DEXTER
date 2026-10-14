@@ -1,8 +1,9 @@
 //! Defines the `MagneticFluxKind` and `MagneticFlux` enums.
 
+use ndarray::Array1;
 use rsl_interpolation::Accelerator;
 
-use crate::{EvalError, Qfactor};
+use crate::{EvalError, MagneticFluxArray, Qfactor};
 
 /// The kind of a magnetic flux coordinate.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -30,6 +31,15 @@ impl MagneticFluxKind {
         match *self {
             Self::Toroidal => MagneticFlux::Toroidal(value),
             Self::Poloidal => MagneticFlux::Poloidal(value),
+        }
+    }
+
+    /// Creates a [`MagneticFluxArray`] of `self`'s kind and values `values`.
+    #[must_use]
+    pub fn to_magnetic_flux_array(&self, values: Array1<f64>) -> MagneticFluxArray {
+        match *self {
+            Self::Toroidal => MagneticFluxArray::Toroidal(values),
+            Self::Poloidal => MagneticFluxArray::Poloidal(values),
         }
     }
 
@@ -250,6 +260,7 @@ mod test {
     use super::*;
     use crate::{MagneticFlux::*, ParabolicQfactor};
     use approx::*;
+    use ndarray::array;
 
     #[test]
     fn magnetic_flux_kind_to_magnetic_flux() {
@@ -261,6 +272,17 @@ mod test {
             MagneticFluxKind::Poloidal.to_magnetic_flux(0.2),
             Poloidal(0.2)
         );
+    }
+
+    #[test]
+    fn magnetic_flux_kind_to_magnetic_flux_array() {
+        let f = MagneticFluxKind::Toroidal.to_magnetic_flux_array(array![0.1, 0.2]);
+        assert_eq!(f.kind(), MagneticFluxKind::Toroidal);
+        assert_eq!(array![0.1, 0.2], f.values());
+
+        let f = MagneticFluxKind::Poloidal.to_magnetic_flux_array(array![0.3, 0.4]);
+        assert_eq!(f.kind(), MagneticFluxKind::Poloidal);
+        assert_eq!(array![0.3, 0.4], f.values());
     }
 
     #[test]

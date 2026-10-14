@@ -660,15 +660,30 @@ class _PyGCHamiltonian:
         pzeta: float,
         mu: float,
     ) -> Array1: ...
+    @classmethod
+    def build_stationary_curve(
+        cls,
+        qfactor: _PyQfactor,
+        current: _PyCurrent,
+        bfield: _PyBfield,
+    ) -> _PyStationaryCurve: ...
+    @override
+    def __repr__(self) -> str: ...
+    @override
+    def __str__(self) -> str: ...
+
+class _PyStationaryCurve:
+    segments: list[_PyParametrizedSegment]
+
+    def __len__(self) -> int: ...
     @override
     def __repr__(self) -> str: ...
     @override
     def __str__(self) -> str: ...
 
 class _PyParametrizedSegment:
-    kind: MagneticFluxKind
+    flux_kind: MagneticFluxKind
 
-    def __init__(self, flux: _PyMagneticFluxArray, theta: Array1) -> None: ...
     def calculate_theta_dot(
         self,
         qfactor: _PyQfactor,
@@ -680,6 +695,10 @@ class _PyParametrizedSegment:
     def flux_array(self) -> _PyMagneticFluxArray: ...
     def get_array(self, name: str) -> Array1 | None: ...
     def __len__(self) -> int: ...
+    @override
+    def __repr__(self) -> str: ...
+    @override
+    def __str__(self) -> str: ...
 
 # ================================================================================================
 

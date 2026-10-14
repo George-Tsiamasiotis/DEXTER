@@ -2,6 +2,7 @@
 
 from semver import Version
 from typing import TypeAlias
+from functools import cached_property
 
 from dexter._core import _PyGeometry
 
@@ -154,39 +155,39 @@ class NcGeometry(MachineObject, Geometry):
         last = self._r.psip_last
         self.psip_last = MagneticFlux._wrap(last) if last is not None else None
 
-    @property
+    @cached_property  # immutable type
     def psi_array(self) -> Array1 | None:
         return self._r.get_array("psi_array")
 
-    @property
+    @cached_property  # immutable type
     def psip_array(self) -> Array1 | None:
         return self._r.get_array("psip_array")
 
-    @property
+    @cached_property  # immutable type
     def theta_array(self) -> Array1:
         array = self._r.get_array("theta_array")
         assert array is not None, "theta_array always exists"
         return array
 
-    @property
+    @cached_property  # immutable type
     def r_array(self) -> Array1:
         array = self._r.get_array("r_array")
         assert array is not None, "r_array always exists"
         return array
 
-    @property
+    @cached_property  # immutable type
     def rlab_array(self) -> Array2:
         array = self._r.get_array2d("rlab_array")
         assert array is not None, "rlab_array always exists"
         return array
 
-    @property
+    @cached_property  # immutable type
     def zlab_array(self) -> Array2:
         array = self._r.get_array2d("zlab_array")
         assert array is not None, "zlab_array always exists"
         return array
 
-    @property
+    @cached_property  # immutable type
     def jacobian_array(self) -> Array2 | None:
         return self._r.get_array2d("jacobian_array")
 

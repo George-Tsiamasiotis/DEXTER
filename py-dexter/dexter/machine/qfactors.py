@@ -2,6 +2,7 @@
 
 from semver import Version
 from typing import TypeAlias
+from functools import cached_property
 
 from dexter._core import _PyQfactor
 
@@ -119,15 +120,15 @@ class NcQfactor(MachineObject, Qfactor):
         self.netcdf_version = Version.parse(self._r.netcdf_version)
         self.interp_type = self._r.interp_type
 
-    @property
+    @cached_property  # immutable type
     def psi_array(self) -> Array1:
         return self._r.get_array("psi_array")
 
-    @property
+    @cached_property  # immutable type
     def psip_array(self) -> Array1:
         return self._r.get_array("psip_array")
 
-    @property
+    @cached_property  # immutable type
     def q_array(self) -> Array1:
         return self._r.get_array("q_array")
 

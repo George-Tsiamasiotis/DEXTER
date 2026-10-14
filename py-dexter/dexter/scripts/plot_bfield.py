@@ -27,10 +27,17 @@ parser.add_argument(
     type=int,
     default=plot_bfield_args["levels"],
 )
+parser.add_argument(
+    "-c",
+    "--contour-points",
+    help=f"Whether or not to plot the points comprising the stationary curve. Defaults to {plot_bfield_args["contour_points"]}.",
+    action="store_true",
+)
 args = parser.parse_args()
 
 machine = Machine.FromNetcdf(args.nc_file, "Linear", args.interpolation_type)
 
-plot_bfield(machine, show=True)
+plot_bfield(machine, contour_points=args.contour_points, show=True)
+print(machine.bfield)
 
 raise SystemExit

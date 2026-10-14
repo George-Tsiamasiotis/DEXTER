@@ -38,5 +38,6 @@ args = parser.parse_args()
 machine = Machine.FromNetcdf(args.nc_file, args.interpolation_type, "Bilinear")
 
 plot_qfactor(machine, points=args.points, data=args.d, show=True)
+print(machine.qfactor)
 
 raise SystemExit

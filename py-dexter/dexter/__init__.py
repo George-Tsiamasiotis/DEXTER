@@ -3,6 +3,10 @@ import matplotlib.pyplot as plt
 
 try:
     matplotlib.use("gtk3agg")
+except:
+    pass
+
+try:
     plt.rcParams["text.usetex"] = True
 except:
     pass
@@ -66,7 +70,8 @@ from dexter.simulate.particle import Particle
 from dexter.simulate.queue import Queue
 
 from dexter.comspace.energy_pzeta_plane import EnergyPzetaPlane
-from dexter.comspace.gc_hamiltonian import GCHamiltonian, ParametrizedSegment
+from dexter.comspace.gc_hamiltonian import GCHamiltonian
+from dexter.comspace.curve import StationaryCurve, ParametrizedSegment
 
 __all__ = [
     # Type Aliases
@@ -131,6 +136,7 @@ __all__ = [
     "plot_rz_poincare",
     # Comspace
     "GCHamiltonian",
+    "StationaryCurve",
     "ParametrizedSegment",
     "EnergyPzetaPlane",
 ]

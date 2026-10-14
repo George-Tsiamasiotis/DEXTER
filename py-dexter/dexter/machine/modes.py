@@ -2,6 +2,7 @@
 
 from semver import Version
 from typing import TypeAlias
+from functools import cached_property
 
 from dexter._core import _PyMode
 
@@ -195,21 +196,21 @@ class NcFluteMode(MachineObject, Mode):
             self._r.phase_average if self._r.phase_method == "Average" else None
         )
 
-    @property
+    @cached_property  # immutable type
     def psi_array(self) -> Array1 | None:
         return self._r.get_array("psi_array")
 
-    @property
+    @cached_property  # immutable type
     def psip_array(self) -> Array1 | None:
         return self._r.get_array("psip_array")
 
-    @property
+    @cached_property  # immutable type
     def alpha_array(self) -> Array1:
         array = self._r.get_array("alpha_array")
         assert array is not None, "alpha_array always exists"
         return array
 
-    @property
+    @cached_property  # immutable type
     def phase_array(self) -> Array1:
         array = self._r.get_array("phase_array")
         assert array is not None, "phase_array always exists"

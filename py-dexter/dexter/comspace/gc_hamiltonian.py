@@ -1,15 +1,14 @@
 r"""Defines the `GCHamiltonian` unit type."""
 
-from typing import cast
 from warnings import warn
 
+from dexter.machine.machine import Machine
 from dexter.machine.flux import MagneticFlux, MagneticFluxArray
 from dexter.types import Array1, Array2
+from dexter.comspace.curve import StationaryCurve
 
-from dexter._core import _PyGCHamiltonian, _PyParametrizedSegment
+from dexter._core import _PyGCHamiltonian
 from dexter._utils import _ReprStrImpl, _into_pyarray1f64
-
-from dexter.machine.machine import Machine
 
 
 class GCHamiltonian(_ReprStrImpl):
@@ -327,71 +326,17 @@ class GCHamiltonian(_ReprStrImpl):
             mu=mu,
         )
 
+    @classmethod
+    def build_stationary_curve(cls, machine: Machine) -> StationaryCurve:
+        r"""Builds the [`StationaryCurve`][dexter.StationaryCurve] of `machine`.
 
-class ParametrizedSegment(_ReprStrImpl):
-    r"""A 2D parametrized curve. Represents an individual segment of the Stationary Curve.
-
-    The parameter $t$ is chosen to be tine index of the corresponding $(\psi/\psi_p, \theta)$ point.
-
-    Parameters
-    ----------
-    flux_array
-        The magnetic flux $\psi$ or $\psi_p$ array.
-    theta_array
-        The $\theta$ array.
-
-    Attributes
-    ----------
-    t_array
-        The parameter $t$ array.
-    flux_array
-        The contained magnetic flux $\psi$ or $\psi_p$ array.
-    theta_array
-        The contained $\theta$ array.
-    theta_dot_array
-        The $\dot\theta$ array, if it has been calculated
-    """
-
-    _r: _PyParametrizedSegment
-
-    def __init__(self, flux: MagneticFluxArray, theta: Array1) -> None:
-        self._r = _PyParametrizedSegment(
-            flux=flux._r,
-            theta=_into_pyarray1f64(theta),
-        )
-
-    @property
-    def flux_array(self) -> MagneticFluxArray:
-        # always exists
-        return MagneticFluxArray._wrap(self._r.flux_array())
-
-    @property
-    def t_array(self) -> Array1:
-        # always exists
-        return cast(Array1, self._r.get_array("t_array"))
-
-    @property
-    def theta_array(self) -> Array1:
-        # always exists
-        return cast(Array1, self._r.get_array("theta_array"))
-
-    @property
-    def theta_dot_array(self) -> Array1 | None:
-        return self._r.get_array("theta_dot_array")
-
-    def calculate_theta_dot(
-        self,
-        machine: Machine,
-        pzeta: float,
-        mu: float,
-    ) -> None:
-        r"""Calculates the $\dot\theta$ array from the contained `flux` and `theta` arrays and
-        the constants of motion $P_\zeta$ and $\mu$.
+        This routines tries to construct the curve w.r.t $\psi$ first. If $\psi$ is not a good
+        coordinate, then $\psi_p$ is used.
         """
-        self._r.calculate_theta_dot(
-            qfactor=machine.qfactor._r,
-            current=machine.current._r,
-            bfield=machine.bfield._r,
-            pzeta=pzeta,
-            mu=mu,
+        return StationaryCurve._wrap(
+            _PyGCHamiltonian.build_stationary_curve(
+                qfactor=machine.qfactor._r,
+                current=machine.current._r,
+                bfield=machine.bfield._r,
+            )
         )

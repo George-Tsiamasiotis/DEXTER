@@ -24,12 +24,13 @@ from matplotlib.figure import Figure
 from matplotlib.axes import Axes
 from typing import cast
 
+from dexter.types import Array1, Array2, MagneticFluxKind
 from dexter.machine.machine import Machine
 from dexter.machine.base import MachineObject
 from dexter.machine.qfactors import NcQfactor
 from dexter.machine.currents import NcCurrent
 from dexter.machine.modes import FluteMode, ModeObject
-from dexter.types import Array1, Array2, MagneticFluxKind
+from dexter.comspace.gc_hamiltonian import GCHamiltonian
 
 TAU = 2 * np.pi
 PI = np.pi
@@ -465,9 +466,10 @@ def plot_current(
 def plot_bfield(
     machine: Machine,
     levels: int = 15,
+    contour_points: bool = False,
     show: bool = True,
 ) -> tuple[Figure, tuple[Axes, Axes, Axes]]:
-    """Plots a [`BfieldObject`][dexter.BfieldObject]'s $B$ and its derivatives on the $R-Z$ plane.
+    r"""Plots a [`BfieldObject`][dexter.BfieldObject]'s $B$ and its derivatives on the $R-Z$ plane.
 
     Parameters
     ----------
@@ -475,6 +477,9 @@ def plot_bfield(
         The machine containing the current object.
     levels
         The number of contour levels.
+    contour_points
+        Whether or not to plot the $\partial B/\partial \theta = 0$ points as calculated from the
+        [`StationaryCurve`][dexter.StationaryCurve].
     show
         Whether or not to call `plt.show()`.
 
@@ -546,14 +551,37 @@ def plot_bfield(
     axbt.contour(csbt, colors="k", linewidths=LEVEL_LINE_WIDTH)
     axsc.contour(csbt, colors="k", linewidths=LEVEL_LINE_WIDTH)
 
-    axsc.contour(
+    axsc.contour(  # stationary_curve from matplotlib
         cssc,
         levels=[0],
-        colors=SC_COLOR,
+        colors="r",
         linewidths=2 * LEVEL_LINE_WIDTH,
         linestyle="solid",
         negative_linestyles="solid",
     )
+    sc = GCHamiltonian.build_stationary_curve(machine)
+    for seg in sc.segments:
+        lab_eval_args = {flux_arg_name: seg.flux_array.values, "theta": seg.theta_array}
+        rlab_seg = geometry.eval_rlab(**lab_eval_args)
+        zlab_seg = geometry.eval_zlab(**lab_eval_args)
+        axsc.plot(
+            rlab_seg,
+            zlab_seg,
+            color=SC_COLOR,
+            linewidth=2 * LEVEL_LINE_WIDTH,
+            zorder=2,
+        )
+        if contour_points:
+            axsc.scatter(
+                rlab_seg,
+                zlab_seg,
+                marker="x",
+                c="k",
+                s=5,
+                linewidths=0.4,
+                alpha=0.8,
+                zorder=1,
+            )
     axsc.plot([], [], color=SC_COLOR, label=r"$dB(R,Z)/d\theta$")
     axsc.legend(loc="upper right", prop={"size": 7})
 
