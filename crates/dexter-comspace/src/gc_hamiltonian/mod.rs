@@ -5,8 +5,11 @@
 #![expect(clippy::min_ident_chars, reason = "Hamiltonian terms")]
 
 mod array;
+mod segment;
 
 use std::f64::consts::TAU;
+
+pub use segment::ParametrizedSegment;
 
 // ===============================================================================================
 

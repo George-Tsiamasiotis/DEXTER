@@ -25,7 +25,8 @@ impl GCHamiltonian {
     ///
     /// # Errors
     ///
-    /// + Returns a [`COMError::BadFluxCoordinate`] if `psi` is not a [`Good`] coordinate of `machine`.
+    /// + Returns a [`COMError::BadFluxCoordinate`] if `flux_array.kind()` is not a [`Good`]
+    ///   coordinate of `machine`.
     /// + Returns a [`COMError::ShapeMismatch`] if `theta_array` and `flux_array` do not have the
     ///   same length.
     /// + Returns a [`COMError::EvalError`] if `flux_array` contains any out-of-bounds values or
@@ -118,7 +119,8 @@ impl GCHamiltonian {
     ///
     /// # Errors
     ///
-    /// + Returns a [`COMError::BadFluxCoordinate`] if `psi` is not a [`Good`] coordinate of `machine`.
+    /// + Returns a [`COMError::BadFluxCoordinate`] if `flux_array.kind()` is not a [`Good`]
+    ///   coordinate of `machine`.
     /// + Returns a [`COMError::EvalError`] if `flux_array` contains any out-of-bounds values or
     ///   if any evaluation fails.
     ///
@@ -190,12 +192,113 @@ impl GCHamiltonian {
         // SAFETY: The loop passes from all elements and initializes them
         Ok(unsafe { grid.assume_init() })
     }
+
+    /// Evaluates `dot(θ)` as given by the canonical equation of motion for a charged particle in an
+    /// axisymmetric configuration.
+    ///
+    /// This method uses the [`flux_array.kind()`][MagneticFluxKind] flux coordinate to perform all
+    /// evaluations. Since only `ψp` appears explicitly in the equation (inside the `rho` term), if
+    /// `flux_array.kind() == Toroidal` then an extra evaluation is needed to calculate `ψp`.
+    ///
+    /// # Errors
+    ///
+    /// + Returns a [`COMError::BadFluxCoordinate`] if `flux_array.kind()` is not a [`Good`]
+    ///   coordinate of `machine`.
+    /// + Returns a [`COMError::ShapeMismatch`] if `theta_array` and `flux_array` do not have the
+    ///   same length.
+    /// + Returns a [`COMError::EvalError`] if `flux_array` contains any out-of-bounds values or
+    ///   if any evaluation fails.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use dexter_machine::*;
+    /// # use dexter_comspace::*;
+    /// # use ndarray::Array1;
+    /// # use std::f64::consts::TAU;
+    /// let lcfs = LastClosedFluxSurface::Toroidal(0.05);
+    /// let qfactor = ParabolicQfactor::new(1.1, 3.9, lcfs);
+    /// let current = LarCurrent::new();
+    /// let bfield = LarBfield::new();
+    /// let machine = MachineBuilder::new(&qfactor, &current, &bfield).build();
+    ///
+    /// let theta_array = Array1::linspace(0.0, TAU, 10);
+    /// let psi_array = MagneticFluxArray::Toroidal(
+    ///     Array1::linspace(1e-5, 1.0, 10) * machine.psi_last().value()
+    /// );
+    /// let pzeta = -0.1 * machine.psip_last().value();
+    /// let mu = 1e-4;
+    ///
+    /// let theta_dot =
+    ///     GCHamiltonian::eval_theta_dot_array(machine, &theta_array, &psi_array, pzeta, mu)?;
+    /// # Ok::<_, COMError>(())
+    ///
+    /// ```
+    ///
+    /// [`Good`]: dexter_machine::FluxCoordinateState::Good
+    pub fn eval_theta_dot_array(
+        machine: Machine,
+        theta_array: &ArrayRef1<f64>,
+        flux_array: &MagneticFluxArray,
+        pzeta: f64,
+        mu: f64,
+    ) -> Result<Array1<f64>, COMError> {
+        if !machine.is_good_flux(flux_array.kind()) {
+            return Err(COMError::BadFluxCoordinate);
+        }
+        if !(theta_array.len() == flux_array.len()) {
+            return Err(COMError::ShapeMismatch);
+        }
+
+        let acc = &mut Accelerator2d::new();
+        let mut array = Array1::<f64>::uninit(theta_array.len());
+
+        for index in 0..array.len() {
+            let theta = theta_array[index].rem_euclid(TAU);
+            let Some(flux) = flux_array.get(index) else {
+                unreachable!("index is in-bounds")
+            };
+
+            let q = machine.qfactor().eval_q(flux, acc.xacc())?;
+            let g = machine.current().eval_g(flux, acc.xacc())?;
+            let i = machine.current().eval_i(flux, acc.xacc())?;
+            let b = machine.bfield().eval_b(flux, theta, acc)?;
+
+            let mut dg = machine.current().eval_g_deriv(flux, acc.xacc())?;
+            let mut di = machine.current().eval_i_deriv(flux, acc.xacc())?;
+            let mut db = machine.bfield().eval_deriv_flux(flux, theta, acc)?;
+
+            if flux_array.kind() == MagneticFluxKind::Toroidal {
+                dg *= q;
+                di *= q;
+                db *= q;
+            };
+
+            let psip = match flux_array.kind() {
+                MagneticFluxKind::Toroidal => flux.to_other(machine.qfactor())?,
+                MagneticFluxKind::Poloidal => flux,
+            };
+
+            let rho = (pzeta + psip.value()) / g;
+            let dterm = g * q + i + rho * (g * di - i * dg);
+            let mu_par = mu + rho.powi(2) * b;
+            let brace = mu_par * db;
+
+            let theta_dot_first = rho * b.powi(2) * (1.0 - rho * dg) / dterm;
+            let theta_dot_second = g * brace / dterm;
+
+            array[index] = MaybeUninit::new(theta_dot_first + theta_dot_second)
+        }
+
+        // SAFETY: The loop passes from all elements and initializes them
+        Ok(unsafe { array.assume_init() })
+    }
 }
 
 #[cfg(test)]
 mod test {
     use super::*;
-    use dexter_machine::extract::TEST_NETCDF_PATH;
+    use dexter_machine::extract::{POLOIDAL_TEST_NETCDF_PATH, TEST_NETCDF_PATH};
     use dexter_machine::*;
     use dexter_machine::{Interpolation1dType::Steffen, Interpolation2dType::Bicubic};
     use ndarray::{arr1, arr2, array};
@@ -255,5 +358,51 @@ mod test {
         let hamiltonian_psip_grid =
             GCHamiltonian::eval_grid(machine, &theta_array, &psip_array, pzeta, mu).unwrap();
         assert!(hamiltonian_psi_grid.relative_eq(&hamiltonian_psip_grid, 1e-7, 1e-7));
+    }
+
+    /// Data taken from a particle integration at two random, but far away points.
+    #[test]
+    fn toroidal_theta_dot_particle_integration_check() {
+        let geometry = LarGeometry::new(3.0, 1.75, 0.5);
+        let qfactor = ParabolicQfactor::new(1.1, 3.9, geometry.psi_last());
+        let current = LarCurrent::new();
+        let bfield = LarBfield::new();
+        let machine = MachineBuilder::new(&qfactor, &current, &bfield).build();
+
+        let pzeta = -0.4 * machine.psip_last().value();
+        let mu = 8e-5;
+        let psi_array =
+            MagneticFluxArray::Toroidal(array![0.0150416641300857, 0.024489797620614817]);
+        let theta_array = array![-1.5110542958752977, -0.00026883737083318703];
+        let expected = array![0.0019260499850548007, 0.001795964125966984];
+
+        let theta_dot =
+            GCHamiltonian::eval_theta_dot_array(machine, &theta_array, &psi_array, pzeta, mu)
+                .unwrap();
+
+        assert!(theta_dot.relative_eq(&expected, 1e-8, 1e-8))
+    }
+
+    /// Data taken from a particle integration at two random, but far away points.
+    #[test]
+    fn poloidal_theta_dot_particle_integration_check() {
+        let path = std::path::PathBuf::from(POLOIDAL_TEST_NETCDF_PATH);
+        let qfactor = NcQfactorBuilder::new(&path, Steffen).build().unwrap();
+        let current = NcCurrentBuilder::new(&path, Steffen).build().unwrap();
+        let bfield = NcBfieldBuilder::new(&path, Bicubic).build().unwrap();
+        let machine = MachineBuilder::new(&qfactor, &current, &bfield).build();
+
+        let pzeta = -0.4 * machine.psip_last().value();
+        let mu = 8e-5;
+        let psip_array =
+            MagneticFluxArray::Poloidal(array![0.27380535826052793, 0.29999997523064204]);
+        let theta_array = array![8.716612844125935, 25.13242757224653];
+        let expected = array![0.10155540604265717, 0.032902288079255174];
+
+        let theta_dot =
+            GCHamiltonian::eval_theta_dot_array(machine, &theta_array, &psip_array, pzeta, mu)
+                .unwrap();
+
+        assert!(theta_dot.relative_eq(&expected, 1e-8, 1e-8))
     }
 }
