@@ -1,0 +1,112 @@
+"""Defines the `StationaryCurve` and `ParametrizedSegment` classes."""
+
+from typing import cast
+from functools import cached_property
+
+from dexter.types import Array1, MagneticFluxKind
+
+from dexter._utils import _ReprStrImpl, _RustTypeWrapper
+from dexter._core import _PyParametrizedSegment, _PyStationaryCurve
+
+from dexter.machine.machine import Machine
+from dexter.machine.flux import MagneticFluxArray
+
+
+class StationaryCurve(_ReprStrImpl, _RustTypeWrapper):
+    r"""The stationary curve of the Hamiltonian.
+
+    The stationary curve is defined through the equation $\partial\mathcal{H}/\partial\theta = 0$.
+    In the absence of an electric field, this is equivalent to \partial B/\partial\theta = 0$.
+
+    The stationary curve is described by one or more parametrized segments of the form
+    $\partial\mathcal{H}/\partial\theta = 0$
+
+    This type is built through
+    [`GCHamiltonian.build_stationary_curve`][dexter.GCHamiltonian.build_stationary_curve].
+
+    Attributes
+    ----------
+    segments
+        The segments comprising the stationary curve.
+    """
+
+    _r: _PyStationaryCurve
+
+    def __init__(self) -> None:
+        raise RuntimeError(
+            "'StationaryCurve' must be constructed through GCHamiltonian.build_stationary_curve"
+        )
+
+    @cached_property  # immutable type
+    def segments(self) -> list[ParametrizedSegment]:
+        """The segments comprising the stationary curve."""
+        return [ParametrizedSegment._wrap(_segment) for _segment in self._r.segments]
+
+
+class ParametrizedSegment(_ReprStrImpl, _RustTypeWrapper):
+    r"""A 2D parametrized curve. Represents an individual segment of the Stationary Curve.
+
+    The parameter $t$ is chosen to be the index of the corresponding $(\psi/\psi_p, \theta)$ point.
+
+    Attributes
+    ----------
+    flux_kind
+        The kind of the magnetic flux w.r.t. the segment is defined.
+    t_array
+        The parameter $t$ array.
+    flux_array
+        The contained magnetic flux $\psi$ or $\psi_p$ array.
+    theta_array
+        The contained $\theta$ array.
+    theta_dot_array
+        The $\dot\theta$ array, if it has been calculated
+    """
+
+    _r: _PyParametrizedSegment
+
+    def __init__(self) -> None:
+        raise RuntimeError("'ParametrizedSegment' cannot be constructed")
+
+    @property
+    def flux_kind(self) -> MagneticFluxKind:
+        return self._r.flux_kind
+
+    @cached_property  # immutable type
+    def flux_array(self) -> MagneticFluxArray:
+        # always exists
+        return MagneticFluxArray._wrap(self._r.flux_array())
+
+    @cached_property  # immutable type
+    def t_array(self) -> Array1:
+        # always exists
+        return cast(Array1, self._r.get_array("t_array"))
+
+    @cached_property  # immutable type
+    def theta_array(self) -> Array1:
+        # always exists
+        return cast(Array1, self._r.get_array("theta_array"))
+
+    @property  # immutable type
+    def theta_dot_array(self) -> Array1 | None:
+        return self._r.get_array("theta_dot_array")
+
+    def calculate_theta_dot(
+        self,
+        machine: Machine,
+        pzeta: float,
+        mu: float,
+    ) -> None:
+        r"""Calculates the $\dot\theta$ array from the contained `flux` and `theta` arrays and
+        the constants of motion $P_\zeta$ and $\mu$.
+        """
+        self._r.calculate_theta_dot(
+            qfactor=machine.qfactor._r,
+            current=machine.current._r,
+            bfield=machine.bfield._r,
+            pzeta=pzeta,
+            mu=mu,
+        )
+
+    def __len__(self) -> int:
+        r"""Returns the number of the contained $(\theta, \psi/\psi_p)$ points."""
+        return self._r.__len__()

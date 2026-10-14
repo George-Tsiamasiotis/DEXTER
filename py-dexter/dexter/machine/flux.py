@@ -2,6 +2,7 @@ import numpy as np
 
 from collections.abc import Callable
 from typing import override
+from functools import cached_property
 
 from dexter.types import Array1, MagneticFluxKind, ArrayLike
 
@@ -199,7 +200,7 @@ class MagneticFluxArray(_ReprStrImpl, _RustTypeWrapper):
     def kind(self) -> MagneticFluxKind:
         return self._r.kind
 
-    @property
+    @cached_property  # immutable type
     def values(self) -> Array1:
         return self._r.values
 

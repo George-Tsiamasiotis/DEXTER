@@ -1,15 +1,16 @@
 //! Defines [`ParametrizedSegment`], a container type to store and parametrize the Stationary
 //! Curve's distinct segments.
 
-use dexter_machine::{Machine, MagneticFluxArray};
+use dexter_machine::{Machine, MagneticFluxArray, MagneticFluxKind};
 use ndarray::{Array1, ArrayView1};
 
 use crate::{COMError, GCHamiltonian};
 
-/// A 2D parametrized curve. Represents an individual segment of the Stationary Curve.
+/// A 2D parametrized curve. Represents an individual segment of the
+/// [`StationaryCurve`][crate::StationaryCurve].
 ///
 /// The parameter `t` is chosen to be the index of the corresponding `(ψ,θ)` point.
-#[derive(Debug)]
+#[derive(Clone)]
 pub struct ParametrizedSegment {
     /// The segment's parameter.
     t: Array1<f64>,
@@ -30,7 +31,7 @@ impl ParametrizedSegment {
     ///
     /// This method panics if the input arrays do not have the same length.
     #[must_use]
-    pub fn new(flux_array: MagneticFluxArray, theta_array: Array1<f64>) -> Self {
+    pub(crate) fn new(flux_array: MagneticFluxArray, theta_array: Array1<f64>) -> Self {
         assert_eq!(
             flux_array.len(),
             theta_array.len(),
@@ -55,6 +56,12 @@ impl ParametrizedSegment {
     #[must_use]
     pub fn is_empty(&self) -> bool {
         self.len() == 0
+    }
+
+    /// Returns the [`MagneticFluxArray`] of the stored [`MagneticFluxArray`].
+    #[must_use]
+    pub fn flux_kind(&self) -> MagneticFluxKind {
+        self.flux_array.kind()
     }
 
     /// Returns a view on the `t` parameter array.
@@ -108,6 +115,32 @@ impl ParametrizedSegment {
             mu,
         )?);
         Ok(())
+    }
+}
+
+impl std::fmt::Debug for ParametrizedSegment {
+    #[expect(clippy::unwrap_used, reason = "safe")]
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        // NOTE: By construction, `self` always has a length of at least 2, therefore `unwrap` is
+        // safe here.
+        let last_index = self.len() - 1;
+        let flux_last = self.flux_array.get(last_index).unwrap().value();
+        let start = format_args!(
+            "flux(normalized)={:?}, θ={}",
+            self.flux_array.get(0).unwrap() / flux_last,
+            self.theta_array[0]
+        );
+        let end = format_args!(
+            "flux(normalized)={:?}, θ={}",
+            self.flux_array.get(last_index).unwrap() / flux_last,
+            self.theta_array[last_index]
+        );
+        f.debug_struct("StationaryCurveSegment")
+            .field("flux kind", &self.flux_kind())
+            .field("start", &start)
+            .field("end", &end)
+            .field("length", &self.len())
+            .finish()
     }
 }
 

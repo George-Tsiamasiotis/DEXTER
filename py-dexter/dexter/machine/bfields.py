@@ -2,6 +2,7 @@
 
 from semver import Version
 from typing import TypeAlias
+from functools import cached_property
 
 from dexter._core import _PyBfield
 
@@ -134,31 +135,31 @@ class NcBfield(MachineObject, Bfield):
         self.shape = self._r.shape
         self.shape_padded = self._r.shape_padded
 
-    @property
+    @cached_property  # immutable type
     def psi_array(self) -> Array1 | None:
         return self._r.get_array("psi_array")
 
-    @property
+    @cached_property  # immutable type
     def psip_array(self) -> Array1 | None:
         return self._r.get_array("psip_array")
 
-    @property
+    @cached_property  # immutable type
     def theta_array(self) -> Array1:
         array = self._r.get_array("theta_array")
         assert array is not None, "theta_array always exists"
         return array
 
-    @property
+    @cached_property  # immutable type
     def theta_array_padded(self) -> Array1:
         array = self._r.get_array("theta_array_padded")
         assert array is not None, "theta_array_padded always exists"
         return array
 
-    @property
+    @cached_property  # immutable type
     def b_array(self) -> Array2:
         return self._r.get_array2d("b_array")
 
-    @property
+    @cached_property  # immutable type
     def b_array_padded(self) -> Array2:
         return self._r.get_array2d("b_array_padded")
 

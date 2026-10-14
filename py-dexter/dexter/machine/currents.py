@@ -2,6 +2,7 @@
 
 from semver import Version
 from typing import TypeAlias
+from functools import cached_property
 
 from dexter._core import _PyCurrent
 
@@ -83,21 +84,21 @@ class NcCurrent(MachineObject, Current):
         self.netcdf_version = Version.parse(self._r.netcdf_version)
         self.interp_type = self._r.interp_type
 
-    @property
+    @cached_property  # immutable type
     def psi_array(self) -> Array1 | None:
         return self._r.get_array("psi_array")
 
-    @property
+    @cached_property  # immutable type
     def psip_array(self) -> Array1 | None:
         return self._r.get_array("psip_array")
 
-    @property
+    @cached_property  # immutable type
     def g_array(self) -> Array1:
         array = self._r.get_array("g_array")
         assert array is not None, "g_array always exists"
         return array
 
-    @property
+    @cached_property  # immutable type
     def i_array(self) -> Array1:
         array = self._r.get_array("i_array")
         assert array is not None, "i_array always exists"

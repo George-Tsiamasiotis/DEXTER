@@ -273,6 +273,34 @@ impl<'obj> Machine<'obj> {
         }
     }
 
+    /// Returns the the last closed flux surface of kind `kind`.
+    ///
+    /// Useful in routines that have already decided which flux they are going to use and need its
+    /// value at the last closed flux surface.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use dexter_machine::*;
+    /// # let qfactor = UnityQfactor::new(LastClosedFluxSurface::Toroidal(0.1));
+    /// # let current = LarCurrent::new();
+    /// # let bfield = LarBfield::new();
+    /// # let machine = MachineBuilder::new(&qfactor, &current, &bfield).build();
+    /// let flux_kind = machine.good_flux();
+    /// let last = machine.last(flux_kind);
+    ///
+    /// assert_eq!(machine.last(MagneticFluxKind::Toroidal), machine.psi_last());
+    /// assert_eq!(machine.last(MagneticFluxKind::Poloidal), machine.psip_last());
+    /// # Ok::<_, MachineError>(())
+    /// ```
+    #[must_use]
+    pub fn last(&self, kind: MagneticFluxKind) -> MagneticFlux {
+        match kind {
+            MagneticFluxKind::Toroidal => self.psi_last(),
+            MagneticFluxKind::Poloidal => self.psip_last(),
+        }
+    }
+
     /// Returns `true` if `kind` is a [`Good`][`FluxCoordinateState::Good`] magnetic flux coordinate.
     #[must_use]
     pub fn is_good_flux(&self, kind: MagneticFluxKind) -> bool {

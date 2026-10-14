@@ -279,7 +279,7 @@ def plot_poloidal_drift(
         energy_grid = cast(
             Array2,
             machine.quantity(
-                GCHamiltonian.eval_grid(
+                GCHamiltonian().eval_grid(
                     machine,
                     theta_array,
                     flux_array,

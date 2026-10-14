@@ -7,7 +7,7 @@ use dexter::dexter_machine::*;
 use numpy::PyReadonlyArray1;
 use numpy::{IntoPyArray, PyArray1, PyArray2};
 use pyo3::prelude::*;
-use pyo3::types::PyType;
+use pyo3::types::{PyList, PyType};
 
 #[pyclass(name = "_PyGCHamiltonian", immutable_type, frozen)]
 pub struct PyGCHamiltonian;
@@ -94,6 +94,41 @@ impl PyGCHamiltonian {
         )?;
         Ok(array.into_pyarray(py))
     }
+
+    #[classmethod]
+    pub fn build_stationary_curve(
+        _: &Bound<'_, PyType>,
+        qfactor: &PyQfactor,
+        current: &PyCurrent,
+        bfield: &PyBfield,
+    ) -> PyStationaryCurve {
+        let machine = MachineBuilder::new(qfactor.inner(), current.inner(), bfield.inner()).build();
+        let curve = GCHamiltonian::build_stationary_curve(machine);
+        PyStationaryCurve(curve)
+    }
+}
+
+// ===============================================================================================
+
+#[pyclass(name = "_PyStationaryCurve", immutable_type, frozen)]
+pub struct PyStationaryCurve(pub StationaryCurve);
+
+#[pymethods]
+impl PyStationaryCurve {
+    #[getter]
+    pub fn segments<'py>(&self, py: Python<'py>) -> Result<Bound<'py, PyList>> {
+        let py_segments: Vec<PyParametrizedSegment> = self
+            .0
+            .segments()
+            .iter()
+            .map(|segment| PyParametrizedSegment(segment.clone()))
+            .collect();
+        Ok(PyList::new(py, py_segments)?)
+    }
+
+    pub fn __len__(&self) -> usize {
+        self.0.len()
+    }
 }
 
 // ===============================================================================================
@@ -103,21 +138,30 @@ pub struct PyParametrizedSegment(pub ParametrizedSegment);
 
 #[pymethods]
 impl PyParametrizedSegment {
-    #[new]
-    pub fn new<'py>(flux: &PyMagneticFluxArray, theta: PyReadonlyArray1<f64>) -> Self {
-        Self(ParametrizedSegment::new(
-            flux.0.clone(),
-            theta.as_array().to_owned(),
-        ))
+    #[getter]
+    pub fn flux_kind(&self) -> String {
+        format!("{:?}", self.0.flux_array().kind())
+    }
+
+    pub fn calculate_theta_dot(
+        &mut self,
+        qfactor: &PyQfactor,
+        current: &PyCurrent,
+        bfield: &PyBfield,
+        pzeta: f64,
+        mu: f64,
+    ) -> Result<()> {
+        let machine = MachineBuilder::new(qfactor.inner(), current.inner(), bfield.inner()).build();
+        self.0.calculate_theta_dot(machine, pzeta, mu)?;
+        Ok(())
+    }
+
+    pub fn __len__(&self) -> usize {
+        self.0.len()
     }
 
     pub fn flux_array(&self) -> PyMagneticFluxArray {
         PyMagneticFluxArray(self.0.flux_array().to_owned())
-    }
-
-    #[getter]
-    pub fn kind(&self) -> String {
-        format!("{:?}", self.0.flux_array())
     }
 
     pub fn get_array<'py>(
@@ -141,23 +185,6 @@ impl PyParametrizedSegment {
         };
         Ok(Some(array.to_owned().into_pyarray(py)))
     }
-
-    pub fn calculate_theta_dot(
-        &mut self,
-        qfactor: &PyQfactor,
-        current: &PyCurrent,
-        bfield: &PyBfield,
-        pzeta: f64,
-        mu: f64,
-    ) -> Result<()> {
-        let machine = MachineBuilder::new(qfactor.inner(), current.inner(), bfield.inner()).build();
-        self.0.calculate_theta_dot(machine, pzeta, mu)?;
-        Ok(())
-    }
-
-    pub fn __len__(&self) -> usize {
-        self.0.len()
-    }
 }
 
 // ===============================================================================================
@@ -175,5 +202,7 @@ impl PyGCHamiltonian {
     }
 }
 
+wrapper_debug_export!(PyStationaryCurve);
+impl_py_repr!(PyStationaryCurve, pretty);
 wrapper_debug_export!(PyParametrizedSegment);
 impl_py_repr!(PyParametrizedSegment, pretty);

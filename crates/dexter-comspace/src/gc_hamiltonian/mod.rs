@@ -5,10 +5,12 @@
 #![expect(clippy::min_ident_chars, reason = "Hamiltonian terms")]
 
 mod array;
+mod curve;
 mod segment;
 
 use std::f64::consts::TAU;
 
+pub use curve::StationaryCurve;
 pub use segment::ParametrizedSegment;
 
 // ===============================================================================================
@@ -99,6 +101,14 @@ impl GCHamiltonian {
         let perpendicular = mu * b;
 
         Ok(kinetic + perpendicular)
+    }
+
+    /// Builds the [`StationaryCurve`] of `machine`.
+    ///
+    /// The `StationaryCurve` is constructed w.r.t [`Machine::good_flux`].
+    #[must_use]
+    pub fn build_stationary_curve(machine: Machine) -> StationaryCurve {
+        StationaryCurve::build(machine)
     }
 }
 
