@@ -173,6 +173,7 @@ def plot_poloidal_drift(
     array_shape: ArrayShape = (300, 300),
     levels: int = 50,
     locator: Locator = "MaxN",
+    equal: bool = True,
     show: bool = True,
 ) -> tuple[Figure, Axes]:
     r"""Plots a particle's drift on the $R-Z$ plane, overlaid on a contour plot of the Hamiltonian.
@@ -197,6 +198,8 @@ def plot_poloidal_drift(
     ----------------
     locator
         The tick locator to use to locate contour levels.
+    equal
+        Whether or not to set the axis aspect ratio to `equal`.
 
     Raises
     ------
@@ -262,12 +265,20 @@ def plot_poloidal_drift(
 
         if flux == "Toroidal":
             eval_flux_of_r_function = geometry.eval_psi_of_r
+            flux_array_constructor = MagneticFluxArray.Toroidal
         else:
             eval_flux_of_r_function = geometry.eval_psip_of_r
+            flux_array_constructor = MagneticFluxArray.Poloidal
 
-        r_array = np.linspace(0, machine.rlast, array_shape[1]) * 0.99999
-        flux_values: Array1 = cast(Array1, eval_flux_of_r_function(r_array))
-        flux_array: MagneticFluxArray = MagneticFluxArray.Toroidal(flux_values)
+        try:
+            # Try to build a linspace over `r` first, so the grid is spaced more evenly. This
+            # might fail as `r` is not present in all datasets.
+            r_array = np.linspace(0, machine.rlast, array_shape[1]) * 0.99999
+            flux_values: Array1 = cast(Array1, eval_flux_of_r_function(r_array))
+            flux_array: MagneticFluxArray = flux_array_constructor(flux_values)
+        except:
+            flux_values = np.linspace(1e-8, machine.psi_last.value, array_shape[1])
+            flux_array = flux_array_constructor(flux_values)
         theta_array = np.linspace(0, TAU, array_shape[0])
         theta_grid, flux_grid = np.meshgrid(
             theta_array,
@@ -338,7 +349,8 @@ def plot_poloidal_drift(
 
     ax.set_xlabel(r"$R\ [m]$")
     ax.set_ylabel(r"$Z\ [m]$")
-    ax.set_aspect("equal")
+    if equal:
+        ax.set_aspect("equal")
     ax.margins(*MARGINS)
     ax.grid(False)
 

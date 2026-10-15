@@ -3,13 +3,12 @@
 from typing import cast
 from functools import cached_property
 
-from dexter.types import Array1, MagneticFluxKind
+from dexter.types import Array1, CriticalPointKind, MagneticFluxKind
 
 from dexter._utils import _ReprStrImpl, _RustTypeWrapper
-from dexter._core import _PyParametrizedSegment, _PyStationaryCurve
+from dexter._core import _PyParametrizedSegment, _PyStationaryCurve, _PyCriticalPoint
 
-from dexter.machine.machine import Machine
-from dexter.machine.flux import MagneticFluxArray
+from dexter.machine.flux import MagneticFlux, MagneticFluxArray
 
 
 class StationaryCurve(_ReprStrImpl, _RustTypeWrapper):
@@ -58,8 +57,6 @@ class ParametrizedSegment(_ReprStrImpl, _RustTypeWrapper):
         The contained magnetic flux $\psi$ or $\psi_p$ array.
     theta_array
         The contained $\theta$ array.
-    theta_dot_array
-        The $\dot\theta$ array, if it has been calculated
     """
 
     _r: _PyParametrizedSegment
@@ -86,27 +83,55 @@ class ParametrizedSegment(_ReprStrImpl, _RustTypeWrapper):
         # always exists
         return cast(Array1, self._r.get_array("theta_array"))
 
-    @property  # immutable type
-    def theta_dot_array(self) -> Array1 | None:
-        return self._r.get_array("theta_dot_array")
-
-    def calculate_theta_dot(
-        self,
-        machine: Machine,
-        pzeta: float,
-        mu: float,
-    ) -> None:
-        r"""Calculates the $\dot\theta$ array from the contained `flux` and `theta` arrays and
-        the constants of motion $P_\zeta$ and $\mu$.
-        """
-        self._r.calculate_theta_dot(
-            qfactor=machine.qfactor._r,
-            current=machine.current._r,
-            bfield=machine.bfield._r,
-            pzeta=pzeta,
-            mu=mu,
-        )
-
     def __len__(self) -> int:
         r"""Returns the number of the contained $(\theta, \psi/\psi_p)$ points."""
         return self._r.__len__()
+
+
+class CriticalPoint(_ReprStrImpl, _RustTypeWrapper):
+    r"""A critical point of the Hamiltonian.
+
+    A simple container type that is created through
+    [`EnergyPzetaPlane.calculate_critical_points`][dexter.EnergyPzetaPlane.calculate_critical_points].
+
+    Attributes
+    ----------
+    theta
+        The point's $\theta$ position.
+    flux
+        The point's $\psi/\psi_p$ position.
+    energy
+        The point's energy.
+    pzeta
+        The point's $P_\zeta$.
+    mu
+        The point's $\mu$.
+    kind
+        The point's kind.
+    """
+
+    _r: _PyCriticalPoint
+
+    @property
+    def theta(self) -> float:
+        return self._r.theta
+
+    @property
+    def flux(self) -> MagneticFlux:
+        return MagneticFlux._wrap(self._r.flux)
+
+    @property
+    def pzeta(self) -> float:
+        return self._r.pzeta
+
+    @property
+    def energy(self) -> float:
+        return self._r.energy
+
+    @property
+    def mu(self) -> float:
+        return self._r.mu
+
+    @property
+    def kind(self) -> CriticalPointKind:
+        return self._r.kind

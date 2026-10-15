@@ -17,7 +17,7 @@ use rsl_interpolation::{Accelerator, Accelerator2d};
 use std::time::Duration;
 
 use dexter_common::export_array1D_getter_impl;
-use dexter_comspace::{EnergyPzetaPlane, EnergyPzetaPosition, OrbitType};
+use dexter_comspace::{CriticalPoint, EnergyPzetaPlane, EnergyPzetaPosition, OrbitType};
 use dexter_machine::{DynModeCaches, Machine, MachineBuilder};
 
 use crate::{SimulationError, SolverParams};
@@ -165,6 +165,26 @@ impl Particle {
             final_energy: None,
             _routine_ready: false,
         }
+    }
+
+    /// Creates a particle with initial conditions on a [`CriticalPoint`].
+    ///
+    /// This is useful for inspecting the critical points calculated from a
+    /// [`bifurcation analysis`][dexter_comspace::EnergyPzetaPlane::calculate_critical_points].
+    ///
+    /// # Note
+    ///
+    /// The particle's `t0` and `ζ0` are set to `0`.
+    #[must_use]
+    pub fn from_critical_point(point: &CriticalPoint) -> Self {
+        Self::new(&InitialConditions::mixed(
+            0.0,
+            point.flux(),
+            point.theta(),
+            0.0,
+            point.pzeta(),
+            point.mu(),
+        ))
     }
 }
 

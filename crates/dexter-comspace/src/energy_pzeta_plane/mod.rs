@@ -6,7 +6,7 @@ mod orbit_type;
 mod tp_boundary;
 
 use dexter_machine::MagneticFlux::*;
-use ndarray::ArrayView1;
+use ndarray::{ArrayRef1, ArrayView1};
 use parabola::Parabola;
 use rsl_interpolation::Accelerator2d;
 
@@ -14,6 +14,8 @@ use dexter_machine::Machine;
 
 pub use orbit_type::{EnergyPzetaPosition, OrbitType};
 pub use tp_boundary::TrappedPassingBoundary;
+
+use crate::{CriticalPoint, StationaryCurve};
 
 /// Representation of the COM space `(E, Pζ, μ=const)`.
 ///
@@ -24,6 +26,8 @@ pub use tp_boundary::TrappedPassingBoundary;
 ]
 #[derive(Clone)]
 pub struct EnergyPzetaPlane {
+    /// The constant magnetic moment `μ`.
+    mu: f64,
     /// The magnetic axis (MA) parabola.
     axis_parabola: Parabola,
     /// The left wall (LW) parabola.
@@ -32,8 +36,13 @@ pub struct EnergyPzetaPlane {
     right_wall_parabola: Parabola,
     /// The trapped-passing boundary curves.
     tp_boundary: TrappedPassingBoundary,
-    /// The constant magnetic moment `μ`.
-    mu: f64,
+    /// The calculated stationary curve.
+    ///
+    /// Even though the stationary curve does not depend on mu, it is handy it to store it here. It
+    /// is only calculated when [`Self::calculate_critical_points`] is called.
+    stationary_curve: Option<StationaryCurve>,
+    /// The calculated critical points.
+    critical_points: Box<[CriticalPoint]>,
 }
 
 impl EnergyPzetaPlane {
@@ -41,12 +50,25 @@ impl EnergyPzetaPlane {
     #[must_use]
     pub fn from_mu(machine: Machine, mu: f64) -> Self {
         Self {
+            mu,
             axis_parabola: Self::build_magnetic_axis_parabola(machine, mu),
             left_wall_parabola: Self::build_left_wall_parabola(machine, mu),
             right_wall_parabola: Self::build_right_wall_parabola(machine, mu),
             tp_boundary: TrappedPassingBoundary::new(machine, mu),
-            mu,
+            stationary_curve: None,
+            critical_points: Box::new([]),
         }
+    }
+}
+
+/// Bifurcation Analysis.
+impl EnergyPzetaPlane {
+    /// Calculates the critical points of the `(E, Pζ; μ)` slice over all values of `pzeta_array` and
+    /// stores them.
+    pub fn calculate_critical_points(&mut self, machine: Machine, pzeta_array: &ArrayRef1<f64>) {
+        let mut curve = StationaryCurve::build(machine);
+        self.critical_points = curve.calculate_critical_points(machine, pzeta_array, self.mu);
+        self.stationary_curve = Some(curve);
     }
 }
 
@@ -214,6 +236,34 @@ impl EnergyPzetaPlane {
     pub fn tp_lower_values(&self) -> ArrayView1<'_, f64> {
         self.tp_boundary.lower()
     }
+
+    /// Returns a reference on the stored [`CriticalPoints`][CriticalPoint].
+    #[must_use]
+    pub fn critical_points(&self) -> &[CriticalPoint] {
+        &self.critical_points
+    }
+
+    /// Returns an array with the calculated critical points' `Pζ`.
+    ///
+    /// The points are visited in order of creation, as in [`Self::critical_points`].
+    #[must_use]
+    pub fn critical_points_pzetas(&self) -> Box<[f64]> {
+        self.critical_points
+            .iter()
+            .map(CriticalPoint::pzeta)
+            .collect()
+    }
+
+    /// Returns an array with the calculated critical points' energies.
+    ///
+    /// The points are visited in order of creation, as in [`Self::critical_points`].
+    #[must_use]
+    pub fn critical_points_energies(&self) -> Box<[f64]> {
+        self.critical_points
+            .iter()
+            .map(CriticalPoint::energy)
+            .collect()
+    }
 }
 
 impl std::fmt::Debug for EnergyPzetaPlane {
@@ -224,6 +274,8 @@ impl std::fmt::Debug for EnergyPzetaPlane {
             .field("left_wall_parabola", &self.left_wall_parabola)
             .field("right_wall_parabola", &self.right_wall_parabola)
             .field("tp_boundary", &self.tp_boundary)
+            .field("stationary_curve", &self.stationary_curve)
+            .field("critical_points", &self.critical_points.len())
             .finish()
     }
 }
