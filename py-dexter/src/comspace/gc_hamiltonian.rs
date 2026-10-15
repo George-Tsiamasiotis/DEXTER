@@ -143,19 +143,6 @@ impl PyParametrizedSegment {
         format!("{:?}", self.0.flux_array().kind())
     }
 
-    pub fn calculate_theta_dot(
-        &mut self,
-        qfactor: &PyQfactor,
-        current: &PyCurrent,
-        bfield: &PyBfield,
-        pzeta: f64,
-        mu: f64,
-    ) -> Result<()> {
-        let machine = MachineBuilder::new(qfactor.inner(), current.inner(), bfield.inner()).build();
-        self.0.calculate_theta_dot(machine, pzeta, mu)?;
-        Ok(())
-    }
-
     pub fn __len__(&self) -> usize {
         self.0.len()
     }
@@ -189,6 +176,44 @@ impl PyParametrizedSegment {
 
 // ===============================================================================================
 
+#[pyclass(name = "_PyCriticalPoint", immutable_type, frozen)]
+pub struct PyCriticalPoint(pub CriticalPoint);
+
+#[pymethods]
+impl PyCriticalPoint {
+    #[getter]
+    pub fn theta(&self) -> f64 {
+        self.0.theta()
+    }
+
+    #[getter]
+    pub fn flux(&self) -> PyMagneticFlux {
+        PyMagneticFlux(self.0.flux())
+    }
+
+    #[getter]
+    pub fn energy(&self) -> f64 {
+        self.0.energy()
+    }
+
+    #[getter]
+    pub fn pzeta(&self) -> f64 {
+        self.0.pzeta()
+    }
+
+    #[getter]
+    pub fn mu(&self) -> f64 {
+        self.0.mu()
+    }
+
+    #[getter]
+    pub fn kind(&self) -> String {
+        format!("{:?}", self.0.kind())
+    }
+}
+
+// ===============================================================================================
+
 impl std::fmt::Debug for PyGCHamiltonian {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str("GCHamiltonian")
@@ -206,3 +231,5 @@ wrapper_debug_export!(PyStationaryCurve);
 impl_py_repr!(PyStationaryCurve, pretty);
 wrapper_debug_export!(PyParametrizedSegment);
 impl_py_repr!(PyParametrizedSegment, pretty);
+wrapper_debug_export!(PyCriticalPoint);
+impl_py_repr!(PyCriticalPoint, pretty);

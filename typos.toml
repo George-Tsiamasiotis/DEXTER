@@ -1,4 +1,5 @@
 [default]
 extend-ignore-re = [
-    "ND", "Nd", "nd" # NdArray
+    "ND", "Nd", "nd", # NdArray
+    "thi", # `t` parameter interval upper value
 ]

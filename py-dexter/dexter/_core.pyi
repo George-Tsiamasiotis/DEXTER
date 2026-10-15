@@ -12,6 +12,7 @@ from dexter.types import (
     Array1,
     Array2,
     ArrayShape,
+    CriticalPointKind,
     Directionality,
     EnergyPzetaPosition,
     MagneticFluxKind,
@@ -684,17 +685,22 @@ class _PyStationaryCurve:
 class _PyParametrizedSegment:
     flux_kind: MagneticFluxKind
 
-    def calculate_theta_dot(
-        self,
-        qfactor: _PyQfactor,
-        current: _PyCurrent,
-        bfield: _PyBfield,
-        pzeta: float,
-        mu: float,
-    ) -> None: ...
     def flux_array(self) -> _PyMagneticFluxArray: ...
     def get_array(self, name: str) -> Array1 | None: ...
     def __len__(self) -> int: ...
+    @override
+    def __repr__(self) -> str: ...
+    @override
+    def __str__(self) -> str: ...
+
+class _PyCriticalPoint:
+    theta: float
+    flux: _PyMagneticFlux
+    energy: float
+    pzeta: float
+    mu: float
+    kind: CriticalPointKind
+
     @override
     def __repr__(self) -> str: ...
     @override
@@ -721,6 +727,7 @@ class _PyEnergyPzetaPlane:
     tp_pzeta_values: Array1
     tp_upper_values: Array1
     tp_lower_values: Array1
+    critical_points: list[_PyCriticalPoint]
 
     def __init__(
         self,
@@ -728,6 +735,13 @@ class _PyEnergyPzetaPlane:
         current: _PyCurrent,
         bfield: _PyBfield,
         mu: float,
+    ) -> None: ...
+    def calculate_critical_points(
+        self,
+        qfactor: _PyQfactor,
+        current: _PyCurrent,
+        bfield: _PyBfield,
+        pzeta_array: Array1,
     ) -> None: ...
     @override
     def __repr__(self) -> str: ...

@@ -7,9 +7,9 @@ use std::ops::Range;
 use contour::{ContourBuilder, Line};
 use dexter_machine::{Accelerator2d, Machine, MagneticFluxArray, MagneticFluxKind};
 use geo_types::{LineString, MultiLineString};
-use ndarray::{Array1, Array2};
+use ndarray::{Array1, Array2, ArrayRef1};
 
-use crate::ParametrizedSegment;
+use crate::{CriticalPoint, ParametrizedSegment};
 
 /// The density of the (θ, ψ/ψp) grid on which to search the stationary curve contours.
 const SC_CONTOUR_DENSITY: (usize, usize) = (300, 300);
@@ -49,6 +49,24 @@ impl StationaryCurve {
     #[must_use]
     pub fn is_empty(&self) -> bool {
         self.segments.len() == 0
+    }
+
+    /// Calculates the critical points of the `(E, Pζ; μ)` slice over all values of `pzeta_array` and
+    /// stores them.
+    pub fn calculate_critical_points(
+        &mut self,
+        machine: Machine,
+        pzeta_array: &ArrayRef1<f64>,
+        mu: f64,
+    ) -> Box<[CriticalPoint]> {
+        let mut all_critical_points = Vec::<CriticalPoint>::new();
+        pzeta_array.iter().for_each(|pzeta| {
+            self.segments.iter_mut().for_each(|segment| {
+                all_critical_points
+                    .append(&mut segment.calculate_critical_points(machine, *pzeta, mu))
+            });
+        });
+        all_critical_points.into_boxed_slice()
     }
 
     /// Builds the `StationaryCurve` of `machine`.

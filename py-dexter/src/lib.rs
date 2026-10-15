@@ -39,6 +39,7 @@ fn _core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<comspace::PyGCHamiltonian>()?;
     m.add_class::<comspace::PyStationaryCurve>()?;
     m.add_class::<comspace::PyParametrizedSegment>()?;
+    m.add_class::<comspace::PyCriticalPoint>()?;
     m.add_class::<comspace::PyParabola>()?;
     m.add_class::<comspace::PyEnergyPzetaPlane>()?;
     Ok(())

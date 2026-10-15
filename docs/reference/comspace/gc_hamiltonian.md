@@ -5,3 +5,5 @@
 ::: dexter.StationaryCurve
 
 ::: dexter.ParametrizedSegment
+
+::: dexter.CriticalPoint

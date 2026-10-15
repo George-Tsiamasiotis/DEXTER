@@ -74,8 +74,3 @@ def test_parametrized_segment(
     assert np.all(np.isfinite(segment.flux_array.values))
     assert np.all(np.isfinite(segment.theta_array))
     assert segment.theta_dot_array is None
-
-    segment.calculate_theta_dot(lar_machine, -0.0123, 1e-5)
-
-    assert segment.theta_dot_array is not None
-    assert np.all(np.isfinite(segment.theta_dot_array))

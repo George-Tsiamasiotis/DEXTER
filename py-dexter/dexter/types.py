@@ -159,6 +159,78 @@ Interpolation over the `phase_array`.
 Use a custom value for $\phi = const$.
 """
 
+# =================== COMSpace
+
+EnergyPzetaPosition = Literal[
+    "Alpha",
+    "Beta",
+    "Gamma",
+    "Delta",
+    "Epsilon",
+    "Zeta",
+    "Eta",
+    "Theta",
+    "Iota",
+    "Kappa",
+    "Lambda",
+    "Mu",
+    "Unclassified",
+    "Forbidden",
+]
+r"""The position of an $(E, P_\zeta)$ point on the $(E, P_\zeta)$ plane, relative to the orbit
+classification curves.
+
+!!! hint
+
+    See the "$E-P_\zeta$ *Positions*" section on the ***Diagrams*** tab for explanation.
+"""
+
+OrbitType: TypeAlias = Literal[
+    "Unclassified",
+    "TrappedLost",
+    "TrappedConfined",
+    "CoPassingLost",
+    "CoPassingConfined",
+    "CuPassingLost",
+    "CuPassingConfined",
+    "Potato",
+    "Stagnated",
+    "Undefined",
+]
+r"""A particle's orbit type, calculated through the [`dexter.Particle.close()`] routine.
+
+- `Unclassified`: Particle has not been classified.
+- `TrappedLost`: A Trapped-Lost particle. A particle is called trapped if there exists a
+    mirror point where $\rho=0$.
+- `TrappedConfined`: A Trapped-Confined particle. A particle is called trapped if there
+    exists a mirror point where $\rho=0$.
+- `CoPassingLost`: A CoPassing-Lost particle. A particle is called co-passing if it is not
+    trapped and it holds that $\dot\theta>0$.
+- `CoPassingConfined`: A CoPassing-Confined particle. A particle is called co-passing if it
+    is not trapped and it holds that $\dot\theta>0$.
+- `CuPassingLost`: A CounterPassing-Lost particle. A particle is called counter-passing if it is
+    not trapped and it holds that $\dot\theta<0$.
+- `CuPassingConfined`: A CounterPassing-Confined particle. A particle is called counter-passing
+    if it is not trapped and it holds that $\dot\theta<0$.
+- `Potato`: A Potato particle. A particle’s orbit is called a potato orbit if it is trapped
+    but still circles the magnetic axis due to its drift. In the $(E, P_\zeta)$ plane, those
+    lie inside the intersection of the trapped-passing boundary and the magnetic axis parabola.
+- `Stagnated`: A Stagnated particle. A particle is called stagnated if it always has positive
+    parallel velocity but does not circle the magnetic axis. In the $(E, P_\zeta)$ plane,
+    those lie to the right of the trapped-passing boundary and above the magnetic axis parabola.
+- `Undefined`: Not falling under any of the other categories.
+
+!!! hint
+
+    See the "$E-P_\zeta$ *Positions*" section on the ***Diagrams*** tab for explanation.
+"""
+
+CriticalPointKind: TypeAlias = Literal["Unknown"]
+r"""The kind of a [`CriticalPoint`][dexter.CriticalPoint]
+
+- `Unknown`: Unknown kind.
+"""
+
 # =================== Simulate
 
 CoordinateSet: TypeAlias = Literal[
@@ -230,67 +302,3 @@ r"""The integration status of a Particle.
 
 Routine: TypeAlias = Literal["Integrate", "Intersect", "Close", "Classify"]
 """Available Queue routines."""
-
-EnergyPzetaPosition = Literal[
-    "Alpha",
-    "Beta",
-    "Gamma",
-    "Delta",
-    "Epsilon",
-    "Zeta",
-    "Eta",
-    "Theta",
-    "Iota",
-    "Kappa",
-    "Lambda",
-    "Mu",
-    "Unclassified",
-    "Forbidden",
-]
-r"""The position of an $(E, P_\zeta)$ point on the $(E, P_\zeta)$ plane, relative to the orbit
-classification curves.
-
-!!! hint
-
-    See the "$E-P_\zeta$ *Positions*" section on the ***Diagrams*** tab for explanation.
-"""
-
-OrbitType: TypeAlias = Literal[
-    "Unclassified",
-    "TrappedLost",
-    "TrappedConfined",
-    "CoPassingLost",
-    "CoPassingConfined",
-    "CuPassingLost",
-    "CuPassingConfined",
-    "Potato",
-    "Stagnated",
-    "Undefined",
-]
-r"""A particle's orbit type, calculated through the [`dexter.Particle.close()`] routine.
-
-- `Unclassified`: Particle has not been classified.
-- `TrappedLost`: A Trapped-Lost particle. A particle is called trapped if there exists a
-    mirror point where $\rho=0$.
-- `TrappedConfined`: A Trapped-Confined particle. A particle is called trapped if there
-    exists a mirror point where $\rho=0$.
-- `CoPassingLost`: A CoPassing-Lost particle. A particle is called co-passing if it is not
-    trapped and it holds that $\dot\theta>0$.
-- `CoPassingConfined`: A CoPassing-Confined particle. A particle is called co-passing if it
-    is not trapped and it holds that $\dot\theta>0$.
-- `CuPassingLost`: A CounterPassing-Lost particle. A particle is called counter-passing if it is
-    not trapped and it holds that $\dot\theta<0$.
-- `CuPassingConfined`: A CounterPassing-Confined particle. A particle is called counter-passing
-    if it is not trapped and it holds that $\dot\theta<0$.
-- `Potato`: A Potato particle. A particle’s orbit is called a potato orbit if it is trapped
-    but still circles the magnetic axis due to its drift. In the $(E, P_\zeta)$ plane, those
-    lie inside the intersection of the trapped-passing boundary and the magnetic axis parabola.
-- `Stagnated`: A Stagnated particle. A particle is called stagnated if it always has positive
-    parallel velocity but does not circle the magnetic axis. In the $(E, P_\zeta)$ plane,
-    those lie to the right of the trapped-passing boundary and above the magnetic axis parabola.
-- `Undefined`: Not falling under any of the other categories.
-
-!!! hint
-
-    See the "$E-P_\zeta$ *Positions*" section on the ***Diagrams*** tab for explanation.
-"""

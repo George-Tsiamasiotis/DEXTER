@@ -2,7 +2,8 @@
 //!
 //! ### [`Guiding Center Hamiltonian`][GCHamiltonian]
 //!
-//! The guiding center Hamiltonian.
+//! The guiding center Hamiltonian. A unit struct with no internal state that provides evaluation
+//! methods.
 //!
 //! #### Evaluations
 //!
@@ -19,8 +20,11 @@
 //!
 //! ### Calculations on the E - Pζ plane
 //!
-//! + [`EnergyPzetaPlane`]: Representation of the COM space `(E, Pζ, μ=const)`. Contains the three
-//!   classification parabolas and the Trapped-Passing Boundary:
+//! + [`EnergyPzetaPlane`]: Representation of the COM space `(E, Pζ, μ=const)`.
+//!   + Bifurcation analysis:
+//!     - [`EnergyPzetaPlane::calculate_critical_points`]: Calculation of the Hamiltonian's
+//!       critical points over a given `Pζ` span.
+//!   + Classification parabolas and Trapped-Passing Boundary:
 //!     - [`EnergyPzetaPlane::axis_parabola`]: Magnetic Axis Parabola (MA).
 //!     - [`EnergyPzetaPlane::left_wall_parabola`]: Left Wall Parabola (LW).
 //!     - [`EnergyPzetaPlane::right_wall_parabola`]: Right Wall Parabola (RW).
@@ -43,7 +47,7 @@ pub use parabola::Point;
 pub use error::COMError;
 
 pub use gc_hamiltonian::GCHamiltonian;
-pub use gc_hamiltonian::{ParametrizedSegment, StationaryCurve};
+pub use gc_hamiltonian::{CriticalPoint, CriticalPointKind, ParametrizedSegment, StationaryCurve};
 
 pub use energy_pzeta_plane::{
     EnergyPzetaPlane, EnergyPzetaPosition, OrbitType, TrappedPassingBoundary,

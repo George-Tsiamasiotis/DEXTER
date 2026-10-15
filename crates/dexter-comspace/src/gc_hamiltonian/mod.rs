@@ -6,11 +6,13 @@
 
 mod array;
 mod curve;
+mod point;
 mod segment;
 
 use std::f64::consts::TAU;
 
 pub use curve::StationaryCurve;
+pub use point::{CriticalPoint, CriticalPointKind};
 pub use segment::ParametrizedSegment;
 
 // ===============================================================================================

@@ -8,13 +8,14 @@ from matplotlib.figure import Figure
 from matplotlib.axes import Axes
 
 from dexter.machine.machine import Machine
+from dexter.comspace.curve import CriticalPoint
 from dexter.simulate.particle import Particle
 from dexter.simulate.queue import Queue
 from dexter.simulate.plot import orbit_color
 from dexter.types import Array1
 
 from dexter._core import _PyEnergyPzetaPlane
-from dexter._utils import _ReprStrImpl
+from dexter._utils import _ReprStrImpl, _into_pyarray1f64
 
 
 class _ParticlePoints:
@@ -59,6 +60,14 @@ class EnergyPzetaPlane(_ReprStrImpl):
     mu
         The magnetic moment $\mu$.
 
+    Attributes
+    ----------
+    mu
+        The magnetic moment $\mu$.
+    critical_points
+        The calculated critical points, calculated through the
+        [`calculate_critical_points`][dexter.EnergyPzetaPlane.calculate_critical_points] method.
+
     Example
     -------
 
@@ -91,6 +100,33 @@ class EnergyPzetaPlane(_ReprStrImpl):
         self.machine = machine  # handy reference
         self._particle_points = _ParticlePoints()
 
+    def calculate_critical_points(self, pzeta_array: Array1):
+        r"""Calculates the Hamiltonian's critical points over the `pzeta_array`.
+
+        The critical points are stored in `#!python self` and can be accessed through
+        `#!python self.critical_points`.
+
+        Parameters
+        ----------
+        pzeta_array
+            The $P_\zeta$ values, *in Normalized Units*. It usually makes more sense to normalize
+            `pzeta_array` with respect to $\psi_{p, LCFS}$.
+        """
+        self._r.calculate_critical_points(
+            qfactor=self.machine.qfactor._r,
+            current=self.machine.current._r,
+            bfield=self.machine.bfield._r,
+            pzeta_array=_into_pyarray1f64(pzeta_array),
+        )
+
+    @property
+    def mu(self) -> float:
+        return self._r.mu
+
+    @property
+    def critical_points(self) -> list[CriticalPoint]:
+        return [CriticalPoint._wrap(_point) for _point in self._r.critical_points]
+
     def add_particles(self, obj: Particle | Queue):
         r"""Adds particles to the plane, discarding any previously stored ones.
 
@@ -112,6 +148,7 @@ class EnergyPzetaPlane(_ReprStrImpl):
         xlim: tuple[float, float] | None = None,
         ylim: float | tuple[float, float] = 3,
         particles: bool = True,
+        critical_points: bool = True,
         show: bool = True,
     ) -> tuple[Figure, Axes]:
         r"""Plots the plane with the orbit classification curves.
@@ -123,6 +160,10 @@ class EnergyPzetaPlane(_ReprStrImpl):
         ylim
             The yaxis limits, in $E/\mu$ units. If a float, it sets the yaxis upper limit while
             the lower limit is set to `0`.
+        particles
+            Whether or not to plot the stored particles' $(E, P_\zeta)$ points.
+        critical_points
+            Whether or not to plot the stored critical points.
         show
             Whether or not to call `plt.show()`.
         """
@@ -225,6 +266,24 @@ class EnergyPzetaPlane(_ReprStrImpl):
                 s=point_size,
                 zorder=zorder,
             )
+
+        if critical_points:
+            points = self.critical_points
+            psip_last = self.machine.psip_last.value
+            mu = self.mu
+            pzetas = [point.pzeta / psip_last for point in points]
+            energies = [point.energy / mu for point in points]
+            for point in points:
+                ax.scatter(
+                    pzetas,
+                    energies,
+                    s=20,
+                    c="xkcd:cerulean",
+                    marker="o",
+                    edgecolors="k",
+                    linewidths=0.5,
+                    zorder=100,
+                )
 
         ax.grid(True)
         ax.set_ylim(ymin, ymax)
