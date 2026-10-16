@@ -229,15 +229,14 @@ impl std::fmt::Debug for ParametrizedSegment {
         // NOTE: By construction, `self` always has a length of at least 2, therefore `unwrap` is
         // safe here.
         let last_index = self.len() - 1;
-        let flux_last = self.flux_array.get(last_index).unwrap().value();
         let start = format_args!(
-            "flux(normalized)={:?}, θ={}",
-            self.flux_array.get(0).unwrap() / flux_last,
+            "flux={:?}, θ={}",
+            self.flux_array.get(0).unwrap(),
             self.theta_array[0]
         );
         let end = format_args!(
-            "flux(normalized)={:?}, θ={}",
-            self.flux_array.get(last_index).unwrap() / flux_last,
+            "flux={:?}, θ={}",
+            self.flux_array.get(last_index).unwrap(),
             self.theta_array[last_index]
         );
         f.debug_struct("StationaryCurveSegment")

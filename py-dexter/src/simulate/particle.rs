@@ -6,6 +6,7 @@ use dexter::dexter_simulate::*;
 
 use numpy::{IntoPyArray, PyArray1};
 use pyo3::prelude::*;
+use pyo3::types::PyType;
 
 #[pyclass(name = "_PyParticle", from_py_object)]
 #[derive(Clone)]
@@ -18,6 +19,11 @@ impl PyParticle {
     #[new]
     pub fn new(initial: &PyInitialConditions) -> Self {
         Self(Particle::new(&initial.0))
+    }
+
+    #[classmethod]
+    pub fn from_critical_point(_: &Bound<'_, PyType>, point: &PyCriticalPoint) -> Self {
+        Self(Particle::from_critical_point(&point.0))
     }
 
     pub fn integrate(

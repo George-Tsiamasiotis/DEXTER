@@ -1,7 +1,5 @@
-import pytest
-import numpy as np
 import dexter as dex
-from math import isclose, isfinite
+from math import isfinite
 
 
 def test_integrate_analytical(lar_machine_perturbed: dex.Machine):

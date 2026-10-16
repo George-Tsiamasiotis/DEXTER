@@ -173,6 +173,7 @@ def plot_poloidal_drift(
     array_shape: ArrayShape = (300, 300),
     levels: int = 50,
     locator: Locator = "MaxN",
+    equal: bool = True,
     show: bool = True,
 ) -> tuple[Figure, Axes]:
     r"""Plots a particle's drift on the $R-Z$ plane, overlaid on a contour plot of the Hamiltonian.
@@ -197,6 +198,8 @@ def plot_poloidal_drift(
     ----------------
     locator
         The tick locator to use to locate contour levels.
+    equal
+        Whether or not to set the axis aspect ratio to `equal`.
 
     Raises
     ------
@@ -346,7 +349,8 @@ def plot_poloidal_drift(
 
     ax.set_xlabel(r"$R\ [m]$")
     ax.set_ylabel(r"$Z\ [m]$")
-    ax.set_aspect("equal")
+    if equal:
+        ax.set_aspect("equal")
     ax.margins(*MARGINS)
     ax.grid(False)
 

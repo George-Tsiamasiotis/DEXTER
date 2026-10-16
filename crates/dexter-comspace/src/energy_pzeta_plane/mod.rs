@@ -275,6 +275,7 @@ impl std::fmt::Debug for EnergyPzetaPlane {
             .field("right_wall_parabola", &self.right_wall_parabola)
             .field("tp_boundary", &self.tp_boundary)
             .field("stationary_curve", &self.stationary_curve)
+            .field("critical_points", &self.critical_points.len())
             .finish()
     }
 }

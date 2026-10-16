@@ -475,6 +475,8 @@ class _PyParticle:
     mode_cache_misses: int
 
     def __init__(self, initial: _PyInitialConditions) -> None: ...
+    @classmethod
+    def from_critical_point(cls, point: _PyCriticalPoint) -> _PyParticle: ...
     def integrate(
         self,
         qfactor: _PyQfactor,
