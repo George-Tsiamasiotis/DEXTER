@@ -13,6 +13,7 @@ machine = dex.Machine(
 plane = dex.EnergyPzetaPlane(machine, 8e-5)
 plane.show()
 
-pzeta = np.linspace(-1.1, 0.5, 200) * machine.psip_last.value
+pzeta = np.linspace(-1.1, 0.5, 1000) * machine.psip_last.value
 plane.calculate_critical_points(pzeta)
+print(plane)
 plane.show(xlim=(-1.15, 0.3), ylim=(0.5, 1.6))

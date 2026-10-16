@@ -2,6 +2,7 @@
 
 use dexter::dexter_comspace::*;
 use dexter::dexter_machine::*;
+use ndarray::Array1;
 use numpy::{IntoPyArray, PyArray1, PyReadonlyArray1};
 use parabola::{Line, LineIntercepts, Parabola};
 use pyo3::types::PyList;
@@ -106,6 +107,14 @@ impl PyEnergyPzetaPlane {
             .iter()
             .map(|critical_point| PyCriticalPoint(critical_point.clone()));
         PyList::new(py, iter)
+    }
+
+    pub fn critical_points_pzetas<'py>(&self, py: Python<'py>) -> Bound<'py, PyArray1<f64>> {
+        Array1::from_vec(self.0.critical_points_pzetas().to_vec()).into_pyarray(py)
+    }
+
+    pub fn critical_points_energies<'py>(&self, py: Python<'py>) -> Bound<'py, PyArray1<f64>> {
+        Array1::from_vec(self.0.critical_points_energies().to_vec()).into_pyarray(py)
     }
 }
 

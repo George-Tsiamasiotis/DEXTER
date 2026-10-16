@@ -36,6 +36,11 @@ pub struct EnergyPzetaPlane {
     right_wall_parabola: Parabola,
     /// The trapped-passing boundary curves.
     tp_boundary: TrappedPassingBoundary,
+    /// The calculated stationary curve.
+    ///
+    /// Even though the stationary curve does not depend on mu, it is handy it to store it here. It
+    /// is only calculated when [`Self::calculate_critical_points`] is called.
+    stationary_curve: Option<StationaryCurve>,
     /// The calculated critical points.
     critical_points: Box<[CriticalPoint]>,
 }
@@ -50,6 +55,7 @@ impl EnergyPzetaPlane {
             left_wall_parabola: Self::build_left_wall_parabola(machine, mu),
             right_wall_parabola: Self::build_right_wall_parabola(machine, mu),
             tp_boundary: TrappedPassingBoundary::new(machine, mu),
+            stationary_curve: None,
             critical_points: Box::new([]),
         }
     }
@@ -62,6 +68,7 @@ impl EnergyPzetaPlane {
     pub fn calculate_critical_points(&mut self, machine: Machine, pzeta_array: &ArrayRef1<f64>) {
         let mut curve = StationaryCurve::build(machine);
         self.critical_points = curve.calculate_critical_points(machine, pzeta_array, self.mu);
+        self.stationary_curve = Some(curve);
     }
 }
 
@@ -235,6 +242,28 @@ impl EnergyPzetaPlane {
     pub fn critical_points(&self) -> &[CriticalPoint] {
         &self.critical_points
     }
+
+    /// Returns an array with the calculated critical points' `Pζ`.
+    ///
+    /// The points are visited in order of creation, as in [`Self::critical_points`].
+    #[must_use]
+    pub fn critical_points_pzetas(&self) -> Box<[f64]> {
+        self.critical_points
+            .iter()
+            .map(CriticalPoint::pzeta)
+            .collect()
+    }
+
+    /// Returns an array with the calculated critical points' energies.
+    ///
+    /// The points are visited in order of creation, as in [`Self::critical_points`].
+    #[must_use]
+    pub fn critical_points_energies(&self) -> Box<[f64]> {
+        self.critical_points
+            .iter()
+            .map(CriticalPoint::energy)
+            .collect()
+    }
 }
 
 impl std::fmt::Debug for EnergyPzetaPlane {
@@ -245,6 +274,7 @@ impl std::fmt::Debug for EnergyPzetaPlane {
             .field("left_wall_parabola", &self.left_wall_parabola)
             .field("right_wall_parabola", &self.right_wall_parabola)
             .field("tp_boundary", &self.tp_boundary)
+            .field("stationary_curve", &self.stationary_curve)
             .finish()
     }
 }

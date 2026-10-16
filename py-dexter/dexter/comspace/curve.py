@@ -57,8 +57,6 @@ class ParametrizedSegment(_ReprStrImpl, _RustTypeWrapper):
         The contained magnetic flux $\psi$ or $\psi_p$ array.
     theta_array
         The contained $\theta$ array.
-    theta_dot_array
-        The $\dot\theta$ array, if it has been calculated
     """
 
     _r: _PyParametrizedSegment
@@ -84,10 +82,6 @@ class ParametrizedSegment(_ReprStrImpl, _RustTypeWrapper):
     def theta_array(self) -> Array1:
         # always exists
         return cast(Array1, self._r.get_array("theta_array"))
-
-    @property  # immutable type
-    def theta_dot_array(self) -> Array1 | None:
-        return self._r.get_array("theta_dot_array")
 
     def __len__(self) -> int:
         r"""Returns the number of the contained $(\theta, \psi/\psi_p)$ points."""

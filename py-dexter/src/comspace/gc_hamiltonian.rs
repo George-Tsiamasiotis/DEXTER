@@ -159,10 +159,6 @@ impl PyParametrizedSegment {
         let array = match name {
             "t_array" => self.0.t_array(),
             "theta_array" => self.0.theta_array(),
-            "theta_dot_array" => match self.0.theta_dot_array() {
-                Some(array) => array,
-                None => return Ok(None),
-            },
             _ => {
                 return Err(DexterError::AttributeError {
                     obj: "ParametrizedSegment".into(),

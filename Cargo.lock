@@ -318,7 +318,7 @@ dependencies = [
 
 [[package]]
 name = "dexter"
-version = "0.2.2-pre.7"
+version = "0.2.2-pre.8"
 dependencies = [
  "dexter-comspace",
  "dexter-machine",
@@ -327,14 +327,14 @@ dependencies = [
 
 [[package]]
 name = "dexter-common"
-version = "0.2.2-pre.7"
+version = "0.2.2-pre.8"
 dependencies = [
  "rsl-interpolation",
 ]
 
 [[package]]
 name = "dexter-comspace"
-version = "0.2.2-pre.7"
+version = "0.2.2-pre.8"
 dependencies = [
  "contour",
  "dexter-machine",
@@ -342,13 +342,14 @@ dependencies = [
  "geo-types",
  "ndarray",
  "parabola",
+ "rayon",
  "rsl-interpolation",
  "thiserror",
 ]
 
 [[package]]
 name = "dexter-machine"
-version = "0.2.2-pre.7"
+version = "0.2.2-pre.8"
 dependencies = [
  "approx",
  "criterion",
@@ -362,7 +363,7 @@ dependencies = [
 
 [[package]]
 name = "dexter-simulate"
-version = "0.2.2-pre.7"
+version = "0.2.2-pre.8"
 dependencies = [
  "approx",
  "colored",

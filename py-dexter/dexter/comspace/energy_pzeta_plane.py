@@ -127,6 +127,20 @@ class EnergyPzetaPlane(_ReprStrImpl):
     def critical_points(self) -> list[CriticalPoint]:
         return [CriticalPoint._wrap(_point) for _point in self._r.critical_points]
 
+    def _critical_points_pzetas(self) -> Array1:
+        r"""Returns an array with the calculated critical points’ `Pζ`.
+
+        The points are visited in order of creation, as in `self.critical_points`.
+        """
+        return self._r.critical_points_pzetas()
+
+    def _critical_points_energies(self) -> Array1:
+        r"""Returns an array with the calculated critical points’ energies.
+
+        The points are visited in order of creation, as in `self.critical_points`.
+        """
+        return self._r.critical_points_energies()
+
     def add_particles(self, obj: Particle | Queue):
         r"""Adds particles to the plane, discarding any previously stored ones.
 
@@ -268,22 +282,20 @@ class EnergyPzetaPlane(_ReprStrImpl):
             )
 
         if critical_points:
-            points = self.critical_points
             psip_last = self.machine.psip_last.value
             mu = self.mu
-            pzetas = [point.pzeta / psip_last for point in points]
-            energies = [point.energy / mu for point in points]
-            for point in points:
-                ax.scatter(
-                    pzetas,
-                    energies,
-                    s=20,
-                    c="xkcd:cerulean",
-                    marker="o",
-                    edgecolors="k",
-                    linewidths=0.5,
-                    zorder=100,
-                )
+            pzetas = self._critical_points_pzetas() / psip_last
+            energies = self._critical_points_energies() / mu
+            ax.plot(
+                pzetas,
+                energies,
+                c="r",
+                linewidth=0,
+                marker=".",
+                markeredgewidth=0,
+                markersize=5,
+                zorder=20,
+            )
 
         ax.grid(True)
         ax.set_ylim(ymin, ymax)

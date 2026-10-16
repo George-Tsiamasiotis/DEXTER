@@ -262,12 +262,20 @@ def plot_poloidal_drift(
 
         if flux == "Toroidal":
             eval_flux_of_r_function = geometry.eval_psi_of_r
+            flux_array_constructor = MagneticFluxArray.Toroidal
         else:
             eval_flux_of_r_function = geometry.eval_psip_of_r
+            flux_array_constructor = MagneticFluxArray.Poloidal
 
-        r_array = np.linspace(0, machine.rlast, array_shape[1]) * 0.99999
-        flux_values: Array1 = cast(Array1, eval_flux_of_r_function(r_array))
-        flux_array: MagneticFluxArray = MagneticFluxArray.Toroidal(flux_values)
+        try:
+            # Try to build a linspace over `r` first, so the grid is spaced more evenly. This
+            # might fail as `r` is not present in all datasets.
+            r_array = np.linspace(0, machine.rlast, array_shape[1]) * 0.99999
+            flux_values: Array1 = cast(Array1, eval_flux_of_r_function(r_array))
+            flux_array: MagneticFluxArray = flux_array_constructor(flux_values)
+        except:
+            flux_values = np.linspace(1e-8, machine.psi_last.value, array_shape[1])
+            flux_array = flux_array_constructor(flux_values)
         theta_array = np.linspace(0, TAU, array_shape[0])
         theta_grid, flux_grid = np.meshgrid(
             theta_array,

@@ -3,11 +3,13 @@
 use std::f64::consts::TAU;
 use std::mem::MaybeUninit;
 use std::ops::Range;
+use std::time::{Duration, Instant};
 
 use contour::{ContourBuilder, Line};
 use dexter_machine::{Accelerator2d, Machine, MagneticFluxArray, MagneticFluxKind};
 use geo_types::{LineString, MultiLineString};
 use ndarray::{Array1, Array2, ArrayRef1};
+use rayon::iter::{IntoParallelIterator, IntoParallelRefIterator, ParallelIterator};
 
 use crate::{CriticalPoint, ParametrizedSegment};
 
@@ -30,6 +32,8 @@ const SC_CONTOUR_DENSITY: (usize, usize) = (300, 300);
 pub struct StationaryCurve {
     /// The separated segments comprising the `StationaryCurve`.
     segments: Box<[ParametrizedSegment]>,
+    /// The duration of the [`Self::calculate_critical_points`] routine.
+    duration: Option<Duration>,
 }
 
 impl StationaryCurve {
@@ -51,6 +55,12 @@ impl StationaryCurve {
         self.segments.len() == 0
     }
 
+    /// Returns the duration of the [`Self::calculate_critical_points`] routine.
+    #[must_use]
+    pub fn duration(&self) -> Option<Duration> {
+        self.duration
+    }
+
     /// Calculates the critical points of the `(E, Pζ; μ)` slice over all values of `pzeta_array` and
     /// stores them.
     pub fn calculate_critical_points(
@@ -59,14 +69,24 @@ impl StationaryCurve {
         pzeta_array: &ArrayRef1<f64>,
         mu: f64,
     ) -> Box<[CriticalPoint]> {
-        let mut all_critical_points = Vec::<CriticalPoint>::new();
-        pzeta_array.iter().for_each(|pzeta| {
-            self.segments.iter_mut().for_each(|segment| {
-                all_critical_points
-                    .append(&mut segment.calculate_critical_points(machine, *pzeta, mu))
-            });
-        });
-        all_critical_points.into_boxed_slice()
+        let start = Instant::now();
+
+        let slice = pzeta_array.as_slice().unwrap_or(&[]); // do nothing
+        let points: Vec<CriticalPoint> = slice
+            .into_par_iter()
+            .map(|pzeta| {
+                self.segments
+                    .par_iter()
+                    .map(|segment| segment.calculate_critical_points(machine, *pzeta, mu))
+                    .flatten()
+                    .collect::<Vec<CriticalPoint>>()
+            })
+            .flatten()
+            .collect();
+
+        self.duration = Some(start.elapsed());
+
+        points.into_boxed_slice()
     }
 
     /// Builds the `StationaryCurve` of `machine`.
@@ -115,7 +135,10 @@ impl StationaryCurve {
         clamp_separated_strings(&mut separated_strings);
         let segments = separated_strings_into_segments(separated_strings, machine.good_flux());
 
-        Self { segments }
+        Self {
+            segments,
+            duration: None,
+        }
     }
 }
 
@@ -272,9 +295,13 @@ fn separate(string: &LineString, flux_last: f64) -> Box<[LineString]> {
 impl std::fmt::Debug for StationaryCurve {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("StationaryCurve")
-            .field("flux_kind", &self.segments.first())
+            .field(
+                "flux_kind",
+                &self.segments.first().map(ParametrizedSegment::flux_kind),
+            )
             .field("number of segments", &self.segments.len())
             .field("segments", &self.segments)
+            .field("duration", &self.duration)
             .finish()
     }
 }
