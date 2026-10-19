@@ -71,7 +71,7 @@ from dexter.simulate.queue import Queue
 
 from dexter.comspace.energy_pzeta_plane import EnergyPzetaPlane
 from dexter.comspace.gc_hamiltonian import GCHamiltonian
-from dexter.comspace.curve import StationaryCurve, ParametrizedSegment, CriticalPoint
+from dexter.comspace.curve import StationaryCurve, StationaryCurveSegment, CriticalPoint
 
 __all__ = [
     # Type Aliases
@@ -137,7 +137,7 @@ __all__ = [
     # Comspace
     "GCHamiltonian",
     "StationaryCurve",
-    "ParametrizedSegment",
+    "StationaryCurveSegment",
     "CriticalPoint",
     "EnergyPzetaPlane",
 ]

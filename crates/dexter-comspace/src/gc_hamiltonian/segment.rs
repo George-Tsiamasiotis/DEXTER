@@ -1,11 +1,13 @@
 //! Defines [`ParametrizedSegment`], a container type to store and parametrize the Stationary
 //! Curve's distinct segments.
+//!
+//! [`StationaryCurveSegment`] is built on top of [`ParametrizedSegment`].
 
 use std::f64::consts::TAU;
 
 use crate::{CriticalPoint, GCHamiltonian};
 use dexter_machine::{Accelerator, Accelerator2d, Machine, MagneticFluxArray, MagneticFluxKind};
-use ndarray::{Array1, ArrayRef1, ArrayView1};
+use ndarray::{Array1, ArrayRef1};
 use parabola::{Line, Point};
 use roots::{Convergency, SearchError, find_root_brent, find_root_secant};
 use rsl_interpolation::{Interpolation, LinearInterpolator};
@@ -83,31 +85,26 @@ impl Convergency<f64> for FixedPointConvergency {
 
 // ===============================================================================================
 
-/// A 2D parametrized curve. Represents an individual segment of the
-/// [`StationaryCurve`][crate::StationaryCurve].
+/// A 2D parametrized curve on the (ψ, θ) poloidal plane.
 ///
 /// The parameter `t` is chosen to be the index of the corresponding `(ψ,θ)` point.
 #[derive(Clone)]
-pub struct ParametrizedSegment {
+pub(crate) struct ParametrizedSegment {
     /// The segment's parameter.
     t: Array1<f64>,
     /// The segment's magnetic flux values.
     flux_array: MagneticFluxArray,
     /// The segment's `θ` values.
     theta_array: Array1<f64>,
-    /// Statistics about the [`Self::improve`] method.
-    improve_stats: ImproveStats,
-    /// The residual sum of squares of the `𝜕B/𝜕𝜃` values.
-    rss: f64,
 }
 
 impl ParametrizedSegment {
-    /// Creates a new `ParametrizedSegment` from the `flux` and `theta` array and initializes the
+    /// Creates a new `ParametrizedSegment` from the `flux` and `theta` arrays and initializes the
     /// parameter `t`.
     ///
     /// # Panics
     ///
-    /// This method panics if the input arrays do not have the same length.
+    /// This method panics if the input arrays do not have the same length or have 0 elements.
     #[must_use]
     pub(crate) fn new(flux_array: MagneticFluxArray, theta_array: Array1<f64>) -> Self {
         assert_eq!(
@@ -115,53 +112,88 @@ impl ParametrizedSegment {
             theta_array.len(),
             "Input arrays must have the same length"
         );
+        assert_ne!(theta_array.len(), 0, "Input arrays cannot be empty");
         let t = Array1::linspace(0.0, (flux_array.len() - 1) as f64, flux_array.len());
         Self {
             t,
             flux_array,
             theta_array,
-            improve_stats: ImproveStats::default(),
-            rss: f64::NAN,
         }
     }
 
     /// Returns the number of points that comprise the segment.
     #[must_use]
-    pub fn len(&self) -> usize {
+    pub(crate) fn len(&self) -> usize {
         self.t.len()
-    }
-
-    /// Returns `true` if the segment has no points.
-    #[must_use]
-    pub fn is_empty(&self) -> bool {
-        self.len() == 0
     }
 
     /// Returns the [`MagneticFluxArray`] of the stored [`MagneticFluxArray`].
     #[must_use]
-    pub fn flux_kind(&self) -> MagneticFluxKind {
+    pub(crate) fn flux_kind(&self) -> MagneticFluxKind {
         self.flux_array.kind()
     }
+}
 
-    /// Returns a view on the `t` parameter array.
+// ===============================================================================================
+
+/// A single, continuous segment of the [`StationaryCurve`][crate::StationaryCurve].
+#[derive(Debug, Clone)]
+pub struct StationaryCurveSegment {
+    /// The (t, ψ, θ) parametrized segment.
+    segment: ParametrizedSegment,
+    /// Statistics of the segment's fitting on the true stationary curve.
+    improve_stats: ImproveStats,
+    /// The residual sum of squares of the `𝜕B/𝜕𝜃` values. The smaller the value, the better the fitting.
+    rss: f64,
+}
+
+impl StationaryCurveSegment {
+    /// Creates a new `StationaryCurveSegment` from the `flux` and `theta` arrays.
+    ///
+    /// # Panics
+    ///
+    /// This method panics if the input arrays do not have the same length or have 0 elements.
     #[must_use]
-    pub fn t_array(&self) -> ArrayView1<'_, f64> {
-        self.t.view()
+    pub(crate) fn new(flux_array: MagneticFluxArray, theta_array: Array1<f64>) -> Self {
+        let segment = ParametrizedSegment::new(flux_array, theta_array);
+        let improve_stats = ImproveStats::default();
+        let rss = f64::NAN;
+        Self {
+            segment,
+            improve_stats,
+            rss,
+        }
     }
 
-    /// Returns a view on the contained [`MagneticFluxArray`].
+    /// Returns the length of the segment.
+    #[must_use]
+    #[expect(clippy::len_without_is_empty, reason = "cannot create empty segments")]
+    pub fn len(&self) -> usize {
+        self.segment.len()
+    }
+
+    /// Returns the kind of the contained `flux_array`.
+    #[must_use]
+    pub fn flux_kind(&self) -> MagneticFluxKind {
+        self.segment.flux_kind()
+    }
+
+    /// Returns a reference to the contained `flux_array`.
     #[must_use]
     pub fn flux_array(&self) -> &MagneticFluxArray {
-        &self.flux_array
+        &self.segment.flux_array
     }
 
-    /// Returns a view on the `θ` values array.
+    /// Returns a reference to the contained `theta_array`.
     #[must_use]
-    pub fn theta_array(&self) -> ArrayView1<'_, f64> {
-        self.theta_array.view()
+    pub fn theta_array(&self) -> &Array1<f64> {
+        &self.segment.theta_array
     }
+}
 
-    /// Calculates the segment's, critical points, that is, the points for which `dot(θ)(t) = 0`.
+/// Calculations.
+impl StationaryCurveSegment {
+    /// Calculates the segment's critical points, that is, the points for which `dot(θ)(t) = 0`.
     ///
     /// Note that no intermediate steps are stored.
     #[must_use]
@@ -176,18 +208,15 @@ impl ParametrizedSegment {
         let exact_roots = self.find_exact_roots(machine, root_indices, pzeta, mu);
         self._calculate_critical_points(machine, exact_roots, pzeta, mu)
     }
-}
 
-/// Calculations.
-impl ParametrizedSegment {
     /// Calculates the `dot(θ)` array from the contained `flux` and `theta` arrays and the constants
     /// of motion `Pζ` and `μ`.
     #[must_use]
     fn calculate_theta_dot(&self, machine: Machine, pzeta: f64, mu: f64) -> Array1<f64> {
         let Ok(theta_dot_array) = GCHamiltonian::eval_theta_dot_array(
             machine,
-            &self.theta_array,
-            &self.flux_array,
+            &self.segment.theta_array,
+            &self.segment.flux_array,
             pzeta,
             mu,
         ) else {
@@ -215,12 +244,12 @@ impl ParametrizedSegment {
         // skip the first and last points as we cannot define the triangle. These points always lie
         // on the axis or on the wall.
         (0..len).skip(1).take(len - 2).for_each(|i| {
-            let x = self.theta_array[i];
-            let y = self.flux_array[i];
-            let xlo = self.theta_array[i - 1];
-            let xhi = self.theta_array[i + 1];
-            let ylo = self.flux_array[i - 1];
-            let yhi = self.flux_array[i + 1];
+            let x = self.segment.theta_array[i];
+            let y = self.segment.flux_array[i];
+            let xlo = self.segment.theta_array[i - 1];
+            let xhi = self.segment.theta_array[i + 1];
+            let ylo = self.segment.flux_array[i - 1];
+            let yhi = self.segment.flux_array[i + 1];
             let xmid = xlo.midpoint(xhi);
             let ymid = ylo.midpoint(yhi);
 
@@ -265,8 +294,8 @@ impl ParametrizedSegment {
             };
 
             let root_flux = line(root);
-            self.theta_array[i] = root.rem_euclid(TAU);
-            self.flux_array.set_value(i, root_flux);
+            self.segment.theta_array[i] = root.rem_euclid(TAU);
+            self.segment.flux_array.set_value(i, root_flux);
         });
     }
 
@@ -274,10 +303,11 @@ impl ParametrizedSegment {
     pub(crate) fn calculate_rss(&mut self, machine: Machine) {
         let acc = &mut Accelerator2d::new();
         self.rss = self
+            .segment
             .flux_array
             .values()
             .iter()
-            .zip(&self.theta_array)
+            .zip(&self.segment.theta_array)
             .map(|(flux, theta)| {
                 let flux = self.flux_kind().to_magnetic_flux(*flux);
                 match machine.bfield().eval_deriv_theta(flux, *theta, acc) {
@@ -323,12 +353,12 @@ impl ParametrizedSegment {
             // Index into the arrays at the edges of the `[i, i+1]` interval. By construction of
             // the parameter `t`, it always holds that `tlo<thi` and therefore the interpolation
             // is always defined.
-            let tlo = self.t[index]; // == index
-            let thi = self.t[index + 1]; // == index + 1
-            let theta_lo = self.theta_array[index];
-            let theta_hi = self.theta_array[index + 1];
-            let flux_lo = self.flux_array[index];
-            let flux_hi = self.flux_array[index + 1];
+            let tlo = self.segment.t[index]; // == index
+            let thi = self.segment.t[index + 1]; // == index + 1
+            let theta_lo = self.segment.theta_array[index];
+            let theta_hi = self.segment.theta_array[index + 1];
+            let flux_lo = self.segment.flux_array[index];
+            let flux_hi = self.segment.flux_array[index + 1];
             let ta = [tlo, thi];
 
             let ya_theta = [theta_lo, theta_hi];
@@ -388,12 +418,12 @@ impl ParametrizedSegment {
                 // is always defined.
                 let floor_index = root.floor() as usize;
                 let ceil_index = root.ceil() as usize;
-                let tlo = self.t[floor_index];
-                let thi = self.t[ceil_index];
-                let theta_lo = self.theta_array[floor_index];
-                let theta_hi = self.theta_array[ceil_index];
-                let flux_lo = self.flux_array.values()[floor_index];
-                let flux_hi = self.flux_array.values()[ceil_index];
+                let tlo = self.segment.t[floor_index];
+                let thi = self.segment.t[ceil_index];
+                let theta_lo = self.segment.theta_array[floor_index];
+                let theta_hi = self.segment.theta_array[ceil_index];
+                let flux_lo = self.segment.flux_array.values()[floor_index];
+                let flux_hi = self.segment.flux_array.values()[ceil_index];
                 let xa = [tlo, thi];
 
                 let acc = &mut Accelerator::new(); // doesn't really do anything
@@ -410,7 +440,7 @@ impl ParametrizedSegment {
                     .eval(&xa, &ya_flux, root, acc)
                     .expect("arrays and values ok");
 
-                let flux = self.flux_array.kind().to_magnetic_flux(flux);
+                let flux = self.segment.flux_array.kind().to_magnetic_flux(flux);
                 CriticalPoint::new(machine, theta, flux, pzeta, mu).ok()
             })
             .collect()
@@ -430,7 +460,6 @@ impl std::fmt::Debug for ImproveStats {
 
 impl std::fmt::Debug for ParametrizedSegment {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let std_str = format!("{:.4e}", self.rss);
         let last_index = self.len() - 1;
         let start = format_args!(
             "flux={}: {:.8}, θ={:.8}",
@@ -448,8 +477,6 @@ impl std::fmt::Debug for ParametrizedSegment {
             .field("start", &start)
             .field("end", &end)
             .field("length", &self.len())
-            .field("relative std", &std_str)
-            .field("improve stats", &self.improve_stats)
             .finish()
     }
 }
@@ -457,16 +484,10 @@ impl std::fmt::Debug for ParametrizedSegment {
 #[cfg(test)]
 mod test {
     use super::*;
-    use dexter_machine::*;
     use ndarray::array;
 
     #[test]
     fn parametrized_segment_t() {
-        let qfactor = UnityQfactor::new(MagneticFlux::Toroidal(0.1));
-        let current = LarCurrent::new();
-        let bfield = LarBfield::new();
-        let machine = MachineBuilder::new(&qfactor, &current, &bfield).build();
-
         let flux = MagneticFluxArray::Toroidal(Array1::linspace(1e-5, 0.09, 5));
         let theta = Array1::linspace(0.0, 3.1415, 5);
         let segment = ParametrizedSegment::new(flux, theta);
@@ -475,14 +496,6 @@ mod test {
 
         let expected_t = Array1::from_vec(vec![0.0, 1.0, 2.0, 3.0, 4.0]);
         assert!(segment.t.abs_diff_eq(&expected_t, 1e-14));
-
-        let theta_dot_array = segment.calculate_theta_dot(machine, -0.0123, 1e-5);
-
-        assert!(
-            theta_dot_array
-                .iter()
-                .all(|theta_dot| theta_dot.is_finite())
-        )
     }
 
     #[test]
@@ -490,7 +503,7 @@ mod test {
         let theta_dot_array = array![2.0, 1.0, -1.0, -0.5, 0.3, 1.0, 2.0, -3.0];
 
         let expected_indices: Box<[usize]> = Box::new([1, 3, 6]);
-        let found_indices = ParametrizedSegment::find_root_indices(&theta_dot_array);
+        let found_indices = StationaryCurveSegment::find_root_indices(&theta_dot_array);
         assert_eq!(&found_indices, &expected_indices);
     }
 }

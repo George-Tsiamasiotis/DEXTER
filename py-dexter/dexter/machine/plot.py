@@ -30,7 +30,7 @@ from dexter.machine.base import MachineObject
 from dexter.machine.qfactors import NcQfactor
 from dexter.machine.currents import NcCurrent
 from dexter.machine.modes import FluteMode, ModeObject
-from dexter.comspace.gc_hamiltonian import GCHamiltonian
+from dexter.comspace.curve import StationaryCurve
 
 TAU = 2 * np.pi
 PI = np.pi
@@ -559,7 +559,7 @@ def plot_bfield(
         linestyle="solid",
         negative_linestyles="solid",
     )
-    sc = GCHamiltonian.build_stationary_curve(machine)
+    sc = StationaryCurve(machine)
     for seg in sc.segments:
         lab_eval_args = {flux_arg_name: seg.flux_array.values, "theta": seg.theta_array}
         rlab_seg = geometry.eval_rlab(**lab_eval_args)

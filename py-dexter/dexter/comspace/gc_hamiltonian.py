@@ -5,7 +5,6 @@ from warnings import warn
 from dexter.machine.machine import Machine
 from dexter.machine.flux import MagneticFlux, MagneticFluxArray
 from dexter.types import Array1, Array2
-from dexter.comspace.curve import StationaryCurve
 
 from dexter._core import _PyGCHamiltonian
 from dexter._utils import _ReprStrImpl, _into_pyarray1f64
@@ -324,19 +323,4 @@ class GCHamiltonian(_ReprStrImpl):
             flux_array=flux_array._r,
             pzeta=pzeta,
             mu=mu,
-        )
-
-    @classmethod
-    def build_stationary_curve(cls, machine: Machine) -> StationaryCurve:
-        r"""Builds the [`StationaryCurve`][dexter.StationaryCurve] of `machine`.
-
-        This routines tries to construct the curve w.r.t $\psi$ first. If $\psi$ is not a good
-        coordinate, then $\psi_p$ is used.
-        """
-        return StationaryCurve._wrap(
-            _PyGCHamiltonian.build_stationary_curve(
-                qfactor=machine.qfactor._r,
-                current=machine.current._r,
-                bfield=machine.bfield._r,
-            )
         )

@@ -13,7 +13,7 @@ use std::f64::consts::TAU;
 
 pub use curve::StationaryCurve;
 pub use point::{CriticalPoint, CriticalPointKind};
-pub use segment::ParametrizedSegment;
+pub use segment::StationaryCurveSegment;
 
 // ===============================================================================================
 
@@ -177,14 +177,6 @@ impl GCHamiltonian {
         let theta_dot_second = g * brace / dterm;
 
         Ok(theta_dot_first + theta_dot_second)
-    }
-
-    /// Builds the [`StationaryCurve`] of `machine`.
-    ///
-    /// The `StationaryCurve` is constructed w.r.t [`Machine::good_flux`].
-    #[must_use]
-    pub fn build_stationary_curve(machine: Machine) -> StationaryCurve {
-        StationaryCurve::build(machine)
     }
 }
 

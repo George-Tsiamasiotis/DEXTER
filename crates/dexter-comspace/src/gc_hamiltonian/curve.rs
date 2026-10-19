@@ -11,7 +11,7 @@ use geo_types::{LineString, MultiLineString};
 use ndarray::{Array1, Array2, ArrayRef1};
 use rayon::iter::{IntoParallelIterator, IntoParallelRefIterator, ParallelIterator};
 
-use crate::{CriticalPoint, ParametrizedSegment};
+use crate::{CriticalPoint, StationaryCurveSegment};
 
 /// The density of the (θ, ψ/ψp) grid on which to search the stationary curve contours.
 const SC_CONTOUR_DENSITY: (usize, usize) = (300, 300);
@@ -23,33 +23,47 @@ const SC_CONTOUR_DENSITY: (usize, usize) = (300, 300);
 /// The stationary curve is defined through the equation `𝜕H/𝜕𝜃 = 0`. In the absence of an electric
 /// field, this is equivalent to `𝜕B/𝜕𝜃 = 0`.
 ///
-/// The stationary curve is described by one or more [`parametrized segments`][ParametrizedSegment]
+/// The stationary curve is described by one or more [`segments`][StationaryCurveSegment]
 /// of the form `𝜕H/𝜕𝜃(ψ,θ)=0`.
-///
-/// This type is built through
-/// [`GCHamiltonian::build_stationary_curve`][crate::GCHamiltonian::build_stationary_curve].
 #[derive(Clone)]
 pub struct StationaryCurve {
     /// The separated segments comprising the `StationaryCurve`.
-    segments: Box<[ParametrizedSegment]>,
+    segments: Box<[StationaryCurveSegment]>,
     /// The duration of the [`Self::calculate_critical_points`] routine.
     duration: Option<Duration>,
 }
 
 impl StationaryCurve {
-    /// Returns a reference to the stored [`ParametrizedSegments`][ParametrizedSegment].
+    /// Creates a new `StationaryCurve`.
+    ///
+    /// # Process
+    ///
+    /// 1. Build the (θ, ψ/ψp) *orthogonal* grid.
+    /// 2. Set up the [`ContourBuilder`].
+    /// 3. Extract [`ContourBuilder::lines`] into a [`Box<StationaryCurveSegment>`] and store it.
+    ///
+    /// # Panics
+    ///
+    /// This method panics if [`ContourBuilder::lines`] returns an error. This is unusual since at
+    /// least one segment of `𝜕B/𝜕𝜃 = 0` should always exist and therefore should be fatal.
     #[must_use]
-    pub fn segments(&self) -> &[ParametrizedSegment] {
+    pub fn new(machine: Machine) -> Self {
+        Self::_build(machine)
+    }
+
+    /// Returns a reference to the stored [`StationaryCurveSegment`]s.
+    #[must_use]
+    pub fn segments(&self) -> &[StationaryCurveSegment] {
         &self.segments
     }
 
-    /// Returns the number of stored [`ParametrizedSegments`][ParametrizedSegment].
+    /// Returns the number of stored [`StationaryCurveSegment`]s.
     #[must_use]
     pub fn len(&self) -> usize {
         self.segments.len()
     }
 
-    /// Returns `true` if the curve contains no [`ParametrizedSegments`][ParametrizedSegment].
+    /// Returns `true` if the curve contains no [`StationaryCurveSegment`]s.
     #[must_use]
     pub fn is_empty(&self) -> bool {
         self.segments.len() == 0
@@ -90,18 +104,7 @@ impl StationaryCurve {
     }
 
     /// Builds the `StationaryCurve` of `machine`.
-    ///
-    /// # Process
-    ///
-    /// 1. Build the (θ, ψ/ψp) *orthogonal* grid with [`build_grid`].
-    /// 2. Set up the [`ContourBuilder`].
-    /// 3. Extract [`ContourBuilder::lines`] into a [`Box<ParametrizedSegment>`] and store it to `self`.
-    ///
-    /// # Panics
-    ///
-    /// This method panics if [`ContourBuilder::lines`] returns an error. This is unusual since at
-    /// least one segment of `𝜕B/𝜕𝜃 = 0` should always exist and therefore should be fatal.
-    pub(crate) fn build(machine: Machine) -> Self {
+    pub(crate) fn _build(machine: Machine) -> Self {
         let (theta_array, flux_array, grid) = build_grid(machine);
         let flux_arrayv = flux_array.values();
         let flux_cutoff = flux_arrayv.last().copied().expect("non-empty");
@@ -240,7 +243,7 @@ fn clamp_separated_strings(separated_strings: &mut [LineString]) {
 fn separated_strings_into_segments(
     separated_strings: Box<[LineString]>,
     flux_kind: MagneticFluxKind,
-) -> Box<[ParametrizedSegment]> {
+) -> Box<[StationaryCurveSegment]> {
     separated_strings
         .into_iter()
         .map(|separated_string| {
@@ -257,7 +260,7 @@ fn separated_strings_into_segments(
             let flux_arrayv = Array1::from_vec(flux);
             let flux_array = flux_kind.to_magnetic_flux_array(flux_arrayv);
 
-            ParametrizedSegment::new(flux_array, theta_array)
+            StationaryCurveSegment::new(flux_array, theta_array)
         })
         .collect()
 }
@@ -307,7 +310,7 @@ impl std::fmt::Debug for StationaryCurve {
         f.debug_struct("StationaryCurve")
             .field(
                 "flux_kind",
-                &self.segments.first().map(ParametrizedSegment::flux_kind),
+                &self.segments.first().map(StationaryCurveSegment::flux_kind),
             )
             .field("number of segments", &self.segments.len())
             .field("segments", &self.segments)

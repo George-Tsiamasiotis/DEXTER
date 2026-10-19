@@ -318,7 +318,7 @@ dependencies = [
 
 [[package]]
 name = "dexter"
-version = "0.2.2-pre.10"
+version = "0.2.2-pre.11"
 dependencies = [
  "dexter-comspace",
  "dexter-machine",
@@ -327,14 +327,14 @@ dependencies = [
 
 [[package]]
 name = "dexter-common"
-version = "0.2.2-pre.10"
+version = "0.2.2-pre.11"
 dependencies = [
  "rsl-interpolation",
 ]
 
 [[package]]
 name = "dexter-comspace"
-version = "0.2.2-pre.10"
+version = "0.2.2-pre.11"
 dependencies = [
  "contour",
  "dexter-machine",
@@ -350,7 +350,7 @@ dependencies = [
 
 [[package]]
 name = "dexter-machine"
-version = "0.2.2-pre.10"
+version = "0.2.2-pre.11"
 dependencies = [
  "approx",
  "criterion",
@@ -364,7 +364,7 @@ dependencies = [
 
 [[package]]
 name = "dexter-simulate"
-version = "0.2.2-pre.10"
+version = "0.2.2-pre.11"
 dependencies = [
  "approx",
  "colored",
@@ -1052,7 +1052,7 @@ dependencies = [
 
 [[package]]
 name = "py-dexter"
-version = "0.2.1-pre.1"
+version = "0.2.2-pre.11"
 dependencies = [
  "dexter",
  "ndarray",

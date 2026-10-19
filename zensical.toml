@@ -26,6 +26,7 @@ nav = [
     ]},
     {"COM Space" = [
         "reference/comspace/gc_hamiltonian.md",
+        "reference/comspace/stationary_curve.md",
         "reference/comspace/energy_pzeta_plane.md",
     ]},
     {"Simulate" = [

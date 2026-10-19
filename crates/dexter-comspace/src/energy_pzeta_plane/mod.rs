@@ -66,7 +66,7 @@ impl EnergyPzetaPlane {
     /// Calculates the critical points of the `(E, Pζ; μ)` slice over all values of `pzeta_array` and
     /// stores them.
     pub fn calculate_critical_points(&mut self, machine: Machine, pzeta_array: &ArrayRef1<f64>) {
-        let mut curve = StationaryCurve::build(machine);
+        let mut curve = StationaryCurve::_build(machine);
         self.critical_points = curve.calculate_critical_points(machine, pzeta_array, self.mu);
         self.stationary_curve = Some(curve);
     }

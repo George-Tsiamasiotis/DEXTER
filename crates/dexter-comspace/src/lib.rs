@@ -12,12 +12,11 @@
 //! + [`GCHamiltonian::eval_array`]: Evaluates the Hamiltonian in a `([θ], [ψ/ψp]; Pζ, μ)` 1D array.
 //! + [`GCHamiltonian::eval_grid`]: Evaluates the Hamiltonian in a `([θ], [ψ/ψp]; Pζ, μ)` 2D grid.
 //! + [`GCHamiltonian::eval_theta_dot_array`]: Evaluates `dot(θ)` in a `([θ], [ψ/ψp]; Pζ, μ)` 1D array.
-//! + [`GCHamiltonian::build_stationary_curve`]: Builds the [`StationaryCurve`] `𝜕H/𝜕𝜃 = 0` of `machine`.
 //!
 //! #### Stationary Curve
 //!
 //! + [`StationaryCurve`]: Representation of a configuration's stationary curve `𝜕H/𝜕𝜃 = 0`.
-//! + [`ParametrizedSegment`]: A 2D parametrized curve.
+//! + [`StationaryCurveSegment`]: A single continuous segment of the Stationary Curve.
 //!
 //! ### Calculations on the E - Pζ plane
 //!
@@ -48,7 +47,9 @@ pub use parabola::Point;
 pub use error::COMError;
 
 pub use gc_hamiltonian::GCHamiltonian;
-pub use gc_hamiltonian::{CriticalPoint, CriticalPointKind, ParametrizedSegment, StationaryCurve};
+pub use gc_hamiltonian::{
+    CriticalPoint, CriticalPointKind, StationaryCurve, StationaryCurveSegment,
+};
 
 pub use energy_pzeta_plane::{
     EnergyPzetaPlane, EnergyPzetaPosition, OrbitType, TrappedPassingBoundary,

@@ -2,8 +2,4 @@
 
 ::: dexter.GCHamiltonian
 
-::: dexter.StationaryCurve
-
-::: dexter.ParametrizedSegment
-
 ::: dexter.CriticalPoint
