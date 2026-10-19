@@ -11,6 +11,7 @@ plot_poloidal_drift
 import warnings
 
 import numpy as np
+import numpy.ma as ma
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 from matplotlib.axes import Axes
@@ -174,6 +175,7 @@ def plot_poloidal_drift(
     levels: int = 50,
     locator: Locator = "MaxN",
     equal: bool = True,
+    mask: float | None = None,
     show: bool = True,
 ) -> tuple[Figure, Axes]:
     r"""Plots a particle's drift on the $R-Z$ plane, overlaid on a contour plot of the Hamiltonian.
@@ -200,6 +202,9 @@ def plot_poloidal_drift(
         The tick locator to use to locate contour levels.
     equal
         Whether or not to set the axis aspect ratio to `equal`.
+    mask
+        The value at which to mask the energy array where greater, in $keV$. If `None`, no
+        masking is performed. This is useful in cases where the Hamiltonian presents singularities.
 
     Raises
     ------
@@ -233,6 +238,15 @@ def plot_poloidal_drift(
     MARGINS = (0.001, 0.001)
 
     for particle in particles:
+        if len(particles) == 1:
+            init = particle.initial_conditions
+            init_eval_arg = {
+                flux_arg_name: init.flux0.value,
+                "theta": init.theta0 % TAU,
+            }
+            irlab = geometry.eval_rlab(**init_eval_arg)
+            izlab = geometry.eval_zlab(**init_eval_arg)
+            ax.scatter(irlab, izlab, s=20, marker="x", c="k", zorder=11)
         if particle.steps_stored == 0:
             continue
         if flux == "Toroidal":
@@ -302,6 +316,8 @@ def plot_poloidal_drift(
             .to("keV")
             .m,
         )
+        if mask is not None:
+            energy_grid = ma.masked_greater(energy_grid, mask)
 
         _locator = locator.lower()
         _locator = (

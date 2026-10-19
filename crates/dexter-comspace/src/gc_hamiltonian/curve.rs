@@ -133,7 +133,14 @@ impl StationaryCurve {
         let strings = isolines_to_strings(&isolines);
         let mut separated_strings = strings_into_separated_strings(strings, flux_cutoff);
         clamp_separated_strings(&mut separated_strings);
-        let segments = separated_strings_into_segments(separated_strings, machine.good_flux());
+        let mut segments = separated_strings_into_segments(separated_strings, machine.good_flux());
+
+        segments
+            .iter_mut()
+            .for_each(|segment| segment.improve(machine));
+        segments
+            .iter_mut()
+            .for_each(|segment| segment.calculate_rss(machine));
 
         Self {
             segments,
@@ -294,6 +301,9 @@ fn separate(string: &LineString, flux_last: f64) -> Box<[LineString]> {
 
 impl std::fmt::Debug for StationaryCurve {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let duration_str: String = self
+            .duration
+            .map_or_else(|| "None".to_owned(), |d| format!("{d:?}"));
         f.debug_struct("StationaryCurve")
             .field(
                 "flux_kind",
@@ -301,7 +311,7 @@ impl std::fmt::Debug for StationaryCurve {
             )
             .field("number of segments", &self.segments.len())
             .field("segments", &self.segments)
-            .field("duration", &self.duration)
+            .field("duration", &duration_str)
             .finish()
     }
 }

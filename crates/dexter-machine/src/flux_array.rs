@@ -1,6 +1,6 @@
 //! Defines the `MagneticFluxArray` enum.
 
-use ndarray::{Array1, ArrayView1};
+use ndarray::{Array1, ArrayView1, ArrayViewMut1};
 use rsl_interpolation::Accelerator;
 
 use crate::{EvalError, MagneticFlux, MagneticFluxKind, Qfactor};
@@ -14,12 +14,30 @@ pub enum MagneticFluxArray {
     Poloidal(Array1<f64>),
 }
 
+impl std::ops::Index<usize> for MagneticFluxArray {
+    type Output = f64;
+    /// Returns the indexed value of the contained array, regardless of the kind.
+    fn index(&self, index: usize) -> &Self::Output {
+        match *self {
+            Self::Toroidal(ref values) | Self::Poloidal(ref values) => &values[index],
+        }
+    }
+}
+
 impl MagneticFluxArray {
     /// Returns a view on the values of `self`, regardless of the kind.
     #[must_use]
     pub fn values(&self) -> ArrayView1<'_, f64> {
         match *self {
             Self::Toroidal(ref values) | Self::Poloidal(ref values) => values.view(),
+        }
+    }
+
+    /// Returns a mutable view on the values of `self`, regardless of the kind.
+    #[must_use]
+    pub fn values_mut(&mut self) -> ArrayViewMut1<'_, f64> {
+        match *self {
+            Self::Toroidal(ref mut values) | Self::Poloidal(ref mut values) => values.view_mut(),
         }
     }
 
@@ -62,6 +80,15 @@ impl MagneticFluxArray {
             Self::Toroidal(ref values) => Some(MagneticFlux::Toroidal(values[index])),
             Self::Poloidal(ref values) => Some(MagneticFlux::Poloidal(values[index])),
         }
+    }
+
+    /// Sets the `index`-th element of the array to `value`, regardless of the kind.
+    ///
+    /// # Panics
+    ///
+    /// This method panics if `index` is greater than `self.len()`.
+    pub fn set_value(&mut self, index: usize, value: f64) {
+        self.values_mut()[index] = value;
     }
 
     /// Creates a new `MagneticFluxArray` where all values have been converted to the other magnetic
@@ -158,5 +185,14 @@ mod test {
 
         assert!(tor.values().relative_eq(&other_tor.values(), 1e-10, 1e-10));
         assert!(pol.values().relative_eq(&other_pol.values(), 1e-10, 1e-10));
+    }
+
+    #[test]
+    fn magnetic_flux_array_set_values() {
+        let values = Array1::from_vec(vec![0.1, 0.2]);
+        let mut flux = MagneticFluxArray::Toroidal(values.clone());
+
+        flux.set_value(1, 0.3);
+        assert_eq!(flux[1], 0.3);
     }
 }

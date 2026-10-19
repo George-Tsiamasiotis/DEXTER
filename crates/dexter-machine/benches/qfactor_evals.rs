@@ -10,7 +10,7 @@ use std::hint::black_box;
 use std::path::PathBuf;
 
 fn qfactor_evals(c: &mut Criterion) {
-    let lcfs = LastClosedFluxSurface::Toroidal(0.45);
+    let lcfs = MagneticFlux::Toroidal(0.45);
     let path = PathBuf::from(TEST_NETCDF_PATH);
     let acc = &mut Accelerator::new();
     let psi = MagneticFlux::Toroidal(0.01);

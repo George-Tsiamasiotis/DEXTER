@@ -10,7 +10,7 @@ use dexter_simulate::*;
 use criterion::{Criterion, criterion_group, criterion_main};
 
 fn intersect_benchmark(c: &mut Criterion) {
-    let lcfs = LastClosedFluxSurface::Toroidal(0.45);
+    let lcfs = MagneticFlux::Toroidal(0.45);
     let qfactor = ParabolicQfactor::new(1.1, 3.9, lcfs);
     let current = LarCurrent::new();
     let bfield = LarBfield::new();

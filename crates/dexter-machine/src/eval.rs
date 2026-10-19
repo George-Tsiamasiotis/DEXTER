@@ -253,7 +253,7 @@ pub trait Qfactor: MachineObject + Debug + Send + Sync {
     /// # use std::path::PathBuf;
     /// # use rsl_interpolation::Accelerator;
     /// #
-    /// # let lcfs = LastClosedFluxSurface::Toroidal(0.45);
+    /// # let lcfs = MagneticFlux::Toroidal(0.45);
     /// # let qfactor = ParabolicQfactor::new(1.1, 3.8, lcfs);
     /// #
     /// let acc = &mut Accelerator::new();
@@ -279,7 +279,7 @@ pub trait Qfactor: MachineObject + Debug + Send + Sync {
     /// # use std::path::PathBuf;
     /// # use rsl_interpolation::Accelerator;
     /// #
-    /// # let lcfs = LastClosedFluxSurface::Toroidal(0.45);
+    /// # let lcfs = MagneticFlux::Toroidal(0.45);
     /// # let qfactor = ParabolicQfactor::new(1.1, 3.8, lcfs);
     /// #
     /// let acc = &mut Accelerator::new();
@@ -309,7 +309,7 @@ pub trait Qfactor: MachineObject + Debug + Send + Sync {
     /// # use std::path::PathBuf;
     /// # use rsl_interpolation::Accelerator;
     /// #
-    /// # let lcfs = LastClosedFluxSurface::Toroidal(0.45);
+    /// # let lcfs = MagneticFlux::Toroidal(0.45);
     /// # let qfactor = ParabolicQfactor::new(1.1, 3.8, lcfs);
     /// #
     /// let acc = &mut Accelerator::new();
@@ -331,7 +331,7 @@ pub trait Qfactor: MachineObject + Debug + Send + Sync {
     /// # use std::path::PathBuf;
     /// # use rsl_interpolation::Accelerator;
     /// #
-    /// # let lcfs = LastClosedFluxSurface::Toroidal(0.45);
+    /// # let lcfs = MagneticFlux::Toroidal(0.45);
     /// # let qfactor = ParabolicQfactor::new(1.1, 3.8, lcfs);
     /// #
     /// let acc = &mut Accelerator::new();
@@ -364,7 +364,7 @@ pub trait Qfactor: MachineObject + Debug + Send + Sync {
     /// # use rsl_interpolation::Accelerator;
     /// # use approx::assert_relative_eq;
     /// #
-    /// # let lcfs = LastClosedFluxSurface::Toroidal(0.45);
+    /// # let lcfs = MagneticFlux::Toroidal(0.45);
     /// # let qfactor = ParabolicQfactor::new(1.1, 3.8, lcfs);
     /// #
     /// let acc = &mut Accelerator::new();
@@ -410,7 +410,7 @@ pub trait Qfactor: MachineObject + Debug + Send + Sync {
     /// # use rsl_interpolation::Accelerator;
     /// # use approx::assert_relative_eq;
     /// #
-    /// # let lcfs = LastClosedFluxSurface::Toroidal(0.45);
+    /// # let lcfs = MagneticFlux::Toroidal(0.45);
     /// # let qfactor = ParabolicQfactor::new(1.1, 3.8, lcfs);
     /// #
     /// let acc = &mut Accelerator::new();
@@ -445,7 +445,7 @@ pub trait Qfactor: MachineObject + Debug + Send + Sync {
     /// # use std::path::PathBuf;
     /// # use rsl_interpolation::Accelerator;
     /// #
-    /// # let lcfs = LastClosedFluxSurface::Toroidal(0.45);
+    /// # let lcfs = MagneticFlux::Toroidal(0.45);
     /// # let qfactor = ParabolicQfactor::new(1.1, 3.8, lcfs);
     /// #
     /// let acc = &mut Accelerator::new();
@@ -715,7 +715,7 @@ pub trait Mode: MachineObject + DynModeClone + Debug + Send + Sync {
     ///
     /// ```
     /// # use dexter_machine::*;
-    /// let lcfs = LastClosedFluxSurface::Toroidal(0.45);
+    /// let lcfs = MagneticFlux::Toroidal(0.45);
     /// let mode = FluteMode::new(1e-3, lcfs, 3, 2, 0.0);
     /// let cache1 = mode.generate_cache();
     /// # Ok::<_, MachineError>(())
@@ -732,7 +732,7 @@ pub trait Mode: MachineObject + DynModeClone + Debug + Send + Sync {
     ///
     /// ```
     /// # use dexter_machine::*;
-    /// let lcfs = LastClosedFluxSurface::Toroidal(0.45);
+    /// let lcfs = MagneticFlux::Toroidal(0.45);
     /// let mode = FluteMode::new(1e-3, lcfs, 3, 2, 0.0);
     ///
     /// let mut cache = mode.generate_cache();
@@ -760,7 +760,7 @@ pub trait Mode: MachineObject + DynModeClone + Debug + Send + Sync {
     ///
     /// ```
     /// # use dexter_machine::*;
-    /// let lcfs = LastClosedFluxSurface::Poloidal(0.45);
+    /// let lcfs = MagneticFlux::Poloidal(0.45);
     /// let mode = FluteMode::new(1e-3, lcfs, 3, 2, 0.0);
     ///
     /// let mut cache = mode.generate_cache();
@@ -788,7 +788,7 @@ pub trait Mode: MachineObject + DynModeClone + Debug + Send + Sync {
     ///
     /// ```
     /// # use dexter_machine::*;
-    /// let lcfs = LastClosedFluxSurface::Poloidal(0.45);
+    /// let lcfs = MagneticFlux::Poloidal(0.45);
     /// let mode = FluteMode::new(1e-3, lcfs, 3, 2, 0.0);
     ///
     /// let mut cache = mode.generate_cache();
@@ -816,7 +816,7 @@ pub trait Mode: MachineObject + DynModeClone + Debug + Send + Sync {
     ///
     /// ```
     /// # use dexter_machine::*;
-    /// let lcfs = LastClosedFluxSurface::Toroidal(0.45);
+    /// let lcfs = MagneticFlux::Toroidal(0.45);
     /// let mode = FluteMode::new(1e-3, lcfs, 3, 2, 0.0);
     ///
     /// let mut cache = mode.generate_cache();
@@ -844,7 +844,7 @@ pub trait Mode: MachineObject + DynModeClone + Debug + Send + Sync {
     ///
     /// ```
     /// # use dexter_machine::*;
-    /// let lcfs = LastClosedFluxSurface::Toroidal(0.45);
+    /// let lcfs = MagneticFlux::Toroidal(0.45);
     /// let mode = FluteMode::new(1e-3, lcfs, 3, 2, 0.0);
     ///
     /// let mut cache = mode.generate_cache();
@@ -872,7 +872,7 @@ pub trait Mode: MachineObject + DynModeClone + Debug + Send + Sync {
     ///
     /// ```
     /// # use dexter_machine::*;
-    /// let lcfs = LastClosedFluxSurface::Poloidal(0.45);
+    /// let lcfs = MagneticFlux::Poloidal(0.45);
     /// let mode = FluteMode::new(1e-3, lcfs, 3, 2, 0.0);
     ///
     /// let mut cache = mode.generate_cache();
@@ -900,7 +900,7 @@ pub trait Mode: MachineObject + DynModeClone + Debug + Send + Sync {
     ///
     /// ```
     /// # use dexter_machine::*;
-    /// let lcfs = LastClosedFluxSurface::Poloidal(0.45);
+    /// let lcfs = MagneticFlux::Poloidal(0.45);
     /// let mode = FluteMode::new(1e-3, lcfs, 3, 2, 0.0);
     ///
     /// let mut cache = mode.generate_cache();

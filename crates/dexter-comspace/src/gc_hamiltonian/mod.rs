@@ -43,7 +43,7 @@ impl GCHamiltonian {
     /// ```
     /// # use dexter_machine::*;
     /// # use dexter_comspace::*;
-    /// let lcfs = LastClosedFluxSurface::Toroidal(0.05);
+    /// let lcfs = MagneticFlux::Toroidal(0.05);
     /// let qfactor = ParabolicQfactor::new(1.1, 3.9, lcfs);
     /// let current = LarCurrent::new();
     /// let bfield = LarBfield::new();
@@ -58,8 +58,6 @@ impl GCHamiltonian {
     /// # Ok::<_, EvalError>(())
     ///
     /// ```
-    ///
-    /// [`Good`]: dexter_machine::FluxCoordinateState::Good
     pub fn eval(
         machine: Machine,
         theta: f64,
@@ -105,6 +103,82 @@ impl GCHamiltonian {
         Ok(kinetic + perpendicular)
     }
 
+    /// Evaluates `dot(θ)` in a `(θ, ψ/ψp; Pζ, μ)` point.
+    ///
+    /// `dot(θ)` is calculated from the canonical equation of motion `dot(θ) = 𝜕H/𝜕P𝜃`.
+    ///
+    /// # Errors
+    ///
+    /// + This method returns an [`EvalError`] if `flux` is out of bounds.
+    /// + This method returns an [`EvalError`] if `flux` is not [`Good`].
+    /// + This method returns an [`EvalError::UndefinedEvaluation`] if a flux conversion is need but
+    ///   not defined.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use dexter_machine::*;
+    /// # use dexter_comspace::*;
+    /// let lcfs = MagneticFlux::Toroidal(0.05);
+    /// let qfactor = ParabolicQfactor::new(1.1, 3.9, lcfs);
+    /// let current = LarCurrent::new();
+    /// let bfield = LarBfield::new();
+    /// let machine = MachineBuilder::new(&qfactor, &current, &bfield).build();
+    ///
+    /// let theta = 3.1415;
+    /// let psi = MagneticFlux::Toroidal(0.015);
+    /// let pzeta = -0.1*qfactor.psip_last().value();
+    /// let mu = 1e-4;
+    ///
+    /// let energy: f64 = GCHamiltonian::eval_theta_dot(machine, theta, psi, pzeta, mu)?;
+    /// # Ok::<_, EvalError>(())
+    ///
+    /// ```
+    ///
+    /// [`Good`]: dexter_machine::FluxCoordinateState::Good
+    pub fn eval_theta_dot(
+        machine: Machine,
+        theta: f64,
+        flux: MagneticFlux,
+        pzeta: f64,
+        mu: f64,
+    ) -> Result<f64, EvalError> {
+        use dexter_machine::MagneticFluxKind::*;
+
+        let acc = &mut Accelerator2d::new();
+        let theta = theta.rem_euclid(TAU);
+
+        let q = machine.qfactor().eval_q(flux, acc.xacc())?;
+        let g = machine.current().eval_g(flux, acc.xacc())?;
+        let i = machine.current().eval_i(flux, acc.xacc())?;
+        let b = machine.bfield().eval_b(flux, theta, acc)?;
+
+        let mut dg = machine.current().eval_g_deriv(flux, acc.xacc())?;
+        let mut di = machine.current().eval_i_deriv(flux, acc.xacc())?;
+        let mut db = machine.bfield().eval_deriv_flux(flux, theta, acc)?;
+
+        if flux.kind() == Toroidal {
+            dg *= q;
+            di *= q;
+            db *= q;
+        };
+
+        let psip = match flux.kind() {
+            Toroidal => flux.to_other(machine.qfactor())?,
+            Poloidal => flux,
+        };
+
+        let rho = (pzeta + psip.value()) / g;
+        let dterm = g * q + i + rho * (g * di - i * dg);
+        let mu_par = mu + rho.powi(2) * b;
+        let brace = mu_par * db;
+
+        let theta_dot_first = rho * b.powi(2) * (1.0 - rho * dg) / dterm;
+        let theta_dot_second = g * brace / dterm;
+
+        Ok(theta_dot_first + theta_dot_second)
+    }
+
     /// Builds the [`StationaryCurve`] of `machine`.
     ///
     /// The `StationaryCurve` is constructed w.r.t [`Machine::good_flux`].
@@ -117,14 +191,14 @@ impl GCHamiltonian {
 #[cfg(test)]
 mod test {
     use super::*;
-    use dexter_machine::MagneticFlux::*;
     use dexter_machine::extract::{POLOIDAL_TEST_NETCDF_PATH, TOROIDAL_TEST_NETCDF_PATH};
     use dexter_machine::*;
-    use dexter_machine::{Interpolation1dType::Steffen, Interpolation2dType::Bicubic};
+    use dexter_machine::{Interpolation1dType::*, Interpolation2dType::*, MagneticFlux::*};
 
     #[test]
     fn gc_hamiltonian_evaluate_machine_good_both() {
-        let qfactor = UnityQfactor::new(LastClosedFluxSurface::Toroidal(0.1));
+        let unity_qfactor = UnityQfactor::new(Toroidal(0.1));
+        let qfactor = unity_qfactor;
         let current = LarCurrent::new();
         let bfield = LarBfield::new();
         let machine = MachineBuilder::new(&qfactor, &current, &bfield).build();

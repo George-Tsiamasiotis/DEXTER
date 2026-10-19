@@ -122,7 +122,7 @@ impl std::fmt::Debug for NcFlux {
             None => String::from("No values"),
         };
         let last = match self.last_value() {
-            Some(value) => format!("{value}"),
+            Some(value) => format!("{value:.6e}"),
             None => String::from("No value"),
         };
         f.debug_struct("Flux")

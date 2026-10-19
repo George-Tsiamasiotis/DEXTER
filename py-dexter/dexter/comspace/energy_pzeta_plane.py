@@ -217,19 +217,11 @@ class EnergyPzetaPlane(_ReprStrImpl):
 
         LINEWIDTH = 3
         ZORDER = 20
-        MA_COLOR = "xkcd:cobalt blue"
-        LW_COLOR = "xkcd:coral"
-        RW_COLOR = "xkcd:forrest green"
-        TP_COLOR = "xkcd:bright pink"
+        MA_COLOR = "xkcd:aqua"
+        LW_COLOR = "xkcd:gold"
+        RW_COLOR = "xkcd:jade green"
+        TP_COLOR = "xkcd:pinkish purple"
 
-        ax.plot(
-            axis_span / psip_last,
-            axis,
-            c=MA_COLOR,
-            linewidth=LINEWIDTH,
-            zorder=ZORDER,
-            label=r"$Magnetic\ Axis$",
-        )
         ax.plot(
             lw_span / psip_last,
             lw,
@@ -247,6 +239,14 @@ class EnergyPzetaPlane(_ReprStrImpl):
             label=r"$Right\ Wall$",
         )
         ax.plot(
+            axis_span / psip_last,
+            axis,
+            c=MA_COLOR,
+            linewidth=LINEWIDTH,
+            zorder=ZORDER,
+            label=r"$Magnetic\ Axis$",
+        )
+        ax.plot(
             np.concat((tp_pzeta, tp_pzeta[::-1], [-1])),
             np.concat((tp_lower, tp_upper[::-1], [tp_lower[0]])),
             c=TP_COLOR,
@@ -257,11 +257,15 @@ class EnergyPzetaPlane(_ReprStrImpl):
 
         if self.machine._reg is not None:
             si_ax = ax.twinx()
+            min_energy_nu = ymin * mu
             max_energy_nu = ymax * mu
+            min_energy_si = cast(
+                float, self.machine.quantity(min_energy_nu, "NormJoule").to("keV").m
+            )
             max_energy_si = cast(
                 float, self.machine.quantity(max_energy_nu, "NormJoule").to("keV").m
             )
-            si_ax.set_ybound(0, max_energy_si)
+            si_ax.set_ybound(min_energy_si, max_energy_si)
             si_ax.set_ylabel(r"$E\ [keV]$")
 
         if particles:
@@ -282,14 +286,12 @@ class EnergyPzetaPlane(_ReprStrImpl):
             )
 
         if critical_points:
-            psip_last = self.machine.psip_last.value
-            mu = self.mu
             pzetas = self._critical_points_pzetas() / psip_last
             energies = self._critical_points_energies() / mu
             ax.plot(
                 pzetas,
                 energies,
-                c="r",
+                c="xkcd:royal blue",
                 linewidth=0,
                 marker=".",
                 markeredgewidth=0,
