@@ -4,11 +4,10 @@ from warnings import warn
 
 from dexter.machine.machine import Machine
 from dexter.machine.flux import MagneticFlux, MagneticFluxArray
-from dexter.types import Array1, Array2
-from dexter.comspace.curve import StationaryCurve
+from dexter.types import Array1, Array2, CriticalPointKind, BoundaryExtremumKind
 
-from dexter._core import _PyGCHamiltonian
-from dexter._utils import _ReprStrImpl, _into_pyarray1f64
+from dexter._core import _PyGCHamiltonian, _PyCriticalPoint, _PyBoundaryExtremum
+from dexter._utils import _ReprStrImpl, _RustTypeWrapper, _into_pyarray1f64
 
 
 class GCHamiltonian(_ReprStrImpl):
@@ -326,17 +325,100 @@ class GCHamiltonian(_ReprStrImpl):
             mu=mu,
         )
 
-    @classmethod
-    def build_stationary_curve(cls, machine: Machine) -> StationaryCurve:
-        r"""Builds the [`StationaryCurve`][dexter.StationaryCurve] of `machine`.
 
-        This routines tries to construct the curve w.r.t $\psi$ first. If $\psi$ is not a good
-        coordinate, then $\psi_p$ is used.
-        """
-        return StationaryCurve._wrap(
-            _PyGCHamiltonian.build_stationary_curve(
-                qfactor=machine.qfactor._r,
-                current=machine.current._r,
-                bfield=machine.bfield._r,
-            )
-        )
+class CriticalPoint(_ReprStrImpl, _RustTypeWrapper):
+    r"""A critical point of the Hamiltonian.
+
+    A simple container type that is created through
+    [`EnergyPzetaPlane.calculate_critical_points`][dexter.EnergyPzetaPlane.calculate_critical_points].
+
+    Attributes
+    ----------
+    theta
+        The point's $\theta$ position.
+    flux
+        The point's $\psi/\psi_p$ position.
+    energy
+        The point's energy.
+    pzeta
+        The point's $P_\zeta$.
+    mu
+        The point's $\mu$.
+    kind
+        The point's kind.
+    """
+
+    _r: _PyCriticalPoint
+
+    @property
+    def theta(self) -> float:
+        return self._r.theta
+
+    @property
+    def flux(self) -> MagneticFlux:
+        return MagneticFlux._wrap(self._r.flux)
+
+    @property
+    def pzeta(self) -> float:
+        return self._r.pzeta
+
+    @property
+    def energy(self) -> float:
+        return self._r.energy
+
+    @property
+    def mu(self) -> float:
+        return self._r.mu
+
+    @property
+    def kind(self) -> CriticalPointKind:
+        return self._r.kind
+
+
+class BoundaryExtremum(_ReprStrImpl, _RustTypeWrapper):
+    r"""A boundary extremum of the Hamiltonian.
+
+    A simple container type that is created through
+    [`EnergyPzetaPlane.calculate_boundary_extrema`][dexter.EnergyPzetaPlane.calculate_boundary_extrema].
+
+    Attributes
+    ----------
+    theta
+        The point's $\theta$ position.
+    flux
+        The point's $\psi/\psi_p$ position.
+    energy
+        The point's energy.
+    pzeta
+        The point's $P_\zeta$.
+    mu
+        The point's $\mu$.
+    kind
+        The point's kind.
+    """
+
+    _r: _PyBoundaryExtremum
+
+    @property
+    def theta(self) -> float:
+        return self._r.theta
+
+    @property
+    def flux(self) -> MagneticFlux:
+        return MagneticFlux._wrap(self._r.flux)
+
+    @property
+    def pzeta(self) -> float:
+        return self._r.pzeta
+
+    @property
+    def energy(self) -> float:
+        return self._r.energy
+
+    @property
+    def mu(self) -> float:
+        return self._r.mu
+
+    @property
+    def kind(self) -> BoundaryExtremumKind:
+        return self._r.kind

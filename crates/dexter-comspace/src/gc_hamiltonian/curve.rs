@@ -1,20 +1,82 @@
-//! Defines the [`StationaryCurve`] type and its associated methods.
+//! Defines the [`StationaryCurve`] and [`StationaryCurveSegment`] types.
 
 use std::f64::consts::TAU;
 use std::mem::MaybeUninit;
 use std::ops::Range;
 use std::time::{Duration, Instant};
 
-use contour::{ContourBuilder, Line};
+use contour::ContourBuilder;
 use dexter_machine::{Accelerator2d, Machine, MagneticFluxArray, MagneticFluxKind};
 use geo_types::{LineString, MultiLineString};
 use ndarray::{Array1, Array2, ArrayRef1};
 use rayon::iter::{IntoParallelIterator, IntoParallelRefIterator, ParallelIterator};
+use rsl_interpolation::{Interpolation, LinearInterpolator};
 
-use crate::{CriticalPoint, ParametrizedSegment};
+use crate::gc_hamiltonian::ParametrizedSegment;
+use crate::{CriticalPoint, GCHamiltonian};
+use roots::{Convergency, find_root_brent, find_root_secant};
 
 /// The density of the (θ, ψ/ψp) grid on which to search the stationary curve contours.
 const SC_CONTOUR_DENSITY: (usize, usize) = (300, 300);
+
+// ===============================================================================================
+
+/// Convergency criteria for better fitting the segments produced by the contour generator on the
+/// true stationary curve.
+struct ContourConvergency;
+
+impl ContourConvergency {
+    /// Maximum allowed value for `abs(𝜕B/𝜕𝜃)`.
+    const EPS: f64 = 1e-16;
+    /// Maximum allowed iterations.
+    const MAX_ITER: usize = 10;
+    /// Maximum allowed difference between the last elements `theta[i]` and `theta[i-1]`.
+    ///
+    /// Since the parameter `t` correspond to the array indices, a value of `1e-6` means that the
+    /// the series converges when `ψ(t)` and `θ(t)` are approximated within `.0001%` of the initial
+    /// spacing.
+    const MAX_PARAMETER_DIFF: f64 = 1e-8;
+}
+
+#[expect(clippy::renamed_function_params, reason = "clarity")]
+impl Convergency<f64> for ContourConvergency {
+    fn is_root_found(&mut self, db_dtheta: f64) -> bool {
+        db_dtheta.abs() < Self::EPS.abs()
+    }
+    fn is_converged(&mut self, theta_lo: f64, theta_hi: f64) -> bool {
+        (theta_lo - theta_hi).abs() < Self::MAX_PARAMETER_DIFF
+    }
+    fn is_iteration_limit_reached(&mut self, iter: usize) -> bool {
+        iter >= Self::MAX_ITER
+    }
+}
+
+// ===============================================================================================
+
+/// Convergency criteria for finding the root of `dot(θ)(t)`.
+struct FixedPointConvergency;
+
+impl FixedPointConvergency {
+    /// Maximum allowed value for `abs(dot(θ))`.
+    const EPS: f64 = 1e-16;
+    /// Maximum allowed iterations.
+    const MAX_ITER: usize = 50;
+    /// Maximum allowed difference between the 2 last `t` values.
+    const MAX_PARAMETER_DIFF: f64 = 1e-9;
+}
+
+#[expect(clippy::renamed_function_params, reason = "clarity")]
+impl Convergency<f64> for FixedPointConvergency {
+    fn is_root_found(&mut self, theta_dot: f64) -> bool {
+        theta_dot.abs() < Self::EPS.abs()
+    }
+    fn is_converged(&mut self, tlo: f64, thi: f64) -> bool {
+        (tlo - thi).abs() < Self::MAX_PARAMETER_DIFF
+    }
+    fn is_iteration_limit_reached(&mut self, iter: usize) -> bool {
+        iter >= Self::MAX_ITER
+    }
+}
 
 // ===============================================================================================
 
@@ -23,33 +85,47 @@ const SC_CONTOUR_DENSITY: (usize, usize) = (300, 300);
 /// The stationary curve is defined through the equation `𝜕H/𝜕𝜃 = 0`. In the absence of an electric
 /// field, this is equivalent to `𝜕B/𝜕𝜃 = 0`.
 ///
-/// The stationary curve is described by one or more [`parametrized segments`][ParametrizedSegment]
+/// The stationary curve is described by one or more [`segments`][StationaryCurveSegment]
 /// of the form `𝜕H/𝜕𝜃(ψ,θ)=0`.
-///
-/// This type is built through
-/// [`GCHamiltonian::build_stationary_curve`][crate::GCHamiltonian::build_stationary_curve].
 #[derive(Clone)]
 pub struct StationaryCurve {
     /// The separated segments comprising the `StationaryCurve`.
-    segments: Box<[ParametrizedSegment]>,
+    segments: Box<[StationaryCurveSegment]>,
     /// The duration of the [`Self::calculate_critical_points`] routine.
     duration: Option<Duration>,
 }
 
 impl StationaryCurve {
-    /// Returns a reference to the stored [`ParametrizedSegments`][ParametrizedSegment].
+    /// Creates a new `StationaryCurve`.
+    ///
+    /// # Process
+    ///
+    /// 1. Build the (θ, ψ/ψp) *orthogonal* grid.
+    /// 2. Set up the [`ContourBuilder`].
+    /// 3. Extract [`ContourBuilder::lines`] into a [`Box<StationaryCurveSegment>`] and store it.
+    ///
+    /// # Panics
+    ///
+    /// This method panics if [`ContourBuilder::lines`] returns an error. This is unusual since at
+    /// least one segment of `𝜕B/𝜕𝜃 = 0` should always exist and therefore should be fatal.
     #[must_use]
-    pub fn segments(&self) -> &[ParametrizedSegment] {
+    pub fn new(machine: Machine) -> Self {
+        Self::_build(machine)
+    }
+
+    /// Returns a reference to the stored [`StationaryCurveSegment`]s.
+    #[must_use]
+    pub fn segments(&self) -> &[StationaryCurveSegment] {
         &self.segments
     }
 
-    /// Returns the number of stored [`ParametrizedSegments`][ParametrizedSegment].
+    /// Returns the number of stored [`StationaryCurveSegment`]s.
     #[must_use]
     pub fn len(&self) -> usize {
         self.segments.len()
     }
 
-    /// Returns `true` if the curve contains no [`ParametrizedSegments`][ParametrizedSegment].
+    /// Returns `true` if the curve contains no [`StationaryCurveSegment`]s.
     #[must_use]
     pub fn is_empty(&self) -> bool {
         self.segments.len() == 0
@@ -90,18 +166,7 @@ impl StationaryCurve {
     }
 
     /// Builds the `StationaryCurve` of `machine`.
-    ///
-    /// # Process
-    ///
-    /// 1. Build the (θ, ψ/ψp) *orthogonal* grid with [`build_grid`].
-    /// 2. Set up the [`ContourBuilder`].
-    /// 3. Extract [`ContourBuilder::lines`] into a [`Box<ParametrizedSegment>`] and store it to `self`.
-    ///
-    /// # Panics
-    ///
-    /// This method panics if [`ContourBuilder::lines`] returns an error. This is unusual since at
-    /// least one segment of `𝜕B/𝜕𝜃 = 0` should always exist and therefore should be fatal.
-    pub(crate) fn build(machine: Machine) -> Self {
+    pub(crate) fn _build(machine: Machine) -> Self {
         let (theta_array, flux_array, grid) = build_grid(machine);
         let flux_arrayv = flux_array.values();
         let flux_cutoff = flux_arrayv.last().copied().expect("non-empty");
@@ -193,10 +258,10 @@ fn build_grid(machine: Machine) -> (Array1<f64>, MagneticFluxArray, Array2<f64>)
 }
 
 /// Converts a slice of `Lines` into a `Box` of `LineStrings` without cloning.
-fn isolines_to_strings(isolines: &[Line]) -> Box<[&LineString]> {
+fn isolines_to_strings(isolines: &[contour::Line]) -> Box<[&LineString]> {
     isolines
         .iter()
-        .map(Line::geometry)
+        .map(contour::Line::geometry)
         .collect::<Vec<&MultiLineString>>()
         .into_iter()
         .flatten()
@@ -240,7 +305,7 @@ fn clamp_separated_strings(separated_strings: &mut [LineString]) {
 fn separated_strings_into_segments(
     separated_strings: Box<[LineString]>,
     flux_kind: MagneticFluxKind,
-) -> Box<[ParametrizedSegment]> {
+) -> Box<[StationaryCurveSegment]> {
     separated_strings
         .into_iter()
         .map(|separated_string| {
@@ -257,7 +322,7 @@ fn separated_strings_into_segments(
             let flux_arrayv = Array1::from_vec(flux);
             let flux_array = flux_kind.to_magnetic_flux_array(flux_arrayv);
 
-            ParametrizedSegment::new(flux_array, theta_array)
+            StationaryCurveSegment::new(flux_array, theta_array)
         })
         .collect()
 }
@@ -299,6 +364,244 @@ fn separate(string: &LineString, flux_last: f64) -> Box<[LineString]> {
 
 // ===============================================================================================
 
+/// A single, continuous segment of the [`StationaryCurve`][crate::StationaryCurve].
+#[derive(Debug, Clone)]
+pub struct StationaryCurveSegment {
+    /// The (t, ψ, θ) parametrized segment.
+    segment: ParametrizedSegment,
+    /// The residual sum of squares of the `𝜕B/𝜕𝜃` values. The smaller the value, the better the fitting.
+    rss: f64,
+}
+
+impl StationaryCurveSegment {
+    /// Creates a new `StationaryCurveSegment` from the `flux` and `theta` arrays.
+    ///
+    /// # Panics
+    ///
+    /// This method panics if the input arrays do not have the same length or have 0 elements.
+    #[must_use]
+    pub(crate) fn new(flux_array: MagneticFluxArray, theta_array: Array1<f64>) -> Self {
+        let segment = ParametrizedSegment::new(flux_array, theta_array);
+        let rss = f64::NAN;
+        Self { segment, rss }
+    }
+
+    /// Returns the length of the segment.
+    #[must_use]
+    #[expect(clippy::len_without_is_empty, reason = "cannot create empty segments")]
+    pub fn len(&self) -> usize {
+        self.segment.len()
+    }
+
+    /// Returns the kind of the contained `flux_array`.
+    #[must_use]
+    pub fn flux_kind(&self) -> MagneticFluxKind {
+        self.segment.flux_kind()
+    }
+
+    /// Returns a reference to the contained `flux_array`.
+    #[must_use]
+    pub fn flux_array(&self) -> &MagneticFluxArray {
+        &self.segment.flux_array
+    }
+
+    /// Returns a reference to the contained `theta_array`.
+    #[must_use]
+    pub fn theta_array(&self) -> &Array1<f64> {
+        &self.segment.theta_array
+    }
+}
+
+/// Calculations.
+impl StationaryCurveSegment {
+    /// Calculates the segment's critical points, that is, the points for which `dot(θ)(t) = 0`.
+    ///
+    /// Note that no intermediate steps are stored.
+    #[must_use]
+    pub fn calculate_critical_points(
+        &self,
+        machine: Machine,
+        pzeta: f64,
+        mu: f64,
+    ) -> Vec<CriticalPoint> {
+        let theta_dot_array = self.calculate_theta_dot(machine, pzeta, mu);
+        let root_indices = ParametrizedSegment::find_root_indices(&theta_dot_array);
+        let exact_roots = self.find_exact_roots(machine, root_indices, pzeta, mu);
+        self.critical_points_from_exact_roots(machine, &exact_roots, pzeta, mu)
+    }
+
+    /// Calculates the `dot(θ)` array from the contained `flux` and `theta` arrays and the constants
+    /// of motion `Pζ` and `μ`.
+    #[must_use]
+    fn calculate_theta_dot(&self, machine: Machine, pzeta: f64, mu: f64) -> Array1<f64> {
+        let Ok(theta_dot_array) = GCHamiltonian::eval_theta_dot_array(
+            machine,
+            &self.segment.theta_array,
+            &self.segment.flux_array,
+            pzeta,
+            mu,
+        ) else {
+            unreachable!("By construction theta and flux are in-bounds and flux is good")
+        };
+        theta_dot_array
+    }
+
+    /// Finds the true roots of `dot(θ)(t)`.
+    ///
+    /// For every `t[i]`, `t[i+1]` interval where `dot(θ)` changes sign, we construct the 1D function:
+    /// `f(t) = f(ψ(t), θ(t)) = dot(θ)(t)` and find its root.
+    pub(crate) fn find_exact_roots(
+        &self,
+        machine: Machine,
+        root_indices: Box<[usize]>,
+        pzeta: f64,
+        mu: f64,
+    ) -> Box<[f64]> {
+        let mut exact_roots = Vec::new();
+        root_indices.into_iter().for_each(|index| {
+            // Index into the arrays at the edges of the `[i, i+1]` interval. By construction of
+            // the parameter `t`, it always holds that `tlo<thi` and therefore the interpolation
+            // is always defined.
+            let tlo = self.segment.t[index]; // == index
+            let thi = self.segment.t[index + 1]; // == index + 1
+            let theta_lo = self.segment.theta_array[index];
+            let theta_hi = self.segment.theta_array[index + 1];
+            let flux_lo = self.segment.flux_array[index];
+            let flux_hi = self.segment.flux_array[index + 1];
+            let ta = [tlo, thi];
+
+            let ya_theta = [theta_lo, theta_hi];
+            let ya_flux = [flux_lo, flux_hi];
+
+            let acc = &mut Accelerator2d::new();
+
+            let fun = |t: f64| {
+                if !(tlo..=thi).contains(&t) {
+                    return f64::MAX; // stop the solver. Landing here should be extremely unlikely
+                }
+
+                // `t -> θ` interpolation
+                let theta = LinearInterpolator
+                    .eval(&ta, &ya_theta, t, acc.xacc())
+                    .expect("arrays and values ok");
+
+                // `t -> ψ/ψp` interpolation
+                let flux = LinearInterpolator
+                    .eval(&ta, &ya_flux, t, acc.xacc())
+                    .expect("arrays and values ok");
+
+                let flux = self.flux_kind().to_magnetic_flux(flux);
+                GCHamiltonian::eval_theta_dot(machine, theta, flux, pzeta, mu).unwrap_or(f64::NAN)
+            };
+
+            let Ok(t_root) = find_root_brent(tlo, thi, fun, &mut FixedPointConvergency) else {
+                return;
+            };
+
+            exact_roots.push(t_root);
+        });
+        exact_roots.into_boxed_slice()
+    }
+
+    /// Brings each of the segment's points (as calculated by the contour generator) closer to
+    /// the true stationary curve.
+    ///
+    /// This is achieved by finding the root of `𝜕B/𝜕𝜃 = 0` close to the initial point using an
+    /// iterative method.
+    ///
+    /// The contour point and its two adjacent points form a triangle. It is highly likely that the
+    /// true stationary curve passes through this triangle. We then restrict `ψ` and `θ` to move on
+    /// the line defined by the initial point and the midpoint of the two adjacent points, thus
+    /// reducing the problem to the 1D root finding problem `𝜕B/𝜕𝜃(ψ(θ), θ) = 0`.
+    ///
+    /// We use the `secant` method with initial points the point itself and the midpoint of its two
+    /// adjacent contour points, which lie very close to the true curve. The secant method permits
+    /// stepping outside this interval in case the true curve passes outside the triangle.
+    pub(crate) fn improve(&mut self, machine: Machine) {
+        let len = self.len();
+        // skip the first and last points as we cannot define the triangle. These points always lie
+        // on the axis or on the wall.
+        (0..len).skip(1).take(len - 2).for_each(|i| {
+            let x = self.segment.theta_array[i];
+            let y = self.segment.flux_array[i];
+            let xlo = self.segment.theta_array[i - 1];
+            let xhi = self.segment.theta_array[i + 1];
+            let ylo = self.segment.flux_array[i - 1];
+            let yhi = self.segment.flux_array[i + 1];
+            let xmid = xlo.midpoint(xhi);
+            let ymid = ylo.midpoint(yhi);
+
+            // Define `ψ(θ)` line
+            if xmid == 0.0 {
+                return;
+            };
+            let slope = (ymid - y) / (xmid - x);
+            let point = parabola::Point { x: xmid, y: ymid };
+            let line_equation = parabola::Line::from_slope_point(slope, point);
+            let line = |theta| line_equation.eval(theta);
+
+            // Define function over line
+            let acc = &mut Accelerator2d::new();
+            let fun = |theta: f64| {
+                let theta = theta.rem_euclid(TAU);
+                let flux = self.flux_kind().to_magnetic_flux(line(theta));
+                machine
+                    .bfield()
+                    .eval_deriv_theta(flux, theta, acc)
+                    .unwrap_or(f64::NAN) // stop the solver
+            };
+
+            let mut convergency = ContourConvergency;
+            let Ok(root) = find_root_secant(x, xmid, fun, &mut convergency) else {
+                return;
+            };
+
+            let root_flux = line(root);
+            self.segment.theta_array[i] = root.rem_euclid(TAU);
+            self.segment.flux_array.set_value(i, root_flux);
+        });
+    }
+
+    /// Calculates the residual sum of squares of `𝜕B/𝜕𝜃` over the stored `theta` and `flux` arrays.
+    pub(crate) fn calculate_rss(&mut self, machine: Machine) {
+        let acc = &mut Accelerator2d::new();
+        self.rss = self
+            .segment
+            .flux_array
+            .values()
+            .iter()
+            .zip(&self.segment.theta_array)
+            .map(|(flux, theta)| {
+                let flux = self.flux_kind().to_magnetic_flux(*flux);
+                match machine.bfield().eval_deriv_theta(flux, *theta, acc) {
+                    Ok(db_dtheta) => db_dtheta,
+                    Err(_) => unreachable!("contours are always in-bounds"),
+                }
+            })
+            .collect::<Array1<f64>>()
+            .powi(2)
+            .sum()
+    }
+
+    /// Calculates the critical points by interpolating each exact root to the corresponding `θ` and
+    /// `ψ/ψp` points.
+    pub(crate) fn critical_points_from_exact_roots(
+        &self,
+        machine: Machine,
+        exact_roots: &[f64],
+        pzeta: f64,
+        mu: f64,
+    ) -> Vec<CriticalPoint> {
+        self.segment
+            .interpolate_exact_roots(exact_roots)
+            .into_iter()
+            .filter_map(|(theta, flux)| CriticalPoint::new(machine, theta, flux, pzeta, mu).ok())
+            .collect()
+    }
+}
+
+// ===============================================================================================
+
 impl std::fmt::Debug for StationaryCurve {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let duration_str: String = self
@@ -307,7 +610,7 @@ impl std::fmt::Debug for StationaryCurve {
         f.debug_struct("StationaryCurve")
             .field(
                 "flux_kind",
-                &self.segments.first().map(ParametrizedSegment::flux_kind),
+                &self.segments.first().map(StationaryCurveSegment::flux_kind),
             )
             .field("number of segments", &self.segments.len())
             .field("segments", &self.segments)

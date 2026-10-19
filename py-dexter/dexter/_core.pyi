@@ -12,6 +12,7 @@ from dexter.types import (
     Array1,
     Array2,
     ArrayShape,
+    BoundaryExtremumKind,
     CriticalPointKind,
     Directionality,
     EnergyPzetaPosition,
@@ -663,32 +664,31 @@ class _PyGCHamiltonian:
         pzeta: float,
         mu: float,
     ) -> Array1: ...
-    @classmethod
-    def build_stationary_curve(
-        cls,
-        qfactor: _PyQfactor,
-        current: _PyCurrent,
-        bfield: _PyBfield,
-    ) -> _PyStationaryCurve: ...
     @override
     def __repr__(self) -> str: ...
     @override
     def __str__(self) -> str: ...
 
 class _PyStationaryCurve:
-    segments: list[_PyParametrizedSegment]
+    segments: list[_PyStationaryCurveSegment]
 
+    def __init__(
+        self,
+        qfactor: _PyQfactor,
+        current: _PyCurrent,
+        bfield: _PyBfield,
+    ) -> None: ...
     def __len__(self) -> int: ...
     @override
     def __repr__(self) -> str: ...
     @override
     def __str__(self) -> str: ...
 
-class _PyParametrizedSegment:
+class _PyStationaryCurveSegment:
     flux_kind: MagneticFluxKind
 
     def flux_array(self) -> _PyMagneticFluxArray: ...
-    def get_array(self, name: str) -> Array1 | None: ...
+    def theta_array(self) -> Array1: ...
     def __len__(self) -> int: ...
     @override
     def __repr__(self) -> str: ...
@@ -702,6 +702,19 @@ class _PyCriticalPoint:
     pzeta: float
     mu: float
     kind: CriticalPointKind
+
+    @override
+    def __repr__(self) -> str: ...
+    @override
+    def __str__(self) -> str: ...
+
+class _PyBoundaryExtremum:
+    theta: float
+    flux: _PyMagneticFlux
+    energy: float
+    pzeta: float
+    mu: float
+    kind: BoundaryExtremumKind
 
     @override
     def __repr__(self) -> str: ...
@@ -730,6 +743,7 @@ class _PyEnergyPzetaPlane:
     tp_upper_values: Array1
     tp_lower_values: Array1
     critical_points: list[_PyCriticalPoint]
+    boundary_extrema: list[_PyBoundaryExtremum]
 
     def __init__(
         self,
@@ -745,8 +759,17 @@ class _PyEnergyPzetaPlane:
         bfield: _PyBfield,
         pzeta_array: Array1,
     ) -> None: ...
+    def calculate_boundary_extrema(
+        self,
+        qfactor: _PyQfactor,
+        current: _PyCurrent,
+        bfield: _PyBfield,
+        pzeta_array: Array1,
+    ) -> None: ...
     def critical_points_pzetas(self) -> Array1: ...
     def critical_points_energies(self) -> Array1: ...
+    def boundary_extrema_pzetas(self) -> Array1: ...
+    def boundary_extrema_energies(self) -> Array1: ...
     @override
     def __repr__(self) -> str: ...
     @override

@@ -10,7 +10,7 @@ object to be up-to-date.
 from typing import Any
 
 from dexter.machine.machine import Machine
-from dexter.comspace.curve import CriticalPoint
+from dexter.comspace.gc_hamiltonian import CriticalPoint
 from dexter.simulate.initial import InitialConditions
 from dexter.simulate.params import SolverParams, IntersectParams
 import dexter.simulate.plot as plot
@@ -132,7 +132,6 @@ class Particle(_ReprStrImpl, _RustTypeWrapper):
 
     def __init__(self, initial_conditions: InitialConditions) -> None:
         self._r = _PyParticle(initial_conditions._r)
-        pass
 
     @classmethod
     def FromCriticalPoint(cls, point: CriticalPoint) -> Particle:

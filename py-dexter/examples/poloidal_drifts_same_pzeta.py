@@ -56,8 +56,10 @@ queue.retain_orbit_types(
     ]
 )
 plane = dex.EnergyPzetaPlane(machine, mu)
+pzeta_array = np.linspace(-0.4, 0.1, 500) * machine.psip_last.value
+plane.calculate_critical_points(pzeta_array)
 plane.add_particles(queue)
-fig, ax = plane.show(xlim=(-0.4, 0.1), ylim=(0.8, 1.4), show=False)
+fig, ax = plane.show(xlim=(-0.4, 0.1), ylim=(0.8, 1.4), curves=True, show=False)
 fig.set_figheight(4)
 fig.set_figwidth(3)
 ax.legend().remove()

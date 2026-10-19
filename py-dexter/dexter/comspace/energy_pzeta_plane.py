@@ -8,7 +8,7 @@ from matplotlib.figure import Figure
 from matplotlib.axes import Axes
 
 from dexter.machine.machine import Machine
-from dexter.comspace.curve import CriticalPoint
+from dexter.comspace.gc_hamiltonian import CriticalPoint, BoundaryExtremum
 from dexter.simulate.particle import Particle
 from dexter.simulate.queue import Queue
 from dexter.simulate.plot import orbit_color
@@ -67,6 +67,9 @@ class EnergyPzetaPlane(_ReprStrImpl):
     critical_points
         The calculated critical points, calculated through the
         [`calculate_critical_points`][dexter.EnergyPzetaPlane.calculate_critical_points] method.
+    boundary_extrema
+        The calculated boundary extrema, calculated through the
+        [`calculate_boundary_extrema`][dexter.EnergyPzetaPlane.calculate_boundary_extrema] method.
 
     Example
     -------
@@ -82,6 +85,12 @@ class EnergyPzetaPlane(_ReprStrImpl):
     ... )
     >>>
     >>> plane = dex.EnergyPzetaPlane(machine, mu=2e-5)
+    >>> fig, ax = plane.show(curves=True)
+    >>>
+    >>> # Critical points and Boundary extrema
+    >>> pzeta_array = np.linspace(-1.2, 0.3, 100) * machine.psip_last.value
+    >>> plane.calculate_critical_points(pzeta_array)
+    >>> plane.calculate_boundary_extrema(pzeta_array)
     >>> fig, ax = plane.show()
 
     ```
@@ -119,6 +128,25 @@ class EnergyPzetaPlane(_ReprStrImpl):
             pzeta_array=_into_pyarray1f64(pzeta_array),
         )
 
+    def calculate_boundary_extrema(self, pzeta_array: Array1):
+        r"""Calculates the Hamiltonian's boundary extrema over the `pzeta_array`.
+
+        The critical points are stored in `#!python self` and can be accessed through
+        `#!python self.boundary_extrema`.
+
+        Parameters
+        ----------
+        pzeta_array
+            The $P_\zeta$ values, *in Normalized Units*. It usually makes more sense to normalize
+            `pzeta_array` with respect to $\psi_{p, LCFS}$.
+        """
+        self._r.calculate_boundary_extrema(
+            qfactor=self.machine.qfactor._r,
+            current=self.machine.current._r,
+            bfield=self.machine.bfield._r,
+            pzeta_array=_into_pyarray1f64(pzeta_array),
+        )
+
     @property
     def mu(self) -> float:
         return self._r.mu
@@ -126,6 +154,10 @@ class EnergyPzetaPlane(_ReprStrImpl):
     @property
     def critical_points(self) -> list[CriticalPoint]:
         return [CriticalPoint._wrap(_point) for _point in self._r.critical_points]
+
+    @property
+    def boundary_extrema(self) -> list[BoundaryExtremum]:
+        return [BoundaryExtremum._wrap(_point) for _point in self._r.boundary_extrema]
 
     def _critical_points_pzetas(self) -> Array1:
         r"""Returns an array with the calculated critical points’ `Pζ`.
@@ -140,6 +172,20 @@ class EnergyPzetaPlane(_ReprStrImpl):
         The points are visited in order of creation, as in `self.critical_points`.
         """
         return self._r.critical_points_energies()
+
+    def _boundary_extrema_pzetas(self) -> Array1:
+        r"""Returns an array with the calculated boundary extrema’s `Pζ`.
+
+        The points are visited in order of creation, as in `self.boundary_extrema`.
+        """
+        return self._r.boundary_extrema_pzetas()
+
+    def _boundary_extrema_energies(self) -> Array1:
+        r"""Returns an array with the calculated boundary extrema’s energies.
+
+        The points are visited in order of creation, as in `self.boundary_extrema`.
+        """
+        return self._r.boundary_extrema_energies()
 
     def add_particles(self, obj: Particle | Queue):
         r"""Adds particles to the plane, discarding any previously stored ones.
@@ -163,6 +209,8 @@ class EnergyPzetaPlane(_ReprStrImpl):
         ylim: float | tuple[float, float] = 3,
         particles: bool = True,
         critical_points: bool = True,
+        boundary_extrema: bool = True,
+        curves: bool = False,
         show: bool = True,
     ) -> tuple[Figure, Axes]:
         r"""Plots the plane with the orbit classification curves.
@@ -178,6 +226,11 @@ class EnergyPzetaPlane(_ReprStrImpl):
             Whether or not to plot the stored particles' $(E, P_\zeta)$ points.
         critical_points
             Whether or not to plot the stored critical points.
+        boundary_extrema
+            Whether or not to plot the stored boundary extrema.
+        curves
+            Whether or not to plot the analytical curves (parabolas and approximate
+            trapped-passing boundary).
         show
             Whether or not to call `plt.show()`.
         """
@@ -193,67 +246,8 @@ class EnergyPzetaPlane(_ReprStrImpl):
             case _:
                 raise RuntimeError("'ylim' must be a float or a 2-tuple of floats")
 
-        PARABOLA_XAXIS_DENSITY = 1000
-
         psip_last = self.machine.psip_last.value
         mu = self._r.mu
-
-        intercept = ymax * mu
-        axis_intercepts = self._r.axis_parabola.horizontal_intercepts(intercept)
-        lw_intercepts = self._r.left_wall_parabola.horizontal_intercepts(intercept)
-        rw_intercepts = self._r.right_wall_parabola.horizontal_intercepts(intercept)
-
-        axis_span = np.linspace(*axis_intercepts, PARABOLA_XAXIS_DENSITY)
-        lw_span = np.linspace(*lw_intercepts, PARABOLA_XAXIS_DENSITY)
-        rw_span = np.linspace(*rw_intercepts, PARABOLA_XAXIS_DENSITY)
-
-        axis = self._r.axis_parabola.eval_array(axis_span) / mu
-        lw = self._r.left_wall_parabola.eval_array(lw_span) / mu
-        rw = self._r.right_wall_parabola.eval_array(rw_span) / mu
-
-        tp_pzeta = self._r.tp_pzeta_values / psip_last  # not always a linspace
-        tp_lower = self._r.tp_lower_values / mu
-        tp_upper = self._r.tp_upper_values / mu
-
-        LINEWIDTH = 3
-        ZORDER = 20
-        MA_COLOR = "xkcd:aqua"
-        LW_COLOR = "xkcd:gold"
-        RW_COLOR = "xkcd:jade green"
-        TP_COLOR = "xkcd:pinkish purple"
-
-        ax.plot(
-            lw_span / psip_last,
-            lw,
-            c=LW_COLOR,
-            linewidth=LINEWIDTH,
-            zorder=ZORDER,
-            label=r"$Left\ Wall$",
-        )
-        ax.plot(
-            rw_span / psip_last,
-            rw,
-            c=RW_COLOR,
-            linewidth=LINEWIDTH,
-            zorder=ZORDER,
-            label=r"$Right\ Wall$",
-        )
-        ax.plot(
-            axis_span / psip_last,
-            axis,
-            c=MA_COLOR,
-            linewidth=LINEWIDTH,
-            zorder=ZORDER,
-            label=r"$Magnetic\ Axis$",
-        )
-        ax.plot(
-            np.concat((tp_pzeta, tp_pzeta[::-1], [-1])),
-            np.concat((tp_lower, tp_upper[::-1], [tp_lower[0]])),
-            c=TP_COLOR,
-            linewidth=LINEWIDTH,
-            zorder=ZORDER,
-            label=r"$Trapped-Passing\ Boundary$",
-        )
 
         if self.machine._reg is not None:
             si_ax = ax.twinx()
@@ -285,18 +279,105 @@ class EnergyPzetaPlane(_ReprStrImpl):
                 zorder=zorder,
             )
 
+        _had_points = False
+
         if critical_points:
             pzetas = self._critical_points_pzetas() / psip_last
             energies = self._critical_points_energies() / mu
+            if len(pzetas) > 0:
+                _had_points = True
+                ax.plot(
+                    pzetas,
+                    energies,
+                    c="xkcd:purple blue",
+                    linewidth=0,
+                    marker=".",
+                    markeredgewidth=0,
+                    markersize=4,
+                    zorder=20,
+                    label=r"$Critical\ Points$",
+                )
+
+        if boundary_extrema:
+            pzetas = self._boundary_extrema_pzetas() / psip_last
+            energies = self._boundary_extrema_energies() / mu
+            if len(pzetas) > 0:
+                _had_points = True
+                ax.plot(
+                    pzetas,
+                    energies,
+                    c="xkcd:coral",
+                    linewidth=0,
+                    marker=".",
+                    markeredgewidth=0,
+                    markersize=4,
+                    zorder=19,
+                    label=r"$Boundary\ Extrema$",
+                )
+
+        if curves:
+            PARABOLA_XAXIS_DENSITY = 1000
+
+            intercept = ymax * mu
+            axis_intercepts = self._r.axis_parabola.horizontal_intercepts(intercept)
+            lw_intercepts = self._r.left_wall_parabola.horizontal_intercepts(intercept)
+            rw_intercepts = self._r.right_wall_parabola.horizontal_intercepts(intercept)
+
+            axis_span = np.linspace(*axis_intercepts, PARABOLA_XAXIS_DENSITY)
+            lw_span = np.linspace(*lw_intercepts, PARABOLA_XAXIS_DENSITY)
+            rw_span = np.linspace(*rw_intercepts, PARABOLA_XAXIS_DENSITY)
+
+            axis = self._r.axis_parabola.eval_array(axis_span) / mu
+            lw = self._r.left_wall_parabola.eval_array(lw_span) / mu
+            rw = self._r.right_wall_parabola.eval_array(rw_span) / mu
+
+            tp_pzeta = self._r.tp_pzeta_values / psip_last  # not always a linspace
+            tp_lower = self._r.tp_lower_values / mu
+            tp_upper = self._r.tp_upper_values / mu
+
+            LINEWIDTH = 3
+            ZORDER = 15
+            MA_COLOR = "xkcd:aqua"
+            LW_COLOR = "xkcd:gold"
+            RW_COLOR = "xkcd:jade green"
+            TP_COLOR = "xkcd:pinkish purple"
+            CURVES_ALPHA = 0.5 if curves and _had_points else 1
+
             ax.plot(
-                pzetas,
-                energies,
-                c="xkcd:royal blue",
-                linewidth=0,
-                marker=".",
-                markeredgewidth=0,
-                markersize=5,
-                zorder=20,
+                lw_span / psip_last,
+                lw,
+                c=LW_COLOR,
+                linewidth=LINEWIDTH,
+                zorder=ZORDER,
+                label=r"$Left\ Wall$",
+                alpha=CURVES_ALPHA,
+            )
+            ax.plot(
+                rw_span / psip_last,
+                rw,
+                c=RW_COLOR,
+                linewidth=LINEWIDTH,
+                zorder=ZORDER,
+                label=r"$Right\ Wall$",
+                alpha=CURVES_ALPHA,
+            )
+            ax.plot(
+                axis_span / psip_last,
+                axis,
+                c=MA_COLOR,
+                linewidth=LINEWIDTH,
+                zorder=ZORDER,
+                label=r"$Magnetic\ Axis$",
+                alpha=CURVES_ALPHA,
+            )
+            ax.plot(
+                np.concat((tp_pzeta, tp_pzeta[::-1], [-1])),
+                np.concat((tp_lower, tp_upper[::-1], [tp_lower[0]])),
+                c=TP_COLOR,
+                linewidth=LINEWIDTH,
+                zorder=ZORDER,
+                label=r"$Trapped-Passing\ Boundary$",
+                alpha=CURVES_ALPHA,
             )
 
         ax.grid(True)

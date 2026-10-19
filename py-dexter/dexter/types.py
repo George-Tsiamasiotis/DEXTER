@@ -231,6 +231,14 @@ r"""The kind of a [`CriticalPoint`][dexter.CriticalPoint]
 - `Unknown`: Unknown kind.
 """
 
+BoundaryExtremumKind: TypeAlias = Literal["Unknown", "Minimum", "Maximum"]
+r"""The kind of a [`CriticalPoint`][dexter.CriticalPoint]
+
+- `Unknown`: Unknown kind.
+- `Minimum`: Extremum point of minimum energy.
+- `Maximum`: Extremum point of maximum energy.
+"""
+
 # =================== Simulate
 
 CoordinateSet: TypeAlias = Literal[

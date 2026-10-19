@@ -94,18 +94,6 @@ impl PyGCHamiltonian {
         )?;
         Ok(array.into_pyarray(py))
     }
-
-    #[classmethod]
-    pub fn build_stationary_curve(
-        _: &Bound<'_, PyType>,
-        qfactor: &PyQfactor,
-        current: &PyCurrent,
-        bfield: &PyBfield,
-    ) -> PyStationaryCurve {
-        let machine = MachineBuilder::new(qfactor.inner(), current.inner(), bfield.inner()).build();
-        let curve = GCHamiltonian::build_stationary_curve(machine);
-        PyStationaryCurve(curve)
-    }
 }
 
 // ===============================================================================================
@@ -115,13 +103,19 @@ pub struct PyStationaryCurve(pub StationaryCurve);
 
 #[pymethods]
 impl PyStationaryCurve {
+    #[new]
+    pub fn new(qfactor: &PyQfactor, current: &PyCurrent, bfield: &PyBfield) -> Self {
+        let machine = MachineBuilder::new(qfactor.inner(), current.inner(), bfield.inner()).build();
+        Self(StationaryCurve::new(machine))
+    }
+
     #[getter]
     pub fn segments<'py>(&self, py: Python<'py>) -> Result<Bound<'py, PyList>> {
-        let py_segments: Vec<PyParametrizedSegment> = self
+        let py_segments: Vec<PyStationaryCurveSegment> = self
             .0
             .segments()
             .iter()
-            .map(|segment| PyParametrizedSegment(segment.clone()))
+            .map(|segment| PyStationaryCurveSegment(segment.clone()))
             .collect();
         Ok(PyList::new(py, py_segments)?)
     }
@@ -133,11 +127,11 @@ impl PyStationaryCurve {
 
 // ===============================================================================================
 
-#[pyclass(name = "_PyParametrizedSegment")]
-pub struct PyParametrizedSegment(pub ParametrizedSegment);
+#[pyclass(name = "_PyStationaryCurveSegment", immutable_type, frozen)]
+pub struct PyStationaryCurveSegment(pub StationaryCurveSegment);
 
 #[pymethods]
-impl PyParametrizedSegment {
+impl PyStationaryCurveSegment {
     #[getter]
     pub fn flux_kind(&self) -> String {
         format!("{:?}", self.0.flux_array().kind())
@@ -151,22 +145,8 @@ impl PyParametrizedSegment {
         PyMagneticFluxArray(self.0.flux_array().to_owned())
     }
 
-    pub fn get_array<'py>(
-        &self,
-        py: Python<'py>,
-        name: &str,
-    ) -> Result<Option<Bound<'py, PyArray1<f64>>>> {
-        let array = match name {
-            "t_array" => self.0.t_array(),
-            "theta_array" => self.0.theta_array(),
-            _ => {
-                return Err(DexterError::AttributeError {
-                    obj: "ParametrizedSegment".into(),
-                    attr: name.into(),
-                });
-            }
-        };
-        Ok(Some(array.to_owned().into_pyarray(py)))
+    pub fn theta_array<'py>(&self, py: Python<'py>) -> Result<Option<Bound<'py, PyArray1<f64>>>> {
+        Ok(Some(self.0.theta_array().to_owned().into_pyarray(py)))
     }
 }
 
@@ -177,6 +157,44 @@ pub struct PyCriticalPoint(pub CriticalPoint);
 
 #[pymethods]
 impl PyCriticalPoint {
+    #[getter]
+    pub fn theta(&self) -> f64 {
+        self.0.theta()
+    }
+
+    #[getter]
+    pub fn flux(&self) -> PyMagneticFlux {
+        PyMagneticFlux(self.0.flux())
+    }
+
+    #[getter]
+    pub fn energy(&self) -> f64 {
+        self.0.energy()
+    }
+
+    #[getter]
+    pub fn pzeta(&self) -> f64 {
+        self.0.pzeta()
+    }
+
+    #[getter]
+    pub fn mu(&self) -> f64 {
+        self.0.mu()
+    }
+
+    #[getter]
+    pub fn kind(&self) -> String {
+        format!("{:?}", self.0.kind())
+    }
+}
+
+// ===============================================================================================
+
+#[pyclass(name = "_PyBoundaryExtremum", immutable_type, frozen)]
+pub struct PyBoundaryExtremum(pub BoundaryExtremum);
+
+#[pymethods]
+impl PyBoundaryExtremum {
     #[getter]
     pub fn theta(&self) -> f64 {
         self.0.theta()
@@ -225,7 +243,9 @@ impl PyGCHamiltonian {
 
 wrapper_debug_export!(PyStationaryCurve);
 impl_py_repr!(PyStationaryCurve, pretty);
-wrapper_debug_export!(PyParametrizedSegment);
-impl_py_repr!(PyParametrizedSegment, pretty);
+wrapper_debug_export!(PyStationaryCurveSegment);
+impl_py_repr!(PyStationaryCurveSegment, pretty);
 wrapper_debug_export!(PyCriticalPoint);
 impl_py_repr!(PyCriticalPoint, pretty);
+wrapper_debug_export!(PyBoundaryExtremum);
+impl_py_repr!(PyBoundaryExtremum, pretty);

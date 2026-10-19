@@ -60,7 +60,7 @@ queue.classify(machine)
 
 plane = dex.EnergyPzetaPlane(machine, mu)
 plane.add_particles(queue)
-fig, ax = plane.show(particles=True, ylim=(0.4, 2.5), show=False)
+fig, ax = plane.show(particles=True, ylim=(0.4, 2.5), curves=True, show=False)
 fig.set_figwidth(9)
 
 for p in queue.particles():

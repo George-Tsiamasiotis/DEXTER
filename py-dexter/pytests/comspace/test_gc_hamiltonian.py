@@ -63,13 +63,3 @@ def test_gc_hamiltonian_eval_theta_dot_array(nc_machine: dex.Machine):
     assert np.all(np.isfinite(h_psi))
     assert np.all(np.isfinite(h_psip))
     assert np.all(np.isclose(h_psi, h_psip))
-
-
-def test_parametrized_segment(
-    lar_machine: dex.Machine,
-    lar_stationary_curve: dex.StationaryCurve,
-):
-    segment = lar_stationary_curve.segments[0]
-    assert np.all(segment.t_array == np.linspace(0.0, len(segment) - 1, len(segment)))
-    assert np.all(np.isfinite(segment.flux_array.values))
-    assert np.all(np.isfinite(segment.theta_array))

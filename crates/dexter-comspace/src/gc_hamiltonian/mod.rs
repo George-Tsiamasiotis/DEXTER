@@ -5,15 +5,20 @@
 #![expect(clippy::min_ident_chars, reason = "Hamiltonian terms")]
 
 mod array;
+mod boundary;
+mod boundary_extremum;
+mod critical_point;
 mod curve;
-mod point;
 mod segment;
 
 use std::f64::consts::TAU;
 
-pub use curve::StationaryCurve;
-pub use point::{CriticalPoint, CriticalPointKind};
-pub use segment::ParametrizedSegment;
+pub(crate) use segment::ParametrizedSegment;
+
+pub use boundary::Boundary;
+pub use boundary_extremum::{BoundaryExtremum, BoundaryExtremumKind};
+pub use critical_point::{CriticalPoint, CriticalPointKind};
+pub use curve::{StationaryCurve, StationaryCurveSegment};
 
 // ===============================================================================================
 
@@ -177,14 +182,6 @@ impl GCHamiltonian {
         let theta_dot_second = g * brace / dterm;
 
         Ok(theta_dot_first + theta_dot_second)
-    }
-
-    /// Builds the [`StationaryCurve`] of `machine`.
-    ///
-    /// The `StationaryCurve` is constructed w.r.t [`Machine::good_flux`].
-    #[must_use]
-    pub fn build_stationary_curve(machine: Machine) -> StationaryCurve {
-        StationaryCurve::build(machine)
     }
 }
 
