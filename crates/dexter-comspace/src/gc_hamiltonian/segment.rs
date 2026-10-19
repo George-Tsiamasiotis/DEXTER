@@ -1,11 +1,87 @@
 //! Defines [`ParametrizedSegment`], a container type to store and parametrize the Stationary
 //! Curve's distinct segments.
 
-use dexter_machine::{Accelerator, Machine, MagneticFluxArray, MagneticFluxKind};
-use ndarray::{Array1, ArrayRef1, ArrayView1};
-use rsl_interpolation::{BuildInterpolator, Interpolation, LinearInterpolator};
+use std::f64::consts::TAU;
 
 use crate::{CriticalPoint, GCHamiltonian};
+use dexter_machine::{Accelerator, Accelerator2d, Machine, MagneticFluxArray, MagneticFluxKind};
+use ndarray::{Array1, ArrayRef1, ArrayView1};
+use parabola::{Line, Point};
+use roots::{Convergency, SearchError, find_root_brent, find_root_secant};
+use rsl_interpolation::{Interpolation, LinearInterpolator};
+
+/// Convergency criteria for better fitting the segments produced by the contour generator on the
+/// true stationary curve.
+struct ContourConvergency;
+
+impl ContourConvergency {
+    /// Maximum allowed value for `abs(𝜕B/𝜕𝜃)`.
+    const EPS: f64 = 1e-16;
+    /// Maximum allowed iterations.
+    const MAX_ITER: usize = 10;
+    /// Maximum allowed difference between the last elements `theta[i]` and `theta[i-1]`.
+    ///
+    /// Since the parameter `t` correspond to the array indices, a value of `1e-6` means that the
+    /// the series converges when `ψ(t)` and `θ(t)` are approximated within `.0001%` of the initial
+    /// spacing.
+    const MAX_PARAMETER_DIFF: f64 = 1e-8;
+}
+
+#[expect(clippy::renamed_function_params, reason = "clarity")]
+impl Convergency<f64> for ContourConvergency {
+    fn is_root_found(&mut self, db_dtheta: f64) -> bool {
+        db_dtheta.abs() < Self::EPS.abs()
+    }
+    fn is_converged(&mut self, theta_lo: f64, theta_hi: f64) -> bool {
+        (theta_lo - theta_hi).abs() < Self::MAX_PARAMETER_DIFF
+    }
+    fn is_iteration_limit_reached(&mut self, iter: usize) -> bool {
+        iter >= Self::MAX_ITER
+    }
+}
+
+/// Helper struct to keep track of the errors encountered during the
+/// [`ParametrizedSegment::improve`] method.
+#[derive(Default, Clone, Copy)]
+struct ImproveStats {
+    /// From [`SearchError::NoConvergency`].
+    no_convergency: usize,
+    /// From [`SearchError::NoBracketing`].
+    no_bracketing: usize,
+    /// From [`SearchError::ZeroDerivative`].
+    zero_derivative: usize,
+    /// Average number of steps over all analyses.
+    average_steps: f64,
+}
+
+// ===============================================================================================
+
+/// Convergency criteria for finding the root of `dot(θ)(t)`.
+struct FixedPointConvergency;
+
+impl FixedPointConvergency {
+    /// Maximum allowed value for `abs(dot(θ))`.
+    const EPS: f64 = 1e-16;
+    /// Maximum allowed iterations.
+    const MAX_ITER: usize = 50;
+    /// Maximum allowed difference between the 2 last `t` values.
+    const MAX_PARAMETER_DIFF: f64 = 1e-7;
+}
+
+#[expect(clippy::renamed_function_params, reason = "clarity")]
+impl Convergency<f64> for FixedPointConvergency {
+    fn is_root_found(&mut self, theta_dot: f64) -> bool {
+        theta_dot.abs() < Self::EPS.abs()
+    }
+    fn is_converged(&mut self, tlo: f64, thi: f64) -> bool {
+        (tlo - thi).abs() < Self::MAX_PARAMETER_DIFF
+    }
+    fn is_iteration_limit_reached(&mut self, iter: usize) -> bool {
+        iter >= Self::MAX_ITER
+    }
+}
+
+// ===============================================================================================
 
 /// A 2D parametrized curve. Represents an individual segment of the
 /// [`StationaryCurve`][crate::StationaryCurve].
@@ -19,8 +95,10 @@ pub struct ParametrizedSegment {
     flux_array: MagneticFluxArray,
     /// The segment's `θ` values.
     theta_array: Array1<f64>,
-    /// The calculate critical points.
-    critical_points: Vec<CriticalPoint>,
+    /// Statistics about the [`Self::improve`] method.
+    improve_stats: ImproveStats,
+    /// The residual sum of squares of the `𝜕B/𝜕𝜃` values.
+    rss: f64,
 }
 
 impl ParametrizedSegment {
@@ -42,7 +120,8 @@ impl ParametrizedSegment {
             t,
             flux_array,
             theta_array,
-            critical_points: Vec::new(),
+            improve_stats: ImproveStats::default(),
+            rss: f64::NAN,
         }
     }
 
@@ -81,11 +160,6 @@ impl ParametrizedSegment {
     pub fn theta_array(&self) -> ArrayView1<'_, f64> {
         self.theta_array.view()
     }
-    /// Returns a reference on the calculated critical points.
-    #[must_use]
-    pub fn critical_points(&self) -> &[CriticalPoint] {
-        &self.critical_points
-    }
 
     /// Calculates the segment's, critical points, that is, the points for which `dot(θ)(t) = 0`.
     ///
@@ -99,8 +173,8 @@ impl ParametrizedSegment {
     ) -> Vec<CriticalPoint> {
         let theta_dot_array = self.calculate_theta_dot(machine, pzeta, mu);
         let root_indices = Self::find_root_indices(&theta_dot_array);
-        let exact_roots = self.find_exact_roots(root_indices, &theta_dot_array);
-        self._calculate_critical_points(machine, pzeta, mu, exact_roots)
+        let exact_roots = self.find_exact_roots(machine, root_indices, pzeta, mu);
+        self._calculate_critical_points(machine, exact_roots, pzeta, mu)
     }
 }
 
@@ -122,6 +196,100 @@ impl ParametrizedSegment {
         theta_dot_array
     }
 
+    /// Brings each of the segment's points (as calculated by the contour generator) closer to
+    /// the true stationary curve.
+    ///
+    /// This is achieved by finding the root of `𝜕B/𝜕𝜃 = 0` close to the initial point using an
+    /// iterative method.
+    ///
+    /// The contour point and its two adjacent points form a triangle. It is highly likely that the
+    /// true stationary curve passes through this triangle. We then restrict `ψ` and `θ` to move on
+    /// the line defined by the initial point and the midpoint of the two adjacent points, thus
+    /// reducing the problem to the 1D root finding problem `𝜕B/𝜕𝜃(ψ(θ), θ) = 0`.
+    ///
+    /// We use the `secant` method with initial points the point itself and the midpoint of its two
+    /// adjacent contour points, which lie very close to the true curve. The secant method permits
+    /// stepping outside this interval in case the true curve passes outside the triangle.
+    pub(crate) fn improve(&mut self, machine: Machine) {
+        let len = self.len();
+        // skip the first and last points as we cannot define the triangle. These points always lie
+        // on the axis or on the wall.
+        (0..len).skip(1).take(len - 2).for_each(|i| {
+            let x = self.theta_array[i];
+            let y = self.flux_array[i];
+            let xlo = self.theta_array[i - 1];
+            let xhi = self.theta_array[i + 1];
+            let ylo = self.flux_array[i - 1];
+            let yhi = self.flux_array[i + 1];
+            let xmid = xlo.midpoint(xhi);
+            let ymid = ylo.midpoint(yhi);
+
+            // Define `ψ(θ)` line
+            if xmid == 0.0 {
+                return;
+            };
+            let slope = (ymid - y) / (xmid - x);
+            let point = Point { x: xmid, y: ymid };
+            let line_equation = Line::from_slope_point(slope, point);
+            let line = |theta| line_equation.eval(theta);
+
+            // Define function over line
+            let mut steps = 0.0;
+            let acc = &mut Accelerator2d::new();
+            let fun = |theta: f64| {
+                let theta = theta.rem_euclid(TAU);
+                let flux = self.flux_kind().to_magnetic_flux(line(theta));
+                match machine.bfield().eval_deriv_theta(flux, theta, acc) {
+                    Ok(value) => {
+                        steps += 1.0;
+                        value
+                    }
+                    Err(_) => f64::MAX, // Stops the root finder. Should be unreachable
+                }
+            };
+
+            let mut convergency = ContourConvergency;
+            let root = match find_root_secant(x, xmid, fun, &mut convergency) {
+                Ok(root) => {
+                    self.improve_stats.average_steps += steps / self.len() as f64;
+                    root
+                }
+                Err(err) => {
+                    match err {
+                        SearchError::NoConvergency => self.improve_stats.no_convergency += 1,
+                        SearchError::NoBracketing => self.improve_stats.no_bracketing += 1,
+                        SearchError::ZeroDerivative => self.improve_stats.zero_derivative += 1,
+                    }
+                    return;
+                }
+            };
+
+            let root_flux = line(root);
+            self.theta_array[i] = root.rem_euclid(TAU);
+            self.flux_array.set_value(i, root_flux);
+        });
+    }
+
+    /// Calculates the residual sum of squares of `𝜕B/𝜕𝜃` over the stored `theta` and `flux` arrays.
+    pub(crate) fn calculate_rss(&mut self, machine: Machine) {
+        let acc = &mut Accelerator2d::new();
+        self.rss = self
+            .flux_array
+            .values()
+            .iter()
+            .zip(&self.theta_array)
+            .map(|(flux, theta)| {
+                let flux = self.flux_kind().to_magnetic_flux(*flux);
+                match machine.bfield().eval_deriv_theta(flux, *theta, acc) {
+                    Ok(db_dtheta) => db_dtheta,
+                    Err(_) => unreachable!("contours are always in-bounds"),
+                }
+            })
+            .collect::<Array1<f64>>()
+            .powi(2)
+            .sum()
+    }
+
     /// Calculates the floored indices of the `dot(θ)(t)` roots.
     ///
     /// The parameter `t` was defined to correspond to the index of each `(ψ, θ)` point. This means
@@ -139,42 +307,68 @@ impl ParametrizedSegment {
             .collect()
     }
 
-    /// Finds the true roots of `dot(θ)(t)` by interpolating `t` on the `[i, i+1]` intervals, where
-    /// `i` the already calculated floored indices.
+    /// Finds the true roots of `dot(θ)(t)`.
     ///
-    /// The interpolator is a linear interpolator defined as `dot(θ) -> t` within the `[i, i+1]`
-    /// interval. and calculates `t(dot(θ) = 0)`.
+    /// For every `t[i]`, `t[i+1]` interval where `dot(θ)` changes sign, we construct the 1D function:
+    /// `f(t) = f(ψ(t), θ(t)) = dot(θ)(t)` and find its root.
     pub(crate) fn find_exact_roots(
         &self,
+        machine: Machine,
         root_indices: Box<[usize]>,
-        theta_dot_array: &ArrayRef1<f64>,
+        pzeta: f64,
+        mu: f64,
     ) -> Box<[f64]> {
-        use std::cmp::Ordering::*;
+        let mut exact_roots = Vec::new();
+        root_indices.into_iter().for_each(|index| {
+            // Index into the arrays at the edges of the `[i, i+1]` interval. By construction of
+            // the parameter `t`, it always holds that `tlo<thi` and therefore the interpolation
+            // is always defined.
+            let tlo = self.t[index]; // == index
+            let thi = self.t[index + 1]; // == index + 1
+            let theta_lo = self.theta_array[index];
+            let theta_hi = self.theta_array[index + 1];
+            let flux_lo = self.flux_array[index];
+            let flux_hi = self.flux_array[index + 1];
+            let ta = [tlo, thi];
 
-        root_indices
-            .into_iter()
-            .filter_map(|index| -> Option<f64> {
-                // Define the `[x0, x1] -> [y0, y1]` intervals.
-                let xlo = theta_dot_array[index];
-                let xhi = theta_dot_array[index + 1];
-                let ylo = self.t[index];
-                let yhi = self.t[index + 1];
+            let ya_theta = [theta_lo, theta_hi];
+            let ya_flux = [flux_lo, flux_hi];
 
-                // In the case where `x0>x1`, reverse the intervals. This does not affect the final
-                // interpolated value.
-                //
-                // In the very edge case where `xlo=xhi`, the interpolator might either panic or
-                // return garbage, so we simply discard the root.
-                let (xa, ya) = match xlo.total_cmp(&xhi) {
-                    Less => ([xlo, xhi], [ylo, yhi]),
-                    Greater => ([xhi, xlo], [yhi, ylo]),
-                    Equal => return None,
-                };
+            #[expect(clippy::float_cmp, reason = "need exact equality")]
+            if tlo == thi {
+                // ZeroDerivative error
+                return;
+            }
 
-                let interp = LinearInterpolator::build(&xa, &ya).expect("arrays are ok");
-                interp.eval(&xa, &ya, 0.0, &mut Accelerator::new()).ok()
-            })
-            .collect()
+            let acc = &mut Accelerator2d::new();
+
+            let fun = |t: f64| {
+                if !(tlo..=thi).contains(&t) {
+                    return f64::MAX; // stop the solver. Landing here should be extremely unlikely
+                }
+
+                // `t -> θ` interpolation
+                let theta = LinearInterpolator
+                    .eval(&ta, &ya_theta, t, acc.xacc())
+                    .expect("arrays and values ok");
+
+                // `t -> ψ/ψp` interpolation
+                let flux = LinearInterpolator
+                    .eval(&ta, &ya_flux, t, acc.xacc())
+                    .expect("arrays and values ok");
+
+                let flux = self.flux_kind().to_magnetic_flux(flux);
+                GCHamiltonian::eval_theta_dot(machine, theta, flux, pzeta, mu).unwrap_or(f64::NAN)
+            };
+
+            let mut convergency = FixedPointConvergency;
+            let Ok(t_root) = find_root_brent(tlo, thi, fun, &mut convergency) else {
+                return;
+            };
+
+            exact_roots.push(t_root);
+        });
+        exact_roots.into_boxed_slice()
     }
 
     /// Calculates the critical points by interpolating each exact root to the corresponding `θ` and
@@ -182,9 +376,9 @@ impl ParametrizedSegment {
     pub(crate) fn _calculate_critical_points(
         &self,
         machine: Machine,
+        exact_roots: Box<[f64]>,
         pzeta: f64,
         mu: f64,
-        exact_roots: Box<[f64]>,
     ) -> Vec<CriticalPoint> {
         exact_roots
             .into_iter()
@@ -223,27 +417,39 @@ impl ParametrizedSegment {
     }
 }
 
-impl std::fmt::Debug for ParametrizedSegment {
-    #[expect(clippy::unwrap_used, reason = "safe")]
+impl std::fmt::Debug for ImproveStats {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        // NOTE: By construction, `self` always has a length of at least 2, therefore `unwrap` is
-        // safe here.
+        f.debug_struct("ImproveStats")
+            .field("no_convergency", &self.no_convergency)
+            .field("no_bracketing", &self.no_bracketing)
+            .field("zero_derivative", &self.zero_derivative)
+            .field("average_steps", &format!("{:.5}", self.average_steps))
+            .finish()
+    }
+}
+
+impl std::fmt::Debug for ParametrizedSegment {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let std_str = format!("{:.4e}", self.rss);
         let last_index = self.len() - 1;
         let start = format_args!(
-            "flux={:?}, θ={}",
-            self.flux_array.get(0).unwrap(),
+            "flux={}: {:.8}, θ={:.8}",
+            self.flux_kind().symbol(),
+            self.flux_array[0],
             self.theta_array[0]
         );
         let end = format_args!(
-            "flux={:?}, θ={}",
-            self.flux_array.get(last_index).unwrap(),
+            "flux={}: {:.8}, θ={:.8}",
+            self.flux_kind().symbol(),
+            self.flux_array[last_index],
             self.theta_array[last_index]
         );
         f.debug_struct("StationaryCurveSegment")
-            .field("flux kind", &self.flux_kind())
             .field("start", &start)
             .field("end", &end)
             .field("length", &self.len())
+            .field("relative std", &std_str)
+            .field("improve stats", &self.improve_stats)
             .finish()
     }
 }
@@ -280,21 +486,11 @@ mod test {
     }
 
     #[test]
-    fn find_roots() {
-        let flux = Array1::linspace(0.0, 1.0, 8);
-        let theta = Array1::linspace(1.0, 2.0, 8);
+    fn find_root_indices() {
         let theta_dot_array = array![2.0, 1.0, -1.0, -0.5, 0.3, 1.0, 2.0, -3.0];
-        let segment = ParametrizedSegment::new(MagneticFluxArray::Toroidal(flux), theta);
 
         let expected_indices: Box<[usize]> = Box::new([1, 3, 6]);
         let found_indices = ParametrizedSegment::find_root_indices(&theta_dot_array);
         assert_eq!(&found_indices, &expected_indices);
-
-        let _expected_roots = array![0.25, 0.0, -0.5]; // roots of `dot(θ)(t)`
-        let expected_roots_t = array![1.0 + (1.0 / 2.0), 3.0 + (0.5 / 0.8), 6.0 + (2.0 / 5.0)];
-
-        let found_roots = Array1::from(segment.find_exact_roots(found_indices, &theta_dot_array));
-
-        assert!(found_roots.relative_eq(&expected_roots_t, 1e-12, 1e-12))
     }
 }

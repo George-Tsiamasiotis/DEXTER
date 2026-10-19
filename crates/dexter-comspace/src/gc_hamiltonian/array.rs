@@ -6,7 +6,7 @@ use ndarray::{Array1, Array2, ArrayRef1};
 use rsl_interpolation::Accelerator2d;
 use std::{f64::consts::TAU, mem::MaybeUninit};
 
-use dexter_machine::{FluxCoordinateState, Machine, MagneticFluxArray, MagneticFluxKind};
+use dexter_machine::{Machine, MagneticFluxArray, MagneticFluxKind};
 
 use crate::{COMError, GCHamiltonian};
 
@@ -157,7 +157,7 @@ impl GCHamiltonian {
         pzeta: f64,
         mu: f64,
     ) -> Result<Array2<f64>, COMError> {
-        if machine.psi_state() != FluxCoordinateState::Good {
+        if !machine.is_good_flux(flux_array.kind()) {
             return Err(COMError::BadFluxCoordinate);
         }
 
@@ -404,5 +404,65 @@ mod test {
                 .unwrap();
 
         assert!(theta_dot.relative_eq(&expected, 1e-8, 1e-8))
+    }
+
+    #[test]
+    fn toroidal_theta_dot_array_and_single() {
+        let geometry = LarGeometry::new(3.0, 1.75, 0.5);
+        let qfactor = ParabolicQfactor::new(1.1, 3.9, geometry.psi_last());
+        let current = LarCurrent::new();
+        let bfield = LarBfield::new();
+        let machine = MachineBuilder::new(&qfactor, &current, &bfield).build();
+
+        let pzeta = -0.4 * machine.psip_last().value();
+        let mu = 8e-5;
+        let psi_values = Array1::linspace(1e-6, 0.999, 100) * machine.psi_last().value();
+        let psi_array = MagneticFluxArray::Toroidal(psi_values);
+        let theta_array = Array1::linspace(0.0, TAU, 100);
+
+        let theta_dot_array =
+            GCHamiltonian::eval_theta_dot_array(machine, &theta_array, &psi_array, pzeta, mu)
+                .unwrap();
+
+        theta_dot_array
+            .iter()
+            .enumerate()
+            .for_each(|(index, theta_dot)| {
+                let theta = theta_array[index];
+                let flux = psi_array.get(index).unwrap();
+                let theta_dot_single =
+                    GCHamiltonian::eval_theta_dot(machine, theta, flux, pzeta, mu).unwrap();
+                assert_eq!(theta_dot_single, *theta_dot);
+            });
+    }
+
+    #[test]
+    fn poloidal_theta_dot_array_and_single() {
+        let path = std::path::PathBuf::from(POLOIDAL_TEST_NETCDF_PATH);
+        let qfactor = NcQfactorBuilder::new(&path, Steffen).build().unwrap();
+        let current = NcCurrentBuilder::new(&path, Steffen).build().unwrap();
+        let bfield = NcBfieldBuilder::new(&path, Bicubic).build().unwrap();
+        let machine = MachineBuilder::new(&qfactor, &current, &bfield).build();
+
+        let pzeta = -0.4 * machine.psip_last().value();
+        let mu = 8e-5;
+        let psip_values = Array1::linspace(1e-6, 0.999, 100) * machine.psip_last().value();
+        let psip_array = MagneticFluxArray::Poloidal(psip_values);
+        let theta_array = Array1::linspace(0.0, TAU, 100);
+
+        let theta_dot_array =
+            GCHamiltonian::eval_theta_dot_array(machine, &theta_array, &psip_array, pzeta, mu)
+                .unwrap();
+
+        theta_dot_array
+            .iter()
+            .enumerate()
+            .for_each(|(index, theta_dot)| {
+                let theta = theta_array[index];
+                let flux = psip_array.get(index).unwrap();
+                let theta_dot_single =
+                    GCHamiltonian::eval_theta_dot(machine, theta, flux, pzeta, mu).unwrap();
+                assert_eq!(theta_dot_single, *theta_dot);
+            });
     }
 }

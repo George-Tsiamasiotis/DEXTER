@@ -22,6 +22,7 @@ rayon.workspace = true
 embed-doc-image = { version = "0.1.4", optional = true}
 contour = "0.13.1"
 geo-types = "0.7.20"
+roots = "0.0.8"
 
 [lints]
 workspace = true
