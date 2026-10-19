@@ -462,7 +462,7 @@ mod test {
 
     #[test]
     fn parametrized_segment_t() {
-        let qfactor = UnityQfactor::new(LastClosedFluxSurface::Toroidal(0.1));
+        let qfactor = UnityQfactor::new(MagneticFlux::Toroidal(0.1));
         let current = LarCurrent::new();
         let bfield = LarBfield::new();
         let machine = MachineBuilder::new(&qfactor, &current, &bfield).build();

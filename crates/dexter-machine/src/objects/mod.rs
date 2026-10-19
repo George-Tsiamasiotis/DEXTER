@@ -1,7 +1,5 @@
 //! Machine representation objects.
 
-use crate::MagneticFlux;
-
 pub(crate) mod getters;
 pub(crate) mod nc_flux;
 
@@ -25,10 +23,6 @@ pub enum MachineType {
     /// Evaluations are calculated by simply evaluating the formulas.
     Analytical,
 }
-
-/// Helper type to define the Last Closed Flux Surface (LCFS) with respect to one of the
-/// two fluxes.
-pub type LastClosedFluxSurface = MagneticFlux;
 
 /// Debug-asserts that all values of the slice are finite.
 pub(crate) fn debug_assert_all_finite_values(values: &[f64]) {

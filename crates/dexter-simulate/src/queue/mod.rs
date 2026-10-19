@@ -209,7 +209,7 @@ impl Queue {
     /// # use std::path::PathBuf;
     /// # use ndarray::*;
     /// #
-    /// let lcfs = LastClosedFluxSurface::Toroidal(0.6);
+    /// let lcfs = MagneticFlux::Toroidal(0.6);
     /// let qfactor = ParabolicQfactor::new(1.1, 4.2, lcfs);
     /// let current = LarCurrent::new();
     /// let bfield = LarBfield::new();
@@ -271,7 +271,7 @@ impl Queue {
     /// # use dexter_simulate::*;
     /// # use std::path::PathBuf;
     /// # use ndarray::*;
-    /// let lcfs = LastClosedFluxSurface::Toroidal(0.06);
+    /// let lcfs = MagneticFlux::Toroidal(0.06);
     /// let qfactor = ParabolicQfactor::new(1.1, 4.2, lcfs);
     /// let current = LarCurrent::new();
     /// let bfield = LarBfield::new();
@@ -330,7 +330,7 @@ impl Queue {
     /// # use std::path::PathBuf;
     /// # use ndarray::*;
     /// #
-    /// let lcfs = LastClosedFluxSurface::Toroidal(0.6);
+    /// let lcfs = MagneticFlux::Toroidal(0.6);
     /// let qfactor = ParabolicQfactor::new(1.1, 4.2, lcfs);
     /// let current = LarCurrent::new();
     /// let bfield = LarBfield::new();
@@ -387,7 +387,7 @@ impl Queue {
     /// # use std::path::PathBuf;
     /// # use ndarray::*;
     /// #
-    /// let lcfs = LastClosedFluxSurface::Toroidal(0.6);
+    /// let lcfs = MagneticFlux::Toroidal(0.6);
     /// let qfactor = ParabolicQfactor::new(1.1, 4.2, lcfs);
     /// let current = LarCurrent::new();
     /// let bfield = LarBfield::new();

@@ -10,7 +10,7 @@ use dexter_simulate::*;
 const MU: f64 = 6e-5;
 
 fn create_objects() -> (ParabolicQfactor, LarCurrent, LarBfield) {
-    let lcfs = LastClosedFluxSurface::Toroidal(0.03);
+    let lcfs = MagneticFlux::Toroidal(0.03);
     let qfactor = ParabolicQfactor::new(1.1, 3.9, lcfs);
     let current = LarCurrent::new();
     let bfield = LarBfield::new();

@@ -20,7 +20,7 @@ use std::{f64::consts::TAU, path::PathBuf};
 #[rustfmt::skip]
 fn gc_toroidal_integration_uniQ_larC_larB_cosP() {
     use MagneticFlux::*;
-    let lcfs = LastClosedFluxSurface::Toroidal(0.45);
+    let lcfs = Toroidal(0.45);
     let qfactor = UnityQfactor::new(lcfs);
     let current = LarCurrent::new();
     let bfield = LarBfield::new();
@@ -133,7 +133,7 @@ fn gc_poloidal_integration_ncdQ_ncdC_ncdB_ncdP() {
 #[rustfmt::skip]
 fn gc_toroidal_integration_gcmotion_check_uniQ_larC_larB_cosP() {
     use MagneticFlux::*;
-    let lcfs = LastClosedFluxSurface::Toroidal(0.45);
+    let lcfs = Toroidal(0.45);
     let qfactor = UnityQfactor::new(lcfs);
     let current = LarCurrent::new();
     let bfield = LarBfield::new();
@@ -378,7 +378,7 @@ fn gc_mixed_boozer_equivalence() {
 #[rustfmt::skip]
 fn gc_const_pzeta_toroidal_integration_uniQ_larC_larB_cosP() {
     use MagneticFlux::*;
-    let lcfs = LastClosedFluxSurface::Toroidal(0.45);
+    let lcfs = Toroidal(0.45);
     let qfactor = UnityQfactor::new(lcfs);
     let current = LarCurrent::new();
     let bfield = LarBfield::new();

@@ -10,7 +10,7 @@ use std::hint::black_box;
 use std::path::PathBuf;
 
 fn mode_evals(c: &mut Criterion) {
-    let lcfs = LastClosedFluxSurface::Toroidal(0.45);
+    let lcfs = MagneticFlux::Toroidal(0.45);
     let path = PathBuf::from(TEST_NETCDF_PATH);
     let (t, psi, theta, zeta) = (10000.0, MagneticFlux::Toroidal(0.01), 1.0, 4.0);
 

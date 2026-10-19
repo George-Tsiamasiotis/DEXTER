@@ -216,7 +216,7 @@ impl GCHamiltonian {
     /// # use dexter_comspace::*;
     /// # use ndarray::Array1;
     /// # use std::f64::consts::TAU;
-    /// let lcfs = LastClosedFluxSurface::Toroidal(0.05);
+    /// let lcfs = MagneticFlux::Toroidal(0.05);
     /// let qfactor = ParabolicQfactor::new(1.1, 3.9, lcfs);
     /// let current = LarCurrent::new();
     /// let bfield = LarBfield::new();
@@ -300,12 +300,12 @@ mod test {
     use super::*;
     use dexter_machine::extract::{POLOIDAL_TEST_NETCDF_PATH, TEST_NETCDF_PATH};
     use dexter_machine::*;
-    use dexter_machine::{Interpolation1dType::Steffen, Interpolation2dType::Bicubic};
+    use dexter_machine::{Interpolation1dType::*, Interpolation2dType::*, MagneticFlux::*};
     use ndarray::{arr1, arr2, array};
 
     #[test]
     fn gcmotion_check() {
-        let qfactor = UnityQfactor::new(LastClosedFluxSurface::Toroidal(0.1));
+        let qfactor = UnityQfactor::new(Toroidal(0.1));
         let current = LarCurrent::new();
         let bfield = LarBfield::new();
         let machine = MachineBuilder::new(&qfactor, &current, &bfield).build();

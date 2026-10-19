@@ -43,7 +43,7 @@ impl GCHamiltonian {
     /// ```
     /// # use dexter_machine::*;
     /// # use dexter_comspace::*;
-    /// let lcfs = LastClosedFluxSurface::Toroidal(0.05);
+    /// let lcfs = MagneticFlux::Toroidal(0.05);
     /// let qfactor = ParabolicQfactor::new(1.1, 3.9, lcfs);
     /// let current = LarCurrent::new();
     /// let bfield = LarBfield::new();
@@ -119,7 +119,7 @@ impl GCHamiltonian {
     /// ```
     /// # use dexter_machine::*;
     /// # use dexter_comspace::*;
-    /// let lcfs = LastClosedFluxSurface::Toroidal(0.05);
+    /// let lcfs = MagneticFlux::Toroidal(0.05);
     /// let qfactor = ParabolicQfactor::new(1.1, 3.9, lcfs);
     /// let current = LarCurrent::new();
     /// let bfield = LarBfield::new();
@@ -191,14 +191,14 @@ impl GCHamiltonian {
 #[cfg(test)]
 mod test {
     use super::*;
-    use dexter_machine::MagneticFlux::*;
     use dexter_machine::extract::{POLOIDAL_TEST_NETCDF_PATH, TOROIDAL_TEST_NETCDF_PATH};
     use dexter_machine::*;
-    use dexter_machine::{Interpolation1dType::Steffen, Interpolation2dType::Bicubic};
+    use dexter_machine::{Interpolation1dType::*, Interpolation2dType::*, MagneticFlux::*};
 
     #[test]
     fn gc_hamiltonian_evaluate_machine_good_both() {
-        let qfactor = UnityQfactor::new(LastClosedFluxSurface::Toroidal(0.1));
+        let unity_qfactor = UnityQfactor::new(Toroidal(0.1));
+        let qfactor = unity_qfactor;
         let current = LarCurrent::new();
         let bfield = LarBfield::new();
         let machine = MachineBuilder::new(&qfactor, &current, &bfield).build();
