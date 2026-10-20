@@ -64,6 +64,18 @@ impl PyEnergyPzetaPlane {
             .calculate_critical_points(machine, &pzeta_array.as_array());
     }
 
+    pub fn calculate_boundary_extrema(
+        &mut self,
+        qfactor: &PyQfactor,
+        current: &PyCurrent,
+        bfield: &PyBfield,
+        pzeta_array: PyReadonlyArray1<f64>,
+    ) {
+        let machine = MachineBuilder::new(qfactor.inner(), current.inner(), bfield.inner()).build();
+        self.0
+            .calculate_boundary_extrema(machine, &pzeta_array.as_array());
+    }
+
     #[getter]
     pub fn mu(&self) -> f64 {
         self.0.mu()
@@ -109,12 +121,30 @@ impl PyEnergyPzetaPlane {
         PyList::new(py, iter)
     }
 
+    #[getter]
+    pub fn boundary_extrema<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyList>> {
+        let iter = self
+            .0
+            .boundary_extrema()
+            .iter()
+            .map(|boundary_extremum| PyBoundaryExtremum(boundary_extremum.clone()));
+        PyList::new(py, iter)
+    }
+
     pub fn critical_points_pzetas<'py>(&self, py: Python<'py>) -> Bound<'py, PyArray1<f64>> {
         Array1::from_vec(self.0.critical_points_pzetas().to_vec()).into_pyarray(py)
     }
 
     pub fn critical_points_energies<'py>(&self, py: Python<'py>) -> Bound<'py, PyArray1<f64>> {
         Array1::from_vec(self.0.critical_points_energies().to_vec()).into_pyarray(py)
+    }
+
+    pub fn boundary_extrema_pzetas<'py>(&self, py: Python<'py>) -> Bound<'py, PyArray1<f64>> {
+        Array1::from_vec(self.0.boundary_extrema_pzetas().to_vec()).into_pyarray(py)
+    }
+
+    pub fn boundary_extrema_energies<'py>(&self, py: Python<'py>) -> Bound<'py, PyArray1<f64>> {
+        Array1::from_vec(self.0.boundary_extrema_energies().to_vec()).into_pyarray(py)
     }
 }
 

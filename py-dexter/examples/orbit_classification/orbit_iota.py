@@ -43,4 +43,4 @@ dex.plot_poloidal_drift(machine, particle, show=False)
 
 plane = dex.EnergyPzetaPlane(machine, mu)
 plane.add_particles(particle)
-plane.show(particles=True)
+plane.show(particles=True, curves=True)

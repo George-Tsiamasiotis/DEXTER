@@ -2,13 +2,13 @@
 
 from functools import cached_property
 
-from dexter.types import Array1, CriticalPointKind, MagneticFluxKind
+from dexter.types import Array1, MagneticFluxKind
 
 from dexter.machine.machine import Machine
-from dexter.machine.flux import MagneticFlux, MagneticFluxArray
+from dexter.machine.flux import MagneticFluxArray
 
 from dexter._utils import _ReprStrImpl, _RustTypeWrapper
-from dexter._core import _PyStationaryCurveSegment, _PyStationaryCurve, _PyCriticalPoint
+from dexter._core import _PyStationaryCurveSegment, _PyStationaryCurve
 
 
 class StationaryCurve(_ReprStrImpl, _RustTypeWrapper):
@@ -80,52 +80,3 @@ class StationaryCurveSegment(_ReprStrImpl, _RustTypeWrapper):
     def __len__(self) -> int:
         r"""Returns the number of the contained $(\theta, \psi/\psi_p)$ points."""
         return self._r.__len__()
-
-
-class CriticalPoint(_ReprStrImpl, _RustTypeWrapper):
-    r"""A critical point of the Hamiltonian.
-
-    A simple container type that is created through
-    [`EnergyPzetaPlane.calculate_critical_points`][dexter.EnergyPzetaPlane.calculate_critical_points].
-
-    Attributes
-    ----------
-    theta
-        The point's $\theta$ position.
-    flux
-        The point's $\psi/\psi_p$ position.
-    energy
-        The point's energy.
-    pzeta
-        The point's $P_\zeta$.
-    mu
-        The point's $\mu$.
-    kind
-        The point's kind.
-    """
-
-    _r: _PyCriticalPoint
-
-    @property
-    def theta(self) -> float:
-        return self._r.theta
-
-    @property
-    def flux(self) -> MagneticFlux:
-        return MagneticFlux._wrap(self._r.flux)
-
-    @property
-    def pzeta(self) -> float:
-        return self._r.pzeta
-
-    @property
-    def energy(self) -> float:
-        return self._r.energy
-
-    @property
-    def mu(self) -> float:
-        return self._r.mu
-
-    @property
-    def kind(self) -> CriticalPointKind:
-        return self._r.kind

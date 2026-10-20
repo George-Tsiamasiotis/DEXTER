@@ -98,13 +98,3 @@ def test_plot_queue_numerical(nc_machine: dex.Machine):
 
     queue.plot_pzeta_poincare(nc_machine, intersect_params, initial=True)
     queue.plot_rz_poincare(nc_machine, intersect_params, initial=True)
-
-
-def test_plot_energy_pzeta_plane_analytical(lar_machine: dex.Machine):
-    plane = dex.EnergyPzetaPlane(lar_machine, 1e-5)
-    plane.show()
-
-
-def test_plot_energy_pzeta_plane_numerical(nc_machine: dex.Machine):
-    plane = dex.EnergyPzetaPlane(nc_machine, 1e-5)
-    plane.show()

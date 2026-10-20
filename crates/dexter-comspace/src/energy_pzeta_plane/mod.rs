@@ -15,7 +15,7 @@ use dexter_machine::Machine;
 pub use orbit_type::{EnergyPzetaPosition, OrbitType};
 pub use tp_boundary::TrappedPassingBoundary;
 
-use crate::{CriticalPoint, StationaryCurve};
+use crate::{Boundary, BoundaryExtremum, CriticalPoint, StationaryCurve};
 
 /// Representation of the COM space `(E, Pζ, μ=const)`.
 ///
@@ -41,8 +41,12 @@ pub struct EnergyPzetaPlane {
     /// Even though the stationary curve does not depend on mu, it is handy it to store it here. It
     /// is only calculated when [`Self::calculate_critical_points`] is called.
     stationary_curve: Option<StationaryCurve>,
+    /// The calculated boundary of the Hamiltonian.
+    boundary: Option<Boundary>,
     /// The calculated critical points.
     critical_points: Box<[CriticalPoint]>,
+    /// The calculated boundary extremum points.
+    boundary_extrema: Box<[BoundaryExtremum]>,
 }
 
 impl EnergyPzetaPlane {
@@ -56,19 +60,29 @@ impl EnergyPzetaPlane {
             right_wall_parabola: Self::build_right_wall_parabola(machine, mu),
             tp_boundary: TrappedPassingBoundary::new(machine, mu),
             stationary_curve: None,
+            boundary: None,
             critical_points: Box::new([]),
+            boundary_extrema: Box::new([]),
         }
     }
 }
 
 /// Bifurcation Analysis.
 impl EnergyPzetaPlane {
-    /// Calculates the critical points of the `(E, Pζ; μ)` slice over all values of `pzeta_array` and
-    /// stores them.
+    /// Calculates the [`critical points`][CriticalPoint] of the `(E, Pζ; μ)` slice over all values
+    /// of `pzeta_array` and stores them.
     pub fn calculate_critical_points(&mut self, machine: Machine, pzeta_array: &ArrayRef1<f64>) {
-        let mut curve = StationaryCurve::_build(machine);
+        let mut curve = StationaryCurve::new(machine);
         self.critical_points = curve.calculate_critical_points(machine, pzeta_array, self.mu);
         self.stationary_curve = Some(curve);
+    }
+
+    /// Calculates the [`boundary_extrema`][BoundaryExtremum] of the `(E, Pζ; μ)` slice over all
+    /// values of `pzeta_array` and stores them.
+    pub fn calculate_boundary_extrema(&mut self, machine: Machine, pzeta_array: &ArrayRef1<f64>) {
+        let mut boundary = Boundary::new(machine);
+        self.boundary_extrema = boundary.calculate_boundary_extrema(machine, pzeta_array, self.mu);
+        self.boundary = Some(boundary)
     }
 }
 
@@ -243,6 +257,12 @@ impl EnergyPzetaPlane {
         &self.critical_points
     }
 
+    /// Returns a reference on the stored [`BoundaryExtrema`][BoundaryExtremum].
+    #[must_use]
+    pub fn boundary_extrema(&self) -> &[BoundaryExtremum] {
+        &self.boundary_extrema
+    }
+
     /// Returns an array with the calculated critical points' `Pζ`.
     ///
     /// The points are visited in order of creation, as in [`Self::critical_points`].
@@ -264,6 +284,28 @@ impl EnergyPzetaPlane {
             .map(CriticalPoint::energy)
             .collect()
     }
+
+    /// Returns an array with the calculated boundary extrema's `Pζ`.
+    ///
+    /// The points are visited in order of creation, as in [`Self::boundary_extrema`].
+    #[must_use]
+    pub fn boundary_extrema_pzetas(&self) -> Box<[f64]> {
+        self.boundary_extrema
+            .iter()
+            .map(BoundaryExtremum::pzeta)
+            .collect()
+    }
+
+    /// Returns an array with the calculated boundary extrema's energies.
+    ///
+    /// The points are visited in order of creation, as in [`Self::boundary_extrema`].
+    #[must_use]
+    pub fn boundary_extrema_energies(&self) -> Box<[f64]> {
+        self.boundary_extrema
+            .iter()
+            .map(BoundaryExtremum::energy)
+            .collect()
+    }
 }
 
 impl std::fmt::Debug for EnergyPzetaPlane {
@@ -275,7 +317,9 @@ impl std::fmt::Debug for EnergyPzetaPlane {
             .field("right_wall_parabola", &self.right_wall_parabola)
             .field("tp_boundary", &self.tp_boundary)
             .field("stationary_curve", &self.stationary_curve)
+            .field("boundary", &self.boundary)
             .field("critical_points", &self.critical_points.len())
+            .field("boundary_extrema", &self.boundary_extrema.len())
             .finish()
     }
 }

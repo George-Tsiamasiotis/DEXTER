@@ -10,10 +10,12 @@ machine = dex.Machine(
     bfield=dex.LarBfield(),
 )
 
-plane = dex.EnergyPzetaPlane(machine, 8e-5)
-plane.show()
+mu = 8e-5
 
-pzeta = np.linspace(-1.1, 0.5, 1000) * machine.psip_last.value
+plane = dex.EnergyPzetaPlane(machine, mu)
+
+pzeta = np.linspace(-1.9, 0.6, 1000) * machine.psip_last.value
 plane.calculate_critical_points(pzeta)
+plane.calculate_boundary_extrema(pzeta)
 print(plane)
-plane.show(xlim=(-1.15, 0.3), ylim=(0.5, 1.6))
+plane.show(xlim=(-1.9, 0.6), ylim=(0.4, 1.8), curves=True)

@@ -18,12 +18,18 @@
 //! + [`StationaryCurve`]: Representation of a configuration's stationary curve `𝜕H/𝜕𝜃 = 0`.
 //! + [`StationaryCurveSegment`]: A single continuous segment of the Stationary Curve.
 //!
+//! #### Boundary
+//!
+//! + [`Boundary`]: Representation the Hamiltonian's boundary (Last Closed Flux Surface).
+//!
 //! ### Calculations on the E - Pζ plane
 //!
 //! + [`EnergyPzetaPlane`]: Representation of the COM space `(E, Pζ, μ=const)`.
 //!   + Bifurcation analysis:
 //!     - [`EnergyPzetaPlane::calculate_critical_points`]: Calculation of the Hamiltonian's
 //!       critical points over a given `Pζ` span.
+//!     - [`EnergyPzetaPlane::calculate_boundary_extrema`]: Calculation of the Hamiltonian's
+//!       extrema appearing in the device's boundary (Last Closed Flux Surface).
 //!   + Classification parabolas and Trapped-Passing Boundary:
 //!     - [`EnergyPzetaPlane::axis_parabola`]: Magnetic Axis Parabola (MA).
 //!     - [`EnergyPzetaPlane::left_wall_parabola`]: Left Wall Parabola (LW).
@@ -48,7 +54,8 @@ pub use error::COMError;
 
 pub use gc_hamiltonian::GCHamiltonian;
 pub use gc_hamiltonian::{
-    CriticalPoint, CriticalPointKind, StationaryCurve, StationaryCurveSegment,
+    Boundary, BoundaryExtremum, BoundaryExtremumKind, CriticalPoint, CriticalPointKind,
+    StationaryCurve, StationaryCurveSegment,
 };
 
 pub use energy_pzeta_plane::{

@@ -5,15 +5,20 @@
 #![expect(clippy::min_ident_chars, reason = "Hamiltonian terms")]
 
 mod array;
+mod boundary;
+mod boundary_extremum;
+mod critical_point;
 mod curve;
-mod point;
 mod segment;
 
 use std::f64::consts::TAU;
 
-pub use curve::StationaryCurve;
-pub use point::{CriticalPoint, CriticalPointKind};
-pub use segment::StationaryCurveSegment;
+pub(crate) use segment::ParametrizedSegment;
+
+pub use boundary::Boundary;
+pub use boundary_extremum::{BoundaryExtremum, BoundaryExtremumKind};
+pub use critical_point::{CriticalPoint, CriticalPointKind};
+pub use curve::{StationaryCurve, StationaryCurveSegment};
 
 // ===============================================================================================
 

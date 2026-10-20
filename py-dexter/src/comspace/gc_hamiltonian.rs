@@ -190,6 +190,44 @@ impl PyCriticalPoint {
 
 // ===============================================================================================
 
+#[pyclass(name = "_PyBoundaryExtremum", immutable_type, frozen)]
+pub struct PyBoundaryExtremum(pub BoundaryExtremum);
+
+#[pymethods]
+impl PyBoundaryExtremum {
+    #[getter]
+    pub fn theta(&self) -> f64 {
+        self.0.theta()
+    }
+
+    #[getter]
+    pub fn flux(&self) -> PyMagneticFlux {
+        PyMagneticFlux(self.0.flux())
+    }
+
+    #[getter]
+    pub fn energy(&self) -> f64 {
+        self.0.energy()
+    }
+
+    #[getter]
+    pub fn pzeta(&self) -> f64 {
+        self.0.pzeta()
+    }
+
+    #[getter]
+    pub fn mu(&self) -> f64 {
+        self.0.mu()
+    }
+
+    #[getter]
+    pub fn kind(&self) -> String {
+        format!("{:?}", self.0.kind())
+    }
+}
+
+// ===============================================================================================
+
 impl std::fmt::Debug for PyGCHamiltonian {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str("GCHamiltonian")
@@ -209,3 +247,5 @@ wrapper_debug_export!(PyStationaryCurveSegment);
 impl_py_repr!(PyStationaryCurveSegment, pretty);
 wrapper_debug_export!(PyCriticalPoint);
 impl_py_repr!(PyCriticalPoint, pretty);
+wrapper_debug_export!(PyBoundaryExtremum);
+impl_py_repr!(PyBoundaryExtremum, pretty);
