@@ -31,7 +31,7 @@ pub enum PyBfield {
 impl PyBfield {
     #[classmethod]
     pub fn build_lar<'py>(_: Bound<'py, PyType>) -> Result<Self> {
-        let inner = PyLarBfield(Arc::new(LarBfield::new()));
+        let inner = PyLarBfield(Arc::new(LarBfield));
         Ok(Self::Lar(inner))
     }
 

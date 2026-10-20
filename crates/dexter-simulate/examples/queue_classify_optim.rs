@@ -9,8 +9,8 @@ use ndarray::Array1;
 fn main() -> Result<(), SimulationError> {
     let lcfs = MagneticFlux::Toroidal(0.45);
     let qfactor = ParabolicQfactor::new(1.1, 3.9, lcfs);
-    let current = LarCurrent::new();
-    let bfield = LarBfield::new();
+    let current = LarCurrent;
+    let bfield = LarBfield;
     let machine = MachineBuilder::new(&qfactor, &current, &bfield).build();
 
     // Initial Conditions setup

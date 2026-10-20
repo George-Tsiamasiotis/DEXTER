@@ -10,8 +10,8 @@ use dexter_simulate::{
 fn main() {
     let lcfs = MagneticFlux::Toroidal(0.45);
     let qfactor = ParabolicQfactor::new(1.1, 3.9, lcfs);
-    let current = LarCurrent::new();
-    let bfield = LarBfield::new();
+    let current = LarCurrent;
+    let bfield = LarBfield;
     let perturbation = Perturbation::new(vec![
         Box::new(FluteMode::new(1e-3, lcfs, 1, 2, 0.0)),
         Box::new(FluteMode::new(1e-3, lcfs, 1, 4, 0.0)),

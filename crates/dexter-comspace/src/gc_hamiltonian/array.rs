@@ -40,8 +40,8 @@ impl GCHamiltonian {
     /// # use ndarray::*;
     /// # use std::f64::consts::TAU;
     /// # let qfactor = ParabolicQfactor::new(1.1, 3.9, MagneticFlux::Toroidal(0.05));
-    /// # let current = LarCurrent::new();
-    /// # let bfield = LarBfield::new();
+    /// # let current = LarCurrent;
+    /// # let bfield = LarBfield;
     /// # let machine = MachineBuilder::new(&qfactor, &current, &bfield).build();
     /// #
     /// let pzeta = -0.1 * machine.psip_last().value();
@@ -132,8 +132,8 @@ impl GCHamiltonian {
     /// # use ndarray::*;
     /// # use std::f64::consts::TAU;
     /// # let qfactor = ParabolicQfactor::new(1.1, 3.9, MagneticFlux::Toroidal(0.05));
-    /// # let current = LarCurrent::new();
-    /// # let bfield = LarBfield::new();
+    /// # let current = LarCurrent;
+    /// # let bfield = LarBfield;
     /// # let machine = MachineBuilder::new(&qfactor, &current, &bfield).build();
     /// #
     /// let pzeta = -0.1 * machine.psip_last().value();
@@ -218,8 +218,8 @@ impl GCHamiltonian {
     /// # use std::f64::consts::TAU;
     /// let lcfs = MagneticFlux::Toroidal(0.05);
     /// let qfactor = ParabolicQfactor::new(1.1, 3.9, lcfs);
-    /// let current = LarCurrent::new();
-    /// let bfield = LarBfield::new();
+    /// let current = LarCurrent;
+    /// let bfield = LarBfield;
     /// let machine = MachineBuilder::new(&qfactor, &current, &bfield).build();
     ///
     /// let theta_array = Array1::linspace(0.0, TAU, 10);
@@ -306,8 +306,8 @@ mod test {
     #[test]
     fn gcmotion_check() {
         let qfactor = UnityQfactor::new(Toroidal(0.1));
-        let current = LarCurrent::new();
-        let bfield = LarBfield::new();
+        let current = LarCurrent;
+        let bfield = LarBfield;
         let machine = MachineBuilder::new(&qfactor, &current, &bfield).build();
 
         let theta_array = arr1(&vec![-1.0, 1.0]);
@@ -365,8 +365,8 @@ mod test {
     fn toroidal_theta_dot_particle_integration_check() {
         let geometry = LarGeometry::new(3.0, 1.75, 0.5);
         let qfactor = ParabolicQfactor::new(1.1, 3.9, geometry.psi_last());
-        let current = LarCurrent::new();
-        let bfield = LarBfield::new();
+        let current = LarCurrent;
+        let bfield = LarBfield;
         let machine = MachineBuilder::new(&qfactor, &current, &bfield).build();
 
         let pzeta = -0.4 * machine.psip_last().value();
@@ -410,8 +410,8 @@ mod test {
     fn toroidal_theta_dot_array_and_single() {
         let geometry = LarGeometry::new(3.0, 1.75, 0.5);
         let qfactor = ParabolicQfactor::new(1.1, 3.9, geometry.psi_last());
-        let current = LarCurrent::new();
-        let bfield = LarBfield::new();
+        let current = LarCurrent;
+        let bfield = LarBfield;
         let machine = MachineBuilder::new(&qfactor, &current, &bfield).build();
 
         let pzeta = -0.4 * machine.psip_last().value();

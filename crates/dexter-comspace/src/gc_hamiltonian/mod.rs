@@ -50,8 +50,8 @@ impl GCHamiltonian {
     /// # use dexter_comspace::*;
     /// let lcfs = MagneticFlux::Toroidal(0.05);
     /// let qfactor = ParabolicQfactor::new(1.1, 3.9, lcfs);
-    /// let current = LarCurrent::new();
-    /// let bfield = LarBfield::new();
+    /// let current = LarCurrent;
+    /// let bfield = LarBfield;
     /// let machine = MachineBuilder::new(&qfactor, &current, &bfield).build();
     ///
     /// let theta = 3.1415;
@@ -126,8 +126,8 @@ impl GCHamiltonian {
     /// # use dexter_comspace::*;
     /// let lcfs = MagneticFlux::Toroidal(0.05);
     /// let qfactor = ParabolicQfactor::new(1.1, 3.9, lcfs);
-    /// let current = LarCurrent::new();
-    /// let bfield = LarBfield::new();
+    /// let current = LarCurrent;
+    /// let bfield = LarBfield;
     /// let machine = MachineBuilder::new(&qfactor, &current, &bfield).build();
     ///
     /// let theta = 3.1415;
@@ -196,8 +196,8 @@ mod test {
     fn gc_hamiltonian_evaluate_machine_good_both() {
         let unity_qfactor = UnityQfactor::new(Toroidal(0.1));
         let qfactor = unity_qfactor;
-        let current = LarCurrent::new();
-        let bfield = LarBfield::new();
+        let current = LarCurrent;
+        let bfield = LarBfield;
         let machine = MachineBuilder::new(&qfactor, &current, &bfield).build();
 
         let _ = GCHamiltonian::eval(machine, 0.0, Toroidal(0.01), -0.01, 1e-4).unwrap();

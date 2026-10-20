@@ -476,7 +476,7 @@ pub trait Current: MachineObject + Debug + Send + Sync {
     /// # use std::path::PathBuf;
     /// # use rsl_interpolation::Accelerator;
     /// #
-    /// # let current = LarCurrent::new();
+    /// # let current = LarCurrent;
     /// #
     /// let acc = &mut Accelerator::new();
     /// let psi = MagneticFlux::Toroidal(0.01);
@@ -501,7 +501,7 @@ pub trait Current: MachineObject + Debug + Send + Sync {
     /// # use std::path::PathBuf;
     /// # use rsl_interpolation::Accelerator;
     /// #
-    /// # let current = LarCurrent::new();
+    /// # let current = LarCurrent;
     /// #
     /// let acc = &mut Accelerator::new();
     /// let psi = MagneticFlux::Toroidal(0.01);
@@ -526,7 +526,7 @@ pub trait Current: MachineObject + Debug + Send + Sync {
     /// # use std::path::PathBuf;
     /// # use rsl_interpolation::Accelerator;
     /// #
-    /// # let current = LarCurrent::new();
+    /// # let current = LarCurrent;
     /// #
     /// let acc = &mut Accelerator::new();
     /// let psi = MagneticFlux::Toroidal(0.01);
@@ -551,7 +551,7 @@ pub trait Current: MachineObject + Debug + Send + Sync {
     /// # use std::path::PathBuf;
     /// # use rsl_interpolation::Accelerator;
     /// #
-    /// # let current = LarCurrent::new();
+    /// # let current = LarCurrent;
     /// #
     /// let acc = &mut Accelerator::new();
     /// let psi = MagneticFlux::Toroidal(0.01);

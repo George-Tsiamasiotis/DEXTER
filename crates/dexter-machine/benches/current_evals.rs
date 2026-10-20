@@ -14,7 +14,7 @@ fn current_evals(c: &mut Criterion) {
     let acc = &mut Accelerator::new();
     let psi = MagneticFlux::Toroidal(0.01);
 
-    let lar_current = LarCurrent::new();
+    let lar_current = LarCurrent;
     let nc_current = NcCurrentBuilder::new(&path, Interpolation1dType::Cubic)
         .build()
         .unwrap();

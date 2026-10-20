@@ -29,8 +29,8 @@ impl<'obj> MachineBuilder<'obj> {
     /// ```
     /// # use dexter_machine::*;
     /// let qfactor = UnityQfactor::new(MagneticFlux::Toroidal(0.1));
-    /// let current = LarCurrent::new();
-    /// let bfield = LarBfield::new();
+    /// let current = LarCurrent;
+    /// let bfield = LarBfield;
     ///
     /// let builder = MachineBuilder::new(&qfactor, &current, &bfield);
     /// # Ok::<_, MachineError>(())
@@ -61,8 +61,8 @@ impl<'obj> MachineBuilder<'obj> {
     /// # use dexter_machine::*;
     /// let geometry = LarGeometry::new(2.5, 1.75, 0.5);
     /// let qfactor = UnityQfactor::new(MagneticFlux::Toroidal(0.1));
-    /// let current = LarCurrent::new();
-    /// let bfield = LarBfield::new();
+    /// let current = LarCurrent;
+    /// let bfield = LarBfield;
     ///
     /// let builder = MachineBuilder::new(&qfactor, &current, &bfield).with_geometry(&geometry);
     /// # Ok::<_, MachineError>(())
@@ -83,8 +83,8 @@ impl<'obj> MachineBuilder<'obj> {
     /// # use dexter_machine::*;
     /// let lcfs = MagneticFlux::Toroidal(0.45);
     /// let qfactor = UnityQfactor::new(lcfs);
-    /// let current = LarCurrent::new();
-    /// let bfield = LarBfield::new();
+    /// let current = LarCurrent;
+    /// let bfield = LarBfield;
     /// let perturbation = Perturbation::new(vec![
     ///     Box::new(FluteMode::new(1e-3, lcfs, 1, 2, 0.0)),
     ///     Box::new(FluteMode::new(1e-3, lcfs, 1, 3, 0.0)),
@@ -109,8 +109,8 @@ impl<'obj> MachineBuilder<'obj> {
     /// let lcfs = MagneticFlux::Toroidal(0.45);
     /// let geometry = LarGeometry::new(2.5, 1.75, 0.5);
     /// let qfactor = UnityQfactor::new(MagneticFlux::Toroidal(0.1));
-    /// let current = LarCurrent::new();
-    /// let bfield = LarBfield::new();
+    /// let current = LarCurrent;
+    /// let bfield = LarBfield;
     /// let perturbation = Perturbation::new(vec![
     ///     Box::new(FluteMode::new(1e-3, lcfs, 1, 2, 0.0)),
     ///     Box::new(FluteMode::new(1e-3, lcfs, 1, 3, 0.0)),
@@ -283,8 +283,8 @@ impl<'obj> Machine<'obj> {
     /// ```
     /// # use dexter_machine::*;
     /// # let qfactor = UnityQfactor::new(MagneticFlux::Toroidal(0.1));
-    /// # let current = LarCurrent::new();
-    /// # let bfield = LarBfield::new();
+    /// # let current = LarCurrent;
+    /// # let bfield = LarBfield;
     /// # let machine = MachineBuilder::new(&qfactor, &current, &bfield).build();
     /// let flux_kind = machine.good_flux();
     /// let last = machine.last(flux_kind);
@@ -349,8 +349,8 @@ mod test {
     fn machine_init() {
         let geometry = LarGeometry::new(2.5, 1.75, 0.5);
         let qfactor = UnityQfactor::new(MagneticFlux::Toroidal(0.1));
-        let current = LarCurrent::new();
-        let bfield = LarBfield::new();
+        let current = LarCurrent;
+        let bfield = LarBfield;
         let perturbation = Perturbation::zero();
 
         let machine = MachineBuilder::new(&qfactor, &current, &bfield)

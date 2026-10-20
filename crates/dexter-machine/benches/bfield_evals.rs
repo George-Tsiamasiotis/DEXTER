@@ -14,7 +14,7 @@ fn bfield_evals(c: &mut Criterion) {
     let acc = &mut Accelerator2d::new();
     let (psi, theta) = (MagneticFlux::Toroidal(0.1), 1.0);
 
-    let lar_bfield = LarBfield::new();
+    let lar_bfield = LarBfield;
     let nc_bfield = NcBfieldBuilder::new(&path, Interpolation2dType::Bicubic)
         .build()
         .unwrap();

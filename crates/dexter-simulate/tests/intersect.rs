@@ -18,8 +18,8 @@ fn gc_toroidal_intersect_uniQ_larC_larB_noP() {
     use MagneticFlux::*;
     let lcfs = Toroidal(0.45);
     let qfactor = UnityQfactor::new(lcfs);
-    let current = LarCurrent::new();
-    let bfield = LarBfield::new();
+    let current = LarCurrent;
+    let bfield = LarBfield;
     let machine = MachineBuilder::new(&qfactor, &current, &bfield).build();
 
     let initial = InitialConditions::boozer(0.0, Toroidal(0.02), 3.14, 0.0, 1e-4, 1e-6);

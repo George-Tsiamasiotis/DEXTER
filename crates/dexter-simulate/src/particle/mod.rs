@@ -229,8 +229,8 @@ impl Particle {
     /// # use dexter_simulate::*;
     /// let lcfs = MagneticFlux::Toroidal(0.05);
     /// let qfactor = ParabolicQfactor::new(1.1, 3.9, lcfs);
-    /// let current = LarCurrent::new();
-    /// let bfield = LarBfield::new();
+    /// let current = LarCurrent;
+    /// let bfield = LarBfield;
     /// let perturbation = Perturbation::new(vec![
     ///     Box::new(FluteMode::new(1e-4, lcfs, 1, 2, 0.0)),
     ///     Box::new(FluteMode::new(1e-5, lcfs, 1, 3, 0.0)),
@@ -275,8 +275,8 @@ impl Particle {
     /// # use dexter_simulate::*;
     /// let lcfs = MagneticFlux::Toroidal(0.1);
     /// let qfactor = UnityQfactor::new(lcfs);
-    /// let current = LarCurrent::new();
-    /// let bfield = LarBfield::new();
+    /// let current = LarCurrent;
+    /// let bfield = LarBfield;
     /// let perturbation = Perturbation::new(vec![
     ///     Box::new(FluteMode::new(1e-4, lcfs, 1, 2, 0.0)),
     ///     Box::new(FluteMode::new(1e-5, lcfs, 1, 3, 0.0)),
@@ -338,8 +338,8 @@ impl Particle {
     /// # use dexter_simulate::*;
     /// let lcfs = MagneticFlux::Toroidal(0.05);
     /// let qfactor = ParabolicQfactor::new(1.1, 3.9, lcfs);
-    /// let current = LarCurrent::new();
-    /// let bfield = LarBfield::new();
+    /// let current = LarCurrent;
+    /// let bfield = LarBfield;
     /// let perturbation = Perturbation::new(vec![
     ///     Box::new(FluteMode::new(1e-4, lcfs, 1, 2, 0.0)),
     ///     Box::new(FluteMode::new(1e-5, lcfs, 1, 3, 0.0)),
@@ -383,8 +383,8 @@ impl Particle {
     /// # use dexter_simulate::*;
     /// let lcfs = MagneticFlux::Toroidal(0.03);
     /// let qfactor = ParabolicQfactor::new(1.1, 3.9, lcfs);
-    /// let current = LarCurrent::new();
-    /// let bfield = LarBfield::new();
+    /// let current = LarCurrent;
+    /// let bfield = LarBfield;
     /// let perturbation = Perturbation::new(vec![
     ///     Box::new(FluteMode::new(1e-4, lcfs, 1, 2, 0.0)),
     ///     Box::new(FluteMode::new(1e-5, lcfs, 1, 3, 0.0)),

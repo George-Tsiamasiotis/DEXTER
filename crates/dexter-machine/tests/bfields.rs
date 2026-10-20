@@ -11,7 +11,7 @@ use ndarray::{Array1, Array2};
 #[test]
 #[rustfmt::skip]
 fn lar_bfield() {
-    let bfield = dbg!(LarBfield::new());
+    let bfield = LarBfield;
     assert_eq!(bfield.psi_state(), FluxCoordinateState::Good);
     assert_eq!(bfield.psip_state(), FluxCoordinateState::Bad);
 

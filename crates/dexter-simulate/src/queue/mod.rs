@@ -211,8 +211,8 @@ impl Queue {
     /// #
     /// let lcfs = MagneticFlux::Toroidal(0.6);
     /// let qfactor = ParabolicQfactor::new(1.1, 4.2, lcfs);
-    /// let current = LarCurrent::new();
-    /// let bfield = LarBfield::new();
+    /// let current = LarCurrent;
+    /// let bfield = LarBfield;
     /// let perturbation = Perturbation::new(vec![
     ///     Box::new(FluteMode::new(1e-3, lcfs, 1, 1, 0.0)),
     ///     Box::new(FluteMode::new(1e-3, lcfs, 1, 2, 0.0)),
@@ -273,8 +273,8 @@ impl Queue {
     /// # use ndarray::*;
     /// let lcfs = MagneticFlux::Toroidal(0.06);
     /// let qfactor = ParabolicQfactor::new(1.1, 4.2, lcfs);
-    /// let current = LarCurrent::new();
-    /// let bfield = LarBfield::new();
+    /// let current = LarCurrent;
+    /// let bfield = LarBfield;
     /// let machine = MachineBuilder::new(&qfactor, &current, &bfield).build();
     ///
     /// let psip0s = MagneticFluxArray::Poloidal(array![0.15, 0.3]);
@@ -332,8 +332,8 @@ impl Queue {
     /// #
     /// let lcfs = MagneticFlux::Toroidal(0.6);
     /// let qfactor = ParabolicQfactor::new(1.1, 4.2, lcfs);
-    /// let current = LarCurrent::new();
-    /// let bfield = LarBfield::new();
+    /// let current = LarCurrent;
+    /// let bfield = LarBfield;
     /// let machine = MachineBuilder::new(&qfactor, &current, &bfield).build();
     ///
     /// let psip0s = MagneticFluxArray::Poloidal(array![0.15, 0.3]);
@@ -389,8 +389,8 @@ impl Queue {
     /// #
     /// let lcfs = MagneticFlux::Toroidal(0.6);
     /// let qfactor = ParabolicQfactor::new(1.1, 4.2, lcfs);
-    /// let current = LarCurrent::new();
-    /// let bfield = LarBfield::new();
+    /// let current = LarCurrent;
+    /// let bfield = LarBfield;
     /// let machine = MachineBuilder::new(&qfactor, &current, &bfield).build();
     ///
     /// let psip0s = MagneticFluxArray::Poloidal(array![0.15, 0.3]);
