@@ -229,15 +229,20 @@ impl Particle {
     /// # use dexter_simulate::*;
     /// let lcfs = MagneticFlux::Toroidal(0.05);
     /// let qfactor = ParabolicQfactor::new(1.1, 3.9, lcfs);
-    /// let current = LarCurrent::new();
-    /// let bfield = LarBfield::new();
+    /// let current = LarCurrent;
+    /// let bfield = LarBfield;
+    /// let efield = GaussianEfield::new(5e-4, lcfs * 0.9, 0.02 * lcfs.value());
     /// let perturbation = Perturbation::new(vec![
     ///     Box::new(FluteMode::new(1e-4, lcfs, 1, 2, 0.0)),
     ///     Box::new(FluteMode::new(1e-5, lcfs, 1, 3, 0.0)),
     /// ]);
+    ///
     /// let machine = MachineBuilder::new(&qfactor, &current, &bfield)
+    ///     .with_efield(&efield)
     ///     .with_perturbation(&perturbation)
     ///     .build();
+    ///
+    /// // ===========
     ///
     /// let psi0 = MagneticFlux::Toroidal(0.015);
     /// let initial = InitialConditions::boozer(0.0, psi0, 0.0, 3.14, 1e-5, 1e-6);
@@ -275,15 +280,20 @@ impl Particle {
     /// # use dexter_simulate::*;
     /// let lcfs = MagneticFlux::Toroidal(0.1);
     /// let qfactor = UnityQfactor::new(lcfs);
-    /// let current = LarCurrent::new();
-    /// let bfield = LarBfield::new();
+    /// let current = LarCurrent;
+    /// let bfield = LarBfield;
+    /// let efield = GaussianEfield::new(5e-4, lcfs * 0.9, 0.02 * lcfs.value());
     /// let perturbation = Perturbation::new(vec![
     ///     Box::new(FluteMode::new(1e-4, lcfs, 1, 2, 0.0)),
     ///     Box::new(FluteMode::new(1e-5, lcfs, 1, 3, 0.0)),
     /// ]);
+    ///
     /// let machine = MachineBuilder::new(&qfactor, &current, &bfield)
+    ///     .with_efield(&efield)
     ///     .with_perturbation(&perturbation)
     ///     .build();
+    ///
+    /// // ===========
     ///
     /// let psi0 = MagneticFlux::Toroidal(0.02);
     /// let initial = InitialConditions::boozer(0.0, psi0, 3.14, 0.0, 1e-4, 1e-6);
@@ -338,15 +348,20 @@ impl Particle {
     /// # use dexter_simulate::*;
     /// let lcfs = MagneticFlux::Toroidal(0.05);
     /// let qfactor = ParabolicQfactor::new(1.1, 3.9, lcfs);
-    /// let current = LarCurrent::new();
-    /// let bfield = LarBfield::new();
+    /// let current = LarCurrent;
+    /// let bfield = LarBfield;
+    /// let efield = GaussianEfield::new(5e-4, lcfs * 0.9, 0.02 * lcfs.value());
     /// let perturbation = Perturbation::new(vec![
     ///     Box::new(FluteMode::new(1e-4, lcfs, 1, 2, 0.0)),
     ///     Box::new(FluteMode::new(1e-5, lcfs, 1, 3, 0.0)),
     /// ]);
+    ///
     /// let machine = MachineBuilder::new(&qfactor, &current, &bfield)
+    ///     .with_efield(&efield)
     ///     .with_perturbation(&perturbation)
     ///     .build();
+    ///
+    /// // ===========
     ///
     /// let psi0 = MagneticFlux::Toroidal(0.015);
     /// let initial = InitialConditions::boozer(0.0, psi0, 0.0, 3.14, 1e-5, 1e-6);
@@ -364,8 +379,9 @@ impl Particle {
             return;
         }
         // ignore perturbation
-        let machine =
-            MachineBuilder::new(machine.qfactor(), machine.current(), machine.bfield()).build();
+        let machine = MachineBuilder::new(machine.qfactor(), machine.current(), machine.bfield())
+            .with_efield(machine.efield())
+            .build();
         close::close(self, machine, periods, solver_params);
     }
 
@@ -373,8 +389,10 @@ impl Particle {
     ///
     /// # Note
     ///
-    /// This method is experimental. It is exact for LAR equilibria and approximately correct for
-    /// tokamak equilibria, depending on how shaped they are.
+    /// This method follows [`R. B. White`]'s rules for classifying orbits. it only works for
+    /// up-down symmetric equilibria with no electric field.
+    ///
+    /// See [`EnergyPzetaPlane`] diagram for the different orbit types.
     ///
     /// # Example
     ///
@@ -383,13 +401,11 @@ impl Particle {
     /// # use dexter_simulate::*;
     /// let lcfs = MagneticFlux::Toroidal(0.03);
     /// let qfactor = ParabolicQfactor::new(1.1, 3.9, lcfs);
-    /// let current = LarCurrent::new();
-    /// let bfield = LarBfield::new();
-    /// let perturbation = Perturbation::new(vec![
-    ///     Box::new(FluteMode::new(1e-4, lcfs, 1, 2, 0.0)),
-    ///     Box::new(FluteMode::new(1e-5, lcfs, 1, 3, 0.0)),
-    /// ]);
+    /// let current = LarCurrent;
+    /// let bfield = LarBfield;
     /// let machine = MachineBuilder::new(&qfactor, &current, &bfield).build();
+    ///
+    /// // ===========
     ///
     /// let psi0 = MagneticFlux::Toroidal(0.001);
     /// let pzeta0 = -0.8 * machine.qfactor().psip_last().value();
@@ -402,6 +418,8 @@ impl Particle {
     /// # Ok::<_, SimulationError>(())
     ///
     /// ```
+    ///
+    /// [`R. B. White`]: https://doi.org/10.1142/P440
     pub fn classify(&mut self, machine: Machine) {
         self.finalize_initial_conditions(machine);
         if !self._routine_ready {

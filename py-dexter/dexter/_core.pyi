@@ -219,6 +219,43 @@ class _PyBfield:  # Trait and all possible getters
     @override
     def __str__(self) -> str: ...
 
+class _PyEfield:  # Trait and all possible getters
+    machine_type: MachineType
+    psi_state: FluxCoordinateState
+    psip_state: FluxCoordinateState
+    strength: float
+    mean: _PyMagneticFlux
+    width: float
+
+    @classmethod
+    def build_no_efield(cls) -> _PyEfield: ...
+    @classmethod
+    def build_gaussian_efield(
+        cls,
+        strength: float,
+        mean: _PyMagneticFlux,
+        width: float,
+    ) -> _PyEfield: ...
+    def eval_e(
+        self,
+        psi: float,
+        psip: float,
+    ) -> float: ...
+    def eval_phi(
+        self,
+        psi: float,
+        psip: float,
+    ) -> float: ...
+    def eval_phi_deriv(
+        self,
+        psi: float,
+        psip: float,
+    ) -> float: ...
+    @override
+    def __repr__(self) -> str: ...
+    @override
+    def __str__(self) -> str: ...
+
 class _PyMode:  # Trait and all possible getters
     machine_type: MachineType
     psi_state: FluxCoordinateState
@@ -483,6 +520,7 @@ class _PyParticle:
         qfactor: _PyQfactor,
         current: _PyCurrent,
         bfield: _PyBfield,
+        efield: _PyEfield,
         perturbation: _PyPerturbation,
         teval: tuple[float, float],
         solver_params: _PySolverParams,
@@ -492,6 +530,7 @@ class _PyParticle:
         qfactor: _PyQfactor,
         current: _PyCurrent,
         bfield: _PyBfield,
+        efield: _PyEfield,
         perturbation: _PyPerturbation,
         intersect_params: _PyIntersectParams,
         solver_params: _PySolverParams,
@@ -501,6 +540,7 @@ class _PyParticle:
         qfactor: _PyQfactor,
         current: _PyCurrent,
         bfield: _PyBfield,
+        efield: _PyEfield,
         perturbation: _PyPerturbation,
         periods: int,
         solver_params: _PySolverParams,
@@ -559,6 +599,7 @@ class _PyQueue:
         qfactor: _PyQfactor,
         current: _PyCurrent,
         bfield: _PyBfield,
+        efield: _PyEfield,
         perturbation: _PyPerturbation,
         teval: tuple[float, float],
         solver_params: _PySolverParams,
@@ -568,6 +609,7 @@ class _PyQueue:
         qfactor: _PyQfactor,
         current: _PyCurrent,
         bfield: _PyBfield,
+        efield: _PyEfield,
         perturbation: _PyPerturbation,
         intersect_params: _PyIntersectParams,
         solver_params: _PySolverParams,
@@ -577,6 +619,7 @@ class _PyQueue:
         qfactor: _PyQfactor,
         current: _PyCurrent,
         bfield: _PyBfield,
+        efield: _PyEfield,
         perturbation: _PyPerturbation,
         periods: int,
         discard_arrays: bool,
@@ -626,6 +669,7 @@ class _PyGCHamiltonian:
         qfactor: _PyQfactor,
         current: _PyCurrent,
         bfield: _PyBfield,
+        efield: _PyEfield,
         theta: float,
         flux: _PyMagneticFlux,
         pzeta: float,
@@ -637,6 +681,7 @@ class _PyGCHamiltonian:
         qfactor: _PyQfactor,
         current: _PyCurrent,
         bfield: _PyBfield,
+        efield: _PyEfield,
         theta_array: Array1,
         flux_array: _PyMagneticFluxArray,
         pzeta: float,
@@ -648,6 +693,7 @@ class _PyGCHamiltonian:
         qfactor: _PyQfactor,
         current: _PyCurrent,
         bfield: _PyBfield,
+        efield: _PyEfield,
         theta_array: Array1,
         flux_array: _PyMagneticFluxArray,
         pzeta: float,
@@ -659,6 +705,7 @@ class _PyGCHamiltonian:
         qfactor: _PyQfactor,
         current: _PyCurrent,
         bfield: _PyBfield,
+        efield: _PyEfield,
         theta_array: Array1,
         flux_array: _PyMagneticFluxArray,
         pzeta: float,
@@ -750,6 +797,7 @@ class _PyEnergyPzetaPlane:
         qfactor: _PyQfactor,
         current: _PyCurrent,
         bfield: _PyBfield,
+        efield: _PyEfield,
         mu: float,
     ) -> None: ...
     def calculate_critical_points(
@@ -757,6 +805,7 @@ class _PyEnergyPzetaPlane:
         qfactor: _PyQfactor,
         current: _PyCurrent,
         bfield: _PyBfield,
+        efield: _PyEfield,
         pzeta_array: Array1,
     ) -> None: ...
     def calculate_boundary_extrema(
@@ -764,6 +813,7 @@ class _PyEnergyPzetaPlane:
         qfactor: _PyQfactor,
         current: _PyCurrent,
         bfield: _PyBfield,
+        efield: _PyEfield,
         pzeta_array: Array1,
     ) -> None: ...
     def critical_points_pzetas(self) -> Array1: ...

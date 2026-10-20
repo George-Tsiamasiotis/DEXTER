@@ -30,7 +30,7 @@ use dexter_common::{DynInterpolator, DynInterpolator2d, make_interp, make_interp
 ///
 /// No ψ/ψp bounds checks are performed in evaluations.
 #[non_exhaustive]
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub struct LarGeometry {
     /// Magnetic field strength on the axis `B0` in [T].
     baxis: f64,

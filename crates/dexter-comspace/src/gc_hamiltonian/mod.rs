@@ -34,6 +34,7 @@ use dexter_machine::{Accelerator2d, EvalError, Machine, MagneticFlux};
 #[derive(Debug, Clone, Copy)]
 pub struct GCHamiltonian;
 
+/// Evaluations over scalar values.
 impl GCHamiltonian {
     /// Evaluates the Hamiltonian in a `(θ, ψ/ψp; Pζ, μ)` point.
     ///
@@ -50,9 +51,15 @@ impl GCHamiltonian {
     /// # use dexter_comspace::*;
     /// let lcfs = MagneticFlux::Toroidal(0.05);
     /// let qfactor = ParabolicQfactor::new(1.1, 3.9, lcfs);
-    /// let current = LarCurrent::new();
-    /// let bfield = LarBfield::new();
-    /// let machine = MachineBuilder::new(&qfactor, &current, &bfield).build();
+    /// let current = LarCurrent;
+    /// let bfield = LarBfield;
+    /// let efield = GaussianEfield::new(5e-4, lcfs * 0.9, 0.02 * lcfs.value());
+    ///
+    /// let machine = MachineBuilder::new(&qfactor, &current, &bfield)
+    ///     .with_efield(&efield)
+    ///     .build();
+    ///
+    /// // ===========
     ///
     /// let theta = 3.1415;
     /// let psi = MagneticFlux::Toroidal(0.015);
@@ -75,17 +82,19 @@ impl GCHamiltonian {
         let acc = &mut Accelerator2d::new();
         let theta = theta.rem_euclid(TAU);
 
-        let (b, g, psip): (f64, f64, MagneticFlux);
+        let (b, g, phi, psip): (f64, f64, f64, MagneticFlux);
         match (machine.good_flux(), flux.kind()) {
             // Use the passed `flux` in the `b` and `g` calculations to avoid error propagation
             (Toroidal, Toroidal) => {
                 b = machine.bfield().eval_b(flux, theta, acc)?;
                 g = machine.current().eval_g(flux, acc.xacc())?;
                 psip = machine.qfactor().eval_other(flux, acc.xacc())?;
+                phi = machine.efield().eval_phi(flux)?;
             }
             (Poloidal, Poloidal) => {
                 b = machine.bfield().eval_b(flux, theta, acc)?;
                 g = machine.current().eval_g(flux, acc.xacc())?;
+                phi = machine.efield().eval_phi(flux)?;
                 psip = flux;
             }
             // Convert to the other flux and use `machine.good_flux()` in the `b` and `g` calculations
@@ -93,19 +102,21 @@ impl GCHamiltonian {
                 let psi = machine.qfactor().eval_other(flux, acc.xacc())?;
                 b = machine.bfield().eval_b(psi, theta, acc)?;
                 g = machine.current().eval_g(psi, acc.xacc())?;
+                phi = machine.efield().eval_phi(psi)?;
                 psip = flux;
             }
             (Poloidal, Toroidal) => {
                 psip = machine.qfactor().eval_other(flux, acc.xacc())?;
                 b = machine.bfield().eval_b(psip, theta, acc)?;
                 g = machine.current().eval_g(psip, acc.xacc())?;
+                phi = machine.efield().eval_phi(psip)?;
             }
         };
 
-        let kinetic = ((pzeta + psip.value()) * b / g).powi(2) / 2.0;
+        let parallel = ((pzeta + psip.value()) * b / g).powi(2) / 2.0;
         let perpendicular = mu * b;
 
-        Ok(kinetic + perpendicular)
+        Ok(parallel + perpendicular + phi)
     }
 
     /// Evaluates `dot(θ)` in a `(θ, ψ/ψp; Pζ, μ)` point.
@@ -126,16 +137,22 @@ impl GCHamiltonian {
     /// # use dexter_comspace::*;
     /// let lcfs = MagneticFlux::Toroidal(0.05);
     /// let qfactor = ParabolicQfactor::new(1.1, 3.9, lcfs);
-    /// let current = LarCurrent::new();
-    /// let bfield = LarBfield::new();
-    /// let machine = MachineBuilder::new(&qfactor, &current, &bfield).build();
+    /// let current = LarCurrent;
+    /// let bfield = LarBfield;
+    /// let efield = GaussianEfield::new(5e-4, lcfs * 0.9, 0.02 * lcfs.value());
+    ///
+    /// let machine = MachineBuilder::new(&qfactor, &current, &bfield)
+    ///     .with_efield(&efield)
+    ///     .build();
+    ///
+    /// // ===========
     ///
     /// let theta = 3.1415;
     /// let psi = MagneticFlux::Toroidal(0.015);
     /// let pzeta = -0.1*qfactor.psip_last().value();
     /// let mu = 1e-4;
     ///
-    /// let energy: f64 = GCHamiltonian::eval_theta_dot(machine, theta, psi, pzeta, mu)?;
+    /// let theta_dot: f64 = GCHamiltonian::eval_theta_dot(machine, theta, psi, pzeta, mu)?;
     /// # Ok::<_, EvalError>(())
     ///
     /// ```
@@ -161,11 +178,13 @@ impl GCHamiltonian {
         let mut dg = machine.current().eval_g_deriv(flux, acc.xacc())?;
         let mut di = machine.current().eval_i_deriv(flux, acc.xacc())?;
         let mut db = machine.bfield().eval_deriv_flux(flux, theta, acc)?;
+        let mut dphi = machine.efield().eval_phi_deriv(flux)?;
 
         if flux.kind() == Toroidal {
             dg *= q;
             di *= q;
             db *= q;
+            dphi *= q;
         };
 
         let psip = match flux.kind() {
@@ -176,7 +195,7 @@ impl GCHamiltonian {
         let rho = (pzeta + psip.value()) / g;
         let dterm = g * q + i + rho * (g * di - i * dg);
         let mu_par = mu + rho.powi(2) * b;
-        let brace = mu_par * db;
+        let brace = mu_par * db + dphi;
 
         let theta_dot_first = rho * b.powi(2) * (1.0 - rho * dg) / dterm;
         let theta_dot_second = g * brace / dterm;
@@ -194,11 +213,15 @@ mod test {
 
     #[test]
     fn gc_hamiltonian_evaluate_machine_good_both() {
-        let unity_qfactor = UnityQfactor::new(Toroidal(0.1));
+        let lcfs = Toroidal(0.1);
+        let unity_qfactor = UnityQfactor::new(lcfs);
         let qfactor = unity_qfactor;
-        let current = LarCurrent::new();
-        let bfield = LarBfield::new();
-        let machine = MachineBuilder::new(&qfactor, &current, &bfield).build();
+        let current = LarCurrent;
+        let bfield = LarBfield;
+        let efield = GaussianEfield::new(5e-4, lcfs * 0.9, 0.02 * lcfs.value());
+        let machine = MachineBuilder::new(&qfactor, &current, &bfield)
+            .with_efield(&efield)
+            .build();
 
         let _ = GCHamiltonian::eval(machine, 0.0, Toroidal(0.01), -0.01, 1e-4).unwrap();
         let _ = GCHamiltonian::eval(machine, 0.0, Poloidal(0.01), -0.01, 1e-4).unwrap();
@@ -210,7 +233,11 @@ mod test {
         let qfactor = NcQfactorBuilder::new(&path, Steffen).build().unwrap();
         let current = NcCurrentBuilder::new(&path, Steffen).build().unwrap();
         let bfield = NcBfieldBuilder::new(&path, Bicubic).build().unwrap();
-        let machine = MachineBuilder::new(&qfactor, &current, &bfield).build();
+        let lcfs = qfactor.psi_last();
+        let efield = GaussianEfield::new(5e-4, lcfs * 0.9, 0.02 * lcfs.value());
+        let machine = MachineBuilder::new(&qfactor, &current, &bfield)
+            .with_efield(&efield)
+            .build();
 
         let _ = GCHamiltonian::eval(machine, 0.0, Toroidal(0.01), -0.01, 1e-4).unwrap();
         // `psip` is `Bad` so we cannot calculate `psi`
@@ -223,7 +250,11 @@ mod test {
         let qfactor = NcQfactorBuilder::new(&path, Steffen).build().unwrap();
         let current = NcCurrentBuilder::new(&path, Steffen).build().unwrap();
         let bfield = NcBfieldBuilder::new(&path, Bicubic).build().unwrap();
-        let machine = MachineBuilder::new(&qfactor, &current, &bfield).build();
+        let lcfs = qfactor.psip_last();
+        let efield = GaussianEfield::new(5e-4, lcfs * 0.9, 0.02 * lcfs.value());
+        let machine = MachineBuilder::new(&qfactor, &current, &bfield)
+            .with_efield(&efield)
+            .build();
 
         let _ = GCHamiltonian::eval(machine, 0.0, Poloidal(0.01), -0.01, 1e-4).unwrap();
         // `psi` is `Bad` so we cannot calculate `psip`

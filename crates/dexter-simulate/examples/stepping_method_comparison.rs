@@ -7,8 +7,8 @@ fn main() {
     use MagneticFlux::*;
     let lcfs = Toroidal(0.45);
     let qfactor = UnityQfactor::new(lcfs);
-    let current = LarCurrent::new();
-    let bfield = LarBfield::new();
+    let current = LarCurrent;
+    let bfield = LarBfield;
     let perturbation = Perturbation::new(vec![
         Box::new(FluteMode::new(1e-2, lcfs, 1, 1, 0.0)),
         Box::new(FluteMode::new(1e-3, lcfs, 1, 2, 0.0)),

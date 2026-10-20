@@ -5,6 +5,7 @@ pub(crate) mod nc_flux;
 
 pub(crate) mod bfields;
 pub(crate) mod currents;
+pub(crate) mod efields;
 pub(crate) mod flute_mode;
 pub(crate) mod geometries;
 pub(crate) mod nc_flute_mode;

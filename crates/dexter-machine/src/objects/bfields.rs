@@ -30,23 +30,7 @@ use dexter_common::{DynInterpolator2d, make_interp2d};
 /// # Note
 ///
 /// No ψ/ψp bounds checks are performed in evaluations.
-#[non_exhaustive]
-#[derive(Clone)]
 pub struct LarBfield;
-
-impl LarBfield {
-    /// Creates a new `LarBfield`.
-    ///
-    /// # Example
-    /// ```
-    /// # use dexter_machine::*;
-    /// let bfield = LarBfield::new();
-    /// ```
-    #[must_use]
-    pub fn new() -> Self {
-        Self
-    }
-}
 
 impl MachineObject for LarBfield {
     fn machine_type(&self) -> MachineType {
@@ -674,7 +658,7 @@ mod lar_values {
     #[test]
     #[rustfmt::skip]
     fn lar_bfield_values_gcmotion_check() {
-        let b = LarBfield::new();
+        let b = LarBfield;
         let acc = &mut Accelerator2d::new();
         let epsilon = 1e-20;
 

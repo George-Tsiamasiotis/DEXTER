@@ -52,10 +52,10 @@ def get_default_args(func: Callable[[Any], Any]):
     }
 
 
-def tex_unit(pint_unit: PlainQuantity[Any]) -> str:
+def tex_unit(plain_quantity: PlainQuantity[Any]) -> str:
     r"""Converts a Quantity's units to a Latex-printable format."""
-    units = pint_unit.units
-    if pint_unit.is_compatible_with("second"):
+    units = plain_quantity.units
+    if plain_quantity.is_compatible_with("second"):
         match str(units):
             case "femtosecond":
                 return r"fm"
@@ -69,6 +69,34 @@ def tex_unit(pint_unit: PlainQuantity[Any]) -> str:
                 return r"ms"
             case "second":
                 return r"s"
+            case _:
+                return str(units)
+    if plain_quantity.is_compatible_with("volt/meter"):
+        match str(units):
+            case "microvolt / meter":
+                return r"\mu V / m"
+            case "milivolt / meter":
+                return r"mV/m"
+            case "volt / meter":
+                return r"V/m"
+            case "kilovolt / meter":
+                return r"kV/m"
+            case "megavolt / meter":
+                return r"MV/m"
+            case _:
+                return str(units)
+    if plain_quantity.is_compatible_with("volt"):
+        match str(units):
+            case "microvolt":
+                return r"\mu V"
+            case "milivolt":
+                return r"mV"
+            case "volt":
+                return r"V"
+            case "kilovolt":
+                return r"kV"
+            case "megavolt":
+                return r"MV"
             case _:
                 return str(units)
     else:

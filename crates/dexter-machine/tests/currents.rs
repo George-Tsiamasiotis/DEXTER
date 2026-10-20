@@ -10,7 +10,7 @@ use ndarray::Array1;
 
 #[test]
 fn lar_current() {
-    let current = dbg!(LarCurrent::new());
+    let current = LarCurrent;
     assert_eq!(current.psi_state(), FluxCoordinateState::Good);
     assert_eq!(current.psip_state(), FluxCoordinateState::Good);
 

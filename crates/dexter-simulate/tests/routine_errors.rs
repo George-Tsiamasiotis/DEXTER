@@ -7,8 +7,8 @@ use dexter_simulate::*;
 #[test]
 fn time_out() {
     let qfactor = UnityQfactor::new(MagneticFlux::Toroidal(0.5));
-    let current = LarCurrent::new();
-    let bfield = LarBfield::new();
+    let current = LarCurrent;
+    let bfield = LarBfield;
     let machine = MachineBuilder::new(&qfactor, &current, &bfield).build();
 
     let initial = InitialConditions::boozer(0.0, MagneticFlux::Toroidal(0.1), 0.0, 0.0, 1e-4, 1e-6);
@@ -40,8 +40,8 @@ fn time_out() {
 fn out_of_bounds_initialization() {
     use IntegrationStatus::OutOfBoundsInitialization;
     let qfactor = UnityQfactor::new(MagneticFlux::Toroidal(0.5));
-    let current = LarCurrent::new();
-    let bfield = LarBfield::new();
+    let current = LarCurrent;
+    let bfield = LarBfield;
     let machine = MachineBuilder::new(&qfactor, &current, &bfield).build();
 
     let initial = InitialConditions::boozer(0.0, MagneticFlux::Toroidal(1.0), 0.0, 0.0, 1e-4, 1e-6);
@@ -69,8 +69,8 @@ fn out_of_bounds_initialization() {
 fn bad_magnetic_flux_initialization() {
     use IntegrationStatus::BadMagneticFlux;
     let qfactor = UnityQfactor::new(MagneticFlux::Toroidal(0.5));
-    let current = LarCurrent::new();
-    let bfield = LarBfield::new();
+    let current = LarCurrent;
+    let bfield = LarBfield;
     let machine = MachineBuilder::new(&qfactor, &current, &bfield).build();
 
     let initial = InitialConditions::boozer(0.0, MagneticFlux::Poloidal(1.0), 0.0, 0.0, 1e-4, 1e-6);
@@ -91,8 +91,8 @@ fn bad_magnetic_flux_initialization() {
 #[test]
 fn intersected_time_out() {
     let qfactor = UnityQfactor::new(MagneticFlux::Toroidal(0.5));
-    let current = LarCurrent::new();
-    let bfield = LarBfield::new();
+    let current = LarCurrent;
+    let bfield = LarBfield;
     let machine = MachineBuilder::new(&qfactor, &current, &bfield).build();
 
     let initial = InitialConditions::boozer(0.0, MagneticFlux::Toroidal(0.1), 0.0, 0.0, 1e-4, 0.0);

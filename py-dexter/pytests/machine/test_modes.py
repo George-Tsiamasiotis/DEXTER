@@ -1,7 +1,5 @@
 import numpy as np
-import pytest
 import dexter as dex
-from math import isfinite
 
 from semver import Version
 

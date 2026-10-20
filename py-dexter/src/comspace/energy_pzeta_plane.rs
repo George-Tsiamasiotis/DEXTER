@@ -46,9 +46,17 @@ pub struct PyEnergyPzetaPlane(pub EnergyPzetaPlane);
 #[pymethods]
 impl PyEnergyPzetaPlane {
     #[new]
-    pub fn new(qfactor: &PyQfactor, current: &PyCurrent, bfield: &PyBfield, mu: f64) -> Self {
+    pub fn new(
+        qfactor: &PyQfactor,
+        current: &PyCurrent,
+        bfield: &PyBfield,
+        efield: &PyEfield,
+        mu: f64,
+    ) -> Self {
         // EnergyPzetaPlane does not use a Geometry or a Perturbation
-        let machine = MachineBuilder::new(qfactor.inner(), current.inner(), bfield.inner()).build();
+        let machine = MachineBuilder::new(qfactor.inner(), current.inner(), bfield.inner())
+            .with_efield(efield.inner())
+            .build();
         Self(EnergyPzetaPlane::from_mu(machine, mu))
     }
 
@@ -57,9 +65,12 @@ impl PyEnergyPzetaPlane {
         qfactor: &PyQfactor,
         current: &PyCurrent,
         bfield: &PyBfield,
+        efield: &PyEfield,
         pzeta_array: PyReadonlyArray1<f64>,
     ) {
-        let machine = MachineBuilder::new(qfactor.inner(), current.inner(), bfield.inner()).build();
+        let machine = MachineBuilder::new(qfactor.inner(), current.inner(), bfield.inner())
+            .with_efield(efield.inner())
+            .build();
         self.0
             .calculate_critical_points(machine, &pzeta_array.as_array());
     }
@@ -69,9 +80,12 @@ impl PyEnergyPzetaPlane {
         qfactor: &PyQfactor,
         current: &PyCurrent,
         bfield: &PyBfield,
+        efield: &PyEfield,
         pzeta_array: PyReadonlyArray1<f64>,
     ) {
-        let machine = MachineBuilder::new(qfactor.inner(), current.inner(), bfield.inner()).build();
+        let machine = MachineBuilder::new(qfactor.inner(), current.inner(), bfield.inner())
+            .with_efield(efield.inner())
+            .build();
         self.0
             .calculate_boundary_extrema(machine, &pzeta_array.as_array());
     }

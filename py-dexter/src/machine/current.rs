@@ -31,7 +31,7 @@ pub enum PyCurrent {
 impl PyCurrent {
     #[classmethod]
     pub fn build_lar<'py>(_: Bound<'py, PyType>) -> Result<Self> {
-        Ok(Self::Lar(PyLarCurrent(Arc::new(LarCurrent::new()))))
+        Ok(Self::Lar(PyLarCurrent(Arc::new(LarCurrent))))
     }
 
     #[classmethod]

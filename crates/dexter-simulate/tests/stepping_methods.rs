@@ -12,8 +12,8 @@ use ndarray::Axis;
 fn different_stepping_methods() {
     let lcfs = MagneticFlux::Toroidal(0.45);
     let qfactor = UnityQfactor::new(MagneticFlux::Toroidal(0.5));
-    let current = LarCurrent::new();
-    let bfield = LarBfield::new();
+    let current = LarCurrent;
+    let bfield = LarBfield;
     let perturbation = Perturbation::new(vec![
         Box::new(FluteMode::new(1e-3, lcfs, 1, 2, 0.0)),
         Box::new(FluteMode::new(1e-3, lcfs, 1, 4, 0.0)),

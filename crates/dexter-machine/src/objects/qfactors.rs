@@ -22,7 +22,6 @@ use dexter_common::{DynInterpolator, array1D_getter_impl, make_interp};
 
 /// Analytical q-factor profile of q = 1 and ψ=ψp.
 #[non_exhaustive]
-#[derive(Clone)]
 pub struct UnityQfactor {
     /// The value of the last closed toroidal flux surface `ψ_last` in Normalized units.
     psi_last: f64,
@@ -164,7 +163,6 @@ impl std::fmt::Debug for UnityQfactor {
 // ===============================================================================================
 
 /// Analytical q-factor of parabolic q(ψ) profile.
-#[derive(Clone)]
 pub struct ParabolicQfactor {
     /// The `q` value on the magnetic axis.
     qaxis: f64,
@@ -411,7 +409,7 @@ impl std::fmt::Debug for ParabolicQfactor {
 /// Used to create a [`NcQfactor`].
 ///
 /// Exists for future configuration flexibility.
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct NcQfactorBuilder {
     /// Path to the netCDF file.
     path: PathBuf,

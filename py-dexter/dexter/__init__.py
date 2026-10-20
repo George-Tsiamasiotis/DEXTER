@@ -48,11 +48,18 @@ from dexter.machine.qfactors import (
 )
 from dexter.machine.currents import CurrentObject, LarCurrent, NcCurrent
 from dexter.machine.bfields import BfieldObject, LarBfield, NcBfield
+from dexter.machine.efields import EfieldObject, NoEfield, GaussianEfield
 from dexter.machine.modes import ModeObject, FluteMode, NcFluteMode
 from dexter.machine.perturbation import Perturbation
 from dexter.machine.machine import Machine
 
-from dexter.machine.plot import plot_current, plot_qfactor, plot_bfield, plot_mode
+from dexter.machine.plot import (
+    plot_current,
+    plot_qfactor,
+    plot_bfield,
+    plot_efield,
+    plot_mode,
+)
 
 from dexter.simulate.plot import (
     plot_evolution,
@@ -104,6 +111,7 @@ __all__ = [
     "QfactorObject",
     "CurrentObject",
     "BfieldObject",
+    "EfieldObject",
     "ModeObject",
     "MagneticFlux",
     "LarGeometry",
@@ -115,6 +123,8 @@ __all__ = [
     "NcCurrent",
     "LarBfield",
     "NcBfield",
+    "NoEfield",
+    "GaussianEfield",
     "FluteMode",
     "NcFluteMode",
     "Perturbation",
@@ -123,6 +133,7 @@ __all__ = [
     "plot_current",
     "plot_qfactor",
     "plot_bfield",
+    "plot_efield",
     "plot_mode",
     # Simulate
     "InitialConditions",

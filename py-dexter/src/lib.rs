@@ -27,6 +27,7 @@ fn _core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<machine::PyQfactor>()?;
     m.add_class::<machine::PyCurrent>()?;
     m.add_class::<machine::PyBfield>()?;
+    m.add_class::<machine::PyEfield>()?;
     m.add_class::<machine::PyMode>()?;
     m.add_class::<machine::PyPerturbation>()?;
     m.add_class::<simulate::PyInitialConditions>()?;

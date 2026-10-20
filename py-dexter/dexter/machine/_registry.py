@@ -27,6 +27,7 @@ class _Registry(UnitRegistry[float | np.ndarray]):
         self.define(f"NormTesla     = {baxis} tesla")
         self.define(f"NormJoule     = {energy_unit/PROTON_CHARGE} electron_volt")
         self.define(f"NormMeter     = {raxis} meter")
+        self.define(f"NormVolt      = NormJoule / ({PROTON_CHARGE} coulomb)")
 
 
 def get_mass_number(species: ParticleSpecies) -> float:

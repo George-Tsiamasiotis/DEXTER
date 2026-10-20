@@ -10,22 +10,26 @@ use rsl_interpolation::{
 
 use crate::constants::TRAPPED_PASSING_BOUNDARY_DENSITY;
 
-/// Representation of the Trapped-Passing boundary curves on the `(E, Pζ, μ=const)` space.
+/// Representation of the **approximate** Trapped-Passing boundary curves on the
+/// `(E, Pζ, μ=const)` space.
 ///
 /// The Trapped-Passing boundary is defined by the curves:
 ///
-/// 1. E = μB(ψp, 0)
-/// 2. E = μB(ψp, π)
+/// 1. E = μB(ψp, 0) + Φ(ψp)
+/// 2. E = μB(ψp, π) + Φ(ψp)
 ///
 /// where `Pζ = -ψp`. Therefore, we can rewrite them in the `E-Pζ` plane.
 ///
-/// 1. E(Pζ) = μB(-Pζ, 0)
-/// 2. E(Pζ) = μB(-Pζ, π)
+/// 1. E = μB(-Pζ, 0) + Φ(-Pζ)
+/// 2. E = μB(-Pζ, π) + Φ(-Pζ)
 ///
 /// The peaks of the 2 wall parabolas and the axis parabola are always at the `Pζ/ψp_last = -1` and
 /// `Pζ/ψp_last = 0` respectively. Therefore, the two curves lie in the `[-ψp_last, 0]` interval.
 ///
 /// # Note
+///
+/// This method only words for equilibria whose stationary curve lies on the midplane and Φ is a
+/// function of the magnetic flux *only*.
 ///
 /// If the equilibrium has a `good` ψp coordinate, then it is used for all calculations, since
 /// its faster. This also results in an equispaced [`TrappedPassingBoundary::pzeta`].
@@ -116,20 +120,26 @@ impl TrappedPassingBoundary {
 
         let acc = &mut Accelerator2d::new();
 
-        let lower = mu
-            * psip_interval.mapv(|psip| {
-                machine
-                    .bfield()
-                    .eval_b(psip, 0.0, acc)
+        let lower = psip_interval.mapv(|psip| {
+            mu * machine
+                .bfield()
+                .eval_b(psip, 0.0, acc)
+                .expect("-pzeta=psip is always inbound and evaluation is defined")
+                + machine
+                    .efield()
+                    .eval_phi(psip)
                     .expect("-pzeta=psip is always inbound and evaluation is defined")
-            });
-        let upper = mu
-            * psip_interval.mapv(|psip| {
-                machine
-                    .bfield()
-                    .eval_b(psip, PI, acc)
+        });
+        let upper = psip_interval.mapv(|psip| {
+            mu * machine
+                .bfield()
+                .eval_b(psip, PI, acc)
+                .expect("-pzeta=psip is always inbound and evaluation is defined")
+                + machine
+                    .efield()
+                    .eval_phi(psip)
                     .expect("-pzeta=psip is always inbound and evaluation is defined")
-            });
+        });
 
         let pzeta = psip_interval.map(|psip| -psip.value());
         let pzeta_slice = pzeta.as_slice().expect("always non-empty by construction");
@@ -165,20 +175,26 @@ impl TrappedPassingBoundary {
 
         let acc = &mut Accelerator2d::new();
 
-        let lower = mu
-            * psi_interval.mapv(|psi| {
-                machine
-                    .bfield()
-                    .eval_b(psi, 0.0, acc)
+        let lower = psi_interval.mapv(|psi| {
+            mu * machine
+                .bfield()
+                .eval_b(psi, 0.0, acc)
+                .expect("-pzeta=psip is always inbound and evaluation is defined")
+                + machine
+                    .efield()
+                    .eval_phi(psi)
                     .expect("-pzeta=psip is always inbound and evaluation is defined")
-            });
-        let upper = mu
-            * psi_interval.mapv(|psi| {
-                machine
-                    .bfield()
-                    .eval_b(psi, PI, acc)
+        });
+        let upper = psi_interval.mapv(|psi| {
+            mu * machine
+                .bfield()
+                .eval_b(psi, PI, acc)
+                .expect("-pzeta=psip is always inbound and evaluation is defined")
+                + machine
+                    .efield()
+                    .eval_phi(psi)
                     .expect("-pzeta=psip is always inbound and evaluation is defined")
-            });
+        });
 
         let psip_interval = psi_interval.mapv(|psi| {
             machine

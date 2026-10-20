@@ -209,6 +209,7 @@ class Particle(_ReprStrImpl, _RustTypeWrapper):
             qfactor=machine.qfactor._r,
             current=machine.current._r,
             bfield=machine.bfield._r,
+            efield=machine.efield._r,
             perturbation=machine.perturbation._r,
             teval=teval,
             solver_params=solver_params._r,
@@ -278,6 +279,7 @@ class Particle(_ReprStrImpl, _RustTypeWrapper):
             qfactor=machine.qfactor._r,
             current=machine.current._r,
             bfield=machine.bfield._r,
+            efield=machine.efield._r,
             perturbation=machine.perturbation._r,
             intersect_params=intersect_params._r,
             solver_params=solver_params._r,
@@ -344,6 +346,7 @@ class Particle(_ReprStrImpl, _RustTypeWrapper):
             qfactor=machine.qfactor._r,
             current=machine.current._r,
             bfield=machine.bfield._r,
+            efield=machine.efield._r,
             perturbation=machine.perturbation._r,
             periods=periods,
             solver_params=solver_params._r,
@@ -356,9 +359,10 @@ class Particle(_ReprStrImpl, _RustTypeWrapper):
         r"""Classifies the particle’s orbit using its position on the $(E, P_\zeta, \mu=const)$
         plane without integrating.
 
-        This routine only works for LAR-like equilibria.
+        !!! note
 
-        !!! hint
+            This method follows [`R. B. White`](https://doi.org/10.1142/P440)'s rules for classifying
+            orbits. it only works for up-down symmetric equilibria with no electric field.
 
             See the "$E-P_\zeta$ *Positions*" section on the ***Diagrams*** tab for explanation.
 

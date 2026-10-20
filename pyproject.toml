@@ -1,6 +1,6 @@
 [project]
 name = "dexter"
-version = "0.2.2"
+version = "0.2.3"
 description = "Calculations and simulations in analytical and reconstructed configurations of toroidal fusion devices."
 readme = "README.md"
 authors = [
@@ -11,7 +11,7 @@ dependencies = [
     "matplotlib>=3.11.2",
     "maturin>=1.15.0",
     "numpy>=2.5.1",
-    "pint>=0.26.1",
+    "pint>=0.26.2",
     "semver>=3.1.0",
 ]
 
@@ -71,7 +71,6 @@ filterwarnings = [
 
 [tool.pyright]
 include = ["py-dexter", "tools"]
-exclude = ["py-dexter/examples", "py-dexter/pytests"]
 typeCheckingMode = "standard"
 # Enable some options that are disabled in standard mode
 strictListInference = true

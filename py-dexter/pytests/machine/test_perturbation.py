@@ -1,8 +1,6 @@
 import numpy as np
 import dexter as dex
 
-from math import isfinite
-
 LCFS = dex.MagneticFlux.Toroidal(0.05)
 
 

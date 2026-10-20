@@ -24,23 +24,7 @@ use dexter_common::{DynInterpolator, array1D_getter_impl, make_interp};
 /// # Note
 ///
 /// No ψ/ψp bounds checks are performed in evaluations.
-#[non_exhaustive]
-#[derive(Clone)]
 pub struct LarCurrent;
-
-impl LarCurrent {
-    /// Creates a new `LarCurrent`.
-    ///
-    /// # Example
-    /// ```
-    /// # use dexter_machine::*;
-    /// let current = LarCurrent::new();
-    /// ```
-    #[must_use]
-    pub fn new() -> Self {
-        Self
-    }
-}
 
 impl MachineObject for LarCurrent {
     fn machine_type(&self) -> MachineType {
@@ -91,7 +75,7 @@ impl std::fmt::Debug for LarCurrent {
 ///
 /// Exists for future configuration flexibility.
 #[non_exhaustive]
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct NcCurrentBuilder {
     /// Path to the netCDF file.
     path: PathBuf,

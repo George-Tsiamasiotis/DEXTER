@@ -22,8 +22,8 @@ use std::f64::consts::TAU;
 #[rustfmt::skip]
 fn field_line_single_period_uniQ() {
     let qfactor = UnityQfactor::new(MagneticFlux::Toroidal(0.5));
-    let current = LarCurrent::new();
-    let bfield = LarBfield::new();
+    let current = LarCurrent;
+    let bfield = LarBfield;
     let machine = MachineBuilder::new(&qfactor, &current, &bfield).build();
 
     let initial = InitialConditions::boozer(0.0, MagneticFlux::Toroidal(0.3), 1.0, 0.0, 1e-12, 0.0);
@@ -53,8 +53,8 @@ fn field_line_single_period_uniQ() {
 #[rustfmt::skip]
 fn trapped_particle_single_period_uniQ() {
     let qfactor = UnityQfactor::new(MagneticFlux::Toroidal(0.1));
-    let current = LarCurrent::new();
-    let bfield = LarBfield::new();
+    let current = LarCurrent;
+    let bfield = LarBfield;
     let machine = MachineBuilder::new(&qfactor, &current, &bfield).build();
 
     let initial = InitialConditions::boozer(0.0, MagneticFlux::Toroidal(0.02), 1.0, 0.0, 1e-6, 1e-6);
@@ -83,8 +83,8 @@ fn trapped_particle_single_period_uniQ() {
 #[rustfmt::skip]
 fn multiple_periods_frequencies_calculation() {
     let qfactor = UnityQfactor::new(MagneticFlux::Toroidal(0.1));
-    let current = LarCurrent::new();
-    let bfield = LarBfield::new();
+    let current = LarCurrent;
+    let bfield = LarBfield;
     let machine = MachineBuilder::new(&qfactor, &current, &bfield).build();
 
     // Taken from `trapped_particle_single_period_uniQ`

@@ -1,11 +1,12 @@
 """Definition of the `EnergyPzetaPlane` object and its plotting methods."""
 
-from typing import cast
+from typing import Literal
 
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 from matplotlib.axes import Axes
+from itertools import cycle
 
 from dexter.machine.machine import Machine
 from dexter.comspace.gc_hamiltonian import CriticalPoint, BoundaryExtremum
@@ -103,7 +104,11 @@ class EnergyPzetaPlane(_ReprStrImpl):
 
     def __init__(self, machine: Machine, mu: float) -> None:
         self._r = _PyEnergyPzetaPlane(
-            machine.qfactor._r, machine.current._r, machine.bfield._r, mu
+            machine.qfactor._r,
+            machine.current._r,
+            machine.bfield._r,
+            machine.efield._r,
+            mu,
         )
         assert mu == self._r.mu
         self.machine = machine  # handy reference
@@ -125,6 +130,7 @@ class EnergyPzetaPlane(_ReprStrImpl):
             qfactor=self.machine.qfactor._r,
             current=self.machine.current._r,
             bfield=self.machine.bfield._r,
+            efield=self.machine.efield._r,
             pzeta_array=_into_pyarray1f64(pzeta_array),
         )
 
@@ -144,6 +150,7 @@ class EnergyPzetaPlane(_ReprStrImpl):
             qfactor=self.machine.qfactor._r,
             current=self.machine.current._r,
             bfield=self.machine.bfield._r,
+            efield=self.machine.efield._r,
             pzeta_array=_into_pyarray1f64(pzeta_array),
         )
 
@@ -210,6 +217,7 @@ class EnergyPzetaPlane(_ReprStrImpl):
         particles: bool = True,
         critical_points: bool = True,
         boundary_extrema: bool = True,
+        colors: Literal["Orbit", "Cycle"] = "Orbit",
         curves: bool = False,
         show: bool = True,
     ) -> tuple[Figure, Axes]:
@@ -228,6 +236,10 @@ class EnergyPzetaPlane(_ReprStrImpl):
             Whether or not to plot the stored critical points.
         boundary_extrema
             Whether or not to plot the stored boundary extrema.
+        colors
+            The coloring method for each particle's $E-P_\zeta$ point. `'Orbit'` colors each point depending on
+            its orbit type, as calculated from the [`classify`][dexter.Particle.classify] routine. `'Cycle'` cycles
+            through the colors `brcmk`.
         curves
             Whether or not to plot the analytical curves (parabolas and approximate
             trapped-passing boundary).
@@ -253,11 +265,11 @@ class EnergyPzetaPlane(_ReprStrImpl):
             si_ax = ax.twinx()
             min_energy_nu = ymin * mu
             max_energy_nu = ymax * mu
-            min_energy_si = cast(
-                float, self.machine.quantity(min_energy_nu, "NormJoule").to("keV").m
+            min_energy_si = (
+                self.machine.quantity(min_energy_nu, "NormJoule").to("keV").m
             )
-            max_energy_si = cast(
-                float, self.machine.quantity(max_energy_nu, "NormJoule").to("keV").m
+            max_energy_si = (
+                self.machine.quantity(max_energy_nu, "NormJoule").to("keV").m
             )
             si_ax.set_ybound(min_energy_si, max_energy_si)
             si_ax.set_ylabel(r"$E\ [keV]$")
@@ -271,10 +283,18 @@ class EnergyPzetaPlane(_ReprStrImpl):
                 point_size = 10
             else:
                 point_size = 1
+
+            match colors:
+                case "Orbit":
+                    c = self._particle_points.orbit_colors
+                case "Cycle":
+                    cycler = cycle("cbrmk")
+                    c = [next(cycler) for _ in range(self._particle_points.__len__())]
+
             ax.scatter(
                 self._particle_points.pzetas / psip_last,
                 self._particle_points.energies / mu,
-                c=self._particle_points.orbit_colors,
+                c=c,
                 s=point_size,
                 zorder=zorder,
             )
@@ -388,7 +408,7 @@ class EnergyPzetaPlane(_ReprStrImpl):
             ax.set_xlim(*xlim)
         ax.set_xlabel(r"$P_\zeta/\psi_{p, LCFS}$")
         ax.set_ylabel(r"$E/\mu$")
-        ax.legend(loc="lower right")
+        ax.legend(loc="lower right", fontsize=8)
 
         if show:
             plt.show()

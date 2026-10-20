@@ -16,6 +16,8 @@ Current
     Plasma current related evaluation methods.
 Bfield
     Magnetic field related evaluation methods.
+Efield
+    Electric field related evaluation methods.
 Geometry
     Device geometry related evaluation methods.
 Mode
@@ -28,7 +30,14 @@ from numpy import nan as NAN
 from typing import TypeAlias, Any
 from collections.abc import Callable
 
-from dexter._core import _PyQfactor, _PyCurrent, _PyBfield, _PyGeometry, _PyMode
+from dexter._core import (
+    _PyQfactor,
+    _PyCurrent,
+    _PyBfield,
+    _PyEfield,
+    _PyGeometry,
+    _PyMode,
+)
 from dexter._utils import _ReprStrImpl
 from dexter.machine.flux import MagneticFlux
 from dexter.types import ArrayLike, Array, Array1, FluxCoordinateState, MachineType
@@ -391,6 +400,44 @@ class Bfield(_ReprStrImpl):
     ) -> Array:
         r"""Calculates $dB(\psi/\psi_p, \theta)/d\theta$."""
         return self._eval_deriv_theta(theta, psi, psip)[()]
+
+
+class Efield(_ReprStrImpl):
+    """Electric field related evaluation methods."""
+
+    _r: _PyEfield
+
+    def __init__(self) -> None:
+        self._eval_e = _flux_eval_wrap1d(self._r.eval_e)
+        self._eval_phi = _flux_eval_wrap1d(self._r.eval_phi)
+        self._eval_phi_deriv = _flux_eval_wrap1d(self._r.eval_phi_deriv)
+
+    def eval_e(
+        self,
+        psi: ArrayLike | None = None,
+        psip: ArrayLike | None = None,
+    ) -> Array:
+        r"""Calculates $E(\psi/\psi_p)$."""
+        return self._eval_e(psi, psip)[()]
+
+    def eval_phi(
+        self,
+        psi: ArrayLike | None = None,
+        psip: ArrayLike | None = None,
+    ) -> Array:
+        r"""Calculates $\Phi(\psi/\psi_p)$."""
+        return self._eval_phi(psi, psip)[()]
+
+    def eval_phi_deriv(
+        self,
+        psi: ArrayLike | None = None,
+        psip: ArrayLike | None = None,
+    ) -> Array:
+        r"""Calculates $d\Phi(\psi/\psi_p)/d(\psi/\psi_p)$.
+
+        Since the field is radial, this method is equivalent to $-E(\psi/\psi_p)$.
+        """
+        return self._eval_phi_deriv(psi, psip)[()]
 
 
 class Mode(_ReprStrImpl):

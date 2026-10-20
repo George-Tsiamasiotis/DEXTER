@@ -53,6 +53,7 @@ pub(crate) struct GCState {
     g: f64,
     i: f64,
     p: f64,
+    phi: f64,
     db_dflux: f64,
     db_dtheta: f64,
     db_dzeta: f64,
@@ -62,6 +63,7 @@ pub(crate) struct GCState {
     dp_dtheta: f64,
     dp_dzeta: f64,
     dp_dt: f64,
+    dphi_dflux: f64,
 
     delta: f64,
     ddelta_dtheta: f64,
@@ -134,12 +136,13 @@ impl GCState {
         caches: &mut IntegrationCaches,
     ) -> Result<(), SimulationError> {
         debug_assert!(self.flux_value().is_finite(), "NaN flux value encountered");
-        // First do all the interpolations
+        // First do all the evaluations
         self.calculate_modulos();
         self.calculate_other_flux(machine, caches)?;
         self.calculate_qfactor_quantities(machine, caches)?;
         self.calculate_current_quantities(machine, caches)?;
         self.calculate_bfield_quantities(machine, caches)?;
+        self.calculate_efield_quantities(machine, caches)?;
         self.calculate_perturbation_quantities(machine, caches)?;
 
         // Multiply with `q` where needed, depending on the `FluxCoordinate`
@@ -182,8 +185,7 @@ impl GCState {
         }
     }
 
-    /// Returns a reference to the value of the [`MagneticFlux`] with respect to which the
-    /// integration is performed.
+    /// Returns the value of the [`MagneticFlux`] with respect to which the integration is performed.
     pub(crate) fn flux_value(&self) -> f64 {
         self.flux().value()
     }
@@ -267,6 +269,18 @@ impl GCState {
         Ok(())
     }
 
+    fn calculate_efield_quantities(
+        &mut self,
+        machine: Machine,
+        _caches: &mut IntegrationCaches,
+    ) -> Result<(), SimulationError> {
+        let efield = machine.efield();
+        let flux = *self.flux();
+        self.phi = efield.eval_phi(flux)?;
+        self.dphi_dflux = efield.eval_phi_deriv(flux)?;
+        Ok(())
+    }
+
     #[rustfmt::skip]
     fn calculate_perturbation_quantities(
         &mut self,
@@ -304,6 +318,7 @@ impl GCState {
             self.di_dflux *= self.q;
             self.dp_dflux *= self.q;
             self.db_dflux *= self.q;
+            self.dphi_dflux *= self.q;
         };
     }
 
@@ -348,7 +363,7 @@ impl GCState {
     ///
     /// Depending on the flux coordinate, it multiplies by q-factor where needed.
     fn calculate_braces(&mut self) {
-        self.dflux_brace = self.mu_par * self.db_dflux;
+        self.dflux_brace = self.mu_par * self.db_dflux + self.dphi_dflux;
         self.dtheta_brace = self.mu_par * self.db_dtheta;
         self.dzeta_brace = self.mu_par * self.db_dzeta;
     }
@@ -365,7 +380,7 @@ impl GCState {
         // on configurations with g=0.
         let parallel = (self.rho * self.b).powi(2) / 2.0;
         let perpendicular = self.mu * self.b;
-        self.energy = parallel + perpendicular;
+        self.energy = parallel + perpendicular + self.phi;
     }
 
     /// See [`Self::adjust_for_flux`].
@@ -446,6 +461,7 @@ impl Default for GCState {
             g: f64::NAN,
             i: f64::NAN,
             p: f64::NAN,
+            phi: f64::NAN,
             dg_dflux: f64::NAN,
             di_dflux: f64::NAN,
             db_dflux: f64::NAN,
@@ -455,6 +471,7 @@ impl Default for GCState {
             dp_dtheta: f64::NAN,
             dp_dzeta: f64::NAN,
             dp_dt: f64::NAN,
+            dphi_dflux: f64::NAN,
             delta: f64::NAN,
             ddelta_dtheta: f64::NAN,
             ddelta_dzeta: f64::NAN,

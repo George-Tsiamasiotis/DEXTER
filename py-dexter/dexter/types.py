@@ -43,6 +43,7 @@ Unit: TypeAlias = (
         "NormSecond",
         "NormHertz",
         "NormJoule",
+        "NormVolt",
     ]
     | str
 )

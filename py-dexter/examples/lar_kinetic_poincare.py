@@ -1,3 +1,5 @@
+from typing import cast
+
 import numpy as np
 import dexter as dex
 
@@ -17,7 +19,7 @@ machine = dex.Machine(
 
 num = 30
 mu = 3e-5
-energy = machine.quantity(20, "keV").to("NormJoule").m
+energy = cast(float, machine.quantity(20, "keV").to("NormJoule").m)
 
 rs = np.linspace(0.03, geometry.rlast * 0.999, num)
 psis = (rs / geometry.raxis) ** 2 / 2

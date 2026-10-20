@@ -1,7 +1,5 @@
 import numpy as np
-import pytest
 import dexter as dex
-from math import isfinite
 
 from semver import Version
 
@@ -30,13 +28,6 @@ def _test_current_base(current: dex.CurrentObject):
     assert current.machine_type in ["Numerical", "Analytical"]
     assert current.psi_state in ["Good", "Bad"]
     assert current.psip_state in ["Good", "Bad"]
-
-    methods = [
-        current.eval_g,
-        current.eval_i,
-        current.eval_g_deriv,
-        current.eval_i_deriv,
-    ]
 
     flux = 0.02
     fluxes = np.linspace(0, 0.04, 10)
