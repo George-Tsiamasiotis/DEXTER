@@ -27,12 +27,15 @@ impl PyGCHamiltonian {
         qfactor: &PyQfactor,
         current: &PyCurrent,
         bfield: &PyBfield,
+        efield: &PyEfield,
         theta: f64,
         flux: &PyMagneticFlux,
         pzeta: f64,
         mu: f64,
     ) -> Result<f64> {
-        let machine = MachineBuilder::new(qfactor.inner(), current.inner(), bfield.inner()).build();
+        let machine = MachineBuilder::new(qfactor.inner(), current.inner(), bfield.inner())
+            .with_efield(efield.inner())
+            .build();
         Ok(GCHamiltonian::eval(machine, theta, flux.0, pzeta, mu)?)
     }
 
@@ -43,12 +46,15 @@ impl PyGCHamiltonian {
         qfactor: &PyQfactor,
         current: &PyCurrent,
         bfield: &PyBfield,
+        efield: &PyEfield,
         theta_array: PyReadonlyArray1<f64>,
         flux_array: &PyMagneticFluxArray,
         pzeta: f64,
         mu: f64,
     ) -> Result<Bound<'py, PyArray1<f64>>> {
-        let machine = MachineBuilder::new(qfactor.inner(), current.inner(), bfield.inner()).build();
+        let machine = MachineBuilder::new(qfactor.inner(), current.inner(), bfield.inner())
+            .with_efield(efield.inner())
+            .build();
         let array =
             GCHamiltonian::eval_array(machine, &theta_array.as_array(), &flux_array.0, pzeta, mu)?;
         Ok(array.into_pyarray(py))
@@ -61,12 +67,15 @@ impl PyGCHamiltonian {
         qfactor: &PyQfactor,
         current: &PyCurrent,
         bfield: &PyBfield,
+        efield: &PyEfield,
         theta_array: PyReadonlyArray1<f64>,
         flux_array: &PyMagneticFluxArray,
         pzeta: f64,
         mu: f64,
     ) -> Result<Bound<'py, PyArray2<f64>>> {
-        let machine = MachineBuilder::new(qfactor.inner(), current.inner(), bfield.inner()).build();
+        let machine = MachineBuilder::new(qfactor.inner(), current.inner(), bfield.inner())
+            .with_efield(efield.inner())
+            .build();
         let grid =
             GCHamiltonian::eval_grid(machine, &theta_array.as_array(), &flux_array.0, pzeta, mu)?;
         Ok(grid.into_pyarray(py))
@@ -79,12 +88,15 @@ impl PyGCHamiltonian {
         qfactor: &PyQfactor,
         current: &PyCurrent,
         bfield: &PyBfield,
+        efield: &PyEfield,
         theta_array: PyReadonlyArray1<f64>,
         flux_array: &PyMagneticFluxArray,
         pzeta: f64,
         mu: f64,
     ) -> Result<Bound<'py, PyArray1<f64>>> {
-        let machine = MachineBuilder::new(qfactor.inner(), current.inner(), bfield.inner()).build();
+        let machine = MachineBuilder::new(qfactor.inner(), current.inner(), bfield.inner())
+            .with_efield(efield.inner())
+            .build();
         let array = GCHamiltonian::eval_theta_dot_array(
             machine,
             &theta_array.as_array(),

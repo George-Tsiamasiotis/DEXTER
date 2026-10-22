@@ -26,6 +26,10 @@
 //!     - [`LarBfield`]: Large Aspect Ratio magnetic field with B(ψ, θ) = 1 - sqrt(2ψ)cos(θ).
 //!     - [`NcBfield`]: Magnetic field from a netCDF file.
 //!
+//! + Representations of the electric field:
+//!     - [`NoEfield`]: No electric field.
+//!     - [`GaussianEfield`]: Gaussian `E(ψ/ψp)`.
+//!
 //! + Representations of single perturbation modes:
 //!     - [`FluteMode`]: Single analytical flute mode of the form `α*cos(mθ-nζ+φ)`.
 //!     - [`NcFluteMode`]: Single numerical flute mode from a netCDF file of the form
@@ -40,6 +44,7 @@
 //! + [`Qfactor`]: Evaluation of q-factor related quantities.
 //! + [`Current`]: Evaluation of plasma current related quantities.
 //! + [`Bfield`]: Evaluation of magnetic field related quantities.
+//! + [`Efield`]: Evaluation of radial electric field related quantities.
 //! + [`Mode`]: Single perturbation mode related quantities computation.
 //!
 //! ## Caching
@@ -99,7 +104,7 @@ pub use objects::MachineType;
 pub use objects::nc_flux::FluxCoordinateState;
 
 pub use eval::ModeCache;
-pub use eval::{Bfield, Current, Geometry, MachineObject, Mode, Qfactor};
+pub use eval::{Bfield, Current, Efield, Geometry, MachineObject, Mode, Qfactor};
 pub use eval::{DynMode, DynModeCache};
 
 pub use objects::geometries::LarGeometry;
@@ -118,6 +123,8 @@ pub use objects::currents::NcCurrentBuilder;
 pub use objects::bfields::LarBfield;
 pub use objects::bfields::NcBfield;
 pub use objects::bfields::NcBfieldBuilder;
+
+pub use objects::efields::{GaussianEfield, NoEfield};
 
 pub use objects::flute_mode::{FluteMode, FluteModeCache};
 pub use objects::nc_flute_mode::{NcFluteMode, NcFluteModeBuilder, NcFluteModeCache, PhaseMethod};

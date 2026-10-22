@@ -90,7 +90,7 @@ impl EnergyPzetaPlane {
 impl EnergyPzetaPlane {
     /// Constructs the Magnetic Axis (MA) parabola:
     ///
-    /// E(Pζ) = Pζ²B²/2g² + μB.
+    /// E(Pζ) = Pζ²B²/2g² + μB + Φ.
     ///
     /// where all values are evaluated at `(ψ/ψp, θ) = (0, 0)`.
     #[must_use]
@@ -118,17 +118,23 @@ impl EnergyPzetaPlane {
                     .eval_b(psip_axis, 0.0, acc)
                     .expect("At least one of the evaluations will always succeed")
             });
+        let phi_axis = machine.efield().eval_phi(psi_axis).unwrap_or_else(|_| {
+            machine
+                .efield()
+                .eval_phi(psip_axis)
+                .expect("At least one of the evaluations will always succeed")
+        });
 
         Parabola {
             a: (baxis / gaxis).powi(2) / 2.0,
             b: 0.0,
-            c: mu * baxis,
+            c: mu * baxis + phi_axis,
         }
     }
 
     /// Constructs the Left Wall (LW) parabola:
     ///
-    /// E(Pζ) = (Pζ + ψp)²B²/2g² + μB.
+    /// E(Pζ) = (Pζ + ψp)²B²/2g² + μB + Φ.
     ///
     /// where all values are evaluated at `(ψ/ψp, θ) = (ψlast/ψplast, π)`.
     #[must_use]
@@ -157,16 +163,22 @@ impl EnergyPzetaPlane {
                     .eval_b(psip_last, PI, acc)
                     .expect("At least one of the evaluations will always succeed")
             });
+        let phi_last = machine.efield().eval_phi(psi_last).unwrap_or_else(|_| {
+            machine
+                .efield()
+                .eval_phi(psip_last)
+                .expect("At least one of the evaluations will always succeed")
+        });
 
         let a = (blast / glast).powi(2) / 2.0;
         let h = psip_last.value();
-        let k = mu * blast;
+        let k = mu * blast + phi_last;
         Parabola::from_square(a, h, k)
     }
 
     /// Constructs the Right Wall (RW) parabola:
     ///
-    /// E(Pζ) = (Pζ + ψp)²B²/2g² + μB.
+    /// E(Pζ) = (Pζ + ψp)²B²/2g² + μB + Φ.
     ///
     /// where all values are evaluated at `(ψ/ψp, θ) = (ψlast/ψplast, 0)`.
     #[must_use]
@@ -194,10 +206,16 @@ impl EnergyPzetaPlane {
                     .eval_b(psip_last, 0.0, acc)
                     .expect("At least one of the evaluations will always succeed")
             });
+        let phi_last = machine.efield().eval_phi(psi_last).unwrap_or_else(|_| {
+            machine
+                .efield()
+                .eval_phi(psip_last)
+                .expect("At least one of the evaluations will always succeed")
+        });
 
         let a = (blast / glast).powi(2) / 2.0;
         let h = psip_last.value();
-        let k = mu * blast;
+        let k = mu * blast + phi_last;
         Parabola::from_square(a, h, k)
     }
 }

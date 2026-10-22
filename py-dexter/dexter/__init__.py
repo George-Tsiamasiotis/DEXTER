@@ -48,6 +48,7 @@ from dexter.machine.qfactors import (
 )
 from dexter.machine.currents import CurrentObject, LarCurrent, NcCurrent
 from dexter.machine.bfields import BfieldObject, LarBfield, NcBfield
+from dexter.machine.efields import EfieldObject, NoEfield, GaussianEfield
 from dexter.machine.modes import ModeObject, FluteMode, NcFluteMode
 from dexter.machine.perturbation import Perturbation
 from dexter.machine.machine import Machine
@@ -104,6 +105,7 @@ __all__ = [
     "QfactorObject",
     "CurrentObject",
     "BfieldObject",
+    "EfieldObject",
     "ModeObject",
     "MagneticFlux",
     "LarGeometry",
@@ -115,6 +117,8 @@ __all__ = [
     "NcCurrent",
     "LarBfield",
     "NcBfield",
+    "NoEfield",
+    "GaussianEfield",
     "FluteMode",
     "NcFluteMode",
     "Perturbation",

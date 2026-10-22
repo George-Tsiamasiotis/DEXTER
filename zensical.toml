@@ -19,6 +19,7 @@ nav = [
         "reference/machine/qfactors.md",
         "reference/machine/currents.md",
         "reference/machine/bfields.md",
+        "reference/machine/efields.md",
         "reference/machine/modes.md",
         "reference/machine/perturbation.md",
         "reference/machine/machine.md",
@@ -60,7 +61,8 @@ accent = "amber"
 repo = "fontawesome/brands/git-alt"
 
 [project.theme]
-font.code = "Roboto Mono"
+font.code = "Google Sans Code"
+
 features = [
     "header.autohide",
     "navigation.footer",

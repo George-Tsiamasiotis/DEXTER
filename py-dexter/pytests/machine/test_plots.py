@@ -77,6 +77,10 @@ def test_plot_queue_analytical(lar_machine: dex.Machine):
 
     queue.plot_pzeta_poincare(lar_machine, intersect_params, initial=True)
     queue.plot_rz_poincare(lar_machine, intersect_params, initial=True)
+    dex.plot_poloidal_drift(lar_machine, queue, array_shape=(10, 10), show=False)
+    dex.plot_poloidal_drift(
+        lar_machine, queue, array_shape=(10, 10), colors="Orbit", show=False
+    )
 
 
 def test_plot_queue_numerical(nc_machine: dex.Machine):
@@ -98,3 +102,7 @@ def test_plot_queue_numerical(nc_machine: dex.Machine):
 
     queue.plot_pzeta_poincare(nc_machine, intersect_params, initial=True)
     queue.plot_rz_poincare(nc_machine, intersect_params, initial=True)
+    dex.plot_poloidal_drift(nc_machine, queue, array_shape=(10, 10), show=False)
+    dex.plot_poloidal_drift(
+        nc_machine, queue, array_shape=(10, 10), colors="Orbit", show=False
+    )

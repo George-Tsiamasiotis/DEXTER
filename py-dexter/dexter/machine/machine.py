@@ -1,22 +1,23 @@
 """Defines `Machine`, a container for all information a device."""
 
-from pint import Quantity
+import numpy as np
 from typing import override
+from pint.facets.plain import PlainQuantity
 
 from dexter.machine.flux import MagneticFlux
 from dexter.types import (
-    ArrayLike,
     Interpolation1dType,
     Interpolation2dType,
     ParticleSpecies,
     Unit,
 )
 
-from dexter.machine.bfields import BfieldObject, NcBfield
-from dexter.machine.currents import CurrentObject, NcCurrent
 from dexter.machine.geometries import GeometryObject, NcGeometry
-from dexter.machine.perturbation import Perturbation
 from dexter.machine.qfactors import NcQfactor, QfactorObject
+from dexter.machine.currents import CurrentObject, NcCurrent
+from dexter.machine.bfields import BfieldObject, NcBfield
+from dexter.machine.efields import EfieldObject, NoEfield
+from dexter.machine.perturbation import Perturbation
 
 from dexter.machine._registry import _Registry
 
@@ -29,15 +30,17 @@ class Machine:
     Parameters
     ----------
     qfactor
-        The machine's's q-factor.
+        The machine's q-factor.
     current
-        The machine's's current.
+        The machine's current.
     bfield
-        The machine's's bfield.
+        The machine's bfield.
+    efield
+        The machine's efield.
     perturbation
-        The machine's's perturbation.
+        The machine's perturbation.
     geometry
-        The machine's's geometry. This field is not required for routines, but is required for
+        The machine's geometry. This field is not required for routines, but is required for
         conversion to laboratory coordinates and SI units.
     species
         The particle species under study. This only affects unit conversions to SI.
@@ -45,15 +48,17 @@ class Machine:
     Attributes
     ----------
     qfactor
-        The machine's's q-factor.
+        The machine's q-factor.
     current
-        The machine's's current.
+        The machine's current.
     bfield
-        The machine's's bfield.
+        The machine's bfield.
+    efield
+        The machine's efield.
     perturbation
-        The machine's's perturbation.
+        The machine's perturbation.
     geometry
-        The machine's's geometry. This field is not required for routines, but is required for
+        The machine's geometry. This field is not required for routines, but is required for
         conversion to laboratory coordinates and SI units.
     species
         The particle species under study. This only affects unit conversions to SI.
@@ -97,6 +102,7 @@ class Machine:
     qfactor: QfactorObject
     current: CurrentObject
     bfield: BfieldObject
+    efield: EfieldObject
     perturbation: Perturbation
     _reg = _Registry | None
 
@@ -107,6 +113,7 @@ class Machine:
         bfield: BfieldObject,
         *,
         geometry: GeometryObject | None = None,
+        efield: EfieldObject | None = None,
         perturbation: Perturbation | None = None,
         species: ParticleSpecies = "Proton",
     ) -> None:
@@ -114,6 +121,12 @@ class Machine:
         self.current = current
         self.bfield = bfield
         self.geometry = geometry
+
+        if efield is not None:
+            self.efield = efield
+        else:
+            self.efield = NoEfield()
+
         if perturbation is not None:
             self.perturbation = perturbation
         else:
@@ -159,16 +172,57 @@ class Machine:
             bfield=NcBfield(path, interp2d_type),
         )
 
-    def quantity(
+    def quantity[T: float | np.ndarray](
         self,
-        value: float | ArrayLike,
+        value: T,
         units: Unit,
-    ) -> Quantity:
+    ) -> PlainQuantity[T]:
+        r"""Defines a [`Quantity`](https://pint.readthedocs.io/en/stable/user/defining-quantities.html).
+
+        This constructor is aware of the specific [`machine's normalizations`][dexter.types.Unit] on top of
+        all units defined by `pint`.
+
+        !!! important
+
+            The constructor is defined only if the `machine`'s `geometry` is not `None`.
+
+        Parameters
+        ----------
+        value
+            The numeric value(s) of the quantity.
+        units
+            A string of the quantity's units. Can be any unit that `pint` supports or one of the
+            [`normalized units`][dexter.types.Unit].
+
+        Example
+        -------
+
+        ``` py
+        >>> geometry=dex.LarGeometry(baxis=2, raxis=2.75, rlast=0.5)
+        >>> lcfs = geometry.psi_last
+        >>> machine = dex.Machine(
+        ...     geometry=geometry,
+        ...     qfactor=dex.UnityQfactor(lcfs),
+        ...     current=dex.LarCurrent(),
+        ...     bfield=dex.LarBfield(),
+        ... )
+        >>>
+        >>> machine.quantity(geometry.raxis, "meter")
+        Quantity(2.75, "meter")
+        >>> machine.quantity(geometry.raxis, "meter").to("NormMeter").magnitude
+        1.0
+        >>>
+        >>> # Electric field strength in normalized units
+        >>> efield_strength = machine.quantity(50, "kiloVolt / meter")
+        >>> efield_strength.to("NormVolt / NormMeter")
+        Quantity(4.7453113229756864e-05, "NormVolt / NormMeter")
+
+        ```
+        """
         if not isinstance(self._reg, _Registry):
             raise RuntimeError("UnitRegistry has not been defined")
 
-        # typing is hopeless here
-        return self._reg.Quantity(value, units)  # pyright: ignore
+        return self._reg.Quantity(value, units)
 
     @property
     def psi_last(self) -> MagneticFlux:
@@ -221,6 +275,7 @@ class Machine:
         string += str(getattr(self, "qfactor", "")) + "\n"
         string += str(getattr(self, "current", "")) + "\n"
         string += str(getattr(self, "bfield", "")) + "\n"
+        string += str(getattr(self, "efield", "")) + "\n"
         string += str(getattr(self, "perturbation", "")) + "\n"
         return string
 

@@ -1,12 +1,13 @@
 //! Definitions of `Machine` and `MachineBuilder`.
 
-use crate::{
-    Bfield, Current, FluxCoordinateState, Geometry, MagneticFlux, MagneticFluxKind, Perturbation,
-    Qfactor,
-};
+use crate::{Bfield, Current, Efield, Geometry, Perturbation, Qfactor};
+use crate::{FluxCoordinateState, MagneticFlux, MagneticFluxKind, NoEfield};
 
 /// To be used when no perturbation is passed, to avoid calling `unwrap()` every time.
 const ZERO_PERTURBATION: &Perturbation = &Perturbation::zero();
+
+/// To be used when no electric field is passed, to avoid calling `unwrap()` every time.
+const NO_EFIELD: NoEfield = NoEfield;
 
 /// Used to create a [`Machine`].
 ///
@@ -18,6 +19,7 @@ pub struct MachineBuilder<'obj> {
     qfactor: &'obj dyn Qfactor,
     current: &'obj dyn Current,
     bfield: &'obj dyn Bfield,
+    efield: Option<&'obj dyn Efield>,
     perturbation: Option<&'obj Perturbation>,
 }
 
@@ -46,6 +48,7 @@ impl<'obj> MachineBuilder<'obj> {
             qfactor,
             current,
             bfield,
+            efield: None,
             perturbation: None,
         }
     }
@@ -64,12 +67,35 @@ impl<'obj> MachineBuilder<'obj> {
     /// let current = LarCurrent;
     /// let bfield = LarBfield;
     ///
-    /// let builder = MachineBuilder::new(&qfactor, &current, &bfield).with_geometry(&geometry);
+    /// let builder = MachineBuilder::new(&qfactor, &current, &bfield)
+    ///     .with_geometry(&geometry);
     /// # Ok::<_, MachineError>(())
     /// ```
     #[must_use]
     pub fn with_geometry(mut self, geometry: &'obj dyn Geometry) -> Self {
         self.geometry = Some(geometry);
+        self
+    }
+
+    /// Sets the machine's [`Efield`] object.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use dexter_machine::*;
+    /// let lcfs = MagneticFlux::Toroidal(0.1);
+    /// let qfactor = UnityQfactor::new(lcfs);
+    /// let current = LarCurrent;
+    /// let bfield = LarBfield;
+    /// let efield = GaussianEfield::new(5e-4, lcfs * 0.9, 0.02 * lcfs.value());
+    ///
+    /// let builder = MachineBuilder::new(&qfactor, &current, &bfield)
+    ///     .with_efield(&efield);
+    /// # Ok::<_, MachineError>(())
+    /// ```
+    #[must_use]
+    pub fn with_efield(mut self, efield: &'obj dyn Efield) -> Self {
+        self.efield = Some(efield);
         self
     }
 
@@ -111,6 +137,7 @@ impl<'obj> MachineBuilder<'obj> {
     /// let qfactor = UnityQfactor::new(MagneticFlux::Toroidal(0.1));
     /// let current = LarCurrent;
     /// let bfield = LarBfield;
+    /// let efield = GaussianEfield::new(5e-4, lcfs * 0.9, 0.02 * lcfs.value());
     /// let perturbation = Perturbation::new(vec![
     ///     Box::new(FluteMode::new(1e-3, lcfs, 1, 2, 0.0)),
     ///     Box::new(FluteMode::new(1e-3, lcfs, 1, 3, 0.0)),
@@ -118,6 +145,7 @@ impl<'obj> MachineBuilder<'obj> {
     ///
     /// let machine = MachineBuilder::new(&qfactor, &current, &bfield)
     ///     .with_geometry(&geometry)
+    ///     .with_efield(&efield)
     ///     .with_perturbation(&perturbation)
     ///     .build();
     /// # Ok::<_, MachineError>(())
@@ -140,6 +168,7 @@ pub struct Machine<'obj> {
     qfactor: &'obj dyn Qfactor,
     current: &'obj dyn Current,
     bfield: &'obj dyn Bfield,
+    efield: &'obj dyn Efield,
     perturbation: &'obj Perturbation,
 }
 
@@ -156,6 +185,7 @@ impl<'obj> Machine<'obj> {
         let qfactor = builder.qfactor;
         let current = builder.current;
         let bfield = builder.bfield;
+        let efield = builder.efield.unwrap_or(&NO_EFIELD);
         let perturbation = builder.perturbation.unwrap_or(ZERO_PERTURBATION);
 
         use FluxCoordinateState::*;
@@ -163,11 +193,13 @@ impl<'obj> Machine<'obj> {
             qfactor.psi_state(),
             current.psi_state(),
             bfield.psi_state(),
+            efield.psi_state(),
             qfactor.psip_state(),
             current.psip_state(),
             bfield.psip_state(),
+            efield.psip_state(),
         ) {
-            (Good, Good, Good, _, _, _) | (_, _, _, Good, Good, Good) => (),
+            (Good, Good, Good, Good, _, _, _, _) | (_, _, _, _, Good, Good, Good, Good) => (),
             _ => panic!(
                 "'qfactor', 'current' and 'bfield' must have a common 'good' flux coordinate"
             ),
@@ -178,6 +210,7 @@ impl<'obj> Machine<'obj> {
             qfactor,
             current,
             bfield,
+            efield,
             perturbation,
         }
     }
@@ -215,6 +248,7 @@ impl<'obj> Machine<'obj> {
         if (self.qfactor.psi_state() == Good)
             && (self.current.psi_state() == Good)
             && (self.bfield.psi_state() == Good)
+            && (self.efield.psi_state() == Good)
             && pertubration_ok
         {
             Good
@@ -244,6 +278,7 @@ impl<'obj> Machine<'obj> {
         if (self.qfactor.psip_state() == Good)
             && (self.current.psip_state() == Good)
             && (self.bfield.psip_state() == Good)
+            && (self.efield.psip_state() == Good)
             && pertubration_ok
         {
             Good
@@ -334,6 +369,12 @@ impl<'obj> Machine<'obj> {
         self.bfield
     }
 
+    /// Returns a reference to the [`Efield`] object.
+    #[must_use]
+    pub fn efield(&self) -> &dyn Efield {
+        self.efield
+    }
+
     /// Returns a reference to the [`Perturbation`] object.
     #[must_use]
     pub fn perturbation(&self) -> &Perturbation {
@@ -348,13 +389,16 @@ mod test {
     #[test]
     fn machine_init() {
         let geometry = LarGeometry::new(2.5, 1.75, 0.5);
+        let lcfs = geometry.psi_last();
         let qfactor = UnityQfactor::new(MagneticFlux::Toroidal(0.1));
         let current = LarCurrent;
         let bfield = LarBfield;
+        let efield = GaussianEfield::new(5e-4, lcfs * 0.9, 0.02 * lcfs.value());
         let perturbation = Perturbation::zero();
 
         let machine = MachineBuilder::new(&qfactor, &current, &bfield)
             .with_geometry(&geometry)
+            .with_efield(&efield)
             .with_perturbation(&perturbation)
             .build();
 
@@ -362,6 +406,7 @@ mod test {
         let _: &dyn Qfactor = machine.qfactor();
         let _: &dyn Current = machine.current();
         let _: &dyn Bfield = machine.bfield();
+        let _: &dyn Efield = machine.efield();
         let _: &Perturbation = machine.perturbation();
     }
 }

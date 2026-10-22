@@ -31,11 +31,13 @@ impl PyParticle {
         qfactor: &PyQfactor,
         current: &PyCurrent,
         bfield: &PyBfield,
+        efield: &PyEfield,
         perturbation: &PyPerturbation,
         teval: (f64, f64),
         solver_params: &PySolverParams,
     ) {
         let machine = MachineBuilder::new(qfactor.inner(), current.inner(), bfield.inner())
+            .with_efield(efield.inner())
             .with_perturbation(perturbation.inner())
             .build();
         self.0.integrate(machine, teval, &solver_params.0);
@@ -46,11 +48,13 @@ impl PyParticle {
         qfactor: &PyQfactor,
         current: &PyCurrent,
         bfield: &PyBfield,
+        efield: &PyEfield,
         perturbation: &PyPerturbation,
         intersect_params: &PyIntersectParams,
         solver_params: &PySolverParams,
     ) {
         let machine = MachineBuilder::new(qfactor.inner(), current.inner(), bfield.inner())
+            .with_efield(efield.inner())
             .with_perturbation(perturbation.inner())
             .build();
         self.0
@@ -62,11 +66,13 @@ impl PyParticle {
         qfactor: &PyQfactor,
         current: &PyCurrent,
         bfield: &PyBfield,
+        efield: &PyEfield,
         perturbation: &PyPerturbation,
         periods: usize,
         solver_params: &PySolverParams,
     ) {
         let machine = MachineBuilder::new(qfactor.inner(), current.inner(), bfield.inner())
+            .with_efield(efield.inner())
             .with_perturbation(perturbation.inner())
             .build();
         self.0.close(machine, periods, &solver_params.0);

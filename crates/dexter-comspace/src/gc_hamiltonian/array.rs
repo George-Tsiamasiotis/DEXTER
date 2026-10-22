@@ -39,11 +39,18 @@ impl GCHamiltonian {
     /// # use dexter_comspace::*;
     /// # use ndarray::*;
     /// # use std::f64::consts::TAU;
-    /// # let qfactor = ParabolicQfactor::new(1.1, 3.9, MagneticFlux::Toroidal(0.05));
-    /// # let current = LarCurrent;
-    /// # let bfield = LarBfield;
-    /// # let machine = MachineBuilder::new(&qfactor, &current, &bfield).build();
-    /// #
+    /// let lcfs = MagneticFlux::Toroidal(0.05);
+    /// let qfactor = ParabolicQfactor::new(1.1, 3.9, lcfs);
+    /// let current = LarCurrent;
+    /// let bfield = LarBfield;
+    /// let efield = GaussianEfield::new(5e-4, lcfs * 0.9, 0.02 * lcfs.value());
+    ///
+    /// let machine = MachineBuilder::new(&qfactor, &current, &bfield)
+    ///     .with_efield(&efield)
+    ///     .build();
+    ///
+    /// // ===========
+    ///
     /// let pzeta = -0.1 * machine.psip_last().value();
     /// let mu = 1e-4;
     ///
@@ -89,10 +96,12 @@ impl GCHamiltonian {
 
             let g = machine.current().eval_g(flux, acc.xacc())?;
             let b = machine.bfield().eval_b(flux, theta, acc)?;
+            let phi = machine.efield().eval_phi(flux)?;
 
-            let kinetic = ((pzeta + psip.value()) * b / g).powi(2) / 2.0;
+            let parallel = ((pzeta + psip.value()) * b / g).powi(2) / 2.0;
             let perpendicular = mu * b;
-            array[index] = MaybeUninit::new(kinetic + perpendicular)
+
+            array[index] = MaybeUninit::new(parallel + perpendicular + phi)
         }
 
         // SAFETY: The loop passes from all elements and initializes them
@@ -131,11 +140,18 @@ impl GCHamiltonian {
     /// # use dexter_comspace::*;
     /// # use ndarray::*;
     /// # use std::f64::consts::TAU;
-    /// # let qfactor = ParabolicQfactor::new(1.1, 3.9, MagneticFlux::Toroidal(0.05));
-    /// # let current = LarCurrent;
-    /// # let bfield = LarBfield;
-    /// # let machine = MachineBuilder::new(&qfactor, &current, &bfield).build();
-    /// #
+    /// let lcfs = MagneticFlux::Toroidal(0.05);
+    /// let qfactor = ParabolicQfactor::new(1.1, 3.9, lcfs);
+    /// let current = LarCurrent;
+    /// let bfield = LarBfield;
+    /// let efield = GaussianEfield::new(5e-4, lcfs * 0.9, 0.02 * lcfs.value());
+    ///
+    /// let machine = MachineBuilder::new(&qfactor, &current, &bfield)
+    ///     .with_efield(&efield)
+    ///     .build();
+    ///
+    /// // ===========
+    ///
     /// let pzeta = -0.1 * machine.psip_last().value();
     /// let mu = 1e-4;
     ///
@@ -182,10 +198,15 @@ impl GCHamiltonian {
 
             let g = machine.current().eval_g(flux, acc.xacc())?;
             let rho = (pzeta + psip.value()) / g;
+            let phi = machine.efield().eval_phi(flux)?;
             for n in 0..grid.ncols() {
                 let theta = theta_array[n].rem_euclid(TAU);
                 let b = machine.bfield().eval_b(flux, theta, acc)?;
-                grid[[m, n]] = MaybeUninit::new((rho * b).powi(2) / 2.0 + mu * b)
+
+                let parallel = (rho * b).powi(2) / 2.0;
+                let perpendicular = mu * b;
+
+                grid[[m, n]] = MaybeUninit::new(parallel + perpendicular + phi)
             }
         }
 
@@ -220,7 +241,13 @@ impl GCHamiltonian {
     /// let qfactor = ParabolicQfactor::new(1.1, 3.9, lcfs);
     /// let current = LarCurrent;
     /// let bfield = LarBfield;
-    /// let machine = MachineBuilder::new(&qfactor, &current, &bfield).build();
+    /// let efield = GaussianEfield::new(5e-4, lcfs * 0.9, 0.02 * lcfs.value());
+    ///
+    /// let machine = MachineBuilder::new(&qfactor, &current, &bfield)
+    ///     .with_efield(&efield)
+    ///     .build();
+    ///
+    /// // ===========
     ///
     /// let theta_array = Array1::linspace(0.0, TAU, 10);
     /// let psi_array = MagneticFluxArray::Toroidal(
@@ -267,11 +294,13 @@ impl GCHamiltonian {
             let mut dg = machine.current().eval_g_deriv(flux, acc.xacc())?;
             let mut di = machine.current().eval_i_deriv(flux, acc.xacc())?;
             let mut db = machine.bfield().eval_deriv_flux(flux, theta, acc)?;
+            let mut dphi = machine.efield().eval_phi_deriv(flux)?;
 
             if flux_array.kind() == MagneticFluxKind::Toroidal {
                 dg *= q;
                 di *= q;
                 db *= q;
+                dphi *= q;
             };
 
             let psip = match flux_array.kind() {
@@ -282,7 +311,7 @@ impl GCHamiltonian {
             let rho = (pzeta + psip.value()) / g;
             let dterm = g * q + i + rho * (g * di - i * dg);
             let mu_par = mu + rho.powi(2) * b;
-            let brace = mu_par * db;
+            let brace = mu_par * db + dphi;
 
             let theta_dot_first = rho * b.powi(2) * (1.0 - rho * dg) / dterm;
             let theta_dot_second = g * brace / dterm;
@@ -406,13 +435,48 @@ mod test {
         assert!(theta_dot.relative_eq(&expected, 1e-8, 1e-8))
     }
 
+    /// Data taken from a particle integration at two random, but far away points.
+    #[test]
+    fn toroidal_theta_dot_with_efield_particle_integration_check() {
+        let geometry = LarGeometry::new(1.0, 1.75, 0.5);
+        let lcfs = geometry.psi_last();
+        let qfactor = ParabolicQfactor::new(1.1, 2.3, lcfs);
+        let current = LarCurrent;
+        let bfield = LarBfield;
+        let efield = GaussianEfield::new(
+            0.005368980811138206,
+            Toroidal(0.01020408163265306),
+            0.004081632653061224,
+        );
+        let machine = MachineBuilder::new(&qfactor, &current, &bfield)
+            .with_efield(&efield)
+            .build();
+
+        let pzeta = -0.6 * machine.psip_last().value();
+        let mu = 1e-4;
+        let psi_array =
+            MagneticFluxArray::Toroidal(array![0.0060339611482704445, 0.005714231256686681]);
+        let theta_array = array![0.44352209173203894, 7.52938591323585e-5];
+        let expected = array![-0.007135282034392367, -0.007768155477877859];
+
+        let theta_dot =
+            GCHamiltonian::eval_theta_dot_array(machine, &theta_array, &psi_array, pzeta, mu)
+                .unwrap();
+
+        assert!(theta_dot.relative_eq(&expected, 1e-7, 1e-7))
+    }
+
     #[test]
     fn toroidal_theta_dot_array_and_single() {
         let geometry = LarGeometry::new(3.0, 1.75, 0.5);
         let qfactor = ParabolicQfactor::new(1.1, 3.9, geometry.psi_last());
         let current = LarCurrent;
         let bfield = LarBfield;
-        let machine = MachineBuilder::new(&qfactor, &current, &bfield).build();
+        let lcfs = qfactor.psi_last();
+        let efield = GaussianEfield::new(5e-4, lcfs * 0.9, 0.02 * lcfs.value());
+        let machine = MachineBuilder::new(&qfactor, &current, &bfield)
+            .with_efield(&efield)
+            .build();
 
         let pzeta = -0.4 * machine.psip_last().value();
         let mu = 8e-5;
@@ -442,7 +506,11 @@ mod test {
         let qfactor = NcQfactorBuilder::new(&path, Steffen).build().unwrap();
         let current = NcCurrentBuilder::new(&path, Steffen).build().unwrap();
         let bfield = NcBfieldBuilder::new(&path, Bicubic).build().unwrap();
-        let machine = MachineBuilder::new(&qfactor, &current, &bfield).build();
+        let lcfs = qfactor.psip_last();
+        let efield = GaussianEfield::new(5e-4, lcfs * 0.9, 0.02 * lcfs.value());
+        let machine = MachineBuilder::new(&qfactor, &current, &bfield)
+            .with_efield(&efield)
+            .build();
 
         let pzeta = -0.4 * machine.psip_last().value();
         let mu = 8e-5;

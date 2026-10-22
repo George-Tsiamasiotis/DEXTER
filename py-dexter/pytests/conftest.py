@@ -120,9 +120,3 @@ def nc_machine_perturbed(
         bfield=nc_bfield,
         perturbation=dex.Perturbation([nc_flute_mode]),
     )
-
-
-@pytest.fixture(scope="session")
-def lar_stationary_curve(lar_machine: dex.Machine) -> dex.StationaryCurve:
-    """Builds the stationary curve on the LAR equilibrium."""
-    return dex.GCHamiltonian.build_stationary_curve(lar_machine)

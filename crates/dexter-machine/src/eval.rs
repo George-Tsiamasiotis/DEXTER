@@ -660,6 +660,74 @@ pub trait Bfield: MachineObject + Debug + Send + Sync {
     ) -> Result<f64, EvalError>;
 }
 
+/// Electric field related quantities computation.
+pub trait Efield: MachineObject + Debug + Send + Sync {
+    /// Calculates `E(ψ/ψp)`.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use dexter_machine::*;
+    /// let lcfs = MagneticFlux::Toroidal(0.45);
+    /// let efield = GaussianEfield::new(5e-4, lcfs * 0.9, 0.02 * lcfs.value());
+    ///
+    /// let psi = MagneticFlux::Toroidal(0.01);
+    /// let e = efield.eval_e(psi)?;
+    /// # Ok::<_, MachineError>(())
+    /// ```
+    fn eval_e(&self, flux: MagneticFlux) -> Result<f64, EvalError>;
+
+    /// Calculates `Φ(ψ/ψp)`.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
+    ///
+    /// # Example
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use dexter_machine::*;
+    /// let lcfs = MagneticFlux::Poloidal(0.35);
+    /// let efield = GaussianEfield::new(5e-4, lcfs * 0.9, 0.02 * lcfs.value());
+    ///
+    /// let psip = MagneticFlux::Poloidal(0.01);
+    /// let phi = efield.eval_phi(psip)?;
+    /// # Ok::<_, MachineError>(())
+    /// ```
+    fn eval_phi(&self, flux: MagneticFlux) -> Result<f64, EvalError>;
+
+    /// Calculates `dΦ(ψ/ψp)/d(ψ/ψp)`.
+    ///
+    /// Since the field is radial, this method is equivalent to `-E(ψ/ψp)`.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use dexter_machine::*;
+    /// let lcfs = MagneticFlux::Toroidal(0.45);
+    /// let efield = GaussianEfield::new(5e-4, lcfs * 0.9, 0.02 * lcfs.value());
+    ///
+    /// let psi = MagneticFlux::Toroidal(0.01);
+    /// let dphi = efield.eval_phi_deriv(psi)?;
+    ///
+    /// assert_eq!(dphi, -efield.eval_e(psi)?);
+    /// # Ok::<_, MachineError>(())
+    /// ```
+    fn eval_phi_deriv(&self, flux: MagneticFlux) -> Result<f64, EvalError> {
+        Ok(-self.eval_e(flux)?)
+    }
+}
+
 /// Defines the behavior of objects that support caching of a [`Mode`]'s values.
 ///
 /// All non-trivial [`Mode`] evaluation methods must be guarded by a:

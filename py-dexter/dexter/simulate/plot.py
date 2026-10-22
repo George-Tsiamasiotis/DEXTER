@@ -9,6 +9,7 @@ plot_poloidal_drift
 """
 
 import warnings
+from typing import Literal
 
 import numpy as np
 import numpy.ma as ma
@@ -18,8 +19,7 @@ from matplotlib.axes import Axes
 from matplotlib.ticker import LogLocator, MaxNLocator
 from cycler import cycler
 from math import floor, log10
-from typing import cast
-from pint.facets.plain import PlainQuantity
+from itertools import cycle
 
 from dexter.machine.flux import MagneticFluxArray
 from dexter.machine.machine import Machine
@@ -30,7 +30,7 @@ from dexter.simulate.queue import Queue
 from dexter.comspace.gc_hamiltonian import GCHamiltonian
 from dexter._utils import tex_unit
 from dexter.machine.plot import _resolve_magnetic_flux_kind
-from dexter.types import Array2, ArrayShape, Locator, Array1, OrbitType
+from dexter.types import ArrayShape, Locator, Array1, OrbitType
 
 TAU = 2 * np.pi
 PI = np.pi
@@ -141,10 +141,7 @@ def plot_evolution(
         # Possible divide by zero at t=0 during conversion
         with warnings.catch_warnings(action="ignore"):
             # FIXME: this does not rescale the time units as expected
-            tu = cast(
-                PlainQuantity[Array1],
-                machine.quantity(t, "NormSecond").to("second").to_compact(),
-            )
+            tu = machine.quantity(t, "NormSecond").to("second").to_compact()
             t = tu.m
         tunits = tex_unit(tu)
         axrho.set_xlabel(rf"$t\ [{tunits}]$")
@@ -174,6 +171,7 @@ def plot_poloidal_drift(
     array_shape: ArrayShape = (300, 300),
     levels: int = 50,
     locator: Locator = "MaxN",
+    colors: Literal["Orbit", "Cycle"] | str = "Cycle",
     equal: bool = True,
     mask: float | None = None,
     show: bool = True,
@@ -191,6 +189,10 @@ def plot_poloidal_drift(
         The Particle or Queue containing the particles.
     array_shape
         The shape of the $(r, \theta)$ array on which to calculate the contour lines.
+    colors
+        The coloring method for each particle's orbit. `'Orbit'` colors each point depending on
+        its orbit type, as calculated from the [`classify`][dexter.Particle.classify] routine. `'Cycle'`
+        cycles through the colors `brcmk`. If `str` then it is passed to `ax.plot()`.
     levels
         The number of contour levels.
     show
@@ -237,6 +239,7 @@ def plot_poloidal_drift(
     LAST_COLOR = "k"
     MARGINS = (0.001, 0.001)
 
+    cycler = cycle("cbrmk")
     for particle in particles:
         if len(particles) == 1:
             init = particle.initial_conditions
@@ -257,20 +260,37 @@ def plot_poloidal_drift(
             flux_arg_name: particle_flux_array,
             "theta": particle.theta_array % TAU,
         }
+
+        match colors:
+            case "Orbit":
+                c = orbit_color(particle.orbit_type)
+            case "Cycle":
+                c = next(cycler)
+            case _:
+                c = colors
+
         prlab = geometry.eval_rlab(**particle_eval_arg)
         pzlab = geometry.eval_zlab(**particle_eval_arg)
-        color = orbit_color(particle.orbit_type)
-        markersize = 3 if len(particles) == 1 else 2
-        ax.plot(
-            prlab,
-            pzlab,
-            c=color,
-            linewidth=0,
-            marker=".",
-            markeredgewidth=0,
-            markersize=markersize,
-            zorder=10,
-        )
+        markersize = 4 if len(particles) == 1 else 2.5
+        if "ClosedPeriods" in particle.integration_status:  # continuous line
+            ax.plot(
+                prlab,
+                pzlab,
+                c=c,
+                linewidth=1,
+                zorder=10,
+            )
+        else:
+            ax.plot(
+                prlab,
+                pzlab,
+                c=c,
+                linewidth=0,
+                marker=".",
+                markeredgewidth=0,
+                markersize=markersize,
+                zorder=10,
+            )
 
     # Plot energy contour only if all particles have the same Pζ and μ
     pzetas = np.asarray([particle.initial_conditions.pzeta0 for particle in particles])
@@ -288,7 +308,7 @@ def plot_poloidal_drift(
             # Try to build a linspace over `r` first, so the grid is spaced more evenly. This
             # might fail as `r` is not present in all datasets.
             r_array = np.linspace(0, machine.rlast, array_shape[1]) * 0.99999
-            flux_values: Array1 = cast(Array1, eval_flux_of_r_function(r_array))
+            flux_values = eval_flux_of_r_function(r_array)
             flux_array: MagneticFluxArray = flux_array_constructor(flux_values)
         except:
             flux_values = np.linspace(1e-8, machine.psi_last.value, array_shape[1])
@@ -301,8 +321,7 @@ def plot_poloidal_drift(
         grid_eval_arg = {"theta": theta_grid, flux_arg_name: flux_grid}
         rlab_grid = geometry.eval_rlab(**grid_eval_arg)
         zlab_grid = geometry.eval_zlab(**grid_eval_arg)
-        energy_grid = cast(
-            Array2,
+        energy_grid = (
             machine.quantity(
                 GCHamiltonian().eval_grid(
                     machine,
@@ -314,7 +333,7 @@ def plot_poloidal_drift(
                 "NormJoule",
             )
             .to("keV")
-            .m,
+            .m
         )
         if mask is not None:
             energy_grid = ma.masked_greater(energy_grid, mask)
@@ -336,24 +355,24 @@ def plot_poloidal_drift(
         )
         ax.contour(
             contourf,
-            linewidths=0.1,
+            linewidths=0.4,
             colors="k",
         )
         fig.colorbar(contourf, label=r"$Energy\ [keV]$")
 
         # Add an extra contour line on the particle's energy
         if isinstance(obj, Particle):
-            particle_energy = cast(
-                float, machine.quantity(obj.initial_energy, "NormJoule").to("keV").m
+            particle_energy = (
+                machine.quantity(obj.initial_energy, "NormJoule").to("keV").m
             )
             ax.contour(
                 contourf,
                 levels=[particle_energy],
-                linewidths=0.5,
+                linewidths=0.9,
                 colors="k",
             )
 
-    ax.plot(geometry.rlab_last, geometry.zlab_last, color=LAST_COLOR)
+    ax.plot(geometry.rlab_last, geometry.zlab_last, color=LAST_COLOR, zorder=30)
     ax.scatter(
         geometry.raxis,
         geometry.zaxis,
@@ -578,7 +597,7 @@ def orbit_color(orbit_type: OrbitType) -> str:
         case "Stagnated":
             return "xkcd:sky"
         case "Unclassified":
-            return "xkcd:bright purple"
+            return "xkcd:azure"
         case _:
             return "xkcd:indigo"
 
