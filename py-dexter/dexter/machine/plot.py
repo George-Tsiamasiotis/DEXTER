@@ -1,6 +1,6 @@
 r"""Plotting functions for machine objects.
 
-Methods are also available as command line project scripts.
+Some methods are also available as command line project scripts.
 
 Functions
 ---------
@@ -15,6 +15,8 @@ plot_bfield
 plot_mode
     Plots a [`ModeObject`][dexter.ModeObject]'s $\alpha$, $\phi$ and its derivatives with respect
     to $\psi$ or $\psi_p$.
+plot_efield
+    Plots an [`EfieldObject`][dexter.EfieldObject]'s $E$, $Φ$, with respect to $\psi$ or $\psi_p$.
 
 """
 
@@ -23,6 +25,8 @@ import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 from matplotlib.axes import Axes
 from typing import cast
+
+from dexter._utils import tex_unit
 
 from dexter.types import Array1, Array2, MagneticFluxKind
 from dexter.machine.machine import Machine
@@ -815,6 +819,128 @@ def plot_mode(
         plt.show()
 
     return fig, axes
+
+
+def plot_efield(
+    machine: Machine,
+    flux: MagneticFluxKind = "Toroidal",
+    points: int = 1000,
+    show: bool = True,
+) -> tuple[Figure, tuple[Axes, Axes]]:
+    r"""Plots an [`EfieldObject`][dexter.EfieldObject]'s $E$, $Φ$, with respect to $\psi$ or $\psi_p$.
+
+    Parameters
+    ----------
+    machine
+        The machine containing the electric field object.
+    flux
+        The kind of magnetic flux with respect to which to plot. If the toroidal flux is not a
+        good coordinate, the poloidal flux is attempted.
+    points
+        The number of points on which to evaluate the flux in each plot.
+    show
+        Whether or not to call `plt.show()`.
+
+    Example
+    -------
+
+    ``` py title="Electric field plot"
+    >>> machine = dex.Machine.FromNetcdf(path, "Akima", "Bicubic")
+    >>> geometry = machine.geometry
+    >>> LCFS = geometry.psi_last
+    >>>
+    >>> strength = machine.quantity(75, "kiloVolt / meter")
+    >>> rmean = 0.96 * machine.rlast
+    >>> mean = dex.MagneticFlux.Toroidal(float(machine.geometry.eval_psi_of_r(rmean)))
+    >>> waist = LCFS.value * 0.02
+    >>> efield = dex.GaussianEfield(strength, mean, waist)
+    >>> machine.efield = efield
+    >>>
+    >>> fig, ax = dex.plot_current(machine, data=True)
+
+    ```
+
+    """
+    efield = machine.efield
+
+    fig = plt.figure(figsize=(7, 2.5))
+    axes = fig.subplots(1, 2)
+    axe: Axes = axes[0]
+    axp: Axes = axes[1]
+    twe = axe.twinx()
+    twp = axp.twinx()
+
+    flux = _resolve_magnetic_flux_kind(efield, flux)
+
+    if flux == "Toroidal":
+        lcfs = machine.psi_last
+        flux_arg_name = "psi"
+        flux_tex = r"\psi"
+        flux_last_tex = r"\psi_{LCFS}"
+    else:
+        lcfs = machine.psip_last
+        flux_arg_name = "psip"
+        flux_tex = r"\psi_p"
+        flux_last_tex = r"\psi_{p,LCFS}"
+
+    fluxes = np.linspace(0, lcfs.value, points) * 0.99999
+    fluxes_norm = fluxes / lcfs.value
+    eval_arg = {flux_arg_name: fluxes}
+
+    _e_values = efield.eval_e(**eval_arg)
+    _phi_values = efield.eval_phi(**eval_arg)
+    e_values = machine.quantity(_e_values, "NormVolt/NormMeter").to("kiloVolt/meter")
+    phi_values = machine.quantity(_phi_values, "NormVolt").to("Volt")
+
+    E_COLOR = "r"
+    PHI_COLOR = "b"
+    MARGINS = (0, 0.01)
+
+    e_units_label = tex_unit(e_values)
+    phi_units_label = tex_unit(phi_values)
+    axe.plot(
+        fluxes_norm,
+        e_values.m,
+        c=E_COLOR,
+        label=rf"$E({flux_tex})\ [{e_units_label}]$",
+    )
+    axp.plot(
+        fluxes_norm,
+        phi_values.m,
+        c=PHI_COLOR,
+        label=rf"$\Phi({flux_tex})\ [{phi_units_label}]$",
+    )
+
+    # Set twin ax' units to normalized
+    elim = machine.quantity(np.asarray(axe.get_ylim()), "kiloVolt / meter")
+    elim_nu = tuple(elim.to("NormVolt / NormMeter").m)
+    twe.set_ylim(elim_nu)
+    philim = machine.quantity(np.asarray(axp.get_ylim()), "Volt")
+    philim_nu = tuple(philim.to("NormVolt").m)
+    twp.set_ylim(philim_nu)
+
+    axe.grid()
+    axp.grid()
+
+    axe.legend()
+    axp.legend()
+
+    axe.margins(*MARGINS)
+    axp.margins(*MARGINS)
+
+    axe.set_xlabel(rf"${flux_tex}/{flux_last_tex}$")
+    axp.set_xlabel(rf"${flux_tex}/{flux_last_tex}$")
+
+    axe.set_ylabel(rf"$E({flux_tex})\ [{e_units_label}]$")
+    axp.set_ylabel(rf"$\Phi({flux_tex})\ [{phi_units_label}]$")
+
+    twe.set_ylabel(rf"$E({flux_tex})\ [Normalized]$")
+    twp.set_ylabel(rf"$\Phi({flux_tex})\ [Normalized]$")
+
+    if show:
+        plt.show()
+
+    return fig, (axe, axp)
 
 
 def _resolve_magnetic_flux_kind(

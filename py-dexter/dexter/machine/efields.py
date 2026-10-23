@@ -1,12 +1,12 @@
 """Defines the different efield objects as wrappers over `_PyEfield`."""
 
-from typing import TypeAlias, cast
+from typing import TypeAlias
 
 from dexter._core import _PyEfield
 
 from dexter.machine.base import Efield, MachineObject
 from dexter.machine.flux import MagneticFlux
-from pint import Quantity
+from pint.facets.plain import PlainQuantity
 
 
 class NoEfield(MachineObject, Efield):
@@ -53,7 +53,7 @@ class GaussianEfield(MachineObject, Efield):
     Attributes
     ----------
     strength
-        The electric field strength at the curve's peak, as it was passed in the object's constructor.
+        The electric field strength at the curve's peak, **in Normalized Units**.
     mean
         The magnetic flux surface where the peak is located.
     width
@@ -100,17 +100,15 @@ class GaussianEfield(MachineObject, Efield):
     """
 
     _r: _PyEfield
-    _strength: Quantity | float
 
     def __init__(
         self,
-        strength: Quantity | float,
+        strength: PlainQuantity[float] | float,
         mean: MagneticFlux,
         width: float,
     ) -> None:
-        self._strength = strength
-        if isinstance(strength, Quantity):
-            strength = cast(float, strength.to("NormVolt / NormMeter").m)
+        if isinstance(strength, PlainQuantity):
+            strength = strength.to("NormVolt / NormMeter").m
         self._r = _PyEfield.build_gaussian_efield(
             strength=strength,
             mean=mean._r,
@@ -120,8 +118,8 @@ class GaussianEfield(MachineObject, Efield):
         Efield.__init__(self)
 
     @property
-    def strength(self) -> Quantity | float:
-        return self._strength
+    def strength(self) -> float:
+        return self._r.strength
 
     @property
     def mean(self) -> MagneticFlux:
