@@ -499,14 +499,14 @@ def plot_current(
         _normalize_array(g_deriv2_values, *twg_lim),
         c=CURRENT_DERIV2_COLOR,
         alpha=CURRENT_DERIV2_ALPHA,
-        label=rf"$d^2g({flux_tex})/d{flux_tex}^2$",
+        label=rf"$d^2g({flux_tex})/d{flux_tex}^2\ [a.u]$",
     )
     twi.plot(
         fluxes_norm,
         _normalize_array(i_deriv2_values, *twi_lim),
         c=CURRENT_DERIV2_COLOR,
         alpha=CURRENT_DERIV2_ALPHA,
-        label=rf"$d^2I({flux_tex})/d{flux_tex}^2$",
+        label=rf"$d^2I({flux_tex})/d{flux_tex}^2\ [a.u]$",
         zorder=-2,
     )
 
@@ -917,6 +917,8 @@ def plot_efield(
 ) -> tuple[Figure, tuple[Axes, Axes]]:
     r"""Plots an [`EfieldObject`][dexter.EfieldObject]'s $E$, $Φ$, with respect to $\psi$ or $\psi_p$.
 
+    The first and second derivatives of $\Phi$ are plotted as well, but in arbitrary units and origin.
+
     Parameters
     ----------
     machine
@@ -977,11 +979,17 @@ def plot_efield(
 
     _e_values = efield.eval_e(**eval_arg)
     _phi_values = efield.eval_phi(**eval_arg)
+    _dphi_values = efield.eval_phi_deriv(**eval_arg)
+    _dphi2_values = efield.eval_phi_deriv2(**eval_arg)
     e_values = machine.quantity(_e_values, "NormVolt/NormMeter").to("kiloVolt/meter")
     phi_values = machine.quantity(_phi_values, "NormVolt").to("Volt")
 
     E_COLOR = "r"
     PHI_COLOR = "b"
+    DPHI_COLOR = "xkcd:bright blue"
+    DPHI_ALPHA = 0.5
+    DPHI2_COLOR = "xkcd:bright purple"
+    DPHI2_ALPHA = 0.2
     MARGINS = (0, 0.01)
 
     e_units_label = tex_unit(e_values)
@@ -998,6 +1006,35 @@ def plot_efield(
         c=PHI_COLOR,
         label=rf"$\Phi({flux_tex})\ [{phi_units_label}]$",
     )
+    axp_lim = axp.get_ylim()
+    axp.plot(
+        fluxes_norm,
+        _normalize_array(_dphi_values, *axp_lim),
+        c=DPHI_COLOR,
+        alpha=DPHI_ALPHA,
+        label=rf"$d\Phi({flux_tex})\ [a.u.]$",
+    )
+    axp.plot(
+        fluxes_norm,
+        _normalize_array(_dphi2_values, *axp_lim),
+        c=DPHI2_COLOR,
+        alpha=DPHI2_ALPHA,
+        label=rf"$d^2\Phi({flux_tex})/d{flux_tex}^2\ [a.u.]$",
+    )
+    # axp.plot(  # debug
+    #     fluxes_norm,
+    #     _normalize_array(np.gradient(phi_values.m, fluxes), *axp_lim),
+    #     c="k",
+    #     linestyle="--",
+    # )
+    # axp.plot(  # debug
+    #     fluxes_norm,
+    #     _normalize_array(
+    #         np.gradient(np.gradient(phi_values.m, fluxes), fluxes), *axp_lim
+    #     ),
+    #     c="k",
+    #     linestyle="--",
+    # )
 
     # Set twin ax' units to normalized
     elim = machine.quantity(np.asarray(axe.get_ylim()), "kiloVolt / meter")

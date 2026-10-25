@@ -923,6 +923,28 @@ pub trait Efield: MachineObject + Debug + Send + Sync {
     fn eval_phi_deriv(&self, flux: MagneticFlux) -> Result<f64, EvalError> {
         Ok(-self.eval_e(flux)?)
     }
+
+    /// Calculates `d²Φ(ψ/ψp)/d(ψ/ψp)²`.
+    ///
+    /// Since the field is radial, this method is equivalent to `-dE(ψ/ψp)/d(ψ/ψp)`.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use dexter_machine::*;
+    /// let lcfs = MagneticFlux::Toroidal(0.45);
+    /// let efield = GaussianEfield::new(5e-4, lcfs * 0.9, 0.02 * lcfs.value());
+    ///
+    /// let psi = MagneticFlux::Toroidal(0.01);
+    /// let dphi2 = efield.eval_phi_deriv2(psi)?;
+    ///
+    /// # Ok::<_, MachineError>(())
+    /// ```
+    fn eval_phi_deriv2(&self, flux: MagneticFlux) -> Result<f64, EvalError>;
 }
 
 /// Defines the behavior of objects that support caching of a [`Mode`]'s values.

@@ -477,6 +477,7 @@ class Efield(_ReprStrImpl):
         self._eval_e = _flux_eval_wrap1d(self._r.eval_e)
         self._eval_phi = _flux_eval_wrap1d(self._r.eval_phi)
         self._eval_phi_deriv = _flux_eval_wrap1d(self._r.eval_phi_deriv)
+        self._eval_phi_deriv2 = _flux_eval_wrap1d(self._r.eval_phi_deriv2)
 
     def eval_e(
         self,
@@ -504,6 +505,14 @@ class Efield(_ReprStrImpl):
         Since the field is radial, this method is equivalent to $-E(\psi/\psi_p)$.
         """
         return self._eval_phi_deriv(psi, psip)[()]
+
+    def eval_phi_deriv2(
+        self,
+        psi: ArrayLike | None = None,
+        psip: ArrayLike | None = None,
+    ) -> Array:
+        r"""Calculates $d^2\Phi(\psi/\psi_p)/d(\psi/\psi_p)^2$."""
+        return self._eval_phi_deriv2(psi, psip)[()]
 
 
 class Mode(_ReprStrImpl):

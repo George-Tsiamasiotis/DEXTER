@@ -273,6 +273,11 @@ class _PyEfield:  # Trait and all possible getters
         psi: float,
         psip: float,
     ) -> float: ...
+    def eval_phi_deriv2(
+        self,
+        psi: float,
+        psip: float,
+    ) -> float: ...
     @override
     def __repr__(self) -> str: ...
     @override
