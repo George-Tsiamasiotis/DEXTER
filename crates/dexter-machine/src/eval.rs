@@ -762,6 +762,99 @@ pub trait Bfield: MachineObject + Debug + Send + Sync {
         theta: f64,
         acc: &mut Accelerator2d,
     ) -> Result<f64, EvalError>;
+
+    /// Calculates `d²B(ψ/ψp, θ)/d(ψ/ψp)²`.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use dexter_machine::*;
+    /// # use rsl_interpolation::*;
+    /// # use std::path::PathBuf;
+    /// #
+    /// # let path = PathBuf::from("./netcdf.nc");
+    /// # let bfield = NcBfieldBuilder::new(&path, Interpolation2dType::Bilinear).build()?;
+    /// #
+    /// let acc = &mut Accelerator2d::new();
+    /// let psi = MagneticFlux::Toroidal(0.01);
+    /// let psip = MagneticFlux::Poloidal(0.015);
+    ///
+    /// let db_dpsi2 = bfield.eval_deriv_flux2(psi, 3.14, acc)?;
+    /// let db_dpsip2 = bfield.eval_deriv_flux2(psip, 3.14, acc)?;
+    /// # Ok::<_, MachineError>(())
+    /// ```
+    fn eval_deriv_flux2(
+        &self,
+        flux: MagneticFlux,
+        theta: f64,
+        acc: &mut Accelerator2d,
+    ) -> Result<f64, EvalError>;
+
+    /// Calculates `d²B(ψ/ψp, θ)/dθ²`.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use dexter_machine::*;
+    /// # use rsl_interpolation::*;
+    /// # use std::path::PathBuf;
+    /// #
+    /// # let path = PathBuf::from("./netcdf.nc");
+    /// # let bfield = NcBfieldBuilder::new(&path, Interpolation2dType::Bilinear).build()?;
+    /// #
+    /// let acc = &mut Accelerator2d::new();
+    /// let psi = MagneticFlux::Toroidal(0.01);
+    /// let psip = MagneticFlux::Poloidal(0.015);
+    ///
+    /// let db_of_psi_dtheta2 = bfield.eval_deriv_theta2(psi, 3.14, acc)?;
+    /// let db_of_psip_dtheta2 = bfield.eval_deriv_theta2(psip, 3.14, acc)?;
+    /// # Ok::<_, MachineError>(())
+    /// ```
+    fn eval_deriv_theta2(
+        &self,
+        flux: MagneticFlux,
+        theta: f64,
+        acc: &mut Accelerator2d,
+    ) -> Result<f64, EvalError>;
+
+    /// Calculates `d²B(ψ/ψp, θ)/dθd(ψ/ψp)`.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use dexter_machine::*;
+    /// # use rsl_interpolation::*;
+    /// # use std::path::PathBuf;
+    /// #
+    /// # let path = PathBuf::from("./netcdf.nc");
+    /// # let bfield = NcBfieldBuilder::new(&path, Interpolation2dType::Bilinear).build()?;
+    /// #
+    /// let acc = &mut Accelerator2d::new();
+    /// let psi = MagneticFlux::Toroidal(0.01);
+    /// let psip = MagneticFlux::Poloidal(0.015);
+    ///
+    /// let db_dpsi_dtheta = bfield.eval_deriv_mixed(psi, 3.14, acc)?;
+    /// let db_dpsip_dtheta  = bfield.eval_deriv_mixed(psip, 3.14, acc)?;
+    /// # Ok::<_, MachineError>(())
+    /// ```
+    fn eval_deriv_mixed(
+        &self,
+        flux: MagneticFlux,
+        theta: f64,
+        acc: &mut Accelerator2d,
+    ) -> Result<f64, EvalError>;
 }
 
 /// Electric field related quantities computation.

@@ -123,6 +123,27 @@ impl PyBfield {
             .inner()
             .eval_deriv_theta(flux, theta, &mut Accelerator2d::new())?)
     }
+
+    pub fn eval_deriv_flux2(&self, theta: f64, psi: f64, psip: f64) -> Result<f64> {
+        let flux = flux_from_params(psi, psip);
+        Ok(self
+            .inner()
+            .eval_deriv_flux2(flux, theta, &mut Accelerator2d::new())?)
+    }
+
+    pub fn eval_deriv_theta2(&self, theta: f64, psi: f64, psip: f64) -> Result<f64> {
+        let flux = flux_from_params(psi, psip);
+        Ok(self
+            .inner()
+            .eval_deriv_theta2(flux, theta, &mut Accelerator2d::new())?)
+    }
+
+    pub fn eval_deriv_mixed(&self, theta: f64, psi: f64, psip: f64) -> Result<f64> {
+        let flux = flux_from_params(psi, psip);
+        Ok(self
+            .inner()
+            .eval_deriv_mixed(flux, theta, &mut Accelerator2d::new())?)
+    }
 }
 
 // ===============================================================================================
