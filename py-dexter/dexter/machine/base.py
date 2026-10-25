@@ -348,6 +348,8 @@ class Current(_ReprStrImpl):
         self._eval_i = _flux_eval_wrap1d(self._r.eval_i)
         self._eval_g_deriv = _flux_eval_wrap1d(self._r.eval_g_deriv)
         self._eval_i_deriv = _flux_eval_wrap1d(self._r.eval_i_deriv)
+        self._eval_g_deriv2 = _flux_eval_wrap1d(self._r.eval_g_deriv2)
+        self._eval_i_deriv2 = _flux_eval_wrap1d(self._r.eval_i_deriv2)
 
     def eval_g(
         self,
@@ -380,6 +382,22 @@ class Current(_ReprStrImpl):
     ) -> Array:
         r"""Calculates $dI(\psi/\psi_p)/d(\psi/\psi_p)$."""
         return self._eval_i_deriv(psi, psip)[()]
+
+    def eval_g_deriv2(
+        self,
+        psi: ArrayLike | None = None,
+        psip: ArrayLike | None = None,
+    ) -> Array:
+        r"""Calculates $d^2g(\psi/\psi_p)/d(\psi/\psi_p)^2$."""
+        return self._eval_g_deriv2(psi, psip)[()]
+
+    def eval_i_deriv2(
+        self,
+        psi: ArrayLike | None = None,
+        psip: ArrayLike | None = None,
+    ) -> Array:
+        r"""Calculates $d^2I(\psi/\psi_p)/d(\psi/\psi_p)^2$."""
+        return self._eval_i_deriv2(psi, psip)[()]
 
 
 class Bfield(_ReprStrImpl):

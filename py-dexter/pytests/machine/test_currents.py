@@ -54,6 +54,16 @@ def _test_current_base(current: dex.CurrentObject):
         current.eval_i_deriv(psip=flux)
         current.eval_i_deriv(psip=fluxes)
 
+        current.eval_g_deriv2(psi=flux)
+        current.eval_g_deriv2(psi=fluxes)
+        current.eval_g_deriv2(psip=flux)
+        current.eval_g_deriv2(psip=fluxes)
+
+        current.eval_i_deriv2(psi=flux)
+        current.eval_i_deriv2(psi=fluxes)
+        current.eval_i_deriv2(psip=flux)
+        current.eval_i_deriv2(psip=fluxes)
+
     except Exception as e:
         if not "[D] EvalError" in str(e):
             raise RuntimeError(

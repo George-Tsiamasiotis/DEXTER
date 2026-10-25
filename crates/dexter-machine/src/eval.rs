@@ -616,6 +616,56 @@ pub trait Current: MachineObject + Debug + Send + Sync {
     /// # Ok::<_, MachineError>(())
     /// ```
     fn eval_i_deriv(&self, flux: MagneticFlux, acc: &mut Accelerator) -> Result<f64, EvalError>;
+
+    /// Calculates the poloidal current's second derivative `d²g/d(ψ/ψp)²`.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use dexter_machine::*;
+    /// # use std::path::PathBuf;
+    /// # use rsl_interpolation::Accelerator;
+    /// #
+    /// # let current = LarCurrent;
+    /// #
+    /// let acc = &mut Accelerator::new();
+    /// let psi = MagneticFlux::Toroidal(0.01);
+    /// let psip = MagneticFlux::Toroidal(0.015);
+    ///
+    /// let dg_dpsi2 = current.eval_g_deriv2(psi, acc)?;
+    /// let dg_dpsip2 = current.eval_g_deriv2(psip, acc)?;
+    /// # Ok::<_, MachineError>(())
+    /// ```
+    fn eval_g_deriv2(&self, flux: MagneticFlux, acc: &mut Accelerator) -> Result<f64, EvalError>;
+
+    /// Calculates the toroidal current's second derivative `d²I/d(ψ/ψp)²`.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use dexter_machine::*;
+    /// # use std::path::PathBuf;
+    /// # use rsl_interpolation::Accelerator;
+    /// #
+    /// # let current = LarCurrent;
+    /// #
+    /// let acc = &mut Accelerator::new();
+    /// let psi = MagneticFlux::Toroidal(0.01);
+    /// let psip = MagneticFlux::Toroidal(0.015);
+    ///
+    /// let di_dpsi2 = current.eval_i_deriv2(psi, acc)?;
+    /// let di_dpsip2 = current.eval_i_deriv2(psip, acc)?;
+    /// # Ok::<_, MachineError>(())
+    /// ```
+    fn eval_i_deriv2(&self, flux: MagneticFlux, acc: &mut Accelerator) -> Result<f64, EvalError>;
 }
 
 /// Magnetic field related quantities computation.

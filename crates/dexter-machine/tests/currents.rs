@@ -25,6 +25,10 @@ fn lar_current() {
     assert_abs_diff_eq!(current.eval_g_deriv(psip, &mut acc).unwrap(), 0.0);
     assert_abs_diff_eq!(current.eval_i_deriv(psi, &mut acc).unwrap(), 0.0);
     assert_abs_diff_eq!(current.eval_i_deriv(psip, &mut acc).unwrap(), 0.0);
+    assert_abs_diff_eq!(current.eval_g_deriv2(psi, &mut acc).unwrap(), 0.0);
+    assert_abs_diff_eq!(current.eval_g_deriv2(psip, &mut acc).unwrap(), 0.0);
+    assert_abs_diff_eq!(current.eval_i_deriv2(psi, &mut acc).unwrap(), 0.0);
+    assert_abs_diff_eq!(current.eval_i_deriv2(psip, &mut acc).unwrap(), 0.0);
 }
 
 #[test]
@@ -47,15 +51,19 @@ fn nc_current() {
     let g_array: Array1<f64> = current.g_array();
     let i_array: Array1<f64> = current.i_array();
 
-    let mut acc = Accelerator::new();
+    let acc = &mut Accelerator::new();
     let psi = MagneticFlux::Toroidal(0.01);
     let psip = MagneticFlux::Poloidal(0.015);
-    let _: f64 = current.eval_g(psi, &mut acc).unwrap();
-    let _: f64 = current.eval_g(psip, &mut acc).unwrap();
-    let _: f64 = current.eval_i(psi, &mut acc).unwrap();
-    let _: f64 = current.eval_i(psip, &mut acc).unwrap();
-    let _: f64 = current.eval_i_deriv(psi, &mut acc).unwrap();
-    let _: f64 = current.eval_i_deriv(psip, &mut acc).unwrap();
-    let _: f64 = current.eval_i_deriv(psi, &mut acc).unwrap();
-    let _: f64 = current.eval_i_deriv(psip, &mut acc).unwrap();
+    assert!(current.eval_g(psi, acc).unwrap().is_finite());
+    assert!(current.eval_g(psip, acc).unwrap().is_finite());
+    assert!(current.eval_i(psi, acc).unwrap().is_finite());
+    assert!(current.eval_i(psip, acc).unwrap().is_finite());
+    assert!(current.eval_g_deriv(psi, acc).unwrap().is_finite());
+    assert!(current.eval_g_deriv(psip, acc).unwrap().is_finite());
+    assert!(current.eval_i_deriv(psi, acc).unwrap().is_finite());
+    assert!(current.eval_i_deriv(psip, acc).unwrap().is_finite());
+    assert!(current.eval_g_deriv2(psi, acc).unwrap().is_finite());
+    assert!(current.eval_g_deriv2(psip, acc).unwrap().is_finite());
+    assert!(current.eval_i_deriv2(psi, acc).unwrap().is_finite());
+    assert!(current.eval_i_deriv2(psip, acc).unwrap().is_finite());
 }

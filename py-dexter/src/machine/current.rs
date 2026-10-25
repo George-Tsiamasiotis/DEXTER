@@ -115,6 +115,16 @@ impl PyCurrent {
         let flux = flux_from_params(psi, psip);
         Ok(self.inner().eval_i_deriv(flux, &mut Accelerator::new())?)
     }
+
+    pub fn eval_g_deriv2(&self, psi: f64, psip: f64) -> Result<f64> {
+        let flux = flux_from_params(psi, psip);
+        Ok(self.inner().eval_g_deriv2(flux, &mut Accelerator::new())?)
+    }
+
+    pub fn eval_i_deriv2(&self, psi: f64, psip: f64) -> Result<f64> {
+        let flux = flux_from_params(psi, psip);
+        Ok(self.inner().eval_i_deriv2(flux, &mut Accelerator::new())?)
+    }
 }
 
 // ===============================================================================================

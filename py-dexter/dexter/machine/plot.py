@@ -345,6 +345,8 @@ def plot_current(
     r"""Plots a [`CurrentObject`][dexter.CurrentObject]'s $g$, $I$ and their derivatives, with respect to
     $\psi$ and $\psi_p$.
 
+    The second order derivatives of $g$ and $I$ are plotted as well, but in arbitrary units and origin.
+
     Parameters
     ----------
     machine
@@ -404,6 +406,8 @@ def plot_current(
     i_values = current.eval_i(**eval_arg)
     g_deriv_values = current.eval_g_deriv(**eval_arg)
     i_deriv_values = current.eval_i_deriv(**eval_arg)
+    g_deriv2_values = current.eval_g_deriv2(**eval_arg)
+    i_deriv2_values = current.eval_i_deriv2(**eval_arg)
 
     if data and current.machine_type == "Numerical":
         current = cast(NcCurrent, current)
@@ -443,7 +447,9 @@ def plot_current(
 
     CURRENT_COLOR = "r"
     CURRENT_DERIV_COLOR = "b"
-    MARGINS = (0, 0.01)
+    CURRENT_DERIV2_COLOR = "xkcd:bright blue"
+    CURRENT_DERIV2_ALPHA = 0.4
+    MARGINS = (0.001, 0.01)
 
     axg.plot(
         fluxes_norm,
@@ -481,6 +487,27 @@ def plot_current(
         i_deriv_values,
         c=CURRENT_DERIV_COLOR,
         label=rf"$dI({flux_tex})/d{flux_tex}$",
+    )
+
+    # Plot derivatives in arbitrary units
+    twg_lim = twg.get_ylim()
+    twi_lim = twi.get_ylim()
+    twg.autoscale(False)
+    twi.autoscale(False)
+    twg.plot(
+        fluxes_norm,
+        _normalize_array(g_deriv2_values, *twg_lim),
+        c=CURRENT_DERIV2_COLOR,
+        alpha=CURRENT_DERIV2_ALPHA,
+        label=rf"$d^2g({flux_tex})/d{flux_tex}^2$",
+    )
+    twi.plot(
+        fluxes_norm,
+        _normalize_array(i_deriv2_values, *twi_lim),
+        c=CURRENT_DERIV2_COLOR,
+        alpha=CURRENT_DERIV2_ALPHA,
+        label=rf"$d^2I({flux_tex})/d{flux_tex}^2$",
+        zorder=-2,
     )
 
     axg.grid()
@@ -1025,3 +1052,13 @@ def _resolve_magnetic_flux_kind(
                 return "Toroidal"
             else:
                 assert False, "unreachable"
+
+
+def _normalize_array(a: np.ndarray, xmin: float, xmax: float) -> np.ndarray:
+    r"""Normalizes an array within the `(xmin, xmax)` range."""
+    amin = a.min()
+    amax = a.max()
+    if amin == amax:  # avoid division by 0
+        return a
+    else:
+        return xmin + (a - amin) * (xmax - xmin) / (a.max() - amin)

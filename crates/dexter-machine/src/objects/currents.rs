@@ -60,6 +60,16 @@ impl Current for LarCurrent {
         debug_assert_non_negative_flux!(flux);
         Ok(0.0)
     }
+
+    fn eval_g_deriv2(&self, flux: MagneticFlux, _: &mut Accelerator) -> Result<f64, EvalError> {
+        debug_assert_non_negative_flux!(flux);
+        Ok(0.0)
+    }
+
+    fn eval_i_deriv2(&self, flux: MagneticFlux, _: &mut Accelerator) -> Result<f64, EvalError> {
+        debug_assert_non_negative_flux!(flux);
+        Ok(0.0)
+    }
 }
 
 impl std::fmt::Debug for LarCurrent {
@@ -309,6 +319,50 @@ impl Current for NcCurrent {
         let ya = &self.i_values;
         Ok(debug_assert_is_finite!(
             interp.eval_deriv(xa, ya, val, acc)?
+        ))
+    }
+
+    fn eval_g_deriv2(&self, flux: MagneticFlux, acc: &mut Accelerator) -> Result<f64, EvalError> {
+        debug_assert_non_negative_flux!(flux);
+        let interp_opt = match flux {
+            Toroidal(_) => self.g_of_psi_interp.as_ref(),
+            Poloidal(_) => self.g_of_psip_interp.as_ref(),
+        };
+        let Some(interp) = interp_opt else {
+            cold_path();
+            let msg = format!("d²g({})/d{}²", flux.symbol(), flux.symbol());
+            return Err(EvalError::UndefinedEvaluation(msg));
+        };
+        // This cannot panic. If `interp` is `Some` then the corresponding values exist.
+        let (val, xa) = match flux {
+            Toroidal(val) => (val, self.psi.uvalues()),
+            Poloidal(val) => (val, self.psip.uvalues()),
+        };
+        let ya = &self.g_values;
+        Ok(debug_assert_is_finite!(
+            interp.eval_deriv2(xa, ya, val, acc)?
+        ))
+    }
+
+    fn eval_i_deriv2(&self, flux: MagneticFlux, acc: &mut Accelerator) -> Result<f64, EvalError> {
+        debug_assert_non_negative_flux!(flux);
+        let interp_opt = match flux {
+            Toroidal(_) => self.i_of_psi_interp.as_ref(),
+            Poloidal(_) => self.i_of_psip_interp.as_ref(),
+        };
+        let Some(interp) = interp_opt else {
+            cold_path();
+            let msg = format!("d²I({})/d{}²", flux.symbol(), flux.symbol());
+            return Err(EvalError::UndefinedEvaluation(msg));
+        };
+        // This cannot panic. If `interp` is `Some` then the corresponding values exist.
+        let (val, xa) = match flux {
+            Toroidal(val) => (val, self.psi.uvalues()),
+            Poloidal(val) => (val, self.psip.uvalues()),
+        };
+        let ya = &self.i_values;
+        Ok(debug_assert_is_finite!(
+            interp.eval_deriv2(xa, ya, val, acc)?
         ))
     }
 }
