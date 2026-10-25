@@ -2,6 +2,7 @@
 
 #![allow(unused_variables)]
 
+use approx::assert_relative_eq;
 use dexter_machine::*;
 
 #[test]
@@ -18,6 +19,8 @@ fn no_efield() {
     assert_eq!(efield.eval_phi(psip).unwrap(), 0.0);
     assert_eq!(efield.eval_phi_deriv(psi).unwrap(), 0.0);
     assert_eq!(efield.eval_phi_deriv(psip).unwrap(), 0.0);
+    assert_eq!(efield.eval_phi_deriv2(psi).unwrap(), 0.0);
+    assert_eq!(efield.eval_phi_deriv2(psip).unwrap(), 0.0);
 }
 
 #[test]
@@ -37,14 +40,21 @@ fn toroidal_gaussian_efield() {
     assert_eq!(efield.mean(), mean);
     assert_eq!(efield.width(), width);
 
-    let psi = MagneticFlux::Toroidal(0.01);
+    let psi = MagneticFlux::Toroidal(0.40);
     let psip = MagneticFlux::Poloidal(0.015);
     assert!(efield.eval_e(psi).unwrap().is_finite());
     assert!(efield.eval_phi(psi).unwrap().is_finite());
     assert!(efield.eval_phi_deriv(psi).unwrap().is_finite());
+    assert!(efield.eval_phi_deriv2(psi).unwrap().is_finite());
     assert!(efield.eval_e(psip).is_err());
     assert!(efield.eval_phi(psip).is_err());
     assert!(efield.eval_phi_deriv(psip).is_err());
+    assert!(efield.eval_phi_deriv2(psip).is_err());
+
+    assert_relative_eq!(
+        efield.eval_phi_deriv2(psi).unwrap(),
+        (psi.value() - mean.value()) / width.powi(2) * efield.eval_e(psi).unwrap()
+    );
 }
 
 #[test]
@@ -69,7 +79,9 @@ fn poloidal_gaussian_efield() {
     assert!(efield.eval_e(psip).unwrap().is_finite());
     assert!(efield.eval_phi(psip).unwrap().is_finite());
     assert!(efield.eval_phi_deriv(psip).unwrap().is_finite());
+    assert!(efield.eval_phi_deriv2(psip).unwrap().is_finite());
     assert!(efield.eval_e(psi).is_err());
     assert!(efield.eval_phi(psi).is_err());
     assert!(efield.eval_phi_deriv(psi).is_err());
+    assert!(efield.eval_phi_deriv2(psi).is_err());
 }

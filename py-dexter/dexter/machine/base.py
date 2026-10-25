@@ -242,12 +242,14 @@ class Qfactor(_ReprStrImpl):
         self.psi_last = MagneticFlux._wrap(self._r.psi_last)
         self.psip_last = MagneticFlux._wrap(self._r.psip_last)
         self._eval_q = _flux_eval_wrap1d(self._r.eval_q)
+        self._eval_q_deriv = _flux_eval_wrap1d(self._r.eval_q_deriv)
         self._eval_other = _flux_eval_wrap1d(self._r.eval_other)
         self._eval_psi_of_q = np.vectorize(self._r.eval_psi_of_q)
         self._eval_psip_of_q = np.vectorize(self._r.eval_psip_of_q)
         self._eval_deriv_of_other = _flux_eval_wrap1d(self._r.eval_deriv_of_other)
         self._eval_deriv_wrt_other = _flux_eval_wrap1d(self._r.eval_deriv_wrt_other)
         self._eval_iota = _flux_eval_wrap1d(self._r.eval_iota)
+        self._eval_iota_deriv = _flux_eval_wrap1d(self._r.eval_iota_deriv)
 
     def eval_q(
         self,
@@ -256,6 +258,14 @@ class Qfactor(_ReprStrImpl):
     ) -> Array:
         r"""Calculates $q(\psi/\psi_p)$."""
         return self._eval_q(psi, psip)[()]
+
+    def eval_q_deriv(
+        self,
+        psi: ArrayLike | None = None,
+        psip: ArrayLike | None = None,
+    ) -> Array:
+        r"""Calculates $dq(\psi/\psi_p)/d(\psi/\psi_p)$."""
+        return self._eval_q_deriv(psi, psip)[()]
 
     def eval_other(
         self,
@@ -316,8 +326,16 @@ class Qfactor(_ReprStrImpl):
         psi: ArrayLike | None = None,
         psip: ArrayLike | None = None,
     ) -> Array:
-        r"""Calculates $\iota(\psi/\psi_p)$."""
+        r"""Calculates $\iota(\psi/\psi_p) = 1/q$."""
         return self._eval_iota(psi, psip)[()]
+
+    def eval_iota_deriv(
+        self,
+        psi: ArrayLike | None = None,
+        psip: ArrayLike | None = None,
+    ) -> Array:
+        r"""Calculates $d\iota(\psi/\psi_p)/d(\psi/\psi_p) = -q'/q^2$."""
+        return self._eval_iota_deriv(psi, psip)[()]
 
 
 class Current(_ReprStrImpl):
@@ -330,6 +348,8 @@ class Current(_ReprStrImpl):
         self._eval_i = _flux_eval_wrap1d(self._r.eval_i)
         self._eval_g_deriv = _flux_eval_wrap1d(self._r.eval_g_deriv)
         self._eval_i_deriv = _flux_eval_wrap1d(self._r.eval_i_deriv)
+        self._eval_g_deriv2 = _flux_eval_wrap1d(self._r.eval_g_deriv2)
+        self._eval_i_deriv2 = _flux_eval_wrap1d(self._r.eval_i_deriv2)
 
     def eval_g(
         self,
@@ -363,6 +383,22 @@ class Current(_ReprStrImpl):
         r"""Calculates $dI(\psi/\psi_p)/d(\psi/\psi_p)$."""
         return self._eval_i_deriv(psi, psip)[()]
 
+    def eval_g_deriv2(
+        self,
+        psi: ArrayLike | None = None,
+        psip: ArrayLike | None = None,
+    ) -> Array:
+        r"""Calculates $d^2g(\psi/\psi_p)/d(\psi/\psi_p)^2$."""
+        return self._eval_g_deriv2(psi, psip)[()]
+
+    def eval_i_deriv2(
+        self,
+        psi: ArrayLike | None = None,
+        psip: ArrayLike | None = None,
+    ) -> Array:
+        r"""Calculates $d^2I(\psi/\psi_p)/d(\psi/\psi_p)^2$."""
+        return self._eval_i_deriv2(psi, psip)[()]
+
 
 class Bfield(_ReprStrImpl):
     """Magnetic field related evaluation methods."""
@@ -373,6 +409,9 @@ class Bfield(_ReprStrImpl):
         self._eval_b = _flux_eval_wrap2d(self._r.eval_b)
         self._eval_deriv_flux = _flux_eval_wrap2d(self._r.eval_deriv_flux)
         self._eval_deriv_theta = _flux_eval_wrap2d(self._r.eval_deriv_theta)
+        self._eval_deriv_flux2 = _flux_eval_wrap2d(self._r.eval_deriv_flux2)
+        self._eval_deriv_theta2 = _flux_eval_wrap2d(self._r.eval_deriv_theta2)
+        self._eval_deriv_mixed = _flux_eval_wrap2d(self._r.eval_deriv_mixed)
 
     def eval_b(
         self,
@@ -401,6 +440,33 @@ class Bfield(_ReprStrImpl):
         r"""Calculates $dB(\psi/\psi_p, \theta)/d\theta$."""
         return self._eval_deriv_theta(theta, psi, psip)[()]
 
+    def eval_deriv_flux2(
+        self,
+        theta: ArrayLike,
+        psi: ArrayLike | None = None,
+        psip: ArrayLike | None = None,
+    ) -> Array:
+        r"""Calculates $d^2B(\psi/\psi_p, \theta)/d(\psi/\psi_p)^2$."""
+        return self._eval_deriv_flux2(theta, psi, psip)[()]
+
+    def eval_deriv_theta2(
+        self,
+        theta: ArrayLike,
+        psi: ArrayLike | None = None,
+        psip: ArrayLike | None = None,
+    ) -> Array:
+        r"""Calculates $d^2B(\psi/\psi_p, \theta)/d\theta^2$."""
+        return self._eval_deriv_theta2(theta, psi, psip)[()]
+
+    def eval_deriv_mixed(
+        self,
+        theta: ArrayLike,
+        psi: ArrayLike | None = None,
+        psip: ArrayLike | None = None,
+    ) -> Array:
+        r"""Calculates $d^2B(\psi/\psi_p, \theta)/d(\psi,\psi_p)d\theta$."""
+        return self._eval_deriv_mixed(theta, psi, psip)[()]
+
 
 class Efield(_ReprStrImpl):
     """Electric field related evaluation methods."""
@@ -411,6 +477,7 @@ class Efield(_ReprStrImpl):
         self._eval_e = _flux_eval_wrap1d(self._r.eval_e)
         self._eval_phi = _flux_eval_wrap1d(self._r.eval_phi)
         self._eval_phi_deriv = _flux_eval_wrap1d(self._r.eval_phi_deriv)
+        self._eval_phi_deriv2 = _flux_eval_wrap1d(self._r.eval_phi_deriv2)
 
     def eval_e(
         self,
@@ -438,6 +505,14 @@ class Efield(_ReprStrImpl):
         Since the field is radial, this method is equivalent to $-E(\psi/\psi_p)$.
         """
         return self._eval_phi_deriv(psi, psip)[()]
+
+    def eval_phi_deriv2(
+        self,
+        psi: ArrayLike | None = None,
+        psip: ArrayLike | None = None,
+    ) -> Array:
+        r"""Calculates $d^2\Phi(\psi/\psi_p)/d(\psi/\psi_p)^2$."""
+        return self._eval_phi_deriv2(psi, psip)[()]
 
 
 class Mode(_ReprStrImpl):

@@ -73,6 +73,11 @@ def _test_qfactor_base(qfactor: dex.QfactorObject):
         qfactor.eval_q(psip=flux)
         qfactor.eval_q(psip=fluxes)
 
+        qfactor.eval_q_deriv(psi=flux)
+        qfactor.eval_q_deriv(psi=fluxes)
+        qfactor.eval_q_deriv(psip=flux)
+        qfactor.eval_q_deriv(psip=fluxes)
+
         qfactor.eval_other(psi=flux)
         qfactor.eval_other(psi=fluxes)
         qfactor.eval_other(psip=flux)
@@ -97,6 +102,11 @@ def _test_qfactor_base(qfactor: dex.QfactorObject):
         qfactor.eval_iota(psi=fluxes)
         qfactor.eval_iota(psip=flux)
         qfactor.eval_iota(psip=fluxes)
+
+        qfactor.eval_iota_deriv(psi=flux)
+        qfactor.eval_iota_deriv(psi=fluxes)
+        qfactor.eval_iota_deriv(psip=flux)
+        qfactor.eval_iota_deriv(psip=fluxes)
 
     except Exception as e:
         if not "[D] EvalError" in str(e):

@@ -266,6 +266,32 @@ pub trait Qfactor: MachineObject + Debug + Send + Sync {
     /// ```
     fn eval_q(&self, flux: MagneticFlux, acc: &mut Accelerator) -> Result<f64, EvalError>;
 
+    /// Calculates the safety factor's derivative `dq(ψ/ψp)/d(ψ/ψp)`.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use dexter_machine::*;
+    /// # use std::path::PathBuf;
+    /// # use rsl_interpolation::Accelerator;
+    /// #
+    /// # let lcfs = MagneticFlux::Toroidal(0.45);
+    /// # let qfactor = ParabolicQfactor::new(1.1, 3.8, lcfs);
+    /// #
+    /// let acc = &mut Accelerator::new();
+    /// let psi = MagneticFlux::Toroidal(0.01);
+    /// let psip = MagneticFlux::Toroidal(0.015);
+    ///
+    /// let dq_dpsi = qfactor.eval_q_deriv(psi, acc)?;
+    /// let dq_dpsip = qfactor.eval_q_deriv(psip, acc)?;
+    /// # Ok::<_, MachineError>(())
+    /// ```
+    fn eval_q_deriv(&self, flux: MagneticFlux, acc: &mut Accelerator) -> Result<f64, EvalError>;
+
     /// Converts a [`MagneticFlux`] to one of the other variant.
     ///
     /// # Errors
@@ -459,6 +485,34 @@ pub trait Qfactor: MachineObject + Debug + Send + Sync {
     fn eval_iota(&self, flux: MagneticFlux, acc: &mut Accelerator) -> Result<f64, EvalError> {
         Ok(self.eval_q(flux, acc)?.recip())
     }
+
+    /// Calculates the rotational number's derivative `dι(ψ/ψp)/d(ψ/ψp) = -q'/q²`.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use dexter_machine::*;
+    /// # use std::path::PathBuf;
+    /// # use rsl_interpolation::Accelerator;
+    /// #
+    /// # let lcfs = MagneticFlux::Toroidal(0.45);
+    /// # let qfactor = ParabolicQfactor::new(1.1, 3.8, lcfs);
+    /// #
+    /// let acc = &mut Accelerator::new();
+    /// let psi = MagneticFlux::Toroidal(0.01);
+    /// let psip = MagneticFlux::Toroidal(0.015);
+    ///
+    /// let diota_dpsi = qfactor.eval_iota_deriv(psi, acc)?;
+    /// let diota_dpsip = qfactor.eval_iota_deriv(psip, acc)?;
+    /// # Ok::<_, MachineError>(())
+    /// ```
+    fn eval_iota_deriv(&self, flux: MagneticFlux, acc: &mut Accelerator) -> Result<f64, EvalError> {
+        Ok(-self.eval_q_deriv(flux, acc)? / self.eval_q(flux, acc)?.powi(2))
+    }
 }
 
 /// Plasma current related quantities computation.
@@ -562,6 +616,56 @@ pub trait Current: MachineObject + Debug + Send + Sync {
     /// # Ok::<_, MachineError>(())
     /// ```
     fn eval_i_deriv(&self, flux: MagneticFlux, acc: &mut Accelerator) -> Result<f64, EvalError>;
+
+    /// Calculates the poloidal current's second derivative `d²g/d(ψ/ψp)²`.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use dexter_machine::*;
+    /// # use std::path::PathBuf;
+    /// # use rsl_interpolation::Accelerator;
+    /// #
+    /// # let current = LarCurrent;
+    /// #
+    /// let acc = &mut Accelerator::new();
+    /// let psi = MagneticFlux::Toroidal(0.01);
+    /// let psip = MagneticFlux::Toroidal(0.015);
+    ///
+    /// let dg_dpsi2 = current.eval_g_deriv2(psi, acc)?;
+    /// let dg_dpsip2 = current.eval_g_deriv2(psip, acc)?;
+    /// # Ok::<_, MachineError>(())
+    /// ```
+    fn eval_g_deriv2(&self, flux: MagneticFlux, acc: &mut Accelerator) -> Result<f64, EvalError>;
+
+    /// Calculates the toroidal current's second derivative `d²I/d(ψ/ψp)²`.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use dexter_machine::*;
+    /// # use std::path::PathBuf;
+    /// # use rsl_interpolation::Accelerator;
+    /// #
+    /// # let current = LarCurrent;
+    /// #
+    /// let acc = &mut Accelerator::new();
+    /// let psi = MagneticFlux::Toroidal(0.01);
+    /// let psip = MagneticFlux::Toroidal(0.015);
+    ///
+    /// let di_dpsi2 = current.eval_i_deriv2(psi, acc)?;
+    /// let di_dpsip2 = current.eval_i_deriv2(psip, acc)?;
+    /// # Ok::<_, MachineError>(())
+    /// ```
+    fn eval_i_deriv2(&self, flux: MagneticFlux, acc: &mut Accelerator) -> Result<f64, EvalError>;
 }
 
 /// Magnetic field related quantities computation.
@@ -658,6 +762,99 @@ pub trait Bfield: MachineObject + Debug + Send + Sync {
         theta: f64,
         acc: &mut Accelerator2d,
     ) -> Result<f64, EvalError>;
+
+    /// Calculates `d²B(ψ/ψp, θ)/d(ψ/ψp)²`.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use dexter_machine::*;
+    /// # use rsl_interpolation::*;
+    /// # use std::path::PathBuf;
+    /// #
+    /// # let path = PathBuf::from("./netcdf.nc");
+    /// # let bfield = NcBfieldBuilder::new(&path, Interpolation2dType::Bilinear).build()?;
+    /// #
+    /// let acc = &mut Accelerator2d::new();
+    /// let psi = MagneticFlux::Toroidal(0.01);
+    /// let psip = MagneticFlux::Poloidal(0.015);
+    ///
+    /// let db_dpsi2 = bfield.eval_deriv_flux2(psi, 3.14, acc)?;
+    /// let db_dpsip2 = bfield.eval_deriv_flux2(psip, 3.14, acc)?;
+    /// # Ok::<_, MachineError>(())
+    /// ```
+    fn eval_deriv_flux2(
+        &self,
+        flux: MagneticFlux,
+        theta: f64,
+        acc: &mut Accelerator2d,
+    ) -> Result<f64, EvalError>;
+
+    /// Calculates `d²B(ψ/ψp, θ)/dθ²`.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use dexter_machine::*;
+    /// # use rsl_interpolation::*;
+    /// # use std::path::PathBuf;
+    /// #
+    /// # let path = PathBuf::from("./netcdf.nc");
+    /// # let bfield = NcBfieldBuilder::new(&path, Interpolation2dType::Bilinear).build()?;
+    /// #
+    /// let acc = &mut Accelerator2d::new();
+    /// let psi = MagneticFlux::Toroidal(0.01);
+    /// let psip = MagneticFlux::Poloidal(0.015);
+    ///
+    /// let db_of_psi_dtheta2 = bfield.eval_deriv_theta2(psi, 3.14, acc)?;
+    /// let db_of_psip_dtheta2 = bfield.eval_deriv_theta2(psip, 3.14, acc)?;
+    /// # Ok::<_, MachineError>(())
+    /// ```
+    fn eval_deriv_theta2(
+        &self,
+        flux: MagneticFlux,
+        theta: f64,
+        acc: &mut Accelerator2d,
+    ) -> Result<f64, EvalError>;
+
+    /// Calculates `d²B(ψ/ψp, θ)/dθd(ψ/ψp)`.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use dexter_machine::*;
+    /// # use rsl_interpolation::*;
+    /// # use std::path::PathBuf;
+    /// #
+    /// # let path = PathBuf::from("./netcdf.nc");
+    /// # let bfield = NcBfieldBuilder::new(&path, Interpolation2dType::Bilinear).build()?;
+    /// #
+    /// let acc = &mut Accelerator2d::new();
+    /// let psi = MagneticFlux::Toroidal(0.01);
+    /// let psip = MagneticFlux::Poloidal(0.015);
+    ///
+    /// let db_dpsi_dtheta = bfield.eval_deriv_mixed(psi, 3.14, acc)?;
+    /// let db_dpsip_dtheta  = bfield.eval_deriv_mixed(psip, 3.14, acc)?;
+    /// # Ok::<_, MachineError>(())
+    /// ```
+    fn eval_deriv_mixed(
+        &self,
+        flux: MagneticFlux,
+        theta: f64,
+        acc: &mut Accelerator2d,
+    ) -> Result<f64, EvalError>;
 }
 
 /// Electric field related quantities computation.
@@ -726,6 +923,28 @@ pub trait Efield: MachineObject + Debug + Send + Sync {
     fn eval_phi_deriv(&self, flux: MagneticFlux) -> Result<f64, EvalError> {
         Ok(-self.eval_e(flux)?)
     }
+
+    /// Calculates `d²Φ(ψ/ψp)/d(ψ/ψp)²`.
+    ///
+    /// Since the field is radial, this method is equivalent to `-dE(ψ/ψp)/d(ψ/ψp)`.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use dexter_machine::*;
+    /// let lcfs = MagneticFlux::Toroidal(0.45);
+    /// let efield = GaussianEfield::new(5e-4, lcfs * 0.9, 0.02 * lcfs.value());
+    ///
+    /// let psi = MagneticFlux::Toroidal(0.01);
+    /// let dphi2 = efield.eval_phi_deriv2(psi)?;
+    ///
+    /// # Ok::<_, MachineError>(())
+    /// ```
+    fn eval_phi_deriv2(&self, flux: MagneticFlux) -> Result<f64, EvalError>;
 }
 
 /// Defines the behavior of objects that support caching of a [`Mode`]'s values.

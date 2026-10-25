@@ -111,6 +111,11 @@ impl PyEfield {
         let flux = flux_from_params(psi, psip);
         Ok(self.inner().eval_phi_deriv(flux)?)
     }
+
+    pub fn eval_phi_deriv2(&self, psi: f64, psip: f64) -> Result<f64> {
+        let flux = flux_from_params(psi, psip);
+        Ok(self.inner().eval_phi_deriv2(flux)?)
+    }
 }
 
 // ===============================================================================================

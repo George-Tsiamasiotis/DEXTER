@@ -150,6 +150,11 @@ impl PyQfactor {
         Ok(self.inner().eval_q(flux, &mut Accelerator::new())?)
     }
 
+    pub fn eval_q_deriv(&self, psi: f64, psip: f64) -> Result<f64> {
+        let flux = flux_from_params(psi, psip);
+        Ok(self.inner().eval_q_deriv(flux, &mut Accelerator::new())?)
+    }
+
     pub fn eval_other(&self, psi: f64, psip: f64) -> Result<f64> {
         let flux = flux_from_params(psi, psip);
         Ok(self
@@ -189,6 +194,13 @@ impl PyQfactor {
     pub fn eval_iota(&self, psi: f64, psip: f64) -> Result<f64> {
         let flux = flux_from_params(psi, psip);
         Ok(self.inner().eval_iota(flux, &mut Accelerator::new())?)
+    }
+
+    pub fn eval_iota_deriv(&self, psi: f64, psip: f64) -> Result<f64> {
+        let flux = flux_from_params(psi, psip);
+        Ok(self
+            .inner()
+            .eval_iota_deriv(flux, &mut Accelerator::new())?)
     }
 }
 

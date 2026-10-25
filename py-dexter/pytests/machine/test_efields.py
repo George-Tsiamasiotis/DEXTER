@@ -36,6 +36,11 @@ def _test_efield_base(efield: dex.EfieldObject):
 
     try:
 
+        efield.eval_e(psi=flux)
+        efield.eval_e(psi=fluxes)
+        efield.eval_e(psip=flux)
+        efield.eval_e(psip=fluxes)
+
         efield.eval_phi(psi=flux)
         efield.eval_phi(psi=fluxes)
         efield.eval_phi(psip=flux)
@@ -45,6 +50,11 @@ def _test_efield_base(efield: dex.EfieldObject):
         efield.eval_phi_deriv(psi=fluxes)
         efield.eval_phi_deriv(psip=flux)
         efield.eval_phi_deriv(psip=fluxes)
+
+        efield.eval_phi_deriv2(psi=flux)
+        efield.eval_phi_deriv2(psi=fluxes)
+        efield.eval_phi_deriv2(psip=flux)
+        efield.eval_phi_deriv2(psip=fluxes)
 
     except Exception as e:
         if not "[D] EvalError" in str(e):

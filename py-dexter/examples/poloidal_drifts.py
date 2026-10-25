@@ -49,7 +49,7 @@ queue.close(machine, discard_arrays=False)
 
 # ======================
 
-fig, ax = dex.plot_poloidal_drift(machine, queue, show=False)
+fig, ax = dex.plot_poloidal_drift(machine, queue, colors="Orbit", show=False)
 fig.set_figheight(2.3)
 fig.set_figwidth(4.5)
 

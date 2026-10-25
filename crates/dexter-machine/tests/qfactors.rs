@@ -20,12 +20,16 @@ fn unity_qfactor() {
     let psip = Poloidal(0.015);
     assert_abs_diff_eq!(qfactor.eval_q(psi, &mut acc).unwrap(), 1.0);
     assert_abs_diff_eq!(qfactor.eval_q(psip, &mut acc).unwrap(), 1.0);
+    assert_abs_diff_eq!(qfactor.eval_q_deriv(psi, &mut acc).unwrap(), 0.0);
+    assert_abs_diff_eq!(qfactor.eval_q_deriv(psip, &mut acc).unwrap(), 0.0);
+    assert_abs_diff_eq!(qfactor.eval_iota(psi, &mut acc).unwrap(), 1.0);
+    assert_abs_diff_eq!(qfactor.eval_iota(psip, &mut acc).unwrap(), 1.0);
+    assert_abs_diff_eq!(qfactor.eval_iota_deriv(psi, &mut acc).unwrap(), 0.0);
+    assert_abs_diff_eq!(qfactor.eval_iota_deriv(psip, &mut acc).unwrap(), 0.0);
     assert_abs_diff_eq!(qfactor.eval_other(psi, &mut acc).unwrap(), Poloidal(0.01));
     assert_abs_diff_eq!(qfactor.eval_other(psip, &mut acc).unwrap(), Toroidal(0.015));
     assert_abs_diff_eq!(qfactor.eval_deriv_of_other(psi, &mut acc).unwrap(), 1.0);
     assert_abs_diff_eq!(qfactor.eval_deriv_of_other(psip, &mut acc).unwrap(), 1.0);
-    assert_abs_diff_eq!(qfactor.eval_iota(psi, &mut acc).unwrap(), 1.0);
-    assert_abs_diff_eq!(qfactor.eval_iota(psip, &mut acc).unwrap(), 1.0);
 
     assert!(qfactor.eval_psi_of_q(1.0, &mut acc).is_err());
     assert!(qfactor.eval_psip_of_q(1.0, &mut acc).is_err());
@@ -46,19 +50,26 @@ fn parabolic_qfactor() {
     let psi_last: MagneticFlux = qfactor.psi_last();
     let psip_last: MagneticFlux = qfactor.psip_last();
 
-    let mut acc = Accelerator::new();
+    let acc = &mut Accelerator::new();
+    let q = 1.3;
     let psi = Toroidal(0.01);
     let psip = Poloidal(0.015);
-    let _: f64 = qfactor.eval_q(psi, &mut acc).unwrap();
-    let _: f64 = qfactor.eval_q(psip, &mut acc).unwrap();
-    let _: f64 = qfactor.eval_iota(psi, &mut acc).unwrap();
-    let _: f64 = qfactor.eval_iota(psip, &mut acc).unwrap();
-    let _: MagneticFlux = qfactor.eval_other(psi, &mut acc).unwrap();
-    let _: MagneticFlux = qfactor.eval_other(psip, &mut acc).unwrap();
-    let _: f64 = qfactor.eval_deriv_of_other(psi, &mut acc).unwrap();
-    let _: f64 = qfactor.eval_deriv_of_other(psip, &mut acc).unwrap();
-    let _: MagneticFlux = qfactor.eval_psi_of_q(1.3, &mut acc).unwrap();
-    let _: MagneticFlux = qfactor.eval_psip_of_q(1.3, &mut acc).unwrap();
+    assert!(qfactor.eval_q(psi, acc).unwrap().is_finite());
+    assert!(qfactor.eval_q(psip, acc).unwrap().is_finite());
+    assert!(qfactor.eval_q_deriv(psi, acc).unwrap().is_finite());
+    assert!(qfactor.eval_q_deriv(psip, acc).unwrap().is_finite());
+    assert!(qfactor.eval_iota(psi, acc).unwrap().is_finite());
+    assert!(qfactor.eval_iota(psip, acc).unwrap().is_finite());
+    assert!(qfactor.eval_iota_deriv(psi, acc).unwrap().is_finite());
+    assert!(qfactor.eval_iota_deriv(psip, acc).unwrap().is_finite());
+    assert!(qfactor.eval_other(psi, acc).unwrap().value().is_finite());
+    assert!(qfactor.eval_other(psip, acc).unwrap().value().is_finite());
+    assert!(qfactor.eval_deriv_of_other(psi, acc).unwrap().is_finite());
+    assert!(qfactor.eval_deriv_of_other(psip, acc).unwrap().is_finite());
+    assert!(qfactor.eval_deriv_wrt_other(psi, acc).unwrap().is_finite());
+    assert!(qfactor.eval_deriv_wrt_other(psip, acc).unwrap().is_finite());
+    assert!(qfactor.eval_psi_of_q(q, acc).unwrap().value().is_finite());
+    assert!(qfactor.eval_psip_of_q(q, acc).unwrap().value().is_finite());
 }
 
 #[test]
@@ -85,19 +96,26 @@ fn nc_qfactor() {
     let psip_array: Array1<f64> = qfactor.psip_array();
     let q_array: Array1<f64> = qfactor.q_array();
 
-    let mut acc = Accelerator::new();
+    let acc = &mut Accelerator::new();
+    let q = 1.1;
     let psi = Toroidal(0.01);
     let psip = Poloidal(0.015);
-    let _: f64 = qfactor.eval_q(psi, &mut acc).unwrap();
-    let _: f64 = qfactor.eval_q(psip, &mut acc).unwrap();
-    let _: f64 = qfactor.eval_iota(psi, &mut acc).unwrap();
-    let _: f64 = qfactor.eval_iota(psip, &mut acc).unwrap();
-    let _: MagneticFlux = qfactor.eval_other(psi, &mut acc).unwrap();
-    let _: MagneticFlux = qfactor.eval_other(psip, &mut acc).unwrap();
-    let _: f64 = qfactor.eval_deriv_of_other(psi, &mut acc).unwrap();
-    let _: f64 = qfactor.eval_deriv_of_other(psip, &mut acc).unwrap();
-    let _: MagneticFlux = qfactor.eval_psi_of_q(1.3, &mut acc).unwrap();
-    let _: MagneticFlux = qfactor.eval_psip_of_q(1.3, &mut acc).unwrap();
+    assert!(qfactor.eval_q(psi, acc).unwrap().is_finite());
+    assert!(qfactor.eval_q(psip, acc).unwrap().is_finite());
+    assert!(qfactor.eval_q_deriv(psi, acc).unwrap().is_finite());
+    assert!(qfactor.eval_q_deriv(psip, acc).unwrap().is_finite());
+    assert!(qfactor.eval_iota(psi, acc).unwrap().is_finite());
+    assert!(qfactor.eval_iota(psip, acc).unwrap().is_finite());
+    assert!(qfactor.eval_iota_deriv(psi, acc).unwrap().is_finite());
+    assert!(qfactor.eval_iota_deriv(psip, acc).unwrap().is_finite());
+    assert!(qfactor.eval_other(psi, acc).unwrap().value().is_finite());
+    assert!(qfactor.eval_other(psip, acc).unwrap().value().is_finite());
+    assert!(qfactor.eval_deriv_of_other(psi, acc).unwrap().is_finite());
+    assert!(qfactor.eval_deriv_of_other(psip, acc).unwrap().is_finite());
+    assert!(qfactor.eval_deriv_wrt_other(psi, acc).unwrap().is_finite());
+    assert!(qfactor.eval_deriv_wrt_other(psip, acc).unwrap().is_finite());
+    assert!(qfactor.eval_psi_of_q(q, acc).unwrap().value().is_finite());
+    assert!(qfactor.eval_psip_of_q(q, acc).unwrap().value().is_finite());
 }
 
 #[test]

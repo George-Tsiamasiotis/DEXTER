@@ -48,6 +48,11 @@ impl Efield for NoEfield {
         debug_assert_non_negative_flux!(flux);
         Ok(0.0)
     }
+
+    fn eval_phi_deriv2(&self, flux: MagneticFlux) -> Result<f64, EvalError> {
+        debug_assert_non_negative_flux!(flux);
+        Ok(0.0)
+    }
 }
 
 // ===============================================================================================
@@ -175,6 +180,15 @@ impl Efield for GaussianEfield {
             return Err(EvalError::UndefinedEvaluation(msg));
         }
         Ok(-self.eval_e(flux)?)
+    }
+
+    fn eval_phi_deriv2(&self, flux: MagneticFlux) -> Result<f64, EvalError> {
+        debug_assert_non_negative_flux!(flux);
+        if flux.kind() != self._good_flux_kind {
+            let msg = format!("dΦ({})/d{}", flux.kind().symbol(), flux.kind().symbol());
+            return Err(EvalError::UndefinedEvaluation(msg));
+        }
+        Ok((flux.value() - self.mean.value()) / self._var * self.eval_e(flux)?)
     }
 }
 
