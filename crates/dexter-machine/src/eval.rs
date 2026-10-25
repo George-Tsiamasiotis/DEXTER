@@ -266,6 +266,32 @@ pub trait Qfactor: MachineObject + Debug + Send + Sync {
     /// ```
     fn eval_q(&self, flux: MagneticFlux, acc: &mut Accelerator) -> Result<f64, EvalError>;
 
+    /// Calculates the safety factor's derivative `dq(ψ/ψp)/d(ψ/ψp)`.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use dexter_machine::*;
+    /// # use std::path::PathBuf;
+    /// # use rsl_interpolation::Accelerator;
+    /// #
+    /// # let lcfs = MagneticFlux::Toroidal(0.45);
+    /// # let qfactor = ParabolicQfactor::new(1.1, 3.8, lcfs);
+    /// #
+    /// let acc = &mut Accelerator::new();
+    /// let psi = MagneticFlux::Toroidal(0.01);
+    /// let psip = MagneticFlux::Toroidal(0.015);
+    ///
+    /// let dq_dpsi = qfactor.eval_q_deriv(psi, acc)?;
+    /// let dq_dpsip = qfactor.eval_q_deriv(psip, acc)?;
+    /// # Ok::<_, MachineError>(())
+    /// ```
+    fn eval_q_deriv(&self, flux: MagneticFlux, acc: &mut Accelerator) -> Result<f64, EvalError>;
+
     /// Converts a [`MagneticFlux`] to one of the other variant.
     ///
     /// # Errors
@@ -458,6 +484,34 @@ pub trait Qfactor: MachineObject + Debug + Send + Sync {
     /// ```
     fn eval_iota(&self, flux: MagneticFlux, acc: &mut Accelerator) -> Result<f64, EvalError> {
         Ok(self.eval_q(flux, acc)?.recip())
+    }
+
+    /// Calculates the rotational number's derivative `dι(ψ/ψp)/d(ψ/ψp) = -q'/q²`.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use dexter_machine::*;
+    /// # use std::path::PathBuf;
+    /// # use rsl_interpolation::Accelerator;
+    /// #
+    /// # let lcfs = MagneticFlux::Toroidal(0.45);
+    /// # let qfactor = ParabolicQfactor::new(1.1, 3.8, lcfs);
+    /// #
+    /// let acc = &mut Accelerator::new();
+    /// let psi = MagneticFlux::Toroidal(0.01);
+    /// let psip = MagneticFlux::Toroidal(0.015);
+    ///
+    /// let diota_dpsi = qfactor.eval_iota_deriv(psi, acc)?;
+    /// let diota_dpsip = qfactor.eval_iota_deriv(psip, acc)?;
+    /// # Ok::<_, MachineError>(())
+    /// ```
+    fn eval_iota_deriv(&self, flux: MagneticFlux, acc: &mut Accelerator) -> Result<f64, EvalError> {
+        Ok(-self.eval_q_deriv(flux, acc)? / self.eval_q(flux, acc)?.powi(2))
     }
 }
 

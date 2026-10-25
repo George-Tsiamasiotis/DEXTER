@@ -51,6 +51,27 @@ q(\psi_p) = q_{axis} + q_{axis} \tan^2
     \bigg[ \dfrac{\sqrt{q_{axis}(q_{LCFS}-q_{axis})}}{\psi_{LCFS}} \psi_p \bigg]
 $$
 
+$$
+\dfrac{dq(\psi)}{d\psi} = 2(q_{last} - q_{axis})\dfrac{\psi}{\psi_{LCFS}}
+$$
+
+$$
+\dfrac{dq(\psi_p)}{d\psi_p} =
+    \dfrac{2 q_{axis} \sqrt{q_{axis}(q_{last} - q_{axis})}
+    \sin(\beta)}
+    {\psi_{LCFS}\cos^3(\beta)},
+    \qquad \text{where} \qquad
+    \beta= \dfrac{\sqrt{q_{axis} (q_{last} - q_{axis})}\psi_p}{\psi_{LCFS}}
+$$
+
+$$
+\iota = \dfrac{1}{q}
+$$
+
+$$
+\iota' = -\dfrac{q'}{q^2}
+$$
+
 $^*$ Identity: $\dfrac{1}{\cos^2\theta} = 1 + \tan^2\theta$
 
 ---

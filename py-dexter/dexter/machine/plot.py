@@ -5,8 +5,8 @@ Some methods are also available as command line project scripts.
 Functions
 ---------
 plot_qfactor
-    Plots a [`QfactorObject`][dexter.QfactorObject]'s $q(\psi)$, $q(\psi_p)$, $\psi_p(\psi)$ and
-    $\psi(\psi_p)$.
+    Plots a [`QfactorObject`][dexter.QfactorObject]'s
+    $q(\psi)$, $q(\psi_p)$, $q'(\psi)$, $q'(\psi_p)$, $\psi_p(\psi)$ and $\psi(\psi_p)$.
 plot_current
     Plots a [`CurrentObject`][dexter.CurrentObject]'s $g$, $I$ and their derivatives, with respect
     to $\psi$ and $\psi_p$.
@@ -46,7 +46,8 @@ def plot_qfactor(
     data: bool = False,
     show: bool = True,
 ) -> tuple[Figure, tuple[Axes, Axes, Axes]]:
-    r"""Plots a [`QfactorObject`][dexter.QfactorObject]'s $q(\psi)$, $q(\psi_p)$, $\psi_p(\psi)$ and $\psi(\psi_p)$.
+    r"""Plots a [`QfactorObject`][dexter.QfactorObject]'s
+    $q(\psi)$, $q(\psi_p)$, $q'(\psi)$, $q'(\psi_p)$, $\psi_p(\psi)$ and $\psi(\psi_p)$.
 
     The derivatives $d\psi_p/d\psi$ and $(d\psi/d\psi_p)^{-1}$ are calculated independently from
     $q(\psi)$ and $q(\psi_p)$. It is a good sanity check to ensure the two curves coincide.
@@ -79,7 +80,7 @@ def plot_qfactor(
     """
     qfactor = machine.qfactor
 
-    fig = plt.figure(figsize=(5, 4))
+    fig = plt.figure(figsize=(5.5, 4))
     axes = fig.subplots(2, 2)
     axqt: Axes = axes[0, 0]
     axqp: Axes = axes[0, 1]
@@ -88,9 +89,11 @@ def plot_qfactor(
 
     EMPTY_PLOT_COLOR = "#9E9E9E"
     QFACTOR_COLOR = "r"
+    QFACTOR_DERIV_COLOR = "xkcd:bright blue"
+    QFACTOR_DERIV_ALPHA = 0.6
     DERIV_COLOR = "b"
     DERIV_STYLE = (0, (3, 2))
-    MARGINS = (0, 0.01)
+    MARGINS = (0.001, 0.01)
 
     DATA_COLOR = "k"
     DATA_MARKER = "."
@@ -99,17 +102,43 @@ def plot_qfactor(
     DATA_ZORDER = 2
 
     # ======================================================= q(ψ)
+
     axqt.set_xlabel(r"$\psi/\psi_{LCFS}$")
     axqt.set_ylabel(r"$q(\psi)$")
+    axqt.yaxis.label.set_color(QFACTOR_COLOR)
+    axqt.tick_params("y", which="both", colors=QFACTOR_COLOR)
+    axdqt = axqt.twinx()
+    axdqt.set_ylabel(r"$dq(\psi)/d\psi$")
+    axdqt.spines["left"].set_color(QFACTOR_COLOR)
+    axdqt.spines["right"].set_color(QFACTOR_DERIV_COLOR)
+    axdqt.yaxis.label.set_color(QFACTOR_DERIV_COLOR)
+    axdqt.tick_params("y", which="both", colors=QFACTOR_DERIV_COLOR)
     if qfactor.psi_state == "Good":
         psis = np.linspace(0, qfactor.psi_last.value, points) * 0.99999
         psis_norm = psis / qfactor.psi_last.value
         q_values = qfactor.eval_q(psi=psis)
+        dq_values = qfactor.eval_q_deriv(psi=psis)
         axqt.plot(
             psis_norm,
             q_values,
             c=QFACTOR_COLOR,
             label=rf"$q(\psi)$",
+        )
+        axdqt.plot(
+            psis_norm,
+            dq_values,
+            c=QFACTOR_DERIV_COLOR,
+            alpha=QFACTOR_DERIV_ALPHA,
+        )
+        # axdqt.plot(  # debug
+        #     psis_norm, np.gradient(q_values, psis), c="k", linestyle="--"
+        # )
+        axqt.plot(  # legend
+            [],
+            [],
+            c=QFACTOR_DERIV_COLOR,
+            alpha=QFACTOR_DERIV_ALPHA,
+            label=rf"$dq(\psi)/d\psi$",
         )
         if qfactor.psip_state == "Good":
             psips = qfactor.eval_other(psi=psis)
@@ -136,6 +165,7 @@ def plot_qfactor(
                 zorder=DATA_ZORDER,
                 label=DATA_LABEL,
             )
+        axqt.set_xticks([0.0, 0.25, 0.5, 0.75, 1.0])
         axqt.margins(*MARGINS)
         axqt.legend()
         axqt.grid()
@@ -144,17 +174,43 @@ def plot_qfactor(
         axqt.text(0.5, 0.5, ha="center", va="center", s=r"$q(\psi)\ is\ not\ defined$")
 
     # ======================================================= q(ψp)
+
     axqp.set_xlabel(r"$\psi_p/\psi_{p,LCFS}$")
     axqp.set_ylabel(r"$q(\psi_p)$")
+    axqp.yaxis.label.set_color(QFACTOR_COLOR)
+    axqp.tick_params("y", which="both", colors=QFACTOR_COLOR)
+    axdqp = axqp.twinx()
+    axdqp.set_ylabel(r"$dq(\psi_p)/d\psi_p$")
+    axdqp.spines["left"].set_color(QFACTOR_COLOR)
+    axdqp.spines["right"].set_color(QFACTOR_DERIV_COLOR)
+    axdqp.yaxis.label.set_color(QFACTOR_DERIV_COLOR)
+    axdqp.tick_params("y", which="both", colors=QFACTOR_DERIV_COLOR)
     if qfactor.psip_state == "Good":
         psips = np.linspace(0, qfactor.psip_last.value, points) * 0.99999
         psips_norm = psips / qfactor.psip_last.value
         q_values = qfactor.eval_q(psip=psips)
+        dq_values = qfactor.eval_q_deriv(psip=psips)
         axqp.plot(
             psips_norm,
             q_values,
             c=QFACTOR_COLOR,
             label=rf"$q(\psi_p)$",
+        )
+        axdqp.plot(
+            psips_norm,
+            dq_values,
+            c=QFACTOR_DERIV_COLOR,
+            alpha=QFACTOR_DERIV_ALPHA,
+        )
+        # axdqp.plot(  # debug
+        #     psips_norm, np.gradient(q_values, psips), c="k", linestyle="--"
+        # )
+        axqp.plot(  # legend
+            [],
+            [],
+            c=QFACTOR_DERIV_COLOR,
+            alpha=QFACTOR_DERIV_ALPHA,
+            label=rf"$dq(\psi_p)/d\psi_p$",
         )
         if qfactor.psi_state == "Good":
             psis = qfactor.eval_other(psip=psips)
@@ -181,6 +237,7 @@ def plot_qfactor(
                 zorder=DATA_ZORDER,
                 label=DATA_LABEL,
             )
+        axqp.set_xticks([0.0, 0.25, 0.5, 0.75, 1.0])
         axqp.margins(*MARGINS)
         axqp.legend()
         axqp.grid()
@@ -191,6 +248,7 @@ def plot_qfactor(
         )
 
     # ======================================================= ψp(ψ)
+
     axpt.set_xlabel(r"$\psi/\psi_{LCFS}$")
     axpt.set_ylabel(r"$\psi_p(\psi)/\psi_{p,LCFS}$")
     if qfactor.psi_state == "Good":
@@ -220,6 +278,7 @@ def plot_qfactor(
                 zorder=DATA_ZORDER,
                 label=DATA_LABEL,
             )
+        axpt.set_xticks([0.0, 0.25, 0.5, 0.75, 1.0])
         axpt.margins(*MARGINS)
         axpt.legend()
         axpt.grid()
@@ -230,6 +289,7 @@ def plot_qfactor(
         )
 
     # ======================================================= ψ(ψp)
+
     axtp.set_xlabel(r"$\psi_p/\psi_{p,LCFS}$")
     axtp.set_ylabel(r"$\psi(\psi_p)/\psi_{LCFS}$")
     if qfactor.psip_state == "Good":
@@ -259,6 +319,7 @@ def plot_qfactor(
                 zorder=DATA_ZORDER,
                 label=DATA_LABEL,
             )
+        axtp.set_xticks([0.0, 0.25, 0.5, 0.75, 1.0])
         axtp.margins(*MARGINS)
         axtp.legend()
         axtp.grid()

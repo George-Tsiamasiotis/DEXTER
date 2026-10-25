@@ -91,6 +91,18 @@ impl Qfactor for UnityQfactor {
         Ok(1.0)
     }
 
+    fn eval_q_deriv(&self, flux: MagneticFlux, _: &mut Accelerator) -> Result<f64, EvalError> {
+        debug_assert_non_negative_flux!(flux);
+        let last = match flux {
+            Toroidal(_) => self.psi_last,
+            Poloidal(_) => self.psip_last,
+        };
+        if flux.value() > last {
+            return Err(EvalError::AnalyticalDomainError);
+        };
+        Ok(0.0)
+    }
+
     fn eval_other(
         &self,
         flux: MagneticFlux,
@@ -179,6 +191,11 @@ impl ParabolicQfactor {
     ///
     /// A `ParabolicQfactor` is defined with the help of the [`MagneticFlux`] helper struct,
     /// which changes the position where `qlast` is met.
+    ///
+    /// # Note
+    ///
+    /// The q-factor profile is parabolic *with respect to the toroidal flux `ψ`*. The `kind` of `lcfs`
+    /// defines the *position* where the value *qlast* is met.
     ///
     /// # Example
     /// ```
@@ -296,6 +313,31 @@ impl Qfactor for ParabolicQfactor {
                 let tan_arg =
                     (self.qaxis * (self.qlast - self.qaxis)).sqrt() * psip / self.psi_last;
                 self.qaxis + self.qaxis * tan_arg.tan().powi(2)
+            }
+        };
+        Ok(debug_assert_is_finite!(res))
+    }
+
+    fn eval_q_deriv(&self, flux: MagneticFlux, _: &mut Accelerator) -> Result<f64, EvalError> {
+        debug_assert_non_negative_flux!(flux);
+        if flux.value()
+            > match flux {
+                Toroidal(_) => self.psi_last,
+                Poloidal(_) => self.psip_last,
+            }
+        {
+            cold_path();
+            return Err(EvalError::AnalyticalDomainError);
+        };
+        let res = match flux {
+            Toroidal(psi) => 2.0 * (self.qlast - self.qaxis) * psi / self.psi_last.powi(2),
+            Poloidal(psip) => {
+                let root = (self.qaxis * (self.qlast - self.qaxis)).sqrt();
+                let arg = root * psip / self.psi_last;
+                let (sin, cos) = arg.sin_cos();
+                let numerator = 2.0 * self.qaxis * root * sin;
+                let denominator = self.psi_last * cos.powi(3);
+                numerator / denominator
             }
         };
         Ok(debug_assert_is_finite!(res))
@@ -671,6 +713,24 @@ impl Qfactor for NcQfactor {
         } else {
             cold_path();
             let msg = format!("q({})", flux.symbol());
+            Err(EvalError::UndefinedEvaluation(msg))
+        }
+    }
+
+    fn eval_q_deriv(&self, flux: MagneticFlux, acc: &mut Accelerator) -> Result<f64, EvalError> {
+        debug_assert_non_negative_flux!(flux);
+        let (val, xa, interp) = match flux {
+            Toroidal(val) => (val, self.psi.uvalues(), self.q_of_psi_interp.as_ref()),
+            Poloidal(val) => (val, self.psip.uvalues(), self.q_of_psip_interp.as_ref()),
+        };
+        let ya = &self.q_values;
+        if let Some(interp) = interp {
+            Ok(debug_assert_is_finite!(
+                interp.eval_deriv(xa, ya, val, acc)?
+            ))
+        } else {
+            cold_path();
+            let msg = format!("dq({})/d({})", flux.symbol(), flux.symbol());
             Err(EvalError::UndefinedEvaluation(msg))
         }
     }

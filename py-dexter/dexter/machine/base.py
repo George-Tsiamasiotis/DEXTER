@@ -242,12 +242,14 @@ class Qfactor(_ReprStrImpl):
         self.psi_last = MagneticFlux._wrap(self._r.psi_last)
         self.psip_last = MagneticFlux._wrap(self._r.psip_last)
         self._eval_q = _flux_eval_wrap1d(self._r.eval_q)
+        self._eval_q_deriv = _flux_eval_wrap1d(self._r.eval_q_deriv)
         self._eval_other = _flux_eval_wrap1d(self._r.eval_other)
         self._eval_psi_of_q = np.vectorize(self._r.eval_psi_of_q)
         self._eval_psip_of_q = np.vectorize(self._r.eval_psip_of_q)
         self._eval_deriv_of_other = _flux_eval_wrap1d(self._r.eval_deriv_of_other)
         self._eval_deriv_wrt_other = _flux_eval_wrap1d(self._r.eval_deriv_wrt_other)
         self._eval_iota = _flux_eval_wrap1d(self._r.eval_iota)
+        self._eval_iota_deriv = _flux_eval_wrap1d(self._r.eval_iota_deriv)
 
     def eval_q(
         self,
@@ -256,6 +258,14 @@ class Qfactor(_ReprStrImpl):
     ) -> Array:
         r"""Calculates $q(\psi/\psi_p)$."""
         return self._eval_q(psi, psip)[()]
+
+    def eval_q_deriv(
+        self,
+        psi: ArrayLike | None = None,
+        psip: ArrayLike | None = None,
+    ) -> Array:
+        r"""Calculates $dq(\psi/\psi_p)/d(\psi/\psi_p)$."""
+        return self._eval_q_deriv(psi, psip)[()]
 
     def eval_other(
         self,
@@ -316,8 +326,16 @@ class Qfactor(_ReprStrImpl):
         psi: ArrayLike | None = None,
         psip: ArrayLike | None = None,
     ) -> Array:
-        r"""Calculates $\iota(\psi/\psi_p)$."""
+        r"""Calculates $\iota(\psi/\psi_p) = 1/q$."""
         return self._eval_iota(psi, psip)[()]
+
+    def eval_iota_deriv(
+        self,
+        psi: ArrayLike | None = None,
+        psip: ArrayLike | None = None,
+    ) -> Array:
+        r"""Calculates $d\iota(\psi/\psi_p)/d(\psi/\psi_p) = -q'/q^2$."""
+        return self._eval_iota_deriv(psi, psip)[()]
 
 
 class Current(_ReprStrImpl):

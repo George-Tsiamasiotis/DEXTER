@@ -271,13 +271,13 @@ def plot_poloidal_drift(
 
         prlab = geometry.eval_rlab(**particle_eval_arg)
         pzlab = geometry.eval_zlab(**particle_eval_arg)
-        markersize = 4 if len(particles) == 1 else 2.5
+        markersize = 4 if len(particles) == 1 else 1.6
         if "ClosedPeriods" in particle.integration_status:  # continuous line
             ax.plot(
                 prlab,
                 pzlab,
                 c=c,
-                linewidth=1,
+                linewidth=1.2,
                 zorder=10,
             )
         else:
