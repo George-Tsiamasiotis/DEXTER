@@ -88,36 +88,36 @@ def test_flux_eval_wrappers(nc_machine_perturbed: dex.Machine):
     t = 10
 
     # `_flux_eval_wrap1d`
-    qfactor.eval_q(psi=flux)
+    qfactor.eval_q(psit=flux)
     qfactor.eval_q(psip=flux)
     with pytest.raises(TypeError):
-        qfactor.eval_q(psi=flux, psip=flux)
+        qfactor.eval_q(psit=flux, psip=flux)
     with pytest.raises(TypeError):
         qfactor.eval_q()
 
     # `_flux_eval_wrap2d`
-    bfield.eval_b(psi=flux, theta=theta)
+    bfield.eval_b(psit=flux, theta=theta)
     bfield.eval_b(psip=flux, theta=theta)
     with pytest.raises(TypeError):
-        bfield.eval_b(psi=flux, psip=flux, theta=theta)
+        bfield.eval_b(psit=flux, psip=flux, theta=theta)
     with pytest.raises(TypeError):
         bfield.eval_b(theta=theta)
 
     # `_flux_eval_wrap4d`
-    perturbation.eval_p(psi=flux, theta=theta, zeta=zeta, t=t)
+    perturbation.eval_p(psit=flux, theta=theta, zeta=zeta, t=t)
     perturbation.eval_p(psip=flux, theta=theta, zeta=zeta, t=t)
     with pytest.raises(TypeError):
-        perturbation.eval_p(psi=flux, psip=flux, theta=theta, zeta=zeta, t=t)
+        perturbation.eval_p(psit=flux, psip=flux, theta=theta, zeta=zeta, t=t)
     with pytest.raises(TypeError):
         perturbation.eval_p(theta=theta, zeta=zeta, t=t)
 
 
 def test_magnetic_flux_array():
-    psis = dex.MagneticFluxArray.Toroidal([0.1, 0.3])
-    assert psis.kind == "Toroidal"
-    assert np.all(np.isclose(psis.values, np.asarray([0.1, 0.3])))
-    assert len(psis) == 2
-    assert psis[1] == dex.MagneticFlux.Toroidal(0.3)
+    psits = dex.MagneticFluxArray.Toroidal([0.1, 0.3])
+    assert psits.kind == "Toroidal"
+    assert np.all(np.isclose(psits.values, np.asarray([0.1, 0.3])))
+    assert len(psits) == 2
+    assert psits[1] == dex.MagneticFlux.Toroidal(0.3)
 
     psips = dex.MagneticFluxArray.Poloidal(np.linspace(0, 10, 11))
     assert psips.kind == "Poloidal"

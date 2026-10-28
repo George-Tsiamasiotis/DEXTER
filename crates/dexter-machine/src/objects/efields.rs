@@ -15,7 +15,7 @@ use crate::{MagneticFluxKind, debug_assert_non_negative_flux};
 ///
 /// # Note
 ///
-/// No ψ/ψp bounds checks are performed in evaluations.
+/// No ψ bounds checks are performed in evaluations.
 #[derive(Debug)]
 pub struct NoEfield;
 
@@ -24,7 +24,7 @@ impl MachineObject for NoEfield {
         MachineType::Analytical
     }
 
-    fn psi_state(&self) -> FluxCoordinateState {
+    fn psit_state(&self) -> FluxCoordinateState {
         FluxCoordinateState::Good
     }
 
@@ -65,7 +65,7 @@ impl Efield for NoEfield {
 /// # Note
 ///
 /// + The [`kind`][MagneticFluxKind] of `mean` defines the electric field's [`Good`] flux coordinate.
-/// + No ψ/ψp bounds checks are performed in evaluations.
+/// + No ψ bounds checks are performed in evaluations.
 ///
 /// [`Good`]: FluxCoordinateState::Good
 #[non_exhaustive]
@@ -130,7 +130,7 @@ impl MachineObject for GaussianEfield {
         MachineType::Analytical
     }
 
-    fn psi_state(&self) -> FluxCoordinateState {
+    fn psit_state(&self) -> FluxCoordinateState {
         match self.mean.kind() {
             MagneticFluxKind::Toroidal => FluxCoordinateState::Good,
             MagneticFluxKind::Poloidal => FluxCoordinateState::Bad,
@@ -185,7 +185,7 @@ impl Efield for GaussianEfield {
     fn eval_phi_deriv2(&self, flux: MagneticFlux) -> Result<f64, EvalError> {
         debug_assert_non_negative_flux!(flux);
         if flux.kind() != self._good_flux_kind {
-            let msg = format!("dΦ({})/d{}", flux.kind().symbol(), flux.kind().symbol());
+            let msg = format!("d²Φ({})/d{}²", flux.kind().symbol(), flux.kind().symbol());
             return Err(EvalError::UndefinedEvaluation(msg));
         }
         Ok((flux.value() - self.mean.value()) / self._var * self.eval_e(flux)?)

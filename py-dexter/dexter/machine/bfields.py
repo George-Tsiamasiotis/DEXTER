@@ -18,9 +18,9 @@ from dexter.types import (
 
 class LarBfield(MachineObject, Bfield):
     r"""Analytical Large Aspect Ratio magnetic field with
-    $B(\psi,\theta) = 1-\sqrt{2\psi}\cos\theta$.
+    $B(\psi_t,\theta) = 1-\sqrt{2\psi_t}\cos\theta$.
 
-    No $\psi/\psi_p$ bounds checks are performed in evaluations.
+    No $\psi_t$ bounds checks are performed in evaluations.
 
     Example
     -------
@@ -82,10 +82,10 @@ class NcBfield(MachineObject, Bfield):
         The angle $\theta$ of the padding. This corresponds to the **absolute value** of the first
         element of the padded $\theta$ array, e.g the extends of the padding.
     shape
-        Returns the $(\psi/\psi_p,\theta)$ shape of the initial 1D arrays (before the padding).
+        Returns the $(\psi,\theta)$ shape of the initial 1D arrays (before the padding).
     shape_padded
-        Returns the $(\psi/\psi_p,\theta)$ shape of the **padded** arrays that were used to create the interpolator.
-    psi_array
+        Returns the $(\psi,\theta)$ shape of the **padded** arrays that were used to create the interpolator.
+    psit_array
         The toroidal flux' values.
     psip_array
         The poloidal flux' values.
@@ -136,8 +136,8 @@ class NcBfield(MachineObject, Bfield):
         self.shape_padded = self._r.shape_padded
 
     @cached_property  # immutable type
-    def psi_array(self) -> Array1 | None:
-        return self._r.get_array("psi_array")
+    def psit_array(self) -> Array1 | None:
+        return self._r.get_array("psit_array")
 
     @cached_property  # immutable type
     def psip_array(self) -> Array1 | None:
@@ -167,6 +167,6 @@ class NcBfield(MachineObject, Bfield):
 BfieldObject: TypeAlias = LarBfield | NcBfield
 r"""Available [`Bfield`][dexter.machine.base.Bfield] objects.
 
-+ [`LarBfield`][dexter.LarBfield]: Analytical Large Aspect Ratio magnetic field with $B(\psi,\theta) = 1-\sqrt{2\psi}\cos\theta$.
++ [`LarBfield`][dexter.LarBfield]: Analytical Large Aspect Ratio magnetic field with $B(\psi_t,\theta) = 1-\sqrt{2\psi_t}\cos\theta$.
 + [`NcBfield`][dexter.NcBfield]: Numerical magnetic field profile reconstructed from a netCDF file.
 """

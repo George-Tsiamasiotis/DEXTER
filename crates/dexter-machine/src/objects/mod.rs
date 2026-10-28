@@ -51,12 +51,12 @@ macro_rules! debug_assert_non_negative_flux {
     };
 }
 
-/// Debug-asserts that `psi` is non-negative.
+/// Debug-asserts that `psit` is non-negative.
 #[doc(hidden)]
 #[macro_export]
-macro_rules! debug_assert_non_negative_psi {
-    ($psi: expr) => {
-        debug_assert!($psi >= 0.0, "Encountered negative ψ")
+macro_rules! debug_assert_non_negative_psit {
+    ($psit: expr) => {
+        debug_assert!($psit >= 0.0, "Encountered negative ψt")
     };
 }
 

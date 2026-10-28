@@ -1,7 +1,6 @@
 //! Stores the time evolution of a Particle.
 
-use dexter_common::array1D_getter_impl;
-use ndarray::Array1;
+use dexter_common::f64_slice_getter;
 use std::time::Duration;
 
 use crate::state::GCState;
@@ -14,8 +13,8 @@ use crate::state::GCState;
 pub(crate) struct Evolution {
     /// The time array.
     pub(crate) t: Vec<f64>,
-    /// The `ψ` time-series.
-    pub(crate) psi: Vec<f64>,
+    /// The `ψt` time-series.
+    pub(crate) psit: Vec<f64>,
     /// The `ψp` time-series.
     pub(crate) psip: Vec<f64>,
     /// The `θ` time-series.
@@ -51,7 +50,7 @@ impl Evolution {
     /// Pushes the calculated quantities of an *evaluated* [`GCState`] in the time series.
     pub(crate) fn push_state(&mut self, state: &GCState) {
         self.t.push(state.t);
-        self.psi.push(state.psi.value());
+        self.psit.push(state.psit.value());
         self.psip.push(state.psip.value());
         self.theta.push(state.theta);
         self.zeta.push(state.zeta);
@@ -65,7 +64,7 @@ impl Evolution {
     /// Shrinks the vecs and calculates the final energy variance.
     pub(crate) fn finish(&mut self) {
         self.t.shrink_to_fit();
-        self.psi.shrink_to_fit();
+        self.psit.shrink_to_fit();
         self.psip.shrink_to_fit();
         self.theta.shrink_to_fit();
         self.zeta.shrink_to_fit();
@@ -80,7 +79,7 @@ impl Evolution {
     pub(crate) fn discard_arrays(&mut self) {
         let vectors = [
             &mut self.t,
-            &mut self.psi,
+            &mut self.psit,
             &mut self.psip,
             &mut self.theta,
             &mut self.zeta,
@@ -98,16 +97,16 @@ impl Evolution {
 
 /// Getters.
 impl Evolution {
-    array1D_getter_impl!(t_array, t, time);
-    array1D_getter_impl!(psi_array, psi, psi);
-    array1D_getter_impl!(psip_array, psip, psip);
-    array1D_getter_impl!(theta_array, theta, theta);
-    array1D_getter_impl!(zeta_array, zeta, zeta);
-    array1D_getter_impl!(rho_array, rho, rho);
-    array1D_getter_impl!(mu_array, mu, mu);
-    array1D_getter_impl!(ptheta_array, ptheta, Ptheta);
-    array1D_getter_impl!(pzeta_array, pzeta, Pzeta);
-    array1D_getter_impl!(energy_array, energy, E);
+    f64_slice_getter!(t_values, t, t);
+    f64_slice_getter!(psit_values, psit, psit);
+    f64_slice_getter!(psip_values, psip, psip);
+    f64_slice_getter!(theta_values, theta, theta);
+    f64_slice_getter!(zeta_values, zeta, zeta);
+    f64_slice_getter!(rho_values, rho, rho);
+    f64_slice_getter!(mu_values, mu, mu);
+    f64_slice_getter!(ptheta_values, ptheta, ptheta);
+    f64_slice_getter!(pzeta_values, pzeta, pzeta);
+    f64_slice_getter!(energy_values, energy, energy);
 
     /// Returns the final time (last entry on the time array), if it exists.
     pub(crate) fn tf(&self) -> Option<f64> {

@@ -47,15 +47,15 @@ pub fn resolve_phase_method<'py>(arg: Bound<'py, PyAny>) -> Result<PhaseMethod> 
     }
 }
 
-pub(crate) fn flux_from_params(psi: f64, psip: f64) -> MagneticFlux {
-    if !(psi.is_nan() ^ psip.is_nan()) {
+pub(crate) fn flux_from_params(psit: f64, psip: f64) -> MagneticFlux {
+    if !(psit.is_nan() ^ psip.is_nan()) {
         // This is guaranteed to be unreachable as the python decorator would have already raised an
         // exception.
         unreachable!("Only one of `psi` or `psip` must be finite")
     }
     // The above check ensures that at only one of them will be finite.
-    if psi.is_finite() {
-        MagneticFlux::Toroidal(psi)
+    if psit.is_finite() {
+        MagneticFlux::Toroidal(psit)
     } else {
         MagneticFlux::Poloidal(psip)
     }

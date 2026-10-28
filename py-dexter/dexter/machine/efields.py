@@ -15,7 +15,7 @@ class NoEfield(MachineObject, Efield):
     You shouldn't have to use this type; It is created when no `efield` parameter is passed to
     [`Machine`][dexter.Machine].
 
-    No $\psi/\psi_p$ bounds checks are performed in evaluations.
+    No $\psi$ bounds checks are performed in evaluations.
 
     Example
     -------
@@ -74,7 +74,7 @@ class GaussianEfield(MachineObject, Efield):
 
     ``` py title="Electric Field from `machine`"
     >>> geometry=dex.LarGeometry(baxis=2, raxis=2.75, rlast=0.5)
-    >>> lcfs = geometry.psi_last
+    >>> lcfs = geometry.psit_last
     >>> machine = dex.Machine(
     ...     geometry=geometry,
     ...     qfactor=dex.UnityQfactor(lcfs),

@@ -8,7 +8,7 @@ use crate::{EvalError, MagneticFlux, MagneticFluxKind, Qfactor};
 /// Representation of an [`Array1`] of magnetic flux values and their kind.
 #[derive(Clone, PartialEq)]
 pub enum MagneticFluxArray {
-    /// Toroidal magnetic flux `ψ`.
+    /// Toroidal magnetic flux `ψt`.
     Toroidal(Array1<f64>),
     /// Poloidal magnetic flux `ψp`.
     Poloidal(Array1<f64>),
@@ -50,7 +50,7 @@ impl MagneticFluxArray {
         }
     }
 
-    /// Returns the symbol of `self` ("ψ" or "ψp") as a `Box<str>`.
+    /// Returns the symbol of `self` ("ψt" or "ψp") as a `Box<str>`.
     #[must_use]
     pub fn symbol(&self) -> Box<str> {
         self.kind().symbol()
@@ -163,7 +163,7 @@ mod test {
     #[test]
     fn magnetic_flux_array_to_other() {
         let lcfs = MagneticFlux::Toroidal(1.0);
-        let qfactor = ParabolicQfactor::new(1.0, 2.0, lcfs); // q = ψ^2 + 1
+        let qfactor = ParabolicQfactor::new(1.0, 2.0, lcfs); // q = ψt^2 + 1
         let values = Array1::from_vec(vec![0.1, 0.2]);
         let tor = MagneticFluxArray::Toroidal(values.clone());
 

@@ -77,7 +77,7 @@ class EnergyPzetaPlane(_ReprStrImpl):
 
     ``` py title="$E-P_\zeta$ plane construction"
     >>> geometry = dex.LarGeometry(2, 1.75, 0.5)
-    >>> LCFS = geometry.psi_last
+    >>> LCFS = geometry.psit_last
     >>> machine = dex.Machine(
     ...     geometry=geometry,
     ...     qfactor=dex.ParabolicQfactor(qaxis=1.1, qlast=3.5, lcfs=LCFS),
@@ -239,7 +239,7 @@ class EnergyPzetaPlane(_ReprStrImpl):
         colors
             The coloring method for each particle's $E-P_\zeta$ point. `'Orbit'` colors each point depending on
             its orbit type, as calculated from the [`classify`][dexter.Particle.classify] routine. `'Cycle'` cycles
-            through the colors `brcmk`.
+            through the colors `cbrmk`.
         curves
             Whether or not to plot the analytical curves (parabolas and approximate
             trapped-passing boundary).

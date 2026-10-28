@@ -10,7 +10,7 @@ pub type DynModeCaches = Vec<DynModeCache>;
 
 /// A sum of an arbitrary number of [`Modes`](crate::Mode).
 ///
-/// It has the general form `Σ{ Φ(n,m)(ψ/ψp, θ, ζ, t)}`, where `Φ(n,m)` the different modes.
+/// It has the general form `Σ{ Φ(n,m)(ψ, θ, ζ, t)}`, where `Φ(n,m)` the different modes.
 ///
 /// Evaluation methods return the sum of the every corresponding evaluation method in each mode.
 ///
@@ -91,8 +91,8 @@ impl Perturbation {
     /// let mut caches: DynModeCaches = perturbation.generate_caches();
     /// assert_eq!(perturbation.count(), caches.len());
     ///
-    /// let psi = MagneticFlux::Toroidal(0.01);
-    /// let p_of_spi = perturbation.eval_p(psi, 3.14, 3.14, 0.0, &mut caches)?;
+    /// let psit = MagneticFlux::Toroidal(0.01);
+    /// let p_of_psit = perturbation.eval_p(psit, 3.14, 3.14, 0.0, &mut caches)?;
     /// # Ok::<_, MachineError>(())
     /// ```
     #[must_use]
@@ -118,9 +118,9 @@ impl Perturbation {
     ///     Box::new(FluteMode::new(1e-3, lcfs, 1, 3, 0.0)),
     /// ]);
     /// let mut caches = perturbation.generate_caches();
-    /// let psi = MagneticFlux::Toroidal(0.01);
+    /// let psit = MagneticFlux::Toroidal(0.01);
     ///
-    /// let p_of_psi = perturbation.eval_p(psi, 3.14, 3.14, 0.0, &mut caches)?;
+    /// let p_of_psit = perturbation.eval_p(psit, 3.14, 3.14, 0.0, &mut caches)?;
     /// # Ok::<_, MachineError>(())
     /// ```
     pub fn eval_p(
@@ -232,9 +232,9 @@ impl Perturbation {
     ///     Box::new(FluteMode::new(1e-3, lcfs, 1, 3, 0.0)),
     /// ]);
     /// let mut caches = perturbation.generate_caches();
-    /// let psi = MagneticFlux::Toroidal(0.01);
+    /// let psit = MagneticFlux::Toroidal(0.01);
     ///
-    /// let dp_dzetta = perturbation.eval_deriv_zeta(psi, 3.14, 3.14, 0.0, &mut caches)?;
+    /// let dp_dzeta = perturbation.eval_deriv_zeta(psit, 3.14, 3.14, 0.0, &mut caches)?;
     /// # Ok::<_, MachineError>(())
     /// ```
     pub fn eval_deriv_zeta(
@@ -255,7 +255,7 @@ impl Perturbation {
             })
     }
 
-    /// Calculates the Perturbation's derivative with respect to `t`, as a function of `(ψp, θ, ζ, t)`.
+    /// Calculates the Perturbation's derivative with respect to `t`, as a function of `(ψ, θ, ζ, t)`.
     ///
     /// # Errors
     ///

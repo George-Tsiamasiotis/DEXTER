@@ -34,7 +34,7 @@ use crate::constants::TRAPPED_PASSING_BOUNDARY_DENSITY;
 /// If the equilibrium has a `good` ψp coordinate, then it is used for all calculations, since
 /// its faster. This also results in an equispaced [`TrappedPassingBoundary::pzeta`].
 ///
-/// If ψ is the only `good` coordinate, some extra conversions are necessary and the
+/// If ψt is the only `good` coordinate, some extra conversions are necessary and the
 /// `pzeta_interval` is no longer a linspace.
 ///
 #[derive(Clone)]
@@ -58,8 +58,8 @@ impl TrappedPassingBoundary {
         // try `psip` first, since its faster.
         if machine.bfield().psip_state() == FluxCoordinateState::Good {
             Self::from_good_psip(machine, mu)
-        } else if machine.bfield().psi_state() == FluxCoordinateState::Good {
-            Self::from_good_psi(machine, mu)
+        } else if machine.bfield().psit_state() == FluxCoordinateState::Good {
+            Self::from_good_psit(machine, mu)
         } else {
             unreachable!()
         }
@@ -111,7 +111,7 @@ impl TrappedPassingBoundary {
 impl TrappedPassingBoundary {
     /// Creates the boundary in a `Good ψp` equilibrium.
     ///
-    /// This method cannot fail since `FluxState` is already checked and `ψp` is always in-bounds.
+    /// This method cannot fail since `FluxCoordinateState` is already checked and `ψp` is always in-bounds.
     fn from_good_psip(machine: Machine, mu: f64) -> Self {
         let psip_last = machine.qfactor().psip_last();
         let psip_interval =
@@ -159,48 +159,48 @@ impl TrappedPassingBoundary {
         }
     }
 
-    /// Creates the boundary in a `Good ψ` equilibrium.
+    /// Creates the boundary in a `Good ψt` equilibrium.
     ///
-    /// This method cannot fail since `FluxState` is already checked and `ψp/ψ` is always in-bounds.
+    /// This method cannot fail since `FluxCoordinateState` is already checked and `ψt` is always in-bounds.
     ///
     /// NOTE:
-    /// We define the `psi_interval` first and the `psip_interval` second, since it is not
-    /// guaranteed that `qfactor` defines `ψ(ψp)`. This results in a non-linspace `pzeta_interval`,
+    /// We define the `psit_interval` first and the `psip_interval` second, since it is not
+    /// guaranteed that `qfactor` defines `ψt(ψp)`. This results in a non-linspace `pzeta_interval`,
     /// but the values are correct.
-    fn from_good_psi(machine: Machine, mu: f64) -> Self {
-        let psi_last = machine.qfactor().psi_last();
-        let psi_interval =
-            Array1::linspace(psi_last.value(), 0.0, TRAPPED_PASSING_BOUNDARY_DENSITY)
+    fn from_good_psit(machine: Machine, mu: f64) -> Self {
+        let psit_last = machine.qfactor().psit_last();
+        let psit_interval =
+            Array1::linspace(psit_last.value(), 0.0, TRAPPED_PASSING_BOUNDARY_DENSITY)
                 .map(|value| Toroidal(*value));
 
         let acc = &mut Accelerator2d::new();
 
-        let lower = psi_interval.mapv(|psi| {
+        let lower = psit_interval.mapv(|psit| {
             mu * machine
                 .bfield()
-                .eval_b(psi, 0.0, acc)
+                .eval_b(psit, 0.0, acc)
                 .expect("-pzeta=psip is always inbound and evaluation is defined")
                 + machine
                     .efield()
-                    .eval_phi(psi)
+                    .eval_phi(psit)
                     .expect("-pzeta=psip is always inbound and evaluation is defined")
         });
-        let upper = psi_interval.mapv(|psi| {
+        let upper = psit_interval.mapv(|psit| {
             mu * machine
                 .bfield()
-                .eval_b(psi, PI, acc)
+                .eval_b(psit, PI, acc)
                 .expect("-pzeta=psip is always inbound and evaluation is defined")
                 + machine
                     .efield()
-                    .eval_phi(psi)
+                    .eval_phi(psit)
                     .expect("-pzeta=psip is always inbound and evaluation is defined")
         });
 
-        let psip_interval = psi_interval.mapv(|psi| {
+        let psip_interval = psit_interval.mapv(|psit| {
             machine
                 .qfactor()
-                .eval_other(psi, acc.xacc())
-                .expect("psi is always inbound and evaluation is defined")
+                .eval_other(psit, acc.xacc())
+                .expect("psit is always inbound and evaluation is defined")
         });
 
         let pzeta = psip_interval.map(|psip| -psip.value());

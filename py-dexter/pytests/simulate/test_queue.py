@@ -4,8 +4,8 @@ import dexter as dex
 
 
 def test_queue_from_particles(lar_machine: dex.Machine):
-    psi0 = dex.MagneticFlux.Toroidal(0.01)
-    i = dex.InitialConditions.Boozer(0, psi0, 0, 0, 1e-4, 1e-6)
+    psit0 = dex.MagneticFlux.Toroidal(0.01)
+    i = dex.InitialConditions.Boozer(0, psit0, 0, 0, 1e-4, 1e-6)
     p1 = dex.Particle(i)
     p2 = dex.Particle(i)
     p1.close(lar_machine)
@@ -20,12 +20,12 @@ def test_queue_from_particles(lar_machine: dex.Machine):
 
 def test_queue_routines_analytical(lar_machine: dex.Machine):
     num = 4
-    psi0s = dex.MagneticFluxArray.Toroidal(
-        np.linspace(1e-6, lar_machine.psi_last.value, num)
+    psit0s = dex.MagneticFluxArray.Toroidal(
+        np.linspace(1e-6, lar_machine.psit_last.value, num)
     )
     initial = dex.QueueInitialConditions.Boozer(
         t0=np.zeros(num),
-        flux0=psi0s,
+        flux0=psit0s,
         theta0=np.zeros(num),
         zeta0=np.zeros(num),
         rho0=np.full(num, 1e-5),
@@ -42,12 +42,12 @@ def test_queue_routines_analytical(lar_machine: dex.Machine):
 
 def test_queue_routines_numerical(nc_machine: dex.Machine):
     num = 4
-    psi0s = dex.MagneticFluxArray.Toroidal(
-        np.linspace(1e-6, nc_machine.psi_last.value, num)
+    psit0s = dex.MagneticFluxArray.Toroidal(
+        np.linspace(1e-6, nc_machine.psit_last.value, num)
     )
     initial = dex.QueueInitialConditions.Boozer(
         t0=np.zeros(num),
-        flux0=psi0s,
+        flux0=psit0s,
         theta0=np.zeros(num),
         zeta0=np.zeros(num),
         rho0=np.full(num, 1e-3),
@@ -64,12 +64,12 @@ def test_queue_routines_numerical(nc_machine: dex.Machine):
 
 def test_queue_slicing(lar_machine: dex.Machine):
     num = 4
-    psi0s = dex.MagneticFluxArray.Toroidal(
-        np.linspace(1e-6, lar_machine.psi_last.value, num)
+    psit0s = dex.MagneticFluxArray.Toroidal(
+        np.linspace(1e-6, lar_machine.psit_last.value, num)
     )
     initial = dex.QueueInitialConditions.Boozer(
         t0=np.zeros(num),
-        flux0=psi0s,
+        flux0=psit0s,
         theta0=np.zeros(num),
         zeta0=np.zeros(num),
         rho0=np.full(num, 1e-5),
@@ -85,12 +85,12 @@ def test_queue_slicing(lar_machine: dex.Machine):
 
 def test_queue_getters(lar_machine: dex.Machine):
     num = 4
-    psi0s = dex.MagneticFluxArray.Toroidal(
-        np.linspace(1e-6, lar_machine.psi_last.value, num)
+    psit0s = dex.MagneticFluxArray.Toroidal(
+        np.linspace(1e-6, lar_machine.psit_last.value, num)
     )
     initial = dex.QueueInitialConditions.Mixed(
         t0=np.zeros(num),
-        flux0=psi0s,
+        flux0=psit0s,
         theta0=np.zeros(num),
         zeta0=np.zeros(num),
         pzeta0=np.full(num, 1e-5),

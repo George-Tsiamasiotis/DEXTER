@@ -12,11 +12,11 @@ pub use intersect::{Directionality, IntersectParams, Intersection};
 
 // ===============================================================================================
 
-use ndarray::Array1;
+use ndarray::ArrayView1;
 use rsl_interpolation::{Accelerator, Accelerator2d};
 use std::time::Duration;
 
-use dexter_common::export_array1D_getter_impl;
+use dexter_common::f64_slice_getter;
 use dexter_comspace::{CriticalPoint, EnergyPzetaPlane, EnergyPzetaPosition, OrbitType};
 use dexter_machine::{DynModeCaches, Machine, MachineBuilder};
 
@@ -203,7 +203,7 @@ impl Particle {
             Err(EvalError(Domain1dError(..)))
             | Err(EvalError(Domain2dError(..)))
             | Err(EvalError(AnalyticalDomainError)) => {
-                // Magnetic flux ψ0/ψp0 is out of bounds
+                // Magnetic flux ψ0 is out of bounds
                 self.integration_status = IntegrationStatus::OutOfBoundsInitialization
             }
             Err(EvalError(UndefinedEvaluation(..))) | Err(EvalError(InvalidMagneticFlux)) => {
@@ -244,8 +244,8 @@ impl Particle {
     ///
     /// // ===========
     ///
-    /// let psi0 = MagneticFlux::Toroidal(0.015);
-    /// let initial = InitialConditions::boozer(0.0, psi0, 0.0, 3.14, 1e-5, 1e-6);
+    /// let psit0 = MagneticFlux::Toroidal(0.015);
+    /// let initial = InitialConditions::boozer(0.0, psit0, 0.0, 3.14, 1e-5, 1e-6);
     /// let mut particle = Particle::new(&initial);
     /// particle.integrate(machine, (0.0, 1e2), &SolverParams::default());
     ///
@@ -295,8 +295,8 @@ impl Particle {
     ///
     /// // ===========
     ///
-    /// let psi0 = MagneticFlux::Toroidal(0.02);
-    /// let initial = InitialConditions::boozer(0.0, psi0, 3.14, 0.0, 1e-4, 1e-6);
+    /// let psit0 = MagneticFlux::Toroidal(0.02);
+    /// let initial = InitialConditions::boozer(0.0, psit0, 3.14, 0.0, 1e-4, 1e-6);
     /// let mut particle = Particle::new(&initial);
     ///
     /// let intersect_params = IntersectParams::new(
@@ -363,8 +363,8 @@ impl Particle {
     ///
     /// // ===========
     ///
-    /// let psi0 = MagneticFlux::Toroidal(0.015);
-    /// let initial = InitialConditions::boozer(0.0, psi0, 0.0, 3.14, 1e-5, 1e-6);
+    /// let psit0 = MagneticFlux::Toroidal(0.015);
+    /// let initial = InitialConditions::boozer(0.0, psit0, 0.0, 3.14, 1e-5, 1e-6);
     /// let mut particle = Particle::new(&initial);
     ///
     /// particle.close(machine, 1, &SolverParams::default());
@@ -407,9 +407,9 @@ impl Particle {
     ///
     /// // ===========
     ///
-    /// let psi0 = MagneticFlux::Toroidal(0.001);
+    /// let psit0 = MagneticFlux::Toroidal(0.001);
     /// let pzeta0 = -0.8 * machine.qfactor().psip_last().value();
-    /// let initial = InitialConditions::mixed(0.0, psi0, 1.0, 0.0, pzeta0, 6e-5);
+    /// let initial = InitialConditions::mixed(0.0, psit0, 1.0, 0.0, pzeta0, 6e-5);
     ///
     /// let mut particle = Particle::new(&initial);
     /// particle.classify(machine);
@@ -501,7 +501,7 @@ impl Particle {
         // `len()` must be larger than 2, panics otherwise
         (self.evolution.energy.len() > 2).then(|| {
             // call `energy_array()` since we need an `Array1`
-            let energy_array = self.evolution.energy_array();
+            let energy_array = ArrayView1::from(self.evolution.energy_values());
             let mean = energy_array.mean().expect("checked length");
             let std = energy_array.std(1.0);
             std / mean
@@ -608,16 +608,16 @@ impl Particle {
             .fold(0, |acc, cache| acc + cache.misses())
     }
 
-    export_array1D_getter_impl!(t_array, evolution, t);
-    export_array1D_getter_impl!(psi_array, evolution, psi_array);
-    export_array1D_getter_impl!(psip_array, evolution, psip_array);
-    export_array1D_getter_impl!(theta_array, evolution, theta_array);
-    export_array1D_getter_impl!(zeta_array, evolution, zeta_array);
-    export_array1D_getter_impl!(rho_array, evolution, rho_array);
-    export_array1D_getter_impl!(mu_array, evolution, mu_array);
-    export_array1D_getter_impl!(ptheta_array, evolution, ptheta_array);
-    export_array1D_getter_impl!(pzeta_array, evolution, pzeta_array);
-    export_array1D_getter_impl!(energy_array, evolution, energy_array);
+    f64_slice_getter!(t_values, evolution.t_values(), t);
+    f64_slice_getter!(psit_values, evolution.psit_values(), psit);
+    f64_slice_getter!(psip_values, evolution.psip_values(), psip);
+    f64_slice_getter!(theta_values, evolution.theta_values(), theta);
+    f64_slice_getter!(zeta_values, evolution.zeta_values(), zeta);
+    f64_slice_getter!(rho_values, evolution.rho_values(), rho);
+    f64_slice_getter!(mu_values, evolution.mu_values(), mu);
+    f64_slice_getter!(pzeta_values, evolution.pzeta_values(), pzeta);
+    f64_slice_getter!(ptheta_values, evolution.ptheta_values(), ptheta);
+    f64_slice_getter!(energy_values, evolution.energy_values(), energy);
 }
 
 impl PartialEq<IntegrationStatus> for &IntegrationStatus {

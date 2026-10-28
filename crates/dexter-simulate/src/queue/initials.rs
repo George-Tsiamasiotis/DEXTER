@@ -37,11 +37,11 @@ impl QueueInitialConditions {
     /// # Example
     /// ```
     /// # use dexter_simulate::*;
-    /// use ndarray::*;
-    /// let psi0s = MagneticFluxArray::Toroidal(array![0.15, 0.3]);
+    /// # use ndarray::*;
+    /// let psit0s = MagneticFluxArray::Toroidal(array![0.15, 0.3]);
     /// let initial_conditions = QueueInitialConditions::boozer(
     ///     &[0.0, 0.1],
-    ///     &psi0s,
+    ///     &psit0s,
     ///     &[0.0, 0.1],
     ///     &[0.0, 0.0],
     ///     &[1e-3, 2e-3],
@@ -95,7 +95,7 @@ impl QueueInitialConditions {
     /// # Example
     /// ```
     /// # use dexter_simulate::*;
-    /// use ndarray::*;
+    /// # use ndarray::*;
     /// let psip0s = MagneticFluxArray::Poloidal(array![0.15, 0.3]);
     /// let initial_conditions = QueueInitialConditions::mixed(
     ///     &[0.0, 0.1],
@@ -284,10 +284,10 @@ impl QueueInitialConditions {
 
 /// Getters.
 impl QueueInitialConditions {
-    /// Returns the initial times array.
+    /// Returns a view to the initial times array.
     #[must_use]
-    pub fn t_array(&self) -> Array1<f64> {
-        self.t0.clone()
+    pub fn t_array(&self) -> ArrayView1<'_, f64> {
+        self.t0.view()
     }
 
     /// Returns a reference to the initial [`MagneticFluxArray`].
@@ -296,40 +296,34 @@ impl QueueInitialConditions {
         &self.flux0
     }
 
-    /// Returns the initial `θ` array.
+    /// Returns a view to the initial `θ` array.
     #[must_use]
-    pub fn theta_array(&self) -> Array1<f64> {
-        self.theta0.clone()
+    pub fn theta_array(&self) -> ArrayView1<'_, f64> {
+        self.theta0.view()
     }
 
-    /// Returns the initial `ζ` array.
+    /// Returns a view to the initial `ζ` array.
     #[must_use]
-    pub fn zeta_array(&self) -> Array1<f64> {
-        self.zeta0.clone()
+    pub fn zeta_array(&self) -> ArrayView1<'_, f64> {
+        self.zeta0.view()
     }
 
-    /// Returns the initial `μ` array.
+    /// Returns a view to the initial `μ` array.
     #[must_use]
-    pub fn mu_array(&self) -> Array1<f64> {
-        self.mu0.clone()
-    }
-
-    /// Returns an [`ArrayView1`] of the `mu` array.
-    #[must_use]
-    pub(crate) fn mu_array_view(&self) -> ArrayView1<'_, f64> {
+    pub fn mu_array(&self) -> ArrayView1<'_, f64> {
         self.mu0.view()
     }
 
-    /// Returns the initial `ρ` array.
+    /// Returns a view to the initial `ρ` array.
     #[must_use]
-    pub fn rho_array(&self) -> Option<Array1<f64>> {
-        self.rho0.clone()
+    pub fn rho_array(&self) -> Option<ArrayView1<'_, f64>> {
+        self.rho0.as_ref().map(|values| values.view())
     }
 
-    /// Returns the initial `Pζ` array.
+    /// Returns a view to the initial `Pζ` array.
     #[must_use]
-    pub fn pzeta_array(&self) -> Option<Array1<f64>> {
-        self.pzeta0.clone()
+    pub fn pzeta_array(&self) -> Option<ArrayView1<'_, f64>> {
+        self.pzeta0.as_ref().map(|values| values.view())
     }
 }
 
@@ -489,9 +483,9 @@ mod test {
 
     #[test]
     fn from_boozer_particles() {
-        let psi0 = MagneticFlux::Toroidal(0.001);
-        let initial1 = InitialConditions::boozer(0.0, psi0, 1.0, 0.0, 0.1, 0.0);
-        let initial2 = InitialConditions::boozer(0.0, psi0, 2.0, 0.0, 0.1, 0.0);
+        let psit0 = MagneticFlux::Toroidal(0.001);
+        let initial1 = InitialConditions::boozer(0.0, psit0, 1.0, 0.0, 0.1, 0.0);
+        let initial2 = InitialConditions::boozer(0.0, psit0, 2.0, 0.0, 0.1, 0.0);
         let particle1 = Particle::new(&initial1);
         let particle2 = Particle::new(&initial2);
 
@@ -504,9 +498,9 @@ mod test {
 
     #[test]
     fn from_mixed_particles() {
-        let psi0 = MagneticFlux::Toroidal(0.001);
-        let initial1 = InitialConditions::mixed(0.0, psi0, 1.0, 0.0, 0.0, 0.0);
-        let initial2 = InitialConditions::mixed(0.0, psi0, 2.0, 0.0, 0.0, 0.0);
+        let psit0 = MagneticFlux::Toroidal(0.001);
+        let initial1 = InitialConditions::mixed(0.0, psit0, 1.0, 0.0, 0.0, 0.0);
+        let initial2 = InitialConditions::mixed(0.0, psit0, 2.0, 0.0, 0.0, 0.0);
         let particle1 = Particle::new(&initial1);
         let particle2 = Particle::new(&initial2);
 
@@ -520,9 +514,9 @@ mod test {
     #[test]
     #[should_panic]
     fn from_boozer_mixed_particles() {
-        let psi0 = MagneticFlux::Toroidal(0.001);
-        let initial1 = InitialConditions::mixed(0.0, psi0, 1.0, 0.0, 0.0, 0.0);
-        let initial2 = InitialConditions::boozer(0.0, psi0, 2.0, 0.0, 0.1, 0.0);
+        let psit0 = MagneticFlux::Toroidal(0.001);
+        let initial1 = InitialConditions::mixed(0.0, psit0, 1.0, 0.0, 0.0, 0.0);
+        let initial2 = InitialConditions::boozer(0.0, psit0, 2.0, 0.0, 0.1, 0.0);
         let particle1 = Particle::new(&initial1);
         let particle2 = Particle::new(&initial2);
 

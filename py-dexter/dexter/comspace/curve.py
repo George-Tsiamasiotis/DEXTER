@@ -48,14 +48,14 @@ class StationaryCurve(_ReprStrImpl, _RustTypeWrapper):
 class StationaryCurveSegment(_ReprStrImpl, _RustTypeWrapper):
     r"""A 2D parametrized curve. Represents an individual segment of the Stationary Curve.
 
-    The parameter $t$ is chosen to be the index of the corresponding $(\psi/\psi_p, \theta)$ point.
+    The parameter $t$ is chosen to be the index of the corresponding $(\theta, \psi)$ point.
 
     Attributes
     ----------
     flux_kind
         The kind of the magnetic flux w.r.t. the segment is defined.
     flux_array
-        The contained magnetic flux $\psi$ or $\psi_p$ array.
+        The contained magnetic flux $\psi$ array.
     theta_array
         The contained $\theta$ array.
     """
@@ -78,5 +78,5 @@ class StationaryCurveSegment(_ReprStrImpl, _RustTypeWrapper):
         return self._r.theta_array()
 
     def __len__(self) -> int:
-        r"""Returns the number of the contained $(\theta, \psi/\psi_p)$ points."""
+        r"""Returns the number of the contained $(\theta, \psi)$ points."""
         return self._r.__len__()

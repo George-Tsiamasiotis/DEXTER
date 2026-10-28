@@ -17,11 +17,11 @@ fn main() -> Result<(), SimulationError> {
     let particle_count = 1_000_000;
     let pzetas =
         machine.qfactor().psip_last().value() * Array1::linspace(-1.4, 0.2, particle_count);
-    let psi0s_values =
-        machine.qfactor().psi_last().value() * Array1::linspace(0.001, 0.5, particle_count);
+    let psit0s_values =
+        machine.qfactor().psit_last().value() * Array1::linspace(0.001, 0.5, particle_count);
     let initial_conditions = QueueInitialConditions::mixed(
         Array1::zeros(particle_count).as_slice().unwrap(),
-        &MagneticFluxArray::Toroidal(psi0s_values),
+        &MagneticFluxArray::Toroidal(psit0s_values),
         Array1::ones(particle_count).as_slice().unwrap(),
         Array1::zeros(particle_count).as_slice().unwrap(),
         pzetas.as_slice().unwrap(),

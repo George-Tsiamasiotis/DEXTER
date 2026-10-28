@@ -62,10 +62,10 @@ def test_queue_initial_conditions():
         dex.QueueInitialConditions()
 
     num = 10
-    psi0s = dex.MagneticFluxArray.Toroidal(np.linspace(0, 0.05, num))
+    psit0s = dex.MagneticFluxArray.Toroidal(np.linspace(0, 0.05, num))
     _initial = dex.QueueInitialConditions.Boozer(
         t0=np.zeros(num),
-        flux0=psi0s,
+        flux0=psit0s,
         theta0=np.zeros(num),
         zeta0=np.zeros(num),
         rho0=np.full(num, 1e-5),

@@ -12,7 +12,7 @@ use std::path::PathBuf;
 fn bfield_evals(c: &mut Criterion) {
     let path = PathBuf::from(TEST_NETCDF_PATH);
     let acc = &mut Accelerator2d::new();
-    let (psi, theta) = (MagneticFlux::Toroidal(0.1), 1.0);
+    let (psit, theta) = (MagneticFlux::Toroidal(0.1), 1.0);
 
     let lar_bfield = LarBfield;
     let nc_bfield = NcBfieldBuilder::new(&path, Interpolation2dType::Bicubic)
@@ -23,17 +23,17 @@ fn bfield_evals(c: &mut Criterion) {
 
     let mut group = c.benchmark_group("Bfield B(ψ, θ) evaluation");
 
-    group.bench_with_input("LarBfield", &(psi, theta), |b, &(psi, theta)| {
+    group.bench_with_input("LarBfield", &(psit, theta), |b, &(psit, theta)| {
         b.iter(|| {
             lar_bfield
-                .eval_b(black_box(psi), black_box(theta), black_box(acc))
+                .eval_b(black_box(psit), black_box(theta), black_box(acc))
                 .unwrap()
         });
     });
-    group.bench_with_input("NcBfield", &(psi, theta), |b, &(psi, theta)| {
+    group.bench_with_input("NcBfield", &(psit, theta), |b, &(psit, theta)| {
         b.iter(|| {
             nc_bfield
-                .eval_b(black_box(psi), black_box(theta), black_box(acc))
+                .eval_b(black_box(psit), black_box(theta), black_box(acc))
                 .unwrap()
         });
     });
@@ -43,37 +43,97 @@ fn bfield_evals(c: &mut Criterion) {
 
     let mut group = c.benchmark_group("Bfield dB(ψ, θ)/dψ evaluation");
 
-    group.bench_with_input("LarBfield", &(psi, theta), |b, &(psi, theta)| {
+    group.bench_with_input("LarBfield", &(psit, theta), |b, &(psit, theta)| {
         b.iter(|| {
             lar_bfield
-                .eval_deriv_flux(black_box(psi), black_box(theta), black_box(acc))
+                .eval_deriv_flux(black_box(psit), black_box(theta), black_box(acc))
                 .unwrap()
         });
     });
-    group.bench_with_input("NcBfield", &(psi, theta), |b, &(psi, theta)| {
+    group.bench_with_input("NcBfield", &(psit, theta), |b, &(psit, theta)| {
         b.iter(|| {
             nc_bfield
-                .eval_deriv_flux(black_box(psi), black_box(theta), black_box(acc))
+                .eval_deriv_flux(black_box(psit), black_box(theta), black_box(acc))
                 .unwrap()
         });
     });
     group.finish();
 
-    // // ===========================================================================================
+    // ===========================================================================================
 
     let mut group = c.benchmark_group("Bfield dB(ψ, θ)/dθ evaluation");
 
-    group.bench_with_input("LarBfield", &(psi, theta), |b, &(psi, theta)| {
+    group.bench_with_input("LarBfield", &(psit, theta), |b, &(psit, theta)| {
         b.iter(|| {
             lar_bfield
-                .eval_deriv_theta(black_box(psi), black_box(theta), black_box(acc))
+                .eval_deriv_theta(black_box(psit), black_box(theta), black_box(acc))
                 .unwrap()
         });
     });
-    group.bench_with_input("NcBfield", &(psi, theta), |b, &(psi, theta)| {
+    group.bench_with_input("NcBfield", &(psit, theta), |b, &(psit, theta)| {
         b.iter(|| {
             nc_bfield
-                .eval_deriv_theta(black_box(psi), black_box(theta), black_box(acc))
+                .eval_deriv_theta(black_box(psit), black_box(theta), black_box(acc))
+                .unwrap()
+        });
+    });
+    group.finish();
+
+    // ===========================================================================================
+
+    let mut group = c.benchmark_group("Bfield d²B(ψ, θ)/dψ² evaluation");
+
+    group.bench_with_input("LarBfield", &(psit, theta), |b, &(psit, theta)| {
+        b.iter(|| {
+            lar_bfield
+                .eval_deriv_flux2(black_box(psit), black_box(theta), black_box(acc))
+                .unwrap()
+        });
+    });
+    group.bench_with_input("NcBfield", &(psit, theta), |b, &(psit, theta)| {
+        b.iter(|| {
+            nc_bfield
+                .eval_deriv_flux2(black_box(psit), black_box(theta), black_box(acc))
+                .unwrap()
+        });
+    });
+    group.finish();
+
+    // ===========================================================================================
+
+    let mut group = c.benchmark_group("Bfield d²B(ψ, θ)/dθ² evaluation");
+
+    group.bench_with_input("LarBfield", &(psit, theta), |b, &(psit, theta)| {
+        b.iter(|| {
+            lar_bfield
+                .eval_deriv_theta2(black_box(psit), black_box(theta), black_box(acc))
+                .unwrap()
+        });
+    });
+    group.bench_with_input("NcBfield", &(psit, theta), |b, &(psit, theta)| {
+        b.iter(|| {
+            nc_bfield
+                .eval_deriv_theta2(black_box(psit), black_box(theta), black_box(acc))
+                .unwrap()
+        });
+    });
+    group.finish();
+
+    // ===========================================================================================
+
+    let mut group = c.benchmark_group("Bfield d²B(ψ, θ)/dψdθ evaluation");
+
+    group.bench_with_input("LarBfield", &(psit, theta), |b, &(psit, theta)| {
+        b.iter(|| {
+            lar_bfield
+                .eval_deriv_mixed(black_box(psit), black_box(theta), black_box(acc))
+                .unwrap()
+        });
+    });
+    group.bench_with_input("NcBfield", &(psit, theta), |b, &(psit, theta)| {
+        b.iter(|| {
+            nc_bfield
+                .eval_deriv_mixed(black_box(psit), black_box(theta), black_box(acc))
                 .unwrap()
         });
     });

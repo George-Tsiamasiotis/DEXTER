@@ -2,6 +2,7 @@
 
 use std::sync::Arc;
 
+use ndarray::Array1;
 use numpy::{IntoPyArray, PyArray1};
 use pyo3::{prelude::*, types::PyType};
 
@@ -113,8 +114,8 @@ impl PyQfactor {
     }
 
     #[getter]
-    pub fn psi_state(&self) -> String {
-        format!("{:?}", self.inner().psi_state())
+    pub fn psit_state(&self) -> String {
+        format!("{:?}", self.inner().psit_state())
     }
 
     #[getter]
@@ -126,8 +127,8 @@ impl PyQfactor {
 #[pymethods] // Qfactor Trait
 impl PyQfactor {
     #[getter]
-    pub fn psi_last(&self) -> PyMagneticFlux {
-        self.inner().psi_last().into()
+    pub fn psit_last(&self) -> PyMagneticFlux {
+        self.inner().psit_last().into()
     }
 
     #[getter]
@@ -145,28 +146,28 @@ impl PyQfactor {
         self.inner().qaxis()
     }
 
-    pub fn eval_q(&self, psi: f64, psip: f64) -> Result<f64> {
-        let flux = flux_from_params(psi, psip);
+    pub fn eval_q(&self, psit: f64, psip: f64) -> Result<f64> {
+        let flux = flux_from_params(psit, psip);
         Ok(self.inner().eval_q(flux, &mut Accelerator::new())?)
     }
 
-    pub fn eval_q_deriv(&self, psi: f64, psip: f64) -> Result<f64> {
-        let flux = flux_from_params(psi, psip);
+    pub fn eval_q_deriv(&self, psit: f64, psip: f64) -> Result<f64> {
+        let flux = flux_from_params(psit, psip);
         Ok(self.inner().eval_q_deriv(flux, &mut Accelerator::new())?)
     }
 
-    pub fn eval_other(&self, psi: f64, psip: f64) -> Result<f64> {
-        let flux = flux_from_params(psi, psip);
+    pub fn eval_other(&self, psit: f64, psip: f64) -> Result<f64> {
+        let flux = flux_from_params(psit, psip);
         Ok(self
             .inner()
             .eval_other(flux, &mut Accelerator::new())?
             .value())
     }
 
-    pub fn eval_psi_of_q(&self, q: f64) -> Result<f64> {
+    pub fn eval_psit_of_q(&self, q: f64) -> Result<f64> {
         Ok(self
             .inner()
-            .eval_psi_of_q(q, &mut Accelerator::new())?
+            .eval_psit_of_q(q, &mut Accelerator::new())?
             .value())
     }
 
@@ -177,27 +178,27 @@ impl PyQfactor {
             .value())
     }
 
-    pub fn eval_deriv_of_other(&self, psi: f64, psip: f64) -> Result<f64> {
-        let flux = flux_from_params(psi, psip);
+    pub fn eval_deriv_of_other(&self, psit: f64, psip: f64) -> Result<f64> {
+        let flux = flux_from_params(psit, psip);
         Ok(self
             .inner()
             .eval_deriv_of_other(flux, &mut Accelerator::new())?)
     }
 
-    pub fn eval_deriv_wrt_other(&self, psi: f64, psip: f64) -> Result<f64> {
-        let flux = flux_from_params(psi, psip);
+    pub fn eval_deriv_wrt_other(&self, psit: f64, psip: f64) -> Result<f64> {
+        let flux = flux_from_params(psit, psip);
         Ok(self
             .inner()
             .eval_deriv_wrt_other(flux, &mut Accelerator::new())?)
     }
 
-    pub fn eval_iota(&self, psi: f64, psip: f64) -> Result<f64> {
-        let flux = flux_from_params(psi, psip);
+    pub fn eval_iota(&self, psit: f64, psip: f64) -> Result<f64> {
+        let flux = flux_from_params(psit, psip);
         Ok(self.inner().eval_iota(flux, &mut Accelerator::new())?)
     }
 
-    pub fn eval_iota_deriv(&self, psi: f64, psip: f64) -> Result<f64> {
-        let flux = flux_from_params(psi, psip);
+    pub fn eval_iota_deriv(&self, psit: f64, psip: f64) -> Result<f64> {
+        let flux = flux_from_params(psit, psip);
         Ok(self
             .inner()
             .eval_iota_deriv(flux, &mut Accelerator::new())?)
@@ -231,10 +232,10 @@ impl PyQfactor {
 
     pub fn get_array<'py>(&self, py: Python<'py>, name: &str) -> Result<Bound<'py, PyArray1<f64>>> {
         let qfactor = self.nc()?;
-        let array = match name {
-            "q_array" => qfactor.q_array(),
-            "psi_array" => qfactor.psi_array(),
-            "psip_array" => qfactor.psip_array(),
+        let values: &[f64] = match name {
+            "q_array" => qfactor.q_values(),
+            "psit_array" => qfactor.psit_values(),
+            "psip_array" => qfactor.psip_values(),
             _ => {
                 return Err(DexterError::AttributeError {
                     obj: "NcQfactor".into(),
@@ -242,7 +243,7 @@ impl PyQfactor {
                 });
             }
         };
-        Ok(array.into_pyarray(py))
+        Ok(Array1::from(values.to_vec()).into_pyarray(py))
     }
 }
 

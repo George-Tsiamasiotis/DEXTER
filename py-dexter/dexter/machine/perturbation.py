@@ -84,55 +84,55 @@ class Perturbation(_ReprStrImpl):
         theta: ArrayLike,
         zeta: ArrayLike,
         t: ArrayLike,
-        psi: ArrayLike | None = None,
+        psit: ArrayLike | None = None,
         psip: ArrayLike | None = None,
     ) -> Array:
-        r"""Calculates the perturbation's value $p(\psi/\psi_p, \theta, \zeta, t)$, in Normalized Units."""
-        return self._eval_p(theta, zeta, t, psi=psi, psip=psip)[()]
+        r"""Calculates the perturbation's value $p(\psi, \theta, \zeta, t)$, in Normalized Units."""
+        return self._eval_p(theta, zeta, t, psit=psit, psip=psip)[()]
 
     def eval_deriv_flux(
         self,
         theta: ArrayLike,
         zeta: ArrayLike,
         t: ArrayLike,
-        psi: ArrayLike | None = None,
+        psit: ArrayLike | None = None,
         psip: ArrayLike | None = None,
     ) -> Array:
-        r"""Calculates the perturbation's derivative $dp(\psi/\psi_p, \theta, \zeta, t)/d(\psi/\psi_p)$, in Normalized Units."""
-        return self._eval_deriv_flux(theta, zeta, t, psi=psi, psip=psip)[()]
+        r"""Calculates the perturbation's derivative $dp(\psi, \theta, \zeta, t)/d\psi$, in Normalized Units."""
+        return self._eval_deriv_flux(theta, zeta, t, psit=psit, psip=psip)[()]
 
     def eval_deriv_theta(
         self,
         theta: ArrayLike,
         zeta: ArrayLike,
         t: ArrayLike,
-        psi: ArrayLike | None = None,
+        psit: ArrayLike | None = None,
         psip: ArrayLike | None = None,
     ) -> Array:
-        r"""Calculates the perturbation's derivative $dp(\psi/\psi_p, \theta, \zeta, t)/d\theta$, in Normalized Units."""
-        return self._eval_deriv_theta(theta, zeta, t, psi=psi, psip=psip)[()]
+        r"""Calculates the perturbation's derivative $dp(\psi, \theta, \zeta, t)/d\theta$, in Normalized Units."""
+        return self._eval_deriv_theta(theta, zeta, t, psit=psit, psip=psip)[()]
 
     def eval_deriv_zeta(
         self,
         theta: ArrayLike,
         zeta: ArrayLike,
         t: ArrayLike,
-        psi: ArrayLike | None = None,
+        psit: ArrayLike | None = None,
         psip: ArrayLike | None = None,
     ) -> Array:
-        r"""Calculates the perturbation's derivative $dp(\psi/\psi_p, \theta, \zeta, t)/d\zeta$, in Normalized Units."""
-        return self._eval_deriv_zeta(theta, zeta, t, psi=psi, psip=psip)[()]
+        r"""Calculates the perturbation's derivative $dp(\psi, \theta, \zeta, t)/d\zeta$, in Normalized Units."""
+        return self._eval_deriv_zeta(theta, zeta, t, psit=psit, psip=psip)[()]
 
     def eval_deriv_t(
         self,
         theta: ArrayLike,
         zeta: ArrayLike,
         t: ArrayLike,
-        psi: ArrayLike | None = None,
+        psit: ArrayLike | None = None,
         psip: ArrayLike | None = None,
     ) -> Array:
-        r"""Calculates the perturbation's derivative $dp(\psi/\psi_p, \theta, \zeta, t)/dt$, in Normalized Units."""
-        return self._eval_deriv_t(theta, zeta, t, psi=psi, psip=psip)[()]
+        r"""Calculates the perturbation's derivative $dp(\psi, \theta, \zeta, t)/dt$, in Normalized Units."""
+        return self._eval_deriv_t(theta, zeta, t, psit=psit, psip=psip)[()]
 
     def __len__(self) -> int:
         """Returns the total number of modes."""

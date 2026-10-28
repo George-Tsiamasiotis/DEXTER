@@ -128,6 +128,11 @@ impl<'obj> MachineBuilder<'obj> {
 
     /// Creates a new [`Machine`] with the Builder's configuration.
     ///
+    /// # Panics
+    ///
+    /// This constructor panics of the `qfactor`, `current`, `bfield` and `efield` objects do not
+    /// have a common `good` flux coordinate.
+    ///
     /// # Example
     ///
     /// ```
@@ -177,8 +182,8 @@ impl<'obj> Machine<'obj> {
     ///
     /// # Panics
     ///
-    /// This constructor panics of the `qfactor`, `current` and `bfield` objects do not have a
-    /// common `good` flux coordinate.
+    /// This constructor panics of the `qfactor`, `current`, `bfield` and `efield` objects do not
+    /// have a common `good` flux coordinate.
     #[must_use]
     pub(crate) fn build(builder: MachineBuilder<'obj>) -> Self {
         let geometry = builder.geometry;
@@ -190,10 +195,10 @@ impl<'obj> Machine<'obj> {
 
         use FluxCoordinateState::*;
         match (
-            qfactor.psi_state(),
-            current.psi_state(),
-            bfield.psi_state(),
-            efield.psi_state(),
+            qfactor.psit_state(),
+            current.psit_state(),
+            bfield.psit_state(),
+            efield.psit_state(),
             qfactor.psip_state(),
             current.psip_state(),
             bfield.psip_state(),
@@ -217,8 +222,8 @@ impl<'obj> Machine<'obj> {
 
     /// Returns the toroidal Last Closed Flux Surface.
     #[must_use]
-    pub fn psi_last(&self) -> MagneticFlux {
-        self.qfactor.psi_last()
+    pub fn psit_last(&self) -> MagneticFlux {
+        self.qfactor.psit_last()
     }
 
     /// Returns the poloidal Last Closed Flux Surface.
@@ -227,28 +232,28 @@ impl<'obj> Machine<'obj> {
         self.qfactor.psip_last()
     }
 
-    /// Returns the [`Good`] if `psi` is a good coordinate for `self.qfactor()`, `self.current()`
+    /// Returns the [`Good`] if `ψt` is a good coordinate for `self.qfactor()`, `self.current()`
     /// and `self.bfield()`, else [`Bad`].
     ///
     /// [`Good`]: FluxCoordinateState::Good
     /// [`Bad`]: FluxCoordinateState::Bad
     #[must_use]
-    pub fn psi_state(&self) -> FluxCoordinateState {
+    pub fn psit_state(&self) -> FluxCoordinateState {
         use FluxCoordinateState::*;
 
         // `false` if even one harmonic state is `Bad`
         let mut pertubration_ok = true;
         for index in 0..self.perturbation.count() {
-            if self.perturbation[index].psi_state() != Good {
+            if self.perturbation[index].psit_state() != Good {
                 pertubration_ok = false;
                 break;
             }
         }
 
-        if (self.qfactor.psi_state() == Good)
-            && (self.current.psi_state() == Good)
-            && (self.bfield.psi_state() == Good)
-            && (self.efield.psi_state() == Good)
+        if (self.qfactor.psit_state() == Good)
+            && (self.current.psit_state() == Good)
+            && (self.bfield.psit_state() == Good)
+            && (self.efield.psit_state() == Good)
             && pertubration_ok
         {
             Good
@@ -257,7 +262,7 @@ impl<'obj> Machine<'obj> {
         }
     }
 
-    /// Returns the [`Good`] if `psip` is a good coordinate for `self.qfactor()`, `self.current()`
+    /// Returns the [`Good`] if `ψp` is a good coordinate for `self.qfactor()`, `self.current()`
     /// and `self.bfield()`, else [`Bad`].
     ///
     /// [`Good`]: FluxCoordinateState::Good
@@ -287,10 +292,10 @@ impl<'obj> Machine<'obj> {
         }
     }
 
-    /// Returns [`Toroidal`] if `self.psi_state()` is [`Good`], else [`Poloidal`].
+    /// Returns [`Toroidal`] if `self.psip_state()` is [`Good`], else [`Poloidal`].
     ///
-    /// Note that `psi` is checked first, so if `psi` is [`Good`], [`Toroidal`] is returned even
-    /// if `psip` is [`Good`] as well.
+    /// Note that `ψt` is checked first, so if `ψt` is [`Good`], [`Toroidal`] is returned even
+    /// if `ψp` is [`Good`] as well.
     ///
     /// By construction of the `Machine` object, it is guaranteed that at least one of the flux
     /// will be [`Good`].
@@ -301,7 +306,7 @@ impl<'obj> Machine<'obj> {
     #[must_use]
     pub fn good_flux(&self) -> MagneticFluxKind {
         use FluxCoordinateState::*;
-        match (self.psi_state(), self.psip_state()) {
+        match (self.psit_state(), self.psip_state()) {
             (Good, _) => MagneticFluxKind::Toroidal,
             (_, Good) => MagneticFluxKind::Poloidal,
             _ => unreachable!("states are checked at `Machine::build`"),
@@ -324,14 +329,14 @@ impl<'obj> Machine<'obj> {
     /// let flux_kind = machine.good_flux();
     /// let last = machine.last(flux_kind);
     ///
-    /// assert_eq!(machine.last(MagneticFluxKind::Toroidal), machine.psi_last());
+    /// assert_eq!(machine.last(MagneticFluxKind::Toroidal), machine.psit_last());
     /// assert_eq!(machine.last(MagneticFluxKind::Poloidal), machine.psip_last());
     /// # Ok::<_, MachineError>(())
     /// ```
     #[must_use]
     pub fn last(&self, kind: MagneticFluxKind) -> MagneticFlux {
         match kind {
-            MagneticFluxKind::Toroidal => self.psi_last(),
+            MagneticFluxKind::Toroidal => self.psit_last(),
             MagneticFluxKind::Poloidal => self.psip_last(),
         }
     }
@@ -340,7 +345,7 @@ impl<'obj> Machine<'obj> {
     #[must_use]
     pub fn is_good_flux(&self, kind: MagneticFluxKind) -> bool {
         match kind {
-            MagneticFluxKind::Toroidal => self.psi_state() == FluxCoordinateState::Good,
+            MagneticFluxKind::Toroidal => self.psit_state() == FluxCoordinateState::Good,
             MagneticFluxKind::Poloidal => self.psip_state() == FluxCoordinateState::Good,
         }
     }
@@ -389,7 +394,7 @@ mod test {
     #[test]
     fn machine_init() {
         let geometry = LarGeometry::new(2.5, 1.75, 0.5);
-        let lcfs = geometry.psi_last();
+        let lcfs = geometry.psit_last();
         let qfactor = UnityQfactor::new(MagneticFlux::Toroidal(0.1));
         let current = LarCurrent;
         let bfield = LarBfield;

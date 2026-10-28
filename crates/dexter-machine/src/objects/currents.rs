@@ -1,11 +1,10 @@
 //! Representation of a machine's plasma current.
 
 use crate::{
-    debug_assert_is_finite, debug_assert_non_negative_flux, fluxes_values_array_getter_impl,
-    interp_type_getter_impl, netcdf_path_getter_impl, netcdf_version_getter_impl,
+    debug_assert_is_finite, debug_assert_non_negative_flux, interp_type_getter_impl,
+    nc_fluxes_values_getter_impl, netcdf_path_getter_impl, netcdf_version_getter_impl,
 };
 use core::hint::cold_path;
-use ndarray::Array1;
 use rsl_interpolation::Accelerator;
 use std::path::{Path, PathBuf};
 
@@ -15,7 +14,7 @@ use crate::objects::nc_flux::{FluxCoordinateState, NcFlux};
 use crate::{Current, MachineObject, MachineType};
 use crate::{EvalError, MachineError};
 use crate::{MagneticFlux, MagneticFlux::*};
-use dexter_common::{DynInterpolator, array1D_getter_impl, make_interp};
+use dexter_common::{DynInterpolator, make_interp};
 
 // ===============================================================================================
 
@@ -23,7 +22,7 @@ use dexter_common::{DynInterpolator, array1D_getter_impl, make_interp};
 ///
 /// # Note
 ///
-/// No ψ/ψp bounds checks are performed in evaluations.
+/// No ψ bounds checks are performed in evaluations.
 pub struct LarCurrent;
 
 impl MachineObject for LarCurrent {
@@ -31,7 +30,7 @@ impl MachineObject for LarCurrent {
         MachineType::Analytical
     }
 
-    fn psi_state(&self) -> FluxCoordinateState {
+    fn psit_state(&self) -> FluxCoordinateState {
         FluxCoordinateState::Good
     }
 
@@ -148,21 +147,21 @@ pub struct NcCurrent {
     interp_type: Interpolation1dType,
 
     /// The toroidal flux coordinate.
-    psi: NcFlux,
+    psit: NcFlux,
     /// The poloidal flux coordinate.
     psip: NcFlux,
 
     /// The `g` values.
     g_values: Box<[f64]>,
-    /// The `g(ψ)` interpolatior.
-    g_of_psi_interp: Option<DynInterpolator>,
+    /// The `g(ψt)` interpolatior.
+    g_of_psit_interp: Option<DynInterpolator>,
     /// The `g(ψp)` interpolatior.
     g_of_psip_interp: Option<DynInterpolator>,
 
     /// `I` values.
     i_values: Box<[f64]>,
-    /// The `I(ψ)` interpolatior.
-    i_of_psi_interp: Option<DynInterpolator>,
+    /// The `I(ψt)` interpolatior.
+    i_of_psit_interp: Option<DynInterpolator>,
     /// The `I(ψp)` interpolatior.
     i_of_psip_interp: Option<DynInterpolator>,
 }
@@ -179,7 +178,7 @@ impl NcCurrent {
         let file = extract::open(&path)?;
         let netcdf_version = extract::version(&file)?;
 
-        let psi = NcFlux::toroidal(&file);
+        let psit = NcFlux::toroidal(&file);
         let psip = NcFlux::poloidal(&file);
         let g_values = extract::array_1d(&file, NC_G_NORM)?.to_vec();
         let i_values = extract::array_1d(&file, NC_I_NORM)?.to_vec();
@@ -189,12 +188,12 @@ impl NcCurrent {
 
         // Create interpolators, if possible
         use FluxCoordinateState::Good;
-        let g_of_psi_interp = match psi.state() {
-            Good => Some(make_interp(builder.interp_type, psi.uvalues(), &g_values)?),
+        let g_of_psit_interp = match psit.state() {
+            Good => Some(make_interp(builder.interp_type, psit.uvalues(), &g_values)?),
             _ => None,
         };
-        let i_of_psi_interp = match psi.state() {
-            Good => Some(make_interp(builder.interp_type, psi.uvalues(), &i_values)?),
+        let i_of_psit_interp = match psit.state() {
+            Good => Some(make_interp(builder.interp_type, psit.uvalues(), &i_values)?),
             _ => None,
         };
 
@@ -211,13 +210,13 @@ impl NcCurrent {
             netcdf_version,
             path,
             interp_type: builder.interp_type,
-            psi,
+            psit,
             psip,
             g_values: g_values.into_boxed_slice(),
             i_values: i_values.into_boxed_slice(),
-            g_of_psi_interp,
+            g_of_psit_interp,
             g_of_psip_interp,
-            i_of_psi_interp,
+            i_of_psit_interp,
             i_of_psip_interp,
         })
     }
@@ -228,8 +227,8 @@ impl MachineObject for NcCurrent {
         MachineType::Numerical
     }
 
-    fn psi_state(&self) -> FluxCoordinateState {
-        self.psi.state()
+    fn psit_state(&self) -> FluxCoordinateState {
+        self.psit.state()
     }
 
     fn psip_state(&self) -> FluxCoordinateState {
@@ -241,7 +240,7 @@ impl Current for NcCurrent {
     fn eval_g(&self, flux: MagneticFlux, acc: &mut Accelerator) -> Result<f64, EvalError> {
         debug_assert_non_negative_flux!(flux);
         let interp_opt = match flux {
-            Toroidal(_) => self.g_of_psi_interp.as_ref(),
+            Toroidal(_) => self.g_of_psit_interp.as_ref(),
             Poloidal(_) => self.g_of_psip_interp.as_ref(),
         };
         let Some(interp) = interp_opt else {
@@ -251,7 +250,7 @@ impl Current for NcCurrent {
         };
         // This cannot panic. If `interp` is `Some` then the corresponding values exist.
         let (val, xa) = match flux {
-            Toroidal(val) => (val, self.psi.uvalues()),
+            Toroidal(val) => (val, self.psit.uvalues()),
             Poloidal(val) => (val, self.psip.uvalues()),
         };
         let ya = &self.g_values;
@@ -261,7 +260,7 @@ impl Current for NcCurrent {
     fn eval_i(&self, flux: MagneticFlux, acc: &mut Accelerator) -> Result<f64, EvalError> {
         debug_assert_non_negative_flux!(flux);
         let interp_opt = match flux {
-            Toroidal(_) => self.i_of_psi_interp.as_ref(),
+            Toroidal(_) => self.i_of_psit_interp.as_ref(),
             Poloidal(_) => self.i_of_psip_interp.as_ref(),
         };
         let Some(interp) = interp_opt else {
@@ -271,7 +270,7 @@ impl Current for NcCurrent {
         };
         // This cannot panic. If `interp` is `Some` then the corresponding values exist.
         let (val, xa) = match flux {
-            Toroidal(val) => (val, self.psi.uvalues()),
+            Toroidal(val) => (val, self.psit.uvalues()),
             Poloidal(val) => (val, self.psip.uvalues()),
         };
         let ya = &self.i_values;
@@ -281,7 +280,7 @@ impl Current for NcCurrent {
     fn eval_g_deriv(&self, flux: MagneticFlux, acc: &mut Accelerator) -> Result<f64, EvalError> {
         debug_assert_non_negative_flux!(flux);
         let interp_opt = match flux {
-            Toroidal(_) => self.g_of_psi_interp.as_ref(),
+            Toroidal(_) => self.g_of_psit_interp.as_ref(),
             Poloidal(_) => self.g_of_psip_interp.as_ref(),
         };
         let Some(interp) = interp_opt else {
@@ -291,7 +290,7 @@ impl Current for NcCurrent {
         };
         // This cannot panic. If `interp` is `Some` then the corresponding values exist.
         let (val, xa) = match flux {
-            Toroidal(val) => (val, self.psi.uvalues()),
+            Toroidal(val) => (val, self.psit.uvalues()),
             Poloidal(val) => (val, self.psip.uvalues()),
         };
         let ya = &self.g_values;
@@ -303,7 +302,7 @@ impl Current for NcCurrent {
     fn eval_i_deriv(&self, flux: MagneticFlux, acc: &mut Accelerator) -> Result<f64, EvalError> {
         debug_assert_non_negative_flux!(flux);
         let interp_opt = match flux {
-            Toroidal(_) => self.i_of_psi_interp.as_ref(),
+            Toroidal(_) => self.i_of_psit_interp.as_ref(),
             Poloidal(_) => self.i_of_psip_interp.as_ref(),
         };
         let Some(interp) = interp_opt else {
@@ -313,7 +312,7 @@ impl Current for NcCurrent {
         };
         // This cannot panic. If `interp` is `Some` then the corresponding values exist.
         let (val, xa) = match flux {
-            Toroidal(val) => (val, self.psi.uvalues()),
+            Toroidal(val) => (val, self.psit.uvalues()),
             Poloidal(val) => (val, self.psip.uvalues()),
         };
         let ya = &self.i_values;
@@ -325,7 +324,7 @@ impl Current for NcCurrent {
     fn eval_g_deriv2(&self, flux: MagneticFlux, acc: &mut Accelerator) -> Result<f64, EvalError> {
         debug_assert_non_negative_flux!(flux);
         let interp_opt = match flux {
-            Toroidal(_) => self.g_of_psi_interp.as_ref(),
+            Toroidal(_) => self.g_of_psit_interp.as_ref(),
             Poloidal(_) => self.g_of_psip_interp.as_ref(),
         };
         let Some(interp) = interp_opt else {
@@ -335,7 +334,7 @@ impl Current for NcCurrent {
         };
         // This cannot panic. If `interp` is `Some` then the corresponding values exist.
         let (val, xa) = match flux {
-            Toroidal(val) => (val, self.psi.uvalues()),
+            Toroidal(val) => (val, self.psit.uvalues()),
             Poloidal(val) => (val, self.psip.uvalues()),
         };
         let ya = &self.g_values;
@@ -347,7 +346,7 @@ impl Current for NcCurrent {
     fn eval_i_deriv2(&self, flux: MagneticFlux, acc: &mut Accelerator) -> Result<f64, EvalError> {
         debug_assert_non_negative_flux!(flux);
         let interp_opt = match flux {
-            Toroidal(_) => self.i_of_psi_interp.as_ref(),
+            Toroidal(_) => self.i_of_psit_interp.as_ref(),
             Poloidal(_) => self.i_of_psip_interp.as_ref(),
         };
         let Some(interp) = interp_opt else {
@@ -357,7 +356,7 @@ impl Current for NcCurrent {
         };
         // This cannot panic. If `interp` is `Some` then the corresponding values exist.
         let (val, xa) = match flux {
-            Toroidal(val) => (val, self.psi.uvalues()),
+            Toroidal(val) => (val, self.psit.uvalues()),
             Poloidal(val) => (val, self.psip.uvalues()),
         };
         let ya = &self.i_values;
@@ -369,12 +368,22 @@ impl Current for NcCurrent {
 
 /// Getters.
 impl NcCurrent {
+    /// Returns a reference to the `g` values, as extracted from the netCDF file.
+    #[must_use]
+    pub fn g_values(&self) -> &[f64] {
+        &self.g_values
+    }
+
+    /// Returns a reference to the `g` values, as extracted from the netCDF file.
+    #[must_use]
+    pub fn i_values(&self) -> &[f64] {
+        &self.i_values
+    }
+
     netcdf_path_getter_impl!();
     netcdf_version_getter_impl!();
     interp_type_getter_impl!(1);
-    fluxes_values_array_getter_impl!();
-    array1D_getter_impl!(g_array, g_values, g);
-    array1D_getter_impl!(i_array, i_values, I);
+    nc_fluxes_values_getter_impl!();
 }
 
 impl std::fmt::Debug for NcCurrent {
@@ -383,8 +392,8 @@ impl std::fmt::Debug for NcCurrent {
             .field("netCDF path", &self.path())
             .field("netCDF version", &self.netcdf_version().to_string())
             .field("interpolation type", &self.interp_type())
-            .field("psi", &self.psi)
-            .field("psip", &self.psip)
+            .field("ψt", &self.psit)
+            .field("ψp", &self.psip)
             .finish()
     }
 }
@@ -410,22 +419,22 @@ mod test_toroidal_nc_evals {
     #[test]
     fn flux_and_interp_states() {
         let current = create_nc_current(TOROIDAL_TEST_NETCDF_PATH);
-        assert_eq!(current.psi_state(), FluxCoordinateState::Good);
+        assert_eq!(current.psit_state(), FluxCoordinateState::Good);
         assert_eq!(current.psip_state(), FluxCoordinateState::Bad);
 
-        assert_eq!(current.psi.state(), FluxCoordinateState::Good);
+        assert_eq!(current.psit.state(), FluxCoordinateState::Good);
         assert_eq!(current.psip.state(), FluxCoordinateState::Bad);
-        assert!(current.g_of_psi_interp.is_some());
-        assert!(current.i_of_psi_interp.is_some());
+        assert!(current.g_of_psit_interp.is_some());
+        assert!(current.i_of_psit_interp.is_some());
         assert!(current.g_of_psip_interp.is_none());
         assert!(current.i_of_psip_interp.is_none());
 
-        assert!(current.psi_array().is_some());
-        assert!(current.psip_array().is_some());
+        assert!(current.psit_values().is_some());
+        assert!(current.psip_values().is_some());
     }
 
     #[test]
-    fn good_psi_evals() {
+    fn good_psit_evals() {
         let current = create_nc_current(TOROIDAL_TEST_NETCDF_PATH);
         let mut acc = Accelerator::new();
         let flux = Toroidal(0.01);
@@ -458,18 +467,18 @@ mod test_poloidal_nc_evals {
     #[test]
     fn flux_and_interp_states() {
         let current = create_nc_current(POLOIDAL_TEST_NETCDF_PATH);
-        assert_eq!(current.psi_state(), FluxCoordinateState::Bad);
+        assert_eq!(current.psit_state(), FluxCoordinateState::Bad);
         assert_eq!(current.psip_state(), FluxCoordinateState::Good);
 
-        assert_eq!(current.psi.state(), FluxCoordinateState::Bad);
+        assert_eq!(current.psit.state(), FluxCoordinateState::Bad);
         assert_eq!(current.psip.state(), FluxCoordinateState::Good);
-        assert!(current.g_of_psi_interp.is_none());
-        assert!(current.i_of_psi_interp.is_none());
+        assert!(current.g_of_psit_interp.is_none());
+        assert!(current.i_of_psit_interp.is_none());
         assert!(current.g_of_psip_interp.is_some());
         assert!(current.i_of_psip_interp.is_some());
 
-        assert!(current.psi_array().is_some());
-        assert!(current.psip_array().is_some());
+        assert!(current.psit_values().is_some());
+        assert!(current.psip_values().is_some());
     }
 
     #[test]
@@ -484,7 +493,7 @@ mod test_poloidal_nc_evals {
     }
 
     #[test]
-    fn bad_psi_evals() {
+    fn bad_psit_evals() {
         let current = create_nc_current(POLOIDAL_TEST_NETCDF_PATH);
         let mut acc = Accelerator::new();
         let flux = Toroidal(0.01);

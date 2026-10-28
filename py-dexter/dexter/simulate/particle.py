@@ -108,8 +108,8 @@ class Particle(_ReprStrImpl, _RustTypeWrapper):
         The modes' Accelerator cache misses.
     t_array
         The $t$ array.
-    psi_array
-        The $\psi$ array.
+    psit_array
+        The $\psi_t$ array.
     psip_array
         The $\psi_p$ array.
     theta_array
@@ -300,7 +300,6 @@ class Particle(_ReprStrImpl, _RustTypeWrapper):
         exactly on the intersection surface.
 
         This routine also yields the particle's $\omega_theta$, $\omega_\zeta$ and $q_{kin}$.
-
 
         This routine only uses the axisymmetric system, ignoring the Perturbation.
 
@@ -503,8 +502,8 @@ class Particle(_ReprStrImpl, _RustTypeWrapper):
         return self._r.get_array("t_array")
 
     @property
-    def psi_array(self) -> Array1:
-        return self._r.get_array("psi_array")
+    def psit_array(self) -> Array1:
+        return self._r.get_array("psit_array")
 
     @property
     def psip_array(self) -> Array1:

@@ -1,4 +1,4 @@
-"""Plots a QfactorObject q(ψ), q(ψp), ψp(ψ)$ and ψ(ψp)."""
+"""Plots a QfactorObject q(ψt), q(ψp), ψp(ψt)$ and ψt(ψp)."""
 
 import argparse
 from dexter._utils import get_default_args

@@ -18,7 +18,7 @@ def test_nc(nc_bfield: dex.NcBfield):
     assert isfinite(nc_bfield.baxis)
     assert isfinite(nc_bfield.padding)
     assert isinstance(nc_bfield.padding_theta, float)
-    assert isinstance(nc_bfield.psi_array, np.ndarray)
+    assert isinstance(nc_bfield.psit_array, np.ndarray)
     assert isinstance(nc_bfield.psip_array, np.ndarray)
     assert isinstance(nc_bfield.theta_array, np.ndarray)
     assert isinstance(nc_bfield.theta_array_padded, np.ndarray)
@@ -36,7 +36,7 @@ def _test_bfield_base(bfield: dex.BfieldObject):
     bfield.__str__()
 
     assert bfield.machine_type in ["Numerical", "Analytical"]
-    assert bfield.psi_state in ["Good", "Bad"]
+    assert bfield.psit_state in ["Good", "Bad"]
     assert bfield.psip_state in ["Good", "Bad"]
 
     flux = 0.02
@@ -46,33 +46,33 @@ def _test_bfield_base(bfield: dex.BfieldObject):
 
     try:
 
-        bfield.eval_b(psi=flux, theta=theta)
-        bfield.eval_b(psi=fluxes, theta=thetas)
+        bfield.eval_b(psit=flux, theta=theta)
+        bfield.eval_b(psit=fluxes, theta=thetas)
         bfield.eval_b(psip=flux, theta=theta)
         bfield.eval_b(psip=fluxes, theta=thetas)
 
-        bfield.eval_deriv_flux(psi=flux, theta=theta)
-        bfield.eval_deriv_flux(psi=fluxes, theta=thetas)
+        bfield.eval_deriv_flux(psit=flux, theta=theta)
+        bfield.eval_deriv_flux(psit=fluxes, theta=thetas)
         bfield.eval_deriv_flux(psip=flux, theta=theta)
         bfield.eval_deriv_flux(psip=fluxes, theta=thetas)
 
-        bfield.eval_deriv_theta(psi=flux, theta=theta)
-        bfield.eval_deriv_theta(psi=fluxes, theta=thetas)
+        bfield.eval_deriv_theta(psit=flux, theta=theta)
+        bfield.eval_deriv_theta(psit=fluxes, theta=thetas)
         bfield.eval_deriv_theta(psip=flux, theta=theta)
         bfield.eval_deriv_theta(psip=fluxes, theta=thetas)
 
-        bfield.eval_deriv_flux2(psi=flux, theta=theta)
-        bfield.eval_deriv_flux2(psi=fluxes, theta=thetas)
+        bfield.eval_deriv_flux2(psit=flux, theta=theta)
+        bfield.eval_deriv_flux2(psit=fluxes, theta=thetas)
         bfield.eval_deriv_flux2(psip=flux, theta=theta)
         bfield.eval_deriv_flux2(psip=fluxes, theta=thetas)
 
-        bfield.eval_deriv_theta2(psi=flux, theta=theta)
-        bfield.eval_deriv_theta2(psi=fluxes, theta=thetas)
+        bfield.eval_deriv_theta2(psit=flux, theta=theta)
+        bfield.eval_deriv_theta2(psit=fluxes, theta=thetas)
         bfield.eval_deriv_theta2(psip=flux, theta=theta)
         bfield.eval_deriv_theta2(psip=fluxes, theta=thetas)
 
-        bfield.eval_deriv_mixed(psi=flux, theta=theta)
-        bfield.eval_deriv_mixed(psi=fluxes, theta=thetas)
+        bfield.eval_deriv_mixed(psit=flux, theta=theta)
+        bfield.eval_deriv_mixed(psit=fluxes, theta=thetas)
         bfield.eval_deriv_mixed(psip=flux, theta=theta)
         bfield.eval_deriv_mixed(psip=fluxes, theta=thetas)
 

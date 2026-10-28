@@ -48,7 +48,7 @@ RAXIS = "raxis"
 ZAXIS = "zaxis"
 RGEO = ""
 THETA = "boozer_theta"
-PSI_NORM = "psi"
+PSIT_NORM = "psi"
 M = ""
 N = ""
 PSIP_NORM = ""
@@ -57,7 +57,7 @@ R_NORM = ""
 PSIP = ""
 R = ""
 Q = "q"
-PSI = "psi"
+PSIT = "psit"
 G = "g"
 I = "i"
 B = "b"
@@ -93,7 +93,7 @@ raxis = get(RAXIS, None)
 zaxis = get(ZAXIS, None)
 
 theta = get(THETA, nan_array(shape[1]))
-psi_norm = np.insert(get(PSI_NORM, nan_array(shape[0])), 0, 0)
+psit_norm = np.insert(get(PSIT_NORM, nan_array(shape[0])), 0, 0)
 m = np.asarray([])
 n = np.asarray([])
 psip_norm = np.insert(get(PSIP_NORM, nan_array(shape[0])), 0, 0)
@@ -103,7 +103,7 @@ psip = np.insert(get(PSIP, nan_array(shape[0])), 0, 0)
 r = np.insert(get(R, nan_array(shape[0])), 0, 0)
 _q = get(Q, nan_array(shape[0]))
 q = np.insert(_q, 0, _q[0])
-psi = np.insert(get(PSI, nan_array(shape[0])), 0, 0)
+psit = np.insert(get(PSIT, nan_array(shape[0])), 0, 0)
 _g = get(G, nan_array(shape[0]))
 g = np.insert(_g, 0, _g[0])
 i = np.insert(get(I, nan_array(shape[0])), 0, 0)
@@ -163,9 +163,9 @@ theta_coord = xr.Variable(
     attrs=dict(description="Boozer theta coordinate", units="[rads]"),
 )
 
-psi_norm_coord = xr.Variable(
-    data=psi_norm,
-    dims=["psi_norm"],
+psit_norm_coord = xr.Variable(
+    data=psit_norm,
+    dims=["psit_norm"],
     attrs=dict(description="Toroidal flux coordinate", units="Normalized"),
 )
 
@@ -183,7 +183,7 @@ n_coord = xr.Variable(
 
 psip_norm_coord = xr.Variable(
     data=psip_norm,
-    dims=["psip_norm"],
+    dims=["psit_norm"],
     attrs=dict(description="Poloidal flux coordinate", units="Normalized"),
 )
 
@@ -198,7 +198,7 @@ r_norm_coord = xr.Variable(
 
 psip_var = xr.Variable(
     data=psip,
-    dims=["psip_norm"],
+    dims=["psit_norm"],
     attrs=dict(description="Poloidal flux coordinate", units="[Tm]"),
 )
 
@@ -210,50 +210,50 @@ r_var = xr.Variable(
 
 q_var = xr.Variable(
     data=q,
-    dims=["psip_norm"],
+    dims=["psit_norm"],
     attrs=dict(description="Magnetic q-factor", units="dimensionless"),
 )
 
-psi_var = xr.Variable(
-    data=psi,
-    dims=["psi_norm"],
+psit_var = xr.Variable(
+    data=psit,
+    dims=["psit_norm"],
     attrs=dict(description="Toroidal flux coordinate", units="[Tm]"),
 )
 
 
 g_var = xr.Variable(
     data=g,
-    dims=["psip_norm"],
+    dims=["psit_norm"],
     attrs=dict(description="Toroidal current", units="[Tm]"),
 )
 
 i_var = xr.Variable(
     data=i,
-    dims=["psip_norm"],
+    dims=["psit_norm"],
     attrs=dict(description="Poloidal current", units="[Tm]"),
 )
 
 b_var = xr.Variable(
     data=b,
-    dims=["psip_norm", "theta"],
+    dims=["psit_norm", "theta"],
     attrs=dict(description="Magnetic field strength", units="[T]"),
 )
 
 jacobian_var = xr.Variable(
     data=jacobian,
-    dims=["psip_norm", "theta"],
+    dims=["psit_norm", "theta"],
     attrs=dict(description="VMEC to Boozer Jacobian", units="[m/T]"),
 )
 
 rlab_var = xr.Variable(
     data=rlab,
-    dims=["psip_norm", "theta"],
+    dims=["psit_norm", "theta"],
     attrs=dict(description="Lab horizontal coordinate", units="[m]"),
 )
 
 zlab_var = xr.Variable(
     data=zlab,
-    dims=["psip_norm", "theta"],
+    dims=["psit_norm", "theta"],
     attrs=dict(description="Lab vertical coordinate", units="[m]"),
 )
 
@@ -263,19 +263,19 @@ zlab_var = xr.Variable(
 
 g_norm_var = xr.Variable(
     data=g_norm,
-    dims=["psip_norm"],
+    dims=["psit_norm"],
     attrs=dict(description="Toroidal current normalized", units="Normalized"),
 )
 
 i_norm_var = xr.Variable(
     data=i_norm,
-    dims=["psip_norm"],
+    dims=["psit_norm"],
     attrs=dict(description="Poloidal current normalized", units="Normalized"),
 )
 
 b_norm_var = xr.Variable(
     data=b_norm,
-    dims=["psip_norm", "theta"],
+    dims=["psit_norm", "theta"],
     attrs=dict(description="Magnetic field strength", units="Normalized"),
 )
 
@@ -291,7 +291,7 @@ COORDS = {
     "theta": theta_coord,
     "m": m_coord,
     "n": n_coord,
-    "psi_norm": psi_norm_coord,
+    "psit_norm": psit_norm_coord,
     "r_norm": r_norm_coord,
 }
 
@@ -301,7 +301,7 @@ VARIABLES = {
     "zaxis": zaxis_var,
     "rgeo": rgeo_var,
     "psip": psip_var,
-    "psi": psi_var,
+    "psit": psit_var,
     "r": r_var,
     "q": q_var,
     "g": g_var,
@@ -321,6 +321,7 @@ ATTRS = {
     "description": description,
     "date": str(datetime.now().astimezone().replace(microsecond=0).isoformat()),
     "script": str(Path(__file__).stem),
+    "flux": str("Toroidal"),
     "version": str(VERSION),
 }
 
@@ -329,6 +330,10 @@ dataset = xr.Dataset(
     coords=COORDS,
     attrs=ATTRS,
 )
+
+# makes `ncdump -h` cleaner
+for item in dataset.coords | dataset.data_vars:
+    dataset[item].attrs["_FillValue"] = False
 
 dataset.to_netcdf(OUTPUT)
 GREEN = "\033[92m"

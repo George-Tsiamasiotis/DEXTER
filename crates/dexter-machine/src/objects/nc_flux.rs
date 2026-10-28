@@ -3,7 +3,7 @@
 use ndarray::{Array1, ArrayRef1, Axis};
 
 use crate::extract;
-use crate::extract::netcdf_fields::{NC_PSI_NORM, NC_PSIP_NORM};
+use crate::extract::netcdf_fields::{NC_PSIP_NORM, NC_PSIT_NORM};
 
 /// Defines whether or not a Flux coordinate can be used for evaluations.
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
@@ -19,8 +19,7 @@ pub enum FluxCoordinateState {
 }
 
 impl FluxCoordinateState {
-    /// Returns `Good` if the values are strictly monotonic, and `Bad`
-    /// otherwise.
+    /// Returns `Good` if the values are strictly monotonic, and `Bad` otherwise.
     #[expect(clippy::float_cmp, reason = "signum() always returns exactly 1.0_f64")]
     fn from_array(arr: &ArrayRef1<f64>) -> Self {
         // Use abs() to handle negative q-factors; we only care for monotonicity
@@ -48,9 +47,9 @@ pub(crate) struct NcFlux {
 }
 
 impl NcFlux {
-    /// Creates the toroidal flux `ψ` representation.
+    /// Creates the toroidal flux `ψt` representation.
     pub(crate) fn toroidal(file: &netcdf::File) -> Self {
-        Self::build(file, NC_PSI_NORM)
+        Self::build(file, NC_PSIT_NORM)
     }
 
     /// Creates the poroidal flux `ψp` representation.

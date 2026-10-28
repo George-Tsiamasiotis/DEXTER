@@ -11,7 +11,7 @@ use dexter_machine::{Machine, MagneticFluxArray, MagneticFluxKind};
 use crate::{COMError, GCHamiltonian};
 
 impl GCHamiltonian {
-    /// Evaluates the Hamiltonian in a `([θ], [ψ/ψp]; Pζ, μ)` 1D array.
+    /// Evaluates the Hamiltonian in a `([θ], [ψ]; Pζ, μ)` 1D array.
     ///
     /// The produced array has the form:
     ///
@@ -55,12 +55,12 @@ impl GCHamiltonian {
     /// let mu = 1e-4;
     ///
     /// let theta_array = Array1::linspace(0.0, TAU, 10);
-    /// let psi_array = MagneticFluxArray::Toroidal(
-    ///     Array1::linspace(1e-3, 1.0 - 1e-3, 10) * qfactor.psi_last().value(),
+    /// let psit_array = MagneticFluxArray::Toroidal(
+    ///     Array1::linspace(1e-3, 1.0 - 1e-3, 10) * qfactor.psit_last().value(),
     /// );
     ///
     /// let energy_array: Array1<f64> =
-    ///     GCHamiltonian::eval_array(machine, &theta_array, &psi_array, pzeta, mu)?;
+    ///     GCHamiltonian::eval_array(machine, &theta_array, &psit_array, pzeta, mu)?;
     /// # Ok::<_, COMError>(())
     /// ```
     ///
@@ -108,7 +108,7 @@ impl GCHamiltonian {
         Ok(unsafe { array.assume_init() })
     }
 
-    /// Evaluates the Hamiltonian in a `([θ], [ψ/ψp]; Pζ, μ)` 2D grid.
+    /// Evaluates the Hamiltonian in a `([θ], [ψ]; Pζ, μ)` 2D grid.
     ///
     /// The `theta` and `flux` arrays do not need to have the same length. The produced grid has the form:
     ///
@@ -124,7 +124,7 @@ impl GCHamiltonian {
     /// `flux_array.kind() == Toroidal` then an extra evaluation is needed to calculate `ψp`.
     ///
     /// The only allocation that takes place is the allocation of the returned grid. No extra
-    /// allocations for the `(θ, ψ/ψp)` meshgrid are needed.
+    /// allocations for the `(θ, ψ)` meshgrid are needed.
     ///
     /// # Errors
     ///
@@ -156,12 +156,12 @@ impl GCHamiltonian {
     /// let mu = 1e-4;
     ///
     /// let theta_array = Array1::linspace(0.0, TAU, 20);
-    /// let psi_array = MagneticFluxArray::Toroidal(
-    ///     Array1::linspace(1e-3, 1.0 - 1e-3, 10) * qfactor.psi_last().value(),
+    /// let psit_array = MagneticFluxArray::Toroidal(
+    ///     Array1::linspace(1e-3, 1.0 - 1e-3, 10) * qfactor.psit_last().value(),
     /// );
     ///
     /// let energy_grid: Array2<f64> =
-    ///     GCHamiltonian::eval_grid(machine, &theta_array, &psi_array, pzeta, mu)?;
+    ///     GCHamiltonian::eval_grid(machine, &theta_array, &psit_array, pzeta, mu)?;
     /// # Ok::<_, COMError>(())
     /// ```
     ///
@@ -250,14 +250,14 @@ impl GCHamiltonian {
     /// // ===========
     ///
     /// let theta_array = Array1::linspace(0.0, TAU, 10);
-    /// let psi_array = MagneticFluxArray::Toroidal(
-    ///     Array1::linspace(1e-5, 1.0, 10) * machine.psi_last().value()
+    /// let psit_array = MagneticFluxArray::Toroidal(
+    ///     Array1::linspace(1e-5, 1.0, 10) * machine.psit_last().value()
     /// );
     /// let pzeta = -0.1 * machine.psip_last().value();
     /// let mu = 1e-4;
     ///
     /// let theta_dot =
-    ///     GCHamiltonian::eval_theta_dot_array(machine, &theta_array, &psi_array, pzeta, mu)?;
+    ///     GCHamiltonian::eval_theta_dot_array(machine, &theta_array, &psit_array, pzeta, mu)?;
     /// # Ok::<_, COMError>(())
     ///
     /// ```
@@ -340,10 +340,10 @@ mod test {
         let machine = MachineBuilder::new(&qfactor, &current, &bfield).build();
 
         let theta_array = arr1(&vec![-1.0, 1.0]);
-        let psi_array = MagneticFluxArray::Toroidal(array![0.01, 0.02]);
+        let psit_array = MagneticFluxArray::Toroidal(array![0.01, 0.02]);
 
         let hamiltonian_grid =
-            GCHamiltonian::eval_grid(machine, &theta_array, &psi_array, -0.03, 1e-4).unwrap();
+            GCHamiltonian::eval_grid(machine, &theta_array, &psit_array, -0.03, 1e-4).unwrap();
 
         let expected = arr2(&[
             [0.00026296256388989685, 0.00026296256388989685],
@@ -355,6 +355,7 @@ mod test {
     }
 
     #[test]
+    #[rustfmt::skip]
     fn toroidal_poloidal_equivalence() {
         let path = std::path::PathBuf::from(TEST_NETCDF_PATH);
         let qfactor = NcQfactorBuilder::new(&path, Steffen).build().unwrap();
@@ -366,47 +367,43 @@ mod test {
         let mu = 1e-4;
         // Avoid spline edges
         let theta_array = Array1::linspace(1e-3, TAU - 1e-3, 10);
-        let psi_array = MagneticFluxArray::Toroidal(
-            Array1::linspace(1e-3, 1.0 - 1e-3, 10) * qfactor.psi_last().value(),
+        let psit_array = MagneticFluxArray::Toroidal(
+            Array1::linspace(1e-3, 1.0 - 1e-3, 10) * qfactor.psit_last().value(),
         );
-        let psip_array = psi_array.to_other(&qfactor).unwrap();
+        let psip_array = psit_array.to_other(&qfactor).unwrap();
 
-        let hamiltonian_psi_array =
-            GCHamiltonian::eval_array(machine, &theta_array, &psi_array, pzeta, mu).unwrap();
-        let hamiltonian_psip_array =
-            GCHamiltonian::eval_array(machine, &theta_array, &psip_array, pzeta, mu).unwrap();
-        assert!(hamiltonian_psi_array.relative_eq(&hamiltonian_psip_array, 1e-7, 1e-7));
+        let hamiltonian_psit_array = GCHamiltonian::eval_array(machine, &theta_array, &psit_array, pzeta, mu).unwrap();
+        let hamiltonian_psip_array = GCHamiltonian::eval_array(machine, &theta_array, &psip_array, pzeta, mu).unwrap();
+        assert!(hamiltonian_psit_array.relative_eq(&hamiltonian_psip_array, 1e-7, 1e-7));
 
-        let psi_array = MagneticFluxArray::Toroidal(
-            Array1::linspace(1e-3, 1.0 - 1e-3, 20) * qfactor.psi_last().value(),
+        let psit_array = MagneticFluxArray::Toroidal(
+            Array1::linspace(1e-3, 1.0 - 1e-3, 20) * qfactor.psit_last().value(),
         );
-        let psip_array = psi_array.to_other(&qfactor).unwrap();
+        let psip_array = psit_array.to_other(&qfactor).unwrap();
 
-        let hamiltonian_psi_grid =
-            GCHamiltonian::eval_grid(machine, &theta_array, &psi_array, pzeta, mu).unwrap();
-        let hamiltonian_psip_grid =
-            GCHamiltonian::eval_grid(machine, &theta_array, &psip_array, pzeta, mu).unwrap();
-        assert!(hamiltonian_psi_grid.relative_eq(&hamiltonian_psip_grid, 1e-7, 1e-7));
+        let hamiltonian_psit_grid = GCHamiltonian::eval_grid(machine, &theta_array, &psit_array, pzeta, mu).unwrap();
+        let hamiltonian_psip_grid = GCHamiltonian::eval_grid(machine, &theta_array, &psip_array, pzeta, mu).unwrap();
+        assert!(hamiltonian_psit_grid.relative_eq(&hamiltonian_psip_grid, 1e-7, 1e-7));
     }
 
     /// Data taken from a particle integration at two random, but far away points.
     #[test]
+    #[rustfmt::skip]
     fn toroidal_theta_dot_particle_integration_check() {
         let geometry = LarGeometry::new(3.0, 1.75, 0.5);
-        let qfactor = ParabolicQfactor::new(1.1, 3.9, geometry.psi_last());
+        let qfactor = ParabolicQfactor::new(1.1, 3.9, geometry.psit_last());
         let current = LarCurrent;
         let bfield = LarBfield;
         let machine = MachineBuilder::new(&qfactor, &current, &bfield).build();
 
         let pzeta = -0.4 * machine.psip_last().value();
         let mu = 8e-5;
-        let psi_array =
-            MagneticFluxArray::Toroidal(array![0.0150416641300857, 0.024489797620614817]);
+        let psit_array = MagneticFluxArray::Toroidal(array![0.0150416641300857, 0.024489797620614817]);
         let theta_array = array![-1.5110542958752977, -0.00026883737083318703];
         let expected = array![0.0019260499850548007, 0.001795964125966984];
 
         let theta_dot =
-            GCHamiltonian::eval_theta_dot_array(machine, &theta_array, &psi_array, pzeta, mu)
+            GCHamiltonian::eval_theta_dot_array(machine, &theta_array, &psit_array, pzeta, mu)
                 .unwrap();
 
         assert!(theta_dot.relative_eq(&expected, 1e-8, 1e-8))
@@ -414,6 +411,7 @@ mod test {
 
     /// Data taken from a particle integration at two random, but far away points.
     #[test]
+    #[rustfmt::skip]
     fn poloidal_theta_dot_particle_integration_check() {
         let path = std::path::PathBuf::from(POLOIDAL_TEST_NETCDF_PATH);
         let qfactor = NcQfactorBuilder::new(&path, Steffen).build().unwrap();
@@ -423,8 +421,7 @@ mod test {
 
         let pzeta = -0.4 * machine.psip_last().value();
         let mu = 8e-5;
-        let psip_array =
-            MagneticFluxArray::Poloidal(array![0.27380535826052793, 0.29999997523064204]);
+        let psip_array = MagneticFluxArray::Poloidal(array![0.27380535826052793, 0.29999997523064204]);
         let theta_array = array![8.716612844125935, 25.13242757224653];
         let expected = array![0.10155540604265717, 0.032902288079255174];
 
@@ -437,9 +434,10 @@ mod test {
 
     /// Data taken from a particle integration at two random, but far away points.
     #[test]
+    #[rustfmt::skip]
     fn toroidal_theta_dot_with_efield_particle_integration_check() {
         let geometry = LarGeometry::new(1.0, 1.75, 0.5);
-        let lcfs = geometry.psi_last();
+        let lcfs = geometry.psit_last();
         let qfactor = ParabolicQfactor::new(1.1, 2.3, lcfs);
         let current = LarCurrent;
         let bfield = LarBfield;
@@ -454,13 +452,12 @@ mod test {
 
         let pzeta = -0.6 * machine.psip_last().value();
         let mu = 1e-4;
-        let psi_array =
-            MagneticFluxArray::Toroidal(array![0.0060339611482704445, 0.005714231256686681]);
+        let psit_array = MagneticFluxArray::Toroidal(array![0.0060339611482704445, 0.005714231256686681]);
         let theta_array = array![0.44352209173203894, 7.52938591323585e-5];
         let expected = array![-0.007135282034392367, -0.007768155477877859];
 
         let theta_dot =
-            GCHamiltonian::eval_theta_dot_array(machine, &theta_array, &psi_array, pzeta, mu)
+            GCHamiltonian::eval_theta_dot_array(machine, &theta_array, &psit_array, pzeta, mu)
                 .unwrap();
 
         assert!(theta_dot.relative_eq(&expected, 1e-7, 1e-7))
@@ -469,10 +466,10 @@ mod test {
     #[test]
     fn toroidal_theta_dot_array_and_single() {
         let geometry = LarGeometry::new(3.0, 1.75, 0.5);
-        let qfactor = ParabolicQfactor::new(1.1, 3.9, geometry.psi_last());
+        let qfactor = ParabolicQfactor::new(1.1, 3.9, geometry.psit_last());
         let current = LarCurrent;
         let bfield = LarBfield;
-        let lcfs = qfactor.psi_last();
+        let lcfs = qfactor.psit_last();
         let efield = GaussianEfield::new(5e-4, lcfs * 0.9, 0.02 * lcfs.value());
         let machine = MachineBuilder::new(&qfactor, &current, &bfield)
             .with_efield(&efield)
@@ -480,12 +477,12 @@ mod test {
 
         let pzeta = -0.4 * machine.psip_last().value();
         let mu = 8e-5;
-        let psi_values = Array1::linspace(1e-6, 0.999, 100) * machine.psi_last().value();
-        let psi_array = MagneticFluxArray::Toroidal(psi_values);
+        let psit_values = Array1::linspace(1e-6, 0.999, 100) * machine.psit_last().value();
+        let psit_array = MagneticFluxArray::Toroidal(psit_values);
         let theta_array = Array1::linspace(0.0, TAU, 100);
 
         let theta_dot_array =
-            GCHamiltonian::eval_theta_dot_array(machine, &theta_array, &psi_array, pzeta, mu)
+            GCHamiltonian::eval_theta_dot_array(machine, &theta_array, &psit_array, pzeta, mu)
                 .unwrap();
 
         theta_dot_array
@@ -493,7 +490,7 @@ mod test {
             .enumerate()
             .for_each(|(index, theta_dot)| {
                 let theta = theta_array[index];
-                let flux = psi_array.get(index).unwrap();
+                let flux = psit_array.get(index).unwrap();
                 let theta_dot_single =
                     GCHamiltonian::eval_theta_dot(machine, theta, flux, pzeta, mu).unwrap();
                 assert_eq!(theta_dot_single, *theta_dot);

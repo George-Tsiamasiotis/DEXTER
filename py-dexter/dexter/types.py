@@ -75,7 +75,7 @@ NetCDFVersion: TypeAlias = Version
 """The netCDF convention version (SemVer)."""
 
 MagneticFluxKind: TypeAlias = Literal["Toroidal", "Poloidal"]
-r"""Magnetic flux coordinates $\psi$ and $\psi_p$."""
+r"""Magnetic flux coordinates $\psi_t$ and $\psi_p$."""
 
 FluxCoordinateState: TypeAlias = Literal["Good", "Bad", "None"]
 """Flux coordinate state.
@@ -137,8 +137,7 @@ Bicubic Interpolation.
 """
 
 PhaseMethod: TypeAlias = (
-    Literal["Zero", "Average", "Resonance", "Interpolation"]
-    | tuple[Literal["Custom"], float]
+    Literal["Zero", "Average", "Interpolation"] | tuple[Literal["Custom"], float]
 )
 r""" Defines the calculation method of the phase $\phi$ in a Numerical Harmonic.
 
@@ -147,11 +146,6 @@ Corresponds to $\phi = 0$.
 
 # Average
 Corresponds to $\phi = const =$ the average of all the values of the `phase_array`.
-
-# Resonance
-Corresponds to $\phi = const =$ the value of $\phi$ at the resonance $m/n$. In the case that the
-resonance falls outside the last closed flux surface, or does not correspond to a valid q-factor
-value, it defaults to `Zero`.
 
 # Interpolation
 Interpolation over the `phase_array`.
@@ -250,9 +244,9 @@ CoordinateSet: TypeAlias = Literal[
 ]
 r""" The kind of InitialConditions set.
 
-    - `BoozerToroidal`: Initial conditions set in the $(t, \psi, \theta, \zeta, \rho, \mu)$ space.
+    - `BoozerToroidal`: Initial conditions set in the $(t, \psi_t, \theta, \zeta, \rho, \mu)$ space.
     - `BoozerPoloidal`: Initial conditions set in the $(t, \psi_p, \theta, \zeta, \rho, \mu)$ space.
-    - `MixedToroidal`: Initial conditions set in the $(t, P_\zeta, \psi, \theta, \zeta, \mu)$ space.
+    - `MixedToroidal`: Initial conditions set in the $(t, P_\zeta, \psi_t, \theta, \zeta, \mu)$ space.
     - `MixedPoloidal`: Initial conditions set in the $(t, P_\zeta, \psi_p, \theta, \zeta, \mu)$ space.
 """
 

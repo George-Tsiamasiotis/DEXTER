@@ -3,7 +3,7 @@ import dexter as dex
 import matplotlib.pyplot as plt
 
 geometry = dex.LarGeometry(1, 1.65, 0.5)
-LCFS = geometry.psi_last
+LCFS = geometry.psit_last
 machine = dex.Machine(
     geometry=geometry,
     qfactor=dex.ParabolicQfactor(qaxis=1.1, qlast=3.5, lcfs=LCFS),
@@ -13,7 +13,7 @@ machine = dex.Machine(
 
 strength = machine.quantity(750, "kiloVolt / meter").to("NormVolt / NormMeter").m
 rmean = 0.7 * geometry.rlast
-mean = dex.MagneticFlux.Toroidal(float(geometry.eval_psi_of_r(rmean)))
+mean = dex.MagneticFlux.Toroidal(float(geometry.eval_psit_of_r(rmean)))
 waist = LCFS.value * 0.1
 efield = dex.GaussianEfield(strength, mean, waist)
 machine.efield = efield
@@ -39,12 +39,12 @@ theta0s = np.concat(
         np.full(num3, np.pi),
     ),
 )
-psi0s = geometry.eval_psi_of_r(r0s)
-num = len(psi0s)
+psit0s = geometry.eval_psit_of_r(r0s)
+num = len(psit0s)
 
 initial_conditions = dex.QueueInitialConditions.Mixed(
     t0=np.zeros(num),
-    flux0=dex.MagneticFluxArray.Toroidal(psi0s),
+    flux0=dex.MagneticFluxArray.Toroidal(psit0s),
     theta0=theta0s,
     zeta0=np.zeros(num),
     pzeta0=np.full(num, -0.85 * machine.psip_last.value),

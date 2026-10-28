@@ -17,7 +17,7 @@ pub enum CriticalPointKind {
 pub struct CriticalPoint {
     /// The point's `θ` position.
     theta: f64,
-    /// The point's `ψ/ψp` position.
+    /// The point's `ψ` position.
     flux: MagneticFlux,
     /// The point's energy.
     energy: f64,
@@ -30,7 +30,7 @@ pub struct CriticalPoint {
 }
 
 impl CriticalPoint {
-    /// Creates a new `CriticalPoint` from its `(θ, ψ/ψp)` position and its constants `Pζ` and `μ`.
+    /// Creates a new `CriticalPoint` from its `(θ, ψ)` position and its constants `Pζ` and `μ`.
     ///
     /// The point's energy is calculated from the passed arguments.
     ///
@@ -76,7 +76,7 @@ impl CriticalPoint {
         self.theta
     }
 
-    /// Returns the point's `ψ/ψp` position.
+    /// Returns the point's `ψ` position.
     #[must_use]
     pub fn flux(&self) -> MagneticFlux {
         self.flux

@@ -5,7 +5,13 @@ Functions
 plot_evolution
     Plots the time evolution of a particle's dynamical variables.
 plot_poloidal_drift
-    Plots a particle's drift on the $R-Z$ plane, overlaid on a contour plot of the Hamiltonian.
+    Plots particles' drifts on the $R-Z$ plane.
+plot_pzeta_poincare
+    Plots a $P_\zeta-\theta$ or $P_\zeta-\zeta$ Poincare plot.
+plot_rz_poincare
+    Plots an $R-Z$ Poincare plot.
+orbit_color
+    Returns an orbit type's color string.
 """
 
 import warnings
@@ -71,7 +77,7 @@ def plot_evolution(
 
     fig = plt.figure(figsize=(9, 5), dpi=140)
     axes = fig.subplots(4, 2, sharex=True)
-    axpsi = axes[0, 0]
+    axpsit = axes[0, 0]
     axtheta = axes[1, 0]
     axptheta = axes[2, 0]
     axrho = axes[3, 0]
@@ -96,12 +102,12 @@ def plot_evolution(
         warnings.warn("Downsampling did not work..")
 
     t = t_array[::step]
-    psi = particle.psi_array[::step] / machine.psi_last.value
+    psit = particle.psit_array[::step] / machine.psit_last.value
     psip = particle.psip_array[::step] / machine.psip_last.value
     theta = particle.theta_array[::step]
     zeta = particle.zeta_array[::step]
     rho = particle.rho_array[::step]
-    ptheta = particle.ptheta_array[::step] / machine.psi_last.value
+    ptheta = particle.ptheta_array[::step] / machine.psit_last.value
     pzeta = particle.pzeta_array[::step] / particle.initial_conditions.pzeta0 - 1
     energy = particle.energy_array[::step] / particle.initial_energy - 1
 
@@ -114,7 +120,7 @@ def plot_evolution(
 
     PLOT_KW = dict(linewidth=0, marker=".", markersize=2)
 
-    axpsi.plot(t, psi, c=FLUX_COLOR, **PLOT_KW)
+    axpsit.plot(t, psit, c=FLUX_COLOR, **PLOT_KW)
     axpsip.plot(t, psip, c=FLUX_COLOR, **PLOT_KW)
     axtheta.plot(t, theta, c=ANGLE_COLOR, **PLOT_KW)
     axzeta.plot(t, zeta, c=ANGLE_COLOR, **PLOT_KW)
@@ -150,9 +156,9 @@ def plot_evolution(
         axrho.set_xlabel(rf"$t\ [Normalized]$")
         axenergy.set_xlabel(rf"$t\ [Normalized]$")
 
-    axpsi.set_ylabel(r"$\psi(t)/\psi_{LCFS}$", **LEFT_LABEL_KW)
+    axpsit.set_ylabel(r"$\psi_t(t)/\psi_{t,LCFS}$", **LEFT_LABEL_KW)
     axtheta.set_ylabel(r"$\theta(t)\ [rad]$", **LEFT_LABEL_KW)
-    axptheta.set_ylabel(r"$P_\theta(t)/\psi_{LCFS}$", **LEFT_LABEL_KW)
+    axptheta.set_ylabel(r"$P_\theta(t)/\psi_{t,LCFS}$", **LEFT_LABEL_KW)
     axrho.set_ylabel(r"$\rho_{||}(t)\ [Normalized]$", **LEFT_LABEL_KW)
     axpsip.set_ylabel(r"$\psi_p(t)/\psi_{p,LCFS}$", **RIGHT_LABEL_KW)
     axzeta.set_ylabel(r"$\zeta(t)\ [rad]$", **RIGHT_LABEL_KW)
@@ -176,9 +182,11 @@ def plot_poloidal_drift(
     mask: float | None = None,
     show: bool = True,
 ) -> tuple[Figure, Axes]:
-    r"""Plots a particle's drift on the $R-Z$ plane, overlaid on a contour plot of the Hamiltonian.
+    r"""Plots particles' drifts on the $R-Z$ plane, overlaid on a contour plot of the Hamiltonian.
 
     If a single particle is passed, an extra bold contour line is drawn at its energy level.
+
+    The contour of the Hamiltonian is only plotted if all passed particles have the same $P_\zeta$ and $\mu$.
 
     Parameters
     ----------
@@ -188,7 +196,7 @@ def plot_poloidal_drift(
     obj
         The Particle or Queue containing the particles.
     array_shape
-        The shape of the $(r, \theta)$ array on which to calculate the contour lines.
+        The shape of the $(r/\psi, \theta)$ array on which to calculate the contour lines.
     colors
         The coloring method for each particle's orbit. `'Orbit'` colors each point depending on
         its orbit type, as calculated from the [`classify`][dexter.Particle.classify] routine. `'Cycle'`
@@ -230,7 +238,7 @@ def plot_poloidal_drift(
     flux = _resolve_magnetic_flux_kind(machine.bfield, "Toroidal")
 
     if flux == "Toroidal":
-        flux_arg_name = "psi"
+        flux_arg_name = "psit"
     else:
         flux_arg_name = "psip"
 
@@ -253,7 +261,7 @@ def plot_poloidal_drift(
         if particle.steps_stored == 0:
             continue
         if flux == "Toroidal":
-            particle_flux_array = particle.psi_array
+            particle_flux_array = particle.psit_array
         else:
             particle_flux_array = particle.psip_array
         particle_eval_arg = {
@@ -298,7 +306,7 @@ def plot_poloidal_drift(
     if np.all(pzetas == pzetas[0]) and np.all(mus == mus[0]):
 
         if flux == "Toroidal":
-            eval_flux_of_r_function = geometry.eval_psi_of_r
+            eval_flux_of_r_function = geometry.eval_psit_of_r
             flux_array_constructor = MagneticFluxArray.Toroidal
         else:
             eval_flux_of_r_function = geometry.eval_psip_of_r
@@ -311,7 +319,7 @@ def plot_poloidal_drift(
             flux_values = eval_flux_of_r_function(r_array)
             flux_array: MagneticFluxArray = flux_array_constructor(flux_values)
         except:
-            flux_values = np.linspace(1e-8, machine.psi_last.value, array_shape[1])
+            flux_values = np.linspace(1e-8, machine.psit_last.value, array_shape[1])
             flux_array = flux_array_constructor(flux_values)
         theta_array = np.linspace(0, TAU, array_shape[0])
         theta_grid, flux_grid = np.meshgrid(
@@ -528,8 +536,8 @@ def plot_rz_poincare(
         if p.steps_stored == 0:
             continue
         theta_array = p.theta_array % TAU
-        if machine.qfactor.psi_state == "Good":
-            eval_arg = {"psi": p.psi_array, "theta": theta_array}
+        if machine.qfactor.psit_state == "Good":
+            eval_arg = {"psit": p.psit_array, "theta": theta_array}
         else:
             eval_arg = {"psip": p.psip_array, "theta": theta_array}
         rlab_array = machine.geometry.eval_rlab(**eval_arg)
@@ -572,7 +580,7 @@ def plot_rz_poincare(
 
 
 def orbit_color(orbit_type: OrbitType) -> str:
-    r"""Returns each orbit type's color string.
+    r"""Returns an orbit type's color string.
 
     Helps with being consistent with the coloring on different plots.
     """

@@ -15,7 +15,7 @@ use crate::{InitialConditions, MagneticFlux, MagneticFlux::*, SimulationError};
 /// Stores all the intermediate values needed for the calculation of the final time derivatives.
 ///
 /// Corresponds to a single specific point in configuration space, e.g. all values are calculated
-/// at the same (t, ψ, θ, ζ, ρ, μ), or (t, ψp, θ, ζ, ρ, μ) point, depending on the value of the
+/// at the same (t, ψt, θ, ζ, ρ, μ), or (t, ψp, θ, ζ, ρ, μ) point, depending on the value of the
 /// `coordinate` field.
 #[derive(Debug, Clone)]
 #[expect(clippy::min_ident_chars, reason = "symbols in the Hamiltonian")]
@@ -25,7 +25,7 @@ pub(crate) struct GCState {
     pub(crate) t: f64,
 
     // Dynamic variables
-    pub(crate) psi: MagneticFlux,
+    pub(crate) psit: MagneticFlux,
     pub(crate) psip: MagneticFlux,
     pub(crate) theta: f64,
     pub(crate) zeta: f64,
@@ -33,7 +33,7 @@ pub(crate) struct GCState {
     pub(crate) mu: f64,
 
     // Final time derivatives
-    pub(crate) psi_dot: f64,
+    pub(crate) psit_dot: f64,
     pub(crate) psip_dot: f64,
     pub(crate) theta_dot: f64,
     pub(crate) zeta_dot: f64,
@@ -77,11 +77,11 @@ pub(crate) struct GCState {
 
     /// The intermediate value (μ + ρ^2Β).
     mu_par: f64,
-    /// The intermediate value [dψ or dψp derivatives].
+    /// The intermediate value [dψ derivatives].
     dflux_brace: f64,
-    /// The intermediate value [theta derivatives].
+    /// The intermediate value [dtheta derivatives].
     dtheta_brace: f64,
-    /// The intermediate value [zeta derivatives].
+    /// The intermediate value [dzeta derivatives].
     dzeta_brace: f64,
     /// The intermediate value ρ*B^2/D.
     rho_bsquared_d: f64,
@@ -99,27 +99,27 @@ impl GCState {
         machine: Machine,
         caches: &mut IntegrationCaches,
     ) -> Result<Self, SimulationError> {
-        let (psi, psip): (MagneticFlux, MagneticFlux);
+        let (psit, psip): (MagneticFlux, MagneticFlux);
         let coordinate = match initial.flux0 {
             Toroidal(_) => {
-                psi = initial.flux0;
+                psit = initial.flux0;
                 psip = Poloidal(f64::NAN);
                 IntegrationCoordinate::Toroidal
             }
             Poloidal(_) => {
-                psi = Toroidal(f64::NAN);
+                psit = Toroidal(f64::NAN);
                 psip = initial.flux0;
                 IntegrationCoordinate::Poloidal
             }
         };
-        let Some(rho0) = initial.rho0 else {
+        let Some(rho) = initial.rho0 else {
             unreachable!("rho0 must be initialized at this point")
         };
         Self {
             t: initial.t0,
-            psi,
+            psit,
             psip,
-            rho: rho0,
+            rho,
             theta: initial.theta0,
             zeta: initial.zeta0,
             mu: initial.mu0,
@@ -180,7 +180,7 @@ impl GCState {
     /// performed.
     fn flux(&self) -> &MagneticFlux {
         match self.coordinate {
-            IntegrationCoordinate::Toroidal => &self.psi,
+            IntegrationCoordinate::Toroidal => &self.psit,
             IntegrationCoordinate::Poloidal => &self.psip,
         }
     }
@@ -194,7 +194,7 @@ impl GCState {
     /// the integration is performed.
     pub(crate) fn flux_value_mut(&mut self) -> &mut f64 {
         match self.coordinate {
-            IntegrationCoordinate::Toroidal => self.psi.value_mut(),
+            IntegrationCoordinate::Toroidal => self.psit.value_mut(),
             IntegrationCoordinate::Poloidal => self.psip.value_mut(),
         }
     }
@@ -204,7 +204,7 @@ impl GCState {
     fn other(&mut self) -> &mut MagneticFlux {
         match self.coordinate {
             IntegrationCoordinate::Toroidal => &mut self.psip,
-            IntegrationCoordinate::Poloidal => &mut self.psi,
+            IntegrationCoordinate::Poloidal => &mut self.psit,
         }
     }
 }
@@ -300,18 +300,18 @@ impl GCState {
         Ok(())
     }
 
-    /// Since we are solving White's equations of motion, which are expressed through (ψp, θ, ζ, ρ),
-    /// to integrate with respect to `ψ` we must apply the chain rule wherever derivatives with
-    /// respect to `ψp` appear, in order to obtain the derivatives with respect to `ψ`. This results
+    /// Since we are solving the equations of motion as expressed through (ψp, θ, ζ, ρ),
+    /// to integrate with respect to `ψt` we must apply the chain rule wherever derivatives with
+    /// respect to `ψp` appear, in order to obtain the derivatives with respect to `ψt`. This results
     /// to a multiplication with `q`, for which we adjust here.
     ///
     /// Chain rule:
-    ///     dF/dψp = dF/dψ * dψ/dψp = q * dF/dψ.
+    ///     dF/dψp = dF/dψt * dψt/dψp = q * dF/dψt.
     ///
     /// Still, the final expression of `flux_dot` is actually `psip_dot`, since this adjustment
     /// simply calculates the correct derivatives at the current point in the configuration space.
     /// Therefore, using the chain rule, we must also multiply the final `flux_dot` with `q` to
-    /// obtain `psi_dot`.
+    /// obtain `psit_dot`.
     fn adjust_for_flux(&mut self) {
         if self.coordinate == IntegrationCoordinate::Toroidal {
             self.dg_dflux *= self.q;
@@ -323,7 +323,7 @@ impl GCState {
     }
 
     fn calculate_canonical_momenta(&mut self) {
-        self.ptheta = self.psi.value() + self.rho * self.i;
+        self.ptheta = self.psit.value() + self.rho * self.i;
         self.pzeta = self.rho * self.g - self.psip.value();
     }
 
@@ -336,19 +336,19 @@ impl GCState {
     /// Calculates the matrix coefficients denoted with capital letters that appear in the
     /// perturbed equations of motion.
     ///
-    /// If `ψ` is the coordinate, we must apply the chainrule in all g, I, p derivatives (with
+    /// If `ψt` is the coordinate, we must apply the chainrule in all g, I, p derivatives (with
     /// respect to `ψp`), which results in multiplying them with q.
     fn calculate_capitals(&mut self) {
         self.fterm = self.q + (self.rho + self.p) * self.di_dflux + self.i * self.dp_dflux;
-        self.fterm -= self.q * self.rho * self.ddelta_dtheta; // δ term
+        self.fterm -= self.q * self.rho * self.ddelta_dtheta;
 
         self.cterm = -1.0 + (self.rho + self.p) * self.dg_dflux + self.g * self.dp_dflux;
-        self.cterm -= self.q * self.rho * self.ddelta_dzeta; // δ term
+        self.cterm -= self.q * self.rho * self.ddelta_dzeta;
 
         self.kterm = self.g * self.dp_dtheta - self.i * self.dp_dzeta; // same without δ
 
         self.dterm = self.g * self.fterm - self.i * self.cterm;
-        self.dterm += self.delta * self.q * self.kterm; // δ term
+        self.dterm += self.delta * self.q * self.kterm;
     }
 
     /// Calculates (μ + ρ^2B).
@@ -387,7 +387,7 @@ impl GCState {
     fn calculate_flux_dots(&mut self) {
         let flux_dot = self.kterm * self.rho_bsquared_d - self.g_over_d * self.dtheta_brace
             + self.i_over_d * self.dzeta_brace;
-        self.psi_dot = flux_dot * self.q;
+        self.psit_dot = flux_dot * self.q;
         self.psip_dot = flux_dot;
     }
 
@@ -420,7 +420,7 @@ impl GCState {
     pub(crate) fn dots(&self) -> [f64; 5] {
         [
             match self.coordinate {
-                IntegrationCoordinate::Toroidal => self.psi_dot,
+                IntegrationCoordinate::Toroidal => self.psit_dot,
                 IntegrationCoordinate::Poloidal => self.psip_dot,
             },
             self.theta_dot,
@@ -439,13 +439,13 @@ impl Default for GCState {
         Self {
             coordinate: Default::default(),
             t: f64::NAN,
-            psi: Toroidal(f64::NAN),
+            psit: Toroidal(f64::NAN),
             psip: Poloidal(f64::NAN),
             theta: f64::NAN,
             zeta: f64::NAN,
             rho: f64::NAN,
             mu: f64::NAN,
-            psi_dot: f64::NAN,
+            psit_dot: f64::NAN,
             psip_dot: f64::NAN,
             theta_dot: f64::NAN,
             zeta_dot: f64::NAN,

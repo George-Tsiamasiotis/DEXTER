@@ -111,9 +111,9 @@ impl Queue {
     /// Initial conditions in Mixed coordinates.
     /// ```
     /// # use dexter_simulate::*;
-    /// let psi0 = MagneticFlux::Toroidal(0.02);
-    /// let initial1 = InitialConditions::mixed(0.0, psi0, 1.0, 0.0, 0.0, 0.0);
-    /// let initial2 = InitialConditions::mixed(0.0, psi0, 2.0, 0.0, 0.1, 0.0);
+    /// let psit0 = MagneticFlux::Toroidal(0.02);
+    /// let initial1 = InitialConditions::mixed(0.0, psit0, 1.0, 0.0, 0.0, 0.0);
+    /// let initial2 = InitialConditions::mixed(0.0, psit0, 2.0, 0.0, 0.1, 0.0);
     /// let particle1 = Particle::new(&initial1);
     /// let particle2 = Particle::new(&initial2);
     ///
@@ -156,7 +156,7 @@ impl Queue {
     /// #
     /// let path = PathBuf::from("./netcdf.nc");
     /// let qfactor = NcQfactorBuilder::new(&path, Akima).build()?;
-    /// let lcfs = qfactor.psi_last();
+    /// let lcfs = qfactor.psit_last();
     /// let current = NcCurrentBuilder::new(&path, Akima).build()?;
     /// let bfield = NcBfieldBuilder::new(&path, Bicubic).build()?;
     /// let perturbation = Perturbation::new(vec![
@@ -168,10 +168,10 @@ impl Queue {
     ///     .with_perturbation(&perturbation)
     ///     .build();
     ///
-    /// let psi0s = MagneticFluxArray::Toroidal(array![0.15, 0.3]);
+    /// let psit0s = MagneticFluxArray::Toroidal(array![0.15, 0.3]);
     /// let initial_conditions = QueueInitialConditions::boozer(
     ///     &[0.0, 0.1],
-    ///     &psi0s,
+    ///     &psit0s,
     ///     &[0.0, 0.1],
     ///     &[0.0, 0.0],
     ///     &[1e-4, 2e-4],
@@ -222,10 +222,10 @@ impl Queue {
     ///     .with_perturbation(&perturbation)
     ///     .build();
     ///
-    /// let psi0s = MagneticFluxArray::Toroidal(array![0.15, 0.3]);
+    /// let psit0s = MagneticFluxArray::Toroidal(array![0.15, 0.3]);
     /// let initial_conditions = QueueInitialConditions::boozer(
     ///     &[0.0, 0.1],
-    ///     &psi0s,
+    ///     &psit0s,
     ///     &[0.0, 0.1],
     ///     &[0.0, 0.0],
     ///     &[1e-4, 2e-4],
@@ -408,7 +408,7 @@ impl Queue {
     /// ```
     #[expect(clippy::float_cmp, reason = "we need bit-to-bit equivalence")]
     pub fn classify_common_mu(&mut self, machine: Machine) {
-        let mus = self.initial_conditions.mu_array_view();
+        let mus = self.initial_conditions.mu_array();
         let mu = mus
             .first()
             .expect("Queue cannot be instantiated with empty arrays");

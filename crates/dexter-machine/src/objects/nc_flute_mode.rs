@@ -152,9 +152,8 @@ impl NcFluteModeBuilder {
 
 /// Single perturbation flute mode from a netCDF file.
 ///
-/// The mode has the form of `α(ψ/ψp) * cos(mθ-nζ+φ(ψ/ψp))`, where `α` and `φ` can be expressed
-/// as functions of either or both `ψ`, `ψp`, and are calculated by interpolation over the
-/// numerical data.
+/// The mode has the form of `α(ψ) * cos(mθ-nζ+φ(ψ))`, where `α` and `φ` can be expressed as
+/// functions of either `ψt` or `ψp`, and are calculated by interpolation over the numerical data.
 ///
 /// `φ` calculation can be further configured with the [`PhaseMethod`] helper struct.
 ///
@@ -174,8 +173,8 @@ pub struct NcFluteMode {
     /// The modes's toroidal mode number `n`.
     n: i64,
 
-    /// The mode as a function of `ψ`.
-    psi_single: SingleNcFluteMode,
+    /// The mode as a function of `ψt`.
+    psit_single: SingleNcFluteMode,
     /// The mode as a function of `ψp`.
     psip_single: SingleNcFluteMode,
 }
@@ -191,10 +190,10 @@ impl NcFluteMode {
         let file = extract::open(&path)?;
         let netcdf_version = extract::version(&file)?;
 
-        let psi = NcFlux::toroidal(&file);
+        let psit = NcFlux::toroidal(&file);
         let psip = NcFlux::poloidal(&file);
 
-        let psi_single = SingleNcFluteMode::build(&file, &builder, psi)?;
+        let psit_single = SingleNcFluteMode::build(&file, &builder, psit)?;
         let psip_single = SingleNcFluteMode::build(&file, &builder, psip)?;
 
         Ok(Self {
@@ -203,7 +202,7 @@ impl NcFluteMode {
             interp_type: builder.interp_type,
             m: builder.m,
             n: builder.n,
-            psi_single,
+            psit_single,
             psip_single,
         })
     }
@@ -224,8 +223,8 @@ impl MachineObject for NcFluteMode {
         MachineType::Numerical
     }
 
-    fn psi_state(&self) -> FluxCoordinateState {
-        self.psi_single.flux.state()
+    fn psit_state(&self) -> FluxCoordinateState {
+        self.psit_single.flux.state()
     }
 
     fn psip_state(&self) -> FluxCoordinateState {
@@ -241,12 +240,12 @@ impl std::fmt::Debug for NcFluteMode {
             .field("interpolation type", &self.interp_type())
             .field("m", &self.m)
             .field("n", &self.n)
-            .field("psi single", &self.psi_single)
-            .field("psip single", &self.psip_single)
-            .field("phase method", &self.psi_single.phase_method)
+            .field("ψt single", &self.psit_single)
+            .field("ψp single", &self.psip_single)
+            .field("phase method", &self.psit_single.phase_method)
             .field(
                 "analytical threshold index",
-                &self.psi_single.analytical_threshold_index,
+                &self.psit_single.analytical_threshold_index,
             )
             .finish()
     }
@@ -329,7 +328,7 @@ impl ModeCache for NcFluteModeCache {
     mode_cache_getters_impl!(NcFluteModeCache);
 }
 
-// Perform psi/psip debug assertions here since he have the extra information about the flux.
+// Perform ψ debug assertions here since he have the extra information about the flux.
 impl Mode for NcFluteMode {
     fn m(&self) -> i64 {
         self.m
@@ -357,9 +356,9 @@ impl Mode for NcFluteMode {
     ) -> Result<f64, EvalError> {
         debug_assert_non_negative_flux!(flux);
         match flux {
-            Toroidal(psi) => {
-                Self::check_if_defined(&self.psi_single.flux.state(), "α(ψ)")?;
-                self.psi_single.alpha(psi, theta, zeta, t, cache)
+            Toroidal(psit) => {
+                Self::check_if_defined(&self.psit_single.flux.state(), "α(ψt)")?;
+                self.psit_single.alpha(psit, theta, zeta, t, cache)
             }
             Poloidal(psip) => {
                 Self::check_if_defined(&self.psip_single.flux.state(), "α(ψp)")?;
@@ -378,9 +377,9 @@ impl Mode for NcFluteMode {
     ) -> Result<f64, EvalError> {
         debug_assert_non_negative_flux!(flux);
         match flux {
-            Toroidal(psi) => {
-                Self::check_if_defined(&self.psi_single.flux.state(), "φ(ψ)")?;
-                self.psi_single.phase(psi, theta, zeta, t, cache)
+            Toroidal(psit) => {
+                Self::check_if_defined(&self.psit_single.flux.state(), "φ(ψt)")?;
+                self.psit_single.phase(psit, theta, zeta, t, cache)
             }
             Poloidal(psip) => {
                 Self::check_if_defined(&self.psip_single.flux.state(), "φ(ψp)")?;
@@ -399,9 +398,9 @@ impl Mode for NcFluteMode {
     ) -> Result<f64, EvalError> {
         debug_assert_non_negative_flux!(flux);
         match flux {
-            Toroidal(psi) => {
-                Self::check_if_defined(&self.psi_single.flux.state(), "m(ψ, θ, ζ, t)")?;
-                self.psi_single.m(psi, theta, zeta, t, cache)
+            Toroidal(psit) => {
+                Self::check_if_defined(&self.psit_single.flux.state(), "m(ψt, θ, ζ, t)")?;
+                self.psit_single.m(psit, theta, zeta, t, cache)
             }
             Poloidal(psip) => {
                 Self::check_if_defined(&self.psip_single.flux.state(), "m(ψp, θ, ζ, t)")?;
@@ -420,9 +419,9 @@ impl Mode for NcFluteMode {
     ) -> Result<f64, EvalError> {
         debug_assert_non_negative_flux!(flux);
         match flux {
-            Toroidal(psi) => {
-                Self::check_if_defined(&self.psi_single.flux.state(), "dm(ψ, θ, ζ, t)/dψ")?;
-                self.psi_single.dm_dflux(psi, theta, zeta, t, cache)
+            Toroidal(psit) => {
+                Self::check_if_defined(&self.psit_single.flux.state(), "dm(ψt, θ, ζ, t)/dψ")?;
+                self.psit_single.dm_dflux(psit, theta, zeta, t, cache)
             }
             Poloidal(psip) => {
                 Self::check_if_defined(&self.psip_single.flux.state(), "dm(ψp, θ, ζ, t)/dψp")?;
@@ -441,9 +440,9 @@ impl Mode for NcFluteMode {
     ) -> Result<f64, EvalError> {
         debug_assert_non_negative_flux!(flux);
         match flux {
-            Toroidal(psi) => {
-                Self::check_if_defined(&self.psi_single.flux.state(), "dm(ψ, θ, ζ, t)/dθ")?;
-                self.psi_single.dm_dtheta(psi, theta, zeta, t, cache)
+            Toroidal(psit) => {
+                Self::check_if_defined(&self.psit_single.flux.state(), "dm(ψt, θ, ζ, t)/dθ")?;
+                self.psit_single.dm_dtheta(psit, theta, zeta, t, cache)
             }
             Poloidal(psip) => {
                 Self::check_if_defined(&self.psip_single.flux.state(), "dm(ψp, θ, ζ, t)/dθ")?;
@@ -462,9 +461,9 @@ impl Mode for NcFluteMode {
     ) -> Result<f64, EvalError> {
         debug_assert_non_negative_flux!(flux);
         match flux {
-            Toroidal(psi) => {
-                Self::check_if_defined(&self.psi_single.flux.state(), "dm(ψ, θ, ζ, t)/dζ")?;
-                self.psi_single.dm_dzeta(psi, theta, zeta, t, cache)
+            Toroidal(psit) => {
+                Self::check_if_defined(&self.psit_single.flux.state(), "dm(ψt, θ, ζ, t)/dζ")?;
+                self.psit_single.dm_dzeta(psit, theta, zeta, t, cache)
             }
             Poloidal(psip) => {
                 Self::check_if_defined(&self.psip_single.flux.state(), "dm(ψp, θ, ζ, t)/dζ")?;
@@ -497,49 +496,43 @@ impl NcFluteMode {
     /// Both flux coordinates have the same [`PhaseMethod`].
     #[must_use]
     pub fn phase_method(&self) -> PhaseMethod {
-        self.psi_single.phase_method.clone()
+        self.psit_single.phase_method.clone()
     }
 
     /// Returns the average value of the phase arrays, if [`PhaseMethod`] is `Average`.
     #[must_use]
     pub fn phase_average(&self) -> Option<f64> {
-        self.psi_single.phase_average
+        self.psit_single.phase_average
     }
 
-    /// Returns the toroidal flux's values as a 1D array, if they exist.
+    /// Returns a reference to the toroidal flux's values, if they exist.
     #[must_use]
-    pub fn psi_array(&self) -> Option<Array1<f64>> {
-        self.psi_single
-            .flux
-            .values()
-            .map(|values| Array1::from(Vec::from(values)))
+    pub fn psit_values(&self) -> Option<&[f64]> {
+        self.psit_single.flux.values()
     }
-    /// Returns the poloidal flux's values as a 1D array, if they exist.
+    /// Returns a reference to the poloidal flux's values, if they exist.
     #[must_use]
-    pub fn psip_array(&self) -> Option<Array1<f64>> {
-        self.psip_single
-            .flux
-            .values()
-            .map(|values| Array1::from(Vec::from(values)))
+    pub fn psip_values(&self) -> Option<&[f64]> {
+        self.psip_single.flux.values()
     }
 
-    /// Returns the `α` values as a 1D array.
+    /// Returns a reference to the the `α` values.
     #[must_use]
-    pub fn alpha_array(&self) -> Array1<f64> {
-        Array1::from(self.psi_single.alpha_values.clone())
+    pub fn alpha_values(&self) -> &[f64] {
+        &self.psit_single.alpha_values
     }
 
-    /// Returns the `φ` values as a 1D array.
+    /// Returns a reference to the the `φ` values.
     #[must_use]
-    pub fn phase_array(&self) -> Array1<f64> {
-        Array1::from(self.psi_single.phase_values.clone())
+    pub fn phase_values(&self) -> &[f64] {
+        &self.psit_single.phase_values
     }
 
     /// Returns the index of the analytical threshold.
     #[must_use]
     pub fn analytical_threshold_index(&self) -> usize {
         // This exists in both single modes
-        self.psi_single.analytical_threshold_index
+        self.psit_single.analytical_threshold_index
     }
 }
 
@@ -574,9 +567,9 @@ struct SingleNcFluteMode {
     alpha_values: Box<[f64]>,
     /// The phase values.
     phase_values: Box<[f64]>,
-    /// The `α(flux)` interpolator.
+    /// The `α(ψ)` interpolator.
     alpha_interp: Option<DynInterpolator>,
-    /// The `φ(flux)` interpolator.
+    /// The `φ(ψ)` interpolator.
     phase_interp: Option<DynInterpolator>,
 }
 
@@ -720,11 +713,11 @@ impl SingleNcFluteMode {
         } else {
             cache.cache()[3] = match self.alpha_interp.as_ref() {
                 Some(interp) => interp.eval(self.flux.uvalues(), &self.alpha_values, flux, cache.acc().expect("has"))?,
-                None => return Err(EvalError::UndefinedEvaluation("α(flux)".into())),
+                None => return Err(EvalError::UndefinedEvaluation("α(ψ)".into())),
             };
             cache.cache()[4] = match self.alpha_interp.as_ref() {
                 Some(interp) => interp.eval_deriv(self.flux.uvalues(), &self.alpha_values, flux, cache.acc().expect("has"))?,
-                None => return Err(EvalError::UndefinedEvaluation("da(flux)/dflux".into())),
+                None => return Err(EvalError::UndefinedEvaluation("da(ψ)/dψ".into())),
             };
         }
 
@@ -735,7 +728,7 @@ impl SingleNcFluteMode {
             PhaseMethod::Interpolation => {
                 match self.phase_interp.as_ref() {
                     Some(interp) => interp.eval(self.flux.uvalues(), &self.phase_values, flux, cache.acc().expect("has"))?,
-                    None => return Err(EvalError::UndefinedEvaluation("φ(flux)".into())),
+                    None => return Err(EvalError::UndefinedEvaluation("φ(ψ)".into())),
                 }
             }
         };
@@ -743,7 +736,7 @@ impl SingleNcFluteMode {
             PhaseMethod::Interpolation => {
                 match self.phase_interp.as_ref() {
                     Some(interp) => interp.eval_deriv(self.flux.uvalues(), &self.phase_values, flux, cache.acc().expect("has"))?,
-                    None => return Err(EvalError::UndefinedEvaluation("φ(flux)".into())),
+                    None => return Err(EvalError::UndefinedEvaluation("φ(ψ)".into())),
                 }
             }
             _ => 0.0,
@@ -915,7 +908,7 @@ mod phase_methods {
         let c = &mut mode.generate_cache();
 
         assert!(matches!(mode.phase_method(), Zero));
-        assert!(mode.psi_single.phase_average.is_none());
+        assert!(mode.psit_single.phase_average.is_none());
 
         assert_eq!(
             mode.eval_phase(Toroidal(0.01), 0.1, 0.1, 0.0, c).unwrap(),
@@ -936,10 +929,10 @@ mod phase_methods {
             .unwrap();
         let c = &mut mode.generate_cache();
 
-        let expected = mode.phase_array().mean().unwrap();
+        let expected = Array1::from(mode.phase_values().to_vec()).mean().unwrap();
 
         assert!(matches!(mode.phase_method(), Average));
-        assert!(mode.psi_single.phase_average.is_some());
+        assert!(mode.psit_single.phase_average.is_some());
 
         assert_eq!(
             mode.eval_phase(Toroidal(0.01), 0.1, 0.1, 0.0, c).unwrap(),
@@ -964,7 +957,7 @@ mod phase_methods {
         let expected = 0.8414720460746888;
 
         assert!(matches!(mode.phase_method(), Interpolation));
-        assert!(mode.psi_single.phase_average.is_none());
+        assert!(mode.psit_single.phase_average.is_none());
 
         assert_relative_eq!(
             mode.eval_phase(Poloidal(0.1), 0.1, 0.1, 0.1, c).unwrap(),
@@ -983,7 +976,7 @@ mod phase_methods {
         let c = &mut mode.generate_cache();
 
         assert!(matches!(mode.phase_method(), Custom(10.0)));
-        assert!(mode.psi_single.phase_average.is_none());
+        assert!(mode.psit_single.phase_average.is_none());
 
         assert_eq!(
             mode.eval_phase(Toroidal(0.01), 0.1, 0.1, 0.0, c).unwrap(),
@@ -1006,30 +999,30 @@ mod test_toroidal_nc_evals {
     #[test]
     fn flux_and_interp_states() {
         let mode = create_nc_flute_mode(TOROIDAL_TEST_NETCDF_PATH);
-        assert_eq!(mode.psi_state(), FluxCoordinateState::Good);
+        assert_eq!(mode.psit_state(), FluxCoordinateState::Good);
         assert_eq!(mode.psip_state(), FluxCoordinateState::Bad);
-        assert!(mode.psi_single.alpha_interp.is_some());
-        assert!(mode.psi_single.phase_interp.is_some());
+        assert!(mode.psit_single.alpha_interp.is_some());
+        assert!(mode.psit_single.phase_interp.is_some());
         assert!(mode.psip_single.alpha_interp.is_none());
         assert!(mode.psip_single.phase_interp.is_none());
 
-        assert!(mode.psi_array().is_some());
-        assert!(mode.psip_array().is_some());
+        assert!(mode.psit_values().is_some());
+        assert!(mode.psip_values().is_some());
     }
 
     #[test]
     #[rustfmt::skip]
-    fn good_psi_evals() {
+    fn good_psit_evals() {
         let mode = create_nc_flute_mode(TOROIDAL_TEST_NETCDF_PATH);
         let c = &mut mode.generate_cache();
-        let psi = Toroidal(0.1);
-        assert!(mode.eval_amplitude(psi, 0.1, 0.1, 0.1, c).unwrap().is_finite());
-        assert!(mode.eval_phase(psi, 0.1, 0.1, 0.1, c).unwrap().is_finite());
-        assert!(mode.eval_m(psi, 0.1, 0.1, 0.1, c).unwrap().is_finite());
-        assert!(mode.eval_deriv_flux(psi, 0.1, 0.1, 0.1, c).unwrap().is_finite());
-        assert!(mode.eval_deriv_theta(psi, 0.1, 0.1, 0.1, c).unwrap().is_finite());
-        assert!(mode.eval_deriv_zeta(psi, 0.1, 0.1, 0.1, c).unwrap().is_finite());
-        assert!(mode.eval_deriv_t(psi, 0.1, 0.1, 0.1, c).unwrap().is_finite());
+        let flux = Toroidal(0.1);
+        assert!(mode.eval_amplitude(flux, 0.1, 0.1, 0.1, c).unwrap().is_finite());
+        assert!(mode.eval_phase(flux, 0.1, 0.1, 0.1, c).unwrap().is_finite());
+        assert!(mode.eval_m(flux, 0.1, 0.1, 0.1, c).unwrap().is_finite());
+        assert!(mode.eval_deriv_flux(flux, 0.1, 0.1, 0.1, c).unwrap().is_finite());
+        assert!(mode.eval_deriv_theta(flux, 0.1, 0.1, 0.1, c).unwrap().is_finite());
+        assert!(mode.eval_deriv_zeta(flux, 0.1, 0.1, 0.1, c).unwrap().is_finite());
+        assert!(mode.eval_deriv_t(flux, 0.1, 0.1, 0.1, c).unwrap().is_finite());
     }
 
     #[test]
@@ -1038,15 +1031,15 @@ mod test_toroidal_nc_evals {
         let mode = create_nc_flute_mode(TOROIDAL_TEST_NETCDF_PATH);
         let c = &mut mode.generate_cache();
 
-        let psip = Poloidal(0.1);
+        let flux = Poloidal(0.1);
         use EvalError::UndefinedEvaluation as err;
-        assert!(matches!(mode.eval_amplitude(psip, 0.1, 0.1, 0.1, c), Err(err(..))));
-        assert!(matches!(mode.eval_phase(psip, 0.1, 0.1, 0.1, c), Err(err(..))));
-        assert!(matches!(mode.eval_m(psip, 0.1, 0.1, 0.1, c), Err(err(..))));
-        assert!(matches!(mode.eval_deriv_flux(psip, 0.1, 0.1, 0.1, c), Err(err(..))));
-        assert!(matches!(mode.eval_deriv_theta(psip, 0.1, 0.1, 0.1, c), Err(err(..))));
-        assert!(matches!(mode.eval_deriv_zeta(psip, 0.1, 0.1, 0.1, c), Err(err(..))));
-        assert!(matches!(mode.eval_deriv_t(psip, 0.1, 0.1, 0.1, c), Ok(0.0)));
+        assert!(matches!(mode.eval_amplitude(flux, 0.1, 0.1, 0.1, c), Err(err(..))));
+        assert!(matches!(mode.eval_phase(flux, 0.1, 0.1, 0.1, c), Err(err(..))));
+        assert!(matches!(mode.eval_m(flux, 0.1, 0.1, 0.1, c), Err(err(..))));
+        assert!(matches!(mode.eval_deriv_flux(flux, 0.1, 0.1, 0.1, c), Err(err(..))));
+        assert!(matches!(mode.eval_deriv_theta(flux, 0.1, 0.1, 0.1, c), Err(err(..))));
+        assert!(matches!(mode.eval_deriv_zeta(flux, 0.1, 0.1, 0.1, c), Err(err(..))));
+        assert!(matches!(mode.eval_deriv_t(flux, 0.1, 0.1, 0.1, c), Ok(0.0)));
     }
 }
 
@@ -1060,15 +1053,15 @@ mod test_poloidal_nc_evals {
     #[test]
     fn flux_and_interp_states() {
         let mode = create_nc_flute_mode(POLOIDAL_TEST_NETCDF_PATH);
-        assert_eq!(mode.psi_state(), FluxCoordinateState::Bad);
+        assert_eq!(mode.psit_state(), FluxCoordinateState::Bad);
         assert_eq!(mode.psip_state(), FluxCoordinateState::Good);
-        assert!(mode.psi_single.alpha_interp.is_none());
-        assert!(mode.psi_single.phase_interp.is_none());
+        assert!(mode.psit_single.alpha_interp.is_none());
+        assert!(mode.psit_single.phase_interp.is_none());
         assert!(mode.psip_single.alpha_interp.is_some());
         assert!(mode.psip_single.phase_interp.is_some());
 
-        assert!(mode.psi_array().is_some());
-        assert!(mode.psip_array().is_some());
+        assert!(mode.psit_values().is_some());
+        assert!(mode.psip_values().is_some());
     }
 
     #[test]
@@ -1076,31 +1069,31 @@ mod test_poloidal_nc_evals {
     fn good_psip_evals() {
         let mode = create_nc_flute_mode(POLOIDAL_TEST_NETCDF_PATH);
         let c = &mut mode.generate_cache();
-        let psip = Poloidal(0.1);
-        assert!(mode.eval_amplitude(psip, 0.1, 0.1, 0.1, c).unwrap().is_finite());
-        assert!(mode.eval_phase(psip, 0.1, 0.1, 0.1, c).unwrap().is_finite());
-        assert!(mode.eval_m(psip, 0.1, 0.1, 0.1, c).unwrap().is_finite());
-        assert!(mode.eval_deriv_flux(psip, 0.1, 0.1, 0.1, c).unwrap().is_finite());
-        assert!(mode.eval_deriv_theta(psip, 0.1, 0.1, 0.1, c).unwrap().is_finite());
-        assert!(mode.eval_deriv_zeta(psip, 0.1, 0.1, 0.1, c).unwrap().is_finite());
-        assert!(mode.eval_deriv_t(psip, 0.1, 0.1, 0.1, c).unwrap().is_finite());
+        let flux = Poloidal(0.1);
+        assert!(mode.eval_amplitude(flux, 0.1, 0.1, 0.1, c).unwrap().is_finite());
+        assert!(mode.eval_phase(flux, 0.1, 0.1, 0.1, c).unwrap().is_finite());
+        assert!(mode.eval_m(flux, 0.1, 0.1, 0.1, c).unwrap().is_finite());
+        assert!(mode.eval_deriv_flux(flux, 0.1, 0.1, 0.1, c).unwrap().is_finite());
+        assert!(mode.eval_deriv_theta(flux, 0.1, 0.1, 0.1, c).unwrap().is_finite());
+        assert!(mode.eval_deriv_zeta(flux, 0.1, 0.1, 0.1, c).unwrap().is_finite());
+        assert!(mode.eval_deriv_t(flux, 0.1, 0.1, 0.1, c).unwrap().is_finite());
     }
 
     #[test]
     #[rustfmt::skip]
-    fn bad_psi_evals() {
+    fn bad_psit_evals() {
         let mode = create_nc_flute_mode(POLOIDAL_TEST_NETCDF_PATH);
         let c = &mut mode.generate_cache();
 
-        let psi = Toroidal(0.1);
+        let flux = Toroidal(0.1);
         use EvalError::UndefinedEvaluation as err;
-        assert!(matches!(mode.eval_amplitude(psi, 0.1, 0.1, 0.1, c), Err(err(..))));
-        assert!(matches!(mode.eval_phase(psi, 0.1, 0.1, 0.1, c), Err(err(..))));
-        assert!(matches!(mode.eval_m(psi, 0.1, 0.1, 0.1, c), Err(err(..))));
-        assert!(matches!(mode.eval_deriv_flux(psi, 0.1, 0.1, 0.1, c), Err(err(..))));
-        assert!(matches!(mode.eval_deriv_theta(psi, 0.1, 0.1, 0.1, c), Err(err(..))));
-        assert!(matches!(mode.eval_deriv_zeta(psi, 0.1, 0.1, 0.1, c), Err(err(..))));
-        assert!(matches!(mode.eval_deriv_t(psi, 0.1, 0.1, 0.1, c), Ok(0.0)));
+        assert!(matches!(mode.eval_amplitude(flux, 0.1, 0.1, 0.1, c), Err(err(..))));
+        assert!(matches!(mode.eval_phase(flux, 0.1, 0.1, 0.1, c), Err(err(..))));
+        assert!(matches!(mode.eval_m(flux, 0.1, 0.1, 0.1, c), Err(err(..))));
+        assert!(matches!(mode.eval_deriv_flux(flux, 0.1, 0.1, 0.1, c), Err(err(..))));
+        assert!(matches!(mode.eval_deriv_theta(flux, 0.1, 0.1, 0.1, c), Err(err(..))));
+        assert!(matches!(mode.eval_deriv_zeta(flux, 0.1, 0.1, 0.1, c), Err(err(..))));
+        assert!(matches!(mode.eval_deriv_t(flux, 0.1, 0.1, 0.1, c), Ok(0.0)));
     }
 }
 
@@ -1125,28 +1118,27 @@ mod nc_flute_mode_cache {
         assert_eq!(c.hits(), 0);
         assert_eq!(c.misses(), 0);
 
-        let psi = Toroidal(0.01);
-        mode.eval_phase(psi, 0.1, 0.1, t, c).unwrap();
+        let psit = Toroidal(0.01);
+        mode.eval_phase(psit, 0.1, 0.1, t, c).unwrap();
         assert_eq!(c.hits(), 0);
         assert_eq!(c.misses(), 1);
 
-        mode.eval_deriv_theta(psi, 0.1, 0.1, t, c).unwrap();
+        mode.eval_deriv_theta(psit, 0.1, 0.1, t, c).unwrap();
         assert_eq!(c.hits(), 1);
         assert_eq!(c.misses(), 1);
 
         let theta = 3.14;
         let zeta = 1.0;
-        mode.eval_amplitude(psi, theta, zeta, t, c).unwrap();
-        mode.eval_phase(psi, theta, zeta, t, c).unwrap();
-        mode.eval_m(psi, theta, zeta, t, c).unwrap();
-        mode.eval_deriv_flux(psi, theta, zeta, t, c).unwrap();
-        mode.eval_deriv_zeta(psi, theta, zeta, t, c).unwrap();
+        mode.eval_amplitude(psit, theta, zeta, t, c).unwrap();
+        mode.eval_phase(psit, theta, zeta, t, c).unwrap();
+        mode.eval_m(psit, theta, zeta, t, c).unwrap();
+        mode.eval_deriv_flux(psit, theta, zeta, t, c).unwrap();
+        mode.eval_deriv_zeta(psit, theta, zeta, t, c).unwrap();
 
         assert_eq!(c.hits(), 5);
         assert_eq!(c.misses(), 2);
 
-        mode.eval_deriv_flux(Toroidal(0.01 / 2.0), theta, zeta, t, c)
-            .unwrap();
+        mode.eval_deriv_flux(psit / 2.0, theta, zeta, t, c).unwrap();
 
         assert_eq!(c.hits(), 5);
         assert_eq!(c.misses(), 3);

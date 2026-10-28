@@ -1,4 +1,4 @@
-"""Plots a CurrentObject's `g`, `I` and its derivatives with respect to `ψ` or `ψp`."""
+"""Plots a CurrentObject's `g`, `I` and its derivatives with respect to `ψt` or `ψp`."""
 
 import argparse
 from dexter._utils import get_default_args

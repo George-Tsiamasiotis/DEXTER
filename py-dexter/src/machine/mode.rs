@@ -2,6 +2,7 @@
 
 use std::sync::Arc;
 
+use ndarray::Array1;
 use numpy::{IntoPyArray, PyArray1};
 use pyo3::{prelude::*, types::PyType};
 
@@ -114,8 +115,8 @@ impl PyMode {
     }
 
     #[getter]
-    pub fn psi_state(&self) -> String {
-        format!("{:?}", self.inner().psi_state())
+    pub fn psit_state(&self) -> String {
+        format!("{:?}", self.inner().psit_state())
     }
 
     #[getter]
@@ -141,24 +142,24 @@ impl PyMode {
         theta: f64,
         zeta: f64,
         t: f64,
-        psi: f64,
+        psit: f64,
         psip: f64,
     ) -> Result<f64> {
-        let flux = flux_from_params(psi, psip);
+        let flux = flux_from_params(psit, psip);
         Ok(self
             .inner()
             .eval_amplitude(flux, theta, zeta, t, &mut self.inner().generate_cache())?)
     }
 
-    pub fn eval_phase(&self, theta: f64, zeta: f64, t: f64, psi: f64, psip: f64) -> Result<f64> {
-        let flux = flux_from_params(psi, psip);
+    pub fn eval_phase(&self, theta: f64, zeta: f64, t: f64, psit: f64, psip: f64) -> Result<f64> {
+        let flux = flux_from_params(psit, psip);
         Ok(self
             .inner()
             .eval_phase(flux, theta, zeta, t, &mut self.inner().generate_cache())?)
     }
 
-    pub fn eval_m(&self, theta: f64, zeta: f64, t: f64, psi: f64, psip: f64) -> Result<f64> {
-        let flux = flux_from_params(psi, psip);
+    pub fn eval_m(&self, theta: f64, zeta: f64, t: f64, psit: f64, psip: f64) -> Result<f64> {
+        let flux = flux_from_params(psit, psip);
         Ok(self
             .inner()
             .eval_m(flux, theta, zeta, t, &mut self.inner().generate_cache())?)
@@ -169,10 +170,10 @@ impl PyMode {
         theta: f64,
         zeta: f64,
         t: f64,
-        psi: f64,
+        psit: f64,
         psip: f64,
     ) -> Result<f64> {
-        let flux = flux_from_params(psi, psip);
+        let flux = flux_from_params(psit, psip);
         Ok(self.inner().eval_deriv_flux(
             flux,
             theta,
@@ -187,10 +188,10 @@ impl PyMode {
         theta: f64,
         zeta: f64,
         t: f64,
-        psi: f64,
+        psit: f64,
         psip: f64,
     ) -> Result<f64> {
-        let flux = flux_from_params(psi, psip);
+        let flux = flux_from_params(psit, psip);
         Ok(self.inner().eval_deriv_theta(
             flux,
             theta,
@@ -205,10 +206,10 @@ impl PyMode {
         theta: f64,
         zeta: f64,
         t: f64,
-        psi: f64,
+        psit: f64,
         psip: f64,
     ) -> Result<f64> {
-        let flux = flux_from_params(psi, psip);
+        let flux = flux_from_params(psit, psip);
         Ok(self.inner().eval_deriv_zeta(
             flux,
             theta,
@@ -218,8 +219,8 @@ impl PyMode {
         )?)
     }
 
-    pub fn eval_deriv_t(&self, theta: f64, zeta: f64, t: f64, psi: f64, psip: f64) -> Result<f64> {
-        let flux = flux_from_params(psi, psip);
+    pub fn eval_deriv_t(&self, theta: f64, zeta: f64, t: f64, psit: f64, psip: f64) -> Result<f64> {
+        let flux = flux_from_params(psit, psip);
         Ok(self
             .inner()
             .eval_deriv_t(flux, theta, zeta, t, &mut self.inner().generate_cache())?)
@@ -284,22 +285,25 @@ impl PyMode {
         name: &str,
     ) -> Result<Option<Bound<'py, PyArray1<f64>>>> {
         let mode = self.nc()?;
-        match name {
-            "alpha_array" => return Ok(Some(mode.alpha_array().into_pyarray(py))),
-            "phase_array" => return Ok(Some(mode.phase_array().into_pyarray(py))),
-            "psi_array" => match mode.psi_array() {
-                Some(array) => return Ok(Some(array.into_pyarray(py))),
+        let values: &[f64] = match name {
+            "alpha_array" => mode.alpha_values(),
+            "phase_array" => mode.phase_values(),
+            "psit_array" => match mode.psit_values() {
+                Some(values) => values,
                 None => return Ok(None),
             },
-            "psip_array" => match mode.psip_array() {
-                Some(array) => return Ok(Some(array.into_pyarray(py))),
+            "psip_array" => match mode.psip_values() {
+                Some(values) => values,
                 None => return Ok(None),
             },
-            _ => Err(DexterError::AttributeError {
-                obj: "NcBfield".into(),
-                attr: name.into(),
-            }),
-        }
+            _ => {
+                return Err(DexterError::AttributeError {
+                    obj: "NcBfield".into(),
+                    attr: name.into(),
+                });
+            }
+        };
+        Ok(Some(Array1::from(values.to_vec()).into_pyarray(py)))
     }
 }
 

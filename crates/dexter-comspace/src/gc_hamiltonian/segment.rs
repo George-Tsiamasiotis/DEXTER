@@ -1,5 +1,5 @@
 //! Defines [`ParametrizedSegment`], a container type to store and parametrize 2D curves on the
-//! (θ, ψ/ψp) poloidal plane.
+//! (θ, ψ) poloidal plane.
 
 use dexter_machine::{Accelerator, MagneticFlux, MagneticFluxArray, MagneticFluxKind};
 use ndarray::{Array1, ArrayRef1};
@@ -7,7 +7,7 @@ use rsl_interpolation::{Interpolation, LinearInterpolator};
 
 // ===============================================================================================
 
-/// A 2D parametrized curve on the (ψ/ψp, θ) poloidal plane.
+/// A 2D parametrized curve on the (ψ, θ) poloidal plane.
 ///
 /// The parameter `t` is chosen to be the index of the corresponding `(ψ,θ)` point.
 #[derive(Clone)]
@@ -70,7 +70,7 @@ impl ParametrizedSegment {
             .collect()
     }
 
-    /// Performs the `t -> (θ, ψ/ψp)` interpolation in every discorvered exact root.
+    /// Performs the `t -> (θ, ψ)` interpolation in every discorvered exact root.
     pub(crate) fn interpolate_exact_roots(&self, exact_roots: &[f64]) -> Vec<(f64, MagneticFlux)> {
         exact_roots
             .iter()
@@ -96,7 +96,7 @@ impl ParametrizedSegment {
                     .eval(&xa, &ya_theta, *root, acc)
                     .expect("arrays and values ok");
 
-                // `t -> ψ/ψp` interpolation
+                // `t -> ψ` interpolation
                 let ya_flux = [flux_lo, flux_hi];
                 let flux = LinearInterpolator
                     .eval(&xa, &ya_flux, *root, acc)

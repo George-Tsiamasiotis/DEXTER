@@ -9,13 +9,13 @@
 //!
 //! ---
 //!
-//! + Representations of a machine's general geometry. Provides interpolation methods between `ψ`, `ψp`, `r`, `R`, `Z`, `J`.
+//! + Representations of a machine's general geometry. Provides interpolation methods between `ψt`, `ψp`, `r`, `R`, `Z`, `J`.
 //!     - [`LarGeometry`]: Analytical Large Aspect Ratio Geometry of a circular device.
 //!     - [`NcGeometry`]: Geometry from a netCDF file.
 //!
 //! + Representations of the q-factor profile:
-//!     - [`UnityQfactor`]: q-factor profile of q = 1 and ψ=ψp.
-//!     - [`ParabolicQfactor`]: q-factor of parabolic q(ψ) profile.
+//!     - [`UnityQfactor`]: q-factor profile of q = 1 and ψt=ψp.
+//!     - [`ParabolicQfactor`]: q-factor of parabolic q(ψt) profile.
 //!     - [`NcQfactor`]: q-factor from a netCDF file.
 //!
 //! + Representations of the plasma currents:
@@ -23,17 +23,17 @@
 //!     - [`NcCurrent`]: Plasma current from a netCDF file.
 //!
 //! + Representations of the magnetic field:
-//!     - [`LarBfield`]: Large Aspect Ratio magnetic field with B(ψ, θ) = 1 - sqrt(2ψ)cos(θ).
+//!     - [`LarBfield`]: Large Aspect Ratio magnetic field with B(ψt, θ) = 1 - sqrt(2ψt)cos(θ).
 //!     - [`NcBfield`]: Magnetic field from a netCDF file.
 //!
 //! + Representations of the electric field:
 //!     - [`NoEfield`]: No electric field.
-//!     - [`GaussianEfield`]: Gaussian `E(ψ/ψp)`.
+//!     - [`GaussianEfield`]: Gaussian `E(ψ)`.
 //!
 //! + Representations of single perturbation modes:
 //!     - [`FluteMode`]: Single analytical flute mode of the form `α*cos(mθ-nζ+φ)`.
 //!     - [`NcFluteMode`]: Single numerical flute mode from a netCDF file of the form
-//!     `α(ψ/ψp) * cos(mθ-nζ+φ(ψ/ψp))`
+//!     `α(ψ) * cos(mθ-nζ+φ(ψ))`
 //!
 //! + Representations of Perturbations.
 //!     - [`Perturbation`]: A sum of an arbitrary number of [`Modes`](Mode).

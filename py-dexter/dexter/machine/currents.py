@@ -15,7 +15,7 @@ class LarCurrent(MachineObject, Current):
 
     Notes
     -----
-    No $\psi/\psi_p$ bounds checks are performed in evaluations.
+    No $\psi$ bounds checks are performed in evaluations.
 
     Example
     -------
@@ -53,7 +53,7 @@ class NcCurrent(MachineObject, Current):
         The netCDF file's version (SemVer).
     interp_type
         The 1D interpolation type.
-    psi_array
+    psit_array
         The toroidal flux' values.
     psip_array
         The poloidal flux' values.
@@ -85,8 +85,8 @@ class NcCurrent(MachineObject, Current):
         self.interp_type = self._r.interp_type
 
     @cached_property  # immutable type
-    def psi_array(self) -> Array1 | None:
-        return self._r.get_array("psi_array")
+    def psit_array(self) -> Array1 | None:
+        return self._r.get_array("psit_array")
 
     @cached_property  # immutable type
     def psip_array(self) -> Array1 | None:

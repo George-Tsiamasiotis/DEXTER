@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from dexter.simulate.plot import orbit_color
 
 geometry = dex.LarGeometry(1, 1.75, 0.5)
-LCFS = geometry.psi_last
+LCFS = geometry.psit_last
 machine = dex.Machine(
     geometry=geometry,
     qfactor=dex.ParabolicQfactor(qaxis=1.1, qlast=3.5, lcfs=LCFS),
@@ -29,13 +29,13 @@ points = (
 
 points_array = np.asarray(points).T
 pzeta0 = points_array[0] * machine.psip_last.value
-psi0 = points_array[1]
+psit0 = points_array[1]
 theta0 = points_array[2]
 particle_count = len(pzeta0)
 
 initial_conditions = dex.QueueInitialConditions.Mixed(
     t0=np.zeros(particle_count),
-    flux0=dex.MagneticFluxArray.Toroidal(psi0),
+    flux0=dex.MagneticFluxArray.Toroidal(psit0),
     theta0=theta0,
     zeta0=np.zeros(particle_count),
     pzeta0=pzeta0,

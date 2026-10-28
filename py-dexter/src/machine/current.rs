@@ -2,6 +2,7 @@
 
 use std::sync::Arc;
 
+use ndarray::Array1;
 use numpy::{IntoPyArray, PyArray1};
 use pyo3::{prelude::*, types::PyType};
 
@@ -84,8 +85,8 @@ impl PyCurrent {
     }
 
     #[getter]
-    pub fn psi_state(&self) -> String {
-        format!("{:?}", self.inner().psi_state())
+    pub fn psit_state(&self) -> String {
+        format!("{:?}", self.inner().psit_state())
     }
 
     #[getter]
@@ -96,33 +97,33 @@ impl PyCurrent {
 
 #[pymethods] // Current Trait
 impl PyCurrent {
-    pub fn eval_g(&self, psi: f64, psip: f64) -> Result<f64> {
-        let flux = flux_from_params(psi, psip);
+    pub fn eval_g(&self, psit: f64, psip: f64) -> Result<f64> {
+        let flux = flux_from_params(psit, psip);
         Ok(self.inner().eval_g(flux, &mut Accelerator::new())?)
     }
 
-    pub fn eval_i(&self, psi: f64, psip: f64) -> Result<f64> {
-        let flux = flux_from_params(psi, psip);
+    pub fn eval_i(&self, psit: f64, psip: f64) -> Result<f64> {
+        let flux = flux_from_params(psit, psip);
         Ok(self.inner().eval_i(flux, &mut Accelerator::new())?)
     }
 
-    pub fn eval_g_deriv(&self, psi: f64, psip: f64) -> Result<f64> {
-        let flux = flux_from_params(psi, psip);
+    pub fn eval_g_deriv(&self, psit: f64, psip: f64) -> Result<f64> {
+        let flux = flux_from_params(psit, psip);
         Ok(self.inner().eval_g_deriv(flux, &mut Accelerator::new())?)
     }
 
-    pub fn eval_i_deriv(&self, psi: f64, psip: f64) -> Result<f64> {
-        let flux = flux_from_params(psi, psip);
+    pub fn eval_i_deriv(&self, psit: f64, psip: f64) -> Result<f64> {
+        let flux = flux_from_params(psit, psip);
         Ok(self.inner().eval_i_deriv(flux, &mut Accelerator::new())?)
     }
 
-    pub fn eval_g_deriv2(&self, psi: f64, psip: f64) -> Result<f64> {
-        let flux = flux_from_params(psi, psip);
+    pub fn eval_g_deriv2(&self, psit: f64, psip: f64) -> Result<f64> {
+        let flux = flux_from_params(psit, psip);
         Ok(self.inner().eval_g_deriv2(flux, &mut Accelerator::new())?)
     }
 
-    pub fn eval_i_deriv2(&self, psi: f64, psip: f64) -> Result<f64> {
-        let flux = flux_from_params(psi, psip);
+    pub fn eval_i_deriv2(&self, psit: f64, psip: f64) -> Result<f64> {
+        let flux = flux_from_params(psit, psip);
         Ok(self.inner().eval_i_deriv2(flux, &mut Accelerator::new())?)
     }
 }
@@ -155,22 +156,25 @@ impl PyCurrent {
         name: &str,
     ) -> Result<Option<Bound<'py, PyArray1<f64>>>> {
         let current = self.nc()?;
-        match name {
-            "g_array" => Ok(Some(current.g_array().into_pyarray(py))),
-            "i_array" => Ok(Some(current.i_array().into_pyarray(py))),
-            "psi_array" => match current.psi_array() {
-                Some(array) => Ok(Some(array.into_pyarray(py))),
-                None => Ok(None),
+        let values: &[f64] = match name {
+            "g_array" => current.g_values(),
+            "i_array" => current.i_values(),
+            "psit_array" => match current.psit_values() {
+                Some(values) => values,
+                None => return Ok(None),
             },
-            "psip_array" => match current.psip_array() {
-                Some(array) => Ok(Some(array.into_pyarray(py))),
-                None => Ok(None),
+            "psip_array" => match current.psip_values() {
+                Some(values) => values,
+                None => return Ok(None),
             },
-            _ => Err(DexterError::AttributeError {
-                obj: "NcCurrent".into(),
-                attr: name.into(),
-            }),
-        }
+            _ => {
+                return Err(DexterError::AttributeError {
+                    obj: "NcCurrent".into(),
+                    attr: name.into(),
+                });
+            }
+        };
+        Ok(Some(Array1::from_vec(values.to_vec()).into_pyarray(py)))
     }
 }
 
