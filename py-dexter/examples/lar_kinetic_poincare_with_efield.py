@@ -4,7 +4,7 @@ import numpy as np
 import dexter as dex
 
 geometry = dex.LarGeometry(1, 1.75, 0.5)
-LCFS = geometry.psi_last
+LCFS = geometry.psit_last
 machine = dex.Machine(
     geometry=geometry,
     qfactor=dex.ParabolicQfactor(qaxis=1.1, qlast=6.5, lcfs=LCFS),
@@ -19,7 +19,7 @@ machine = dex.Machine(
 
 strength = machine.quantity(750, "kiloVolt / meter").to("NormVolt / NormMeter").m
 rmean = 0.6 * geometry.rlast
-mean = dex.MagneticFlux.Toroidal(float(geometry.eval_psi_of_r(rmean)))
+mean = dex.MagneticFlux.Toroidal(float(geometry.eval_psit_of_r(rmean)))
 waist = LCFS.value * 0.2
 efield = dex.GaussianEfield(strength, mean, waist)
 machine.efield = efield
@@ -33,17 +33,17 @@ num = 30
 energy = cast(float, machine.quantity(30, "keV").to("NormJoule").m)
 
 rs = np.linspace(0.03, geometry.rlast * 0.999, num)
-psis = (rs / geometry.raxis) ** 2 / 2
+psits = (rs / geometry.raxis) ** 2 / 2
 theta0s = np.full(num, np.pi)
 
-bs = machine.bfield.eval_b(psi=psis, theta=theta0s)
-phis = machine.efield.eval_phi(psi=psis)
+bs = machine.bfield.eval_b(psit=psits, theta=theta0s)
+phis = machine.efield.eval_phi(psit=psits)
 rho0s = -np.sqrt(2 * energy - 2 * mu * bs - 2 * phis) / bs
 
 
 initial_conditions = dex.QueueInitialConditions.Boozer(
     t0=np.zeros(num),
-    flux0=dex.MagneticFluxArray.Toroidal(psis),
+    flux0=dex.MagneticFluxArray.Toroidal(psits),
     theta0=theta0s,
     zeta0=np.zeros(num),
     rho0=rho0s,

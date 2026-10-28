@@ -2,17 +2,16 @@
 
 use crate::{
     debug_assert_is_2pi_modulo, debug_assert_is_finite, debug_assert_non_negative_flux,
-    fluxes_values_array_getter_impl, interp_type_getter_impl, netcdf_path_getter_impl,
+    interp_type_getter_impl, nc_fluxes_values_getter_impl, netcdf_path_getter_impl,
     netcdf_version_getter_impl,
 };
 use core::hint::cold_path;
-use ndarray::{Array1, Array2, Axis, Order::ColumnMajor};
+use ndarray::{Array1, Array2, ArrayView2, Axis, Order::ColumnMajor};
 use ndarray::{concatenate, s};
 use rsl_interpolation::Accelerator2d;
 use std::f64::consts::TAU;
 use std::path::{Path, PathBuf};
 
-use super::debug_assert_all_finite_values;
 use crate::Interpolation2dType;
 use crate::constants::DEFAULT_THETA_PADDING_WIDTH;
 use crate::objects::nc_flux::{FluxCoordinateState, NcFlux};
@@ -23,13 +22,13 @@ use dexter_common::{DynInterpolator2d, make_interp2d};
 
 // ===============================================================================================
 
-/// Analytical Large Aspect Ratio magnetic field with B(ψ, θ) = 1 - sqrt(2ψ)cos(θ).
+/// Analytical Large Aspect Ratio magnetic field with B(ψt, θ) = 1 - sqrt(2ψt)cos(θ).
 ///
-/// The LAR magnetic field can only be expressed with respect to the toroidal flux ψ.
+/// The LAR magnetic field can only be expressed with respect to the toroidal flux ψt.
 ///
 /// # Note
 ///
-/// No ψ/ψp bounds checks are performed in evaluations.
+/// No bounds checks are performed in evaluations.
 pub struct LarBfield;
 
 impl MachineObject for LarBfield {
@@ -37,7 +36,7 @@ impl MachineObject for LarBfield {
         MachineType::Analytical
     }
 
-    fn psi_state(&self) -> FluxCoordinateState {
+    fn psit_state(&self) -> FluxCoordinateState {
         FluxCoordinateState::Good
     }
 
@@ -55,8 +54,8 @@ impl Bfield for LarBfield {
     ) -> Result<f64, EvalError> {
         debug_assert_non_negative_flux!(flux);
         match flux {
-            Toroidal(psi) => Ok(debug_assert_is_finite!(
-                1.0 - (2.0 * psi).sqrt() * theta.cos()
+            Toroidal(psit) => Ok(debug_assert_is_finite!(
+                1.0 - (2.0 * psit).sqrt() * theta.cos()
             )),
             Poloidal(_) => {
                 cold_path();
@@ -73,7 +72,7 @@ impl Bfield for LarBfield {
     ) -> Result<f64, EvalError> {
         debug_assert_non_negative_flux!(flux);
         match flux {
-            Toroidal(psi) => Ok(debug_assert_is_finite!(-theta.cos() / (2.0 * psi).sqrt())),
+            Toroidal(psit) => Ok(debug_assert_is_finite!(-theta.cos() / (2.0 * psit).sqrt())),
             Poloidal(_) => {
                 cold_path();
                 Err(EvalError::UndefinedEvaluation("dB(ψp, θ)/dψp".into()))
@@ -89,7 +88,7 @@ impl Bfield for LarBfield {
     ) -> Result<f64, EvalError> {
         debug_assert_non_negative_flux!(flux);
         match flux {
-            Toroidal(psi) => Ok(debug_assert_is_finite!((2.0 * psi).sqrt() * theta.sin())),
+            Toroidal(psit) => Ok(debug_assert_is_finite!((2.0 * psit).sqrt() * theta.sin())),
             Poloidal(_) => {
                 cold_path();
                 Err(EvalError::UndefinedEvaluation("dB(ψp, θ)/dθ".into()))
@@ -105,8 +104,8 @@ impl Bfield for LarBfield {
     ) -> Result<f64, EvalError> {
         debug_assert_non_negative_flux!(flux);
         match flux {
-            Toroidal(psi) => Ok(debug_assert_is_finite!(
-                theta.cos() / (2.0 * psi).powf(3.0 / 2.0)
+            Toroidal(psit) => Ok(debug_assert_is_finite!(
+                theta.cos() / (2.0 * psit).powf(3.0 / 2.0)
             )),
             Poloidal(_) => {
                 cold_path();
@@ -123,7 +122,7 @@ impl Bfield for LarBfield {
     ) -> Result<f64, EvalError> {
         debug_assert_non_negative_flux!(flux);
         match flux {
-            Toroidal(psi) => Ok(debug_assert_is_finite!((2.0 * psi).sqrt() * theta.cos())),
+            Toroidal(psit) => Ok(debug_assert_is_finite!((2.0 * psit).sqrt() * theta.cos())),
             Poloidal(_) => {
                 cold_path();
                 Err(EvalError::UndefinedEvaluation("d²B(ψp, θ)/dθ²".into()))
@@ -139,7 +138,7 @@ impl Bfield for LarBfield {
     ) -> Result<f64, EvalError> {
         debug_assert_non_negative_flux!(flux);
         match flux {
-            Toroidal(psi) => Ok(debug_assert_is_finite!(theta.sin() / (2.0 * psi).sqrt())),
+            Toroidal(psit) => Ok(debug_assert_is_finite!(theta.sin() / (2.0 * psit).sqrt())),
             Poloidal(_) => {
                 cold_path();
                 Err(EvalError::UndefinedEvaluation("d²B(ψp, θ)/dθdψp".into()))
@@ -150,7 +149,7 @@ impl Bfield for LarBfield {
 
 impl std::fmt::Debug for LarBfield {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Large Aspect Ratio Bfield with B(ψ, θ) = 1 - sqrt(2ψ)cos(θ).")
+        f.debug_struct("Large Aspect Ratio Bfield with B(ψt, θ) = 1 - sqrt(2ψt)cos(θ).")
             .finish()
     }
 }
@@ -271,7 +270,7 @@ pub struct NcBfield {
     /// The boozer toroidal angle `θ` in [rads], with the added padding.
     theta_values_padded: Box<[f64]>,
     /// The toroidal flux coordinate.
-    psi: NcFlux,
+    psit: NcFlux,
     /// The poloidal flux coordinate.
     psip: NcFlux,
 
@@ -279,8 +278,8 @@ pub struct NcBfield {
     b_array: Array2<f64>,
     /// The `B` values, flattened in F order, with the added padding.
     b_values_fortran_flat_padded: Box<[f64]>,
-    /// `B(ψ, θ)` interpolator.
-    b_of_psi_interp: Option<DynInterpolator2d>,
+    /// `B(ψt, θ)` interpolator.
+    b_of_psit_interp: Option<DynInterpolator2d>,
     /// `B(ψp, θ)` interpolator.
     b_of_psip_interp: Option<DynInterpolator2d>,
 }
@@ -297,7 +296,7 @@ impl NcBfield {
         let file = extract::open(&path)?;
         let netcdf_version = extract::version(&file)?;
 
-        let psi = NcFlux::toroidal(&file);
+        let psit = NcFlux::toroidal(&file);
         let psip = NcFlux::poloidal(&file);
 
         let theta_array = extract::array_1d(&file, NC_THETA)?;
@@ -308,16 +307,12 @@ impl NcBfield {
         let b_array_padded = Self::pad_b_array(&b_array, builder.padding)?;
         let b_values_fortran_flat_padded = b_array_padded.flatten_with_order(ColumnMajor).to_vec();
 
-        debug_assert!(baxis.is_finite(), "NaN 'baxis' field encountered");
-        debug_assert_all_finite_values(&theta_values_padded);
-        debug_assert_all_finite_values(&b_values_fortran_flat_padded);
-
         // Create interpolators, if possible
         use FluxCoordinateState::Good;
-        let b_of_psi_interp = match psi.state() {
+        let b_of_psit_interp = match psit.state() {
             Good => Some(make_interp2d(
                 builder.interp_type,
-                psi.uvalues(),
+                psit.uvalues(),
                 &theta_values_padded,
                 &b_values_fortran_flat_padded,
             )?),
@@ -339,13 +334,13 @@ impl NcBfield {
             interp_type: builder.interp_type,
             theta_values: theta_array.to_vec().into_boxed_slice(),
             theta_values_padded: theta_values_padded.into_boxed_slice(),
-            psi,
+            psit,
             psip,
             baxis,
             padding: builder.padding,
             b_array,
             b_values_fortran_flat_padded: b_values_fortran_flat_padded.into_boxed_slice(),
-            b_of_psi_interp,
+            b_of_psit_interp,
             b_of_psip_interp,
         })
     }
@@ -395,8 +390,8 @@ impl MachineObject for NcBfield {
         MachineType::Numerical
     }
 
-    fn psi_state(&self) -> FluxCoordinateState {
-        self.psi.state()
+    fn psit_state(&self) -> FluxCoordinateState {
+        self.psit.state()
     }
 
     fn psip_state(&self) -> FluxCoordinateState {
@@ -414,7 +409,7 @@ impl Bfield for NcBfield {
         debug_assert_non_negative_flux!(flux);
         debug_assert_is_2pi_modulo!(theta);
         let interp_opt = match flux {
-            Toroidal(_) => self.b_of_psi_interp.as_ref(),
+            Toroidal(_) => self.b_of_psit_interp.as_ref(),
             Poloidal(_) => self.b_of_psip_interp.as_ref(),
         };
         let Some(interp) = interp_opt else {
@@ -424,7 +419,7 @@ impl Bfield for NcBfield {
         };
         // This cannot panic. If `interp` is `Some` then the corresponding values exist.
         let (val, xa) = match flux {
-            Toroidal(val) => (val, self.psi.uvalues()),
+            Toroidal(val) => (val, self.psit.uvalues()),
             Poloidal(val) => (val, self.psip.uvalues()),
         };
         let ya = &self.theta_values_padded;
@@ -443,7 +438,7 @@ impl Bfield for NcBfield {
         debug_assert_non_negative_flux!(flux);
         debug_assert_is_2pi_modulo!(theta);
         let interp_opt = match flux {
-            Toroidal(_) => self.b_of_psi_interp.as_ref(),
+            Toroidal(_) => self.b_of_psit_interp.as_ref(),
             Poloidal(_) => self.b_of_psip_interp.as_ref(),
         };
         let Some(interp) = interp_opt else {
@@ -453,7 +448,7 @@ impl Bfield for NcBfield {
         };
         // This cannot panic. If `interp` is `Some` then the corresponding values exist.
         let (val, xa) = match flux {
-            Toroidal(val) => (val, self.psi.uvalues()),
+            Toroidal(val) => (val, self.psit.uvalues()),
             Poloidal(val) => (val, self.psip.uvalues()),
         };
         let ya = &self.theta_values_padded;
@@ -472,7 +467,7 @@ impl Bfield for NcBfield {
         debug_assert_non_negative_flux!(flux);
         debug_assert_is_2pi_modulo!(theta);
         let interp_opt = match flux {
-            Toroidal(_) => self.b_of_psi_interp.as_ref(),
+            Toroidal(_) => self.b_of_psit_interp.as_ref(),
             Poloidal(_) => self.b_of_psip_interp.as_ref(),
         };
         let Some(interp) = interp_opt else {
@@ -482,7 +477,7 @@ impl Bfield for NcBfield {
         };
         // This cannot panic. If `interp` is `Some` then the corresponding values exist.
         let (val, xa) = match flux {
-            Toroidal(val) => (val, self.psi.uvalues()),
+            Toroidal(val) => (val, self.psit.uvalues()),
             Poloidal(val) => (val, self.psip.uvalues()),
         };
         let ya = &self.theta_values_padded;
@@ -501,7 +496,7 @@ impl Bfield for NcBfield {
         debug_assert_non_negative_flux!(flux);
         debug_assert_is_2pi_modulo!(theta);
         let interp_opt = match flux {
-            Toroidal(_) => self.b_of_psi_interp.as_ref(),
+            Toroidal(_) => self.b_of_psit_interp.as_ref(),
             Poloidal(_) => self.b_of_psip_interp.as_ref(),
         };
         let Some(interp) = interp_opt else {
@@ -511,7 +506,7 @@ impl Bfield for NcBfield {
         };
         // This cannot panic. If `interp` is `Some` then the corresponding values exist.
         let (val, xa) = match flux {
-            Toroidal(val) => (val, self.psi.uvalues()),
+            Toroidal(val) => (val, self.psit.uvalues()),
             Poloidal(val) => (val, self.psip.uvalues()),
         };
         let ya = &self.theta_values_padded;
@@ -530,7 +525,7 @@ impl Bfield for NcBfield {
         debug_assert_non_negative_flux!(flux);
         debug_assert_is_2pi_modulo!(theta);
         let interp_opt = match flux {
-            Toroidal(_) => self.b_of_psi_interp.as_ref(),
+            Toroidal(_) => self.b_of_psit_interp.as_ref(),
             Poloidal(_) => self.b_of_psip_interp.as_ref(),
         };
         let Some(interp) = interp_opt else {
@@ -540,7 +535,7 @@ impl Bfield for NcBfield {
         };
         // This cannot panic. If `interp` is `Some` then the corresponding values exist.
         let (val, xa) = match flux {
-            Toroidal(val) => (val, self.psi.uvalues()),
+            Toroidal(val) => (val, self.psit.uvalues()),
             Poloidal(val) => (val, self.psip.uvalues()),
         };
         let ya = &self.theta_values_padded;
@@ -559,7 +554,7 @@ impl Bfield for NcBfield {
         debug_assert_non_negative_flux!(flux);
         debug_assert_is_2pi_modulo!(theta);
         let interp_opt = match flux {
-            Toroidal(_) => self.b_of_psi_interp.as_ref(),
+            Toroidal(_) => self.b_of_psit_interp.as_ref(),
             Poloidal(_) => self.b_of_psip_interp.as_ref(),
         };
         let Some(interp) = interp_opt else {
@@ -569,7 +564,7 @@ impl Bfield for NcBfield {
         };
         // This cannot panic. If `interp` is `Some` then the corresponding values exist.
         let (val, xa) = match flux {
-            Toroidal(val) => (val, self.psi.uvalues()),
+            Toroidal(val) => (val, self.psit.uvalues()),
             Poloidal(val) => (val, self.psip.uvalues()),
         };
         let ya = &self.theta_values_padded;
@@ -611,39 +606,39 @@ impl NcBfield {
             .expect("exists by construction")
     }
 
-    /// Returns the `θ` array, as extracted from the netCDF file.
+    /// Returns a reference to the `θ` values, as extracted from the netCDF file.
     #[must_use]
-    pub fn theta_array(&self) -> Array1<f64> {
-        Array1::from(self.theta_values.clone())
+    pub fn theta_values(&self) -> &[f64] {
+        &self.theta_values
     }
 
-    /// Returns the padded `θ` array.
+    /// Returns a reference to the *padded* `θ` values.
     #[must_use]
-    pub fn theta_array_padded(&self) -> Array1<f64> {
-        Array1::from(self.theta_values_padded.clone())
+    pub fn theta_array_padded(&self) -> &[f64] {
+        &self.theta_values_padded
     }
 
-    /// Returns the `B` array, as extracted from the netCDF file.
+    /// Returns a view on the `B` array, as extracted from the netCDF file.
     #[must_use]
-    pub fn b_array(&self) -> Array2<f64> {
-        self.b_array.clone()
+    pub fn b_array(&self) -> ArrayView2<'_, f64> {
+        self.b_array.view()
     }
 
     /// Returns the padded `B` array.
     #[must_use]
-    pub fn b_array_padded(&self) -> Array2<f64> {
+    pub fn b_array_padded(&self) -> ArrayView2<'_, f64> {
         // Array is in Fortran order, so we must reverse the shape
         let shape = (
             self.b_array.ncols() + 2 * self.padding,
             self.b_array.nrows(),
         );
         #[expect(clippy::missing_panics_doc, reason = "infallible")]
-        Array2::from_shape_vec(shape, self.b_values_fortran_flat_padded.to_vec())
+        ArrayView2::from_shape(shape, &self.b_values_fortran_flat_padded)
             .expect("Shape is correct by definition")
             .reversed_axes()
     }
 
-    /// Returns the (ψ/ψp, θ) shape of the **padded** arrays that were used to create the interpolator.
+    /// Returns the (ψ, θ) shape of the **padded** arrays that were used to create the interpolator.
     #[must_use]
     pub fn shape_padded(&self) -> (usize, usize) {
         let mut actual_shape = self.shape();
@@ -651,22 +646,22 @@ impl NcBfield {
         actual_shape
     }
 
-    /// Returns the (ψ/ψp, θ) shape of the initial 1D arrays (before the padding).
+    /// Returns the (ψ, θ) shape of the initial 1D arrays (before the padding).
     #[must_use]
     pub fn shape(&self) -> (usize, usize) {
-        let psi_len = match self.psi_state() {
+        let psit_len = match self.psit_state() {
             FluxCoordinateState::NoValues => 0,
-            _ => self.psi.uvalues().len(),
+            _ => self.psit.uvalues().len(),
         };
         let psip_len = match self.psip_state() {
             FluxCoordinateState::NoValues => 0,
             _ => self.psip.uvalues().len(),
         };
-        let xlen = psi_len.max(psip_len);
+        let xlen = psit_len.max(psip_len);
         (xlen, self.theta_values.len())
     }
 
-    fluxes_values_array_getter_impl!();
+    nc_fluxes_values_getter_impl!();
 }
 
 impl std::fmt::Debug for NcBfield {
@@ -676,10 +671,10 @@ impl std::fmt::Debug for NcBfield {
             .field("netCDF version", &self.netcdf_version().to_string())
             .field("interpolation type", &self.interp_type())
             .field("baxis [T]", &self.baxis)
-            .field("shape (ψ/ψp, θ)", &self.shape())
+            .field("shape (ψ, θ)", &self.shape())
             .field("padding", &self.padding)
-            .field("psi", &self.psi)
-            .field("psip", &self.psip)
+            .field("ψt", &self.psit)
+            .field("ψp", &self.psip)
             .finish()
     }
 }
@@ -705,39 +700,39 @@ mod test_toroidal_nc_evals {
     #[test]
     fn flux_and_interp_states() {
         let bfield = create_nc_bfield(TOROIDAL_TEST_NETCDF_PATH);
-        assert_eq!(bfield.psi_state(), FluxCoordinateState::Good);
+        assert_eq!(bfield.psit_state(), FluxCoordinateState::Good);
         assert_eq!(bfield.psip_state(), FluxCoordinateState::Bad);
 
-        assert_eq!(bfield.psi_state(), FluxCoordinateState::Good);
+        assert_eq!(bfield.psit_state(), FluxCoordinateState::Good);
         assert_eq!(bfield.psip_state(), FluxCoordinateState::Bad);
-        assert!(bfield.b_of_psi_interp.is_some());
+        assert!(bfield.b_of_psit_interp.is_some());
         assert!(bfield.b_of_psip_interp.is_none());
 
-        assert!(bfield.psi_array().is_some());
-        assert!(bfield.psip_array().is_some());
+        assert!(bfield.psit_values().is_some());
+        assert!(bfield.psip_values().is_some());
     }
 
     #[test]
-    fn good_psi_evals() {
+    fn good_psit_evals() {
         let b = create_nc_bfield(TOROIDAL_TEST_NETCDF_PATH);
         let acc = &mut Accelerator2d::new();
-        let t = 3.14;
+        let th = 3.14;
         let flux = Toroidal(0.01);
-        assert!(b.eval_b(flux, t, acc).unwrap().is_finite());
-        assert!(b.eval_deriv_flux(flux, t, acc).unwrap().is_finite());
-        assert!(b.eval_deriv_theta(flux, t, acc).unwrap().is_finite());
+        assert!(b.eval_b(flux, th, acc).unwrap().is_finite());
+        assert!(b.eval_deriv_flux(flux, th, acc).unwrap().is_finite());
+        assert!(b.eval_deriv_theta(flux, th, acc).unwrap().is_finite());
     }
 
     #[test]
     fn bad_psip_evals() {
         let b = create_nc_bfield(TOROIDAL_TEST_NETCDF_PATH);
         let acc = &mut Accelerator2d::new();
-        let t = 3.14;
+        let th = 3.14;
         let flux = Poloidal(0.01);
         use EvalError::UndefinedEvaluation as err;
-        matches!(b.eval_b(flux, t, acc), Err(err(..)));
-        matches!(b.eval_deriv_flux(flux, t, acc), Err(err(..)));
-        matches!(b.eval_deriv_theta(flux, t, acc), Err(err(..)));
+        matches!(b.eval_b(flux, th, acc), Err(err(..)));
+        matches!(b.eval_deriv_flux(flux, th, acc), Err(err(..)));
+        matches!(b.eval_deriv_theta(flux, th, acc), Err(err(..)));
     }
 }
 
@@ -751,39 +746,39 @@ mod test_poloidal_nc_evals {
     #[test]
     fn flux_and_interp_states() {
         let bfield = create_nc_bfield(POLOIDAL_TEST_NETCDF_PATH);
-        assert_eq!(bfield.psi_state(), FluxCoordinateState::Bad);
+        assert_eq!(bfield.psit_state(), FluxCoordinateState::Bad);
         assert_eq!(bfield.psip_state(), FluxCoordinateState::Good);
 
-        assert_eq!(bfield.psi_state(), FluxCoordinateState::Bad);
+        assert_eq!(bfield.psit_state(), FluxCoordinateState::Bad);
         assert_eq!(bfield.psip_state(), FluxCoordinateState::Good);
-        assert!(bfield.b_of_psi_interp.is_none());
+        assert!(bfield.b_of_psit_interp.is_none());
         assert!(bfield.b_of_psip_interp.is_some());
 
-        assert!(bfield.psi_array().is_some());
-        assert!(bfield.psip_array().is_some());
+        assert!(bfield.psit_values().is_some());
+        assert!(bfield.psip_values().is_some());
     }
 
     #[test]
     fn good_psip_evals() {
         let b = create_nc_bfield(POLOIDAL_TEST_NETCDF_PATH);
         let acc = &mut Accelerator2d::new();
-        let t = 3.14;
+        let th = 3.14;
         let flux = Poloidal(0.01);
-        assert!(b.eval_b(flux, t, acc).unwrap().is_finite());
-        assert!(b.eval_deriv_flux(flux, t, acc).unwrap().is_finite());
-        assert!(b.eval_deriv_theta(flux, t, acc).unwrap().is_finite());
+        assert!(b.eval_b(flux, th, acc).unwrap().is_finite());
+        assert!(b.eval_deriv_flux(flux, th, acc).unwrap().is_finite());
+        assert!(b.eval_deriv_theta(flux, th, acc).unwrap().is_finite());
     }
 
     #[test]
-    fn bad_psi_evals() {
+    fn bad_psit_evals() {
         let b = create_nc_bfield(POLOIDAL_TEST_NETCDF_PATH);
         let acc = &mut Accelerator2d::new();
-        let t = 3.14;
+        let th = 3.14;
         let flux = Toroidal(0.01);
         use EvalError::UndefinedEvaluation as err;
-        matches!(b.eval_b(flux, t, acc), Err(err(..)));
-        matches!(b.eval_deriv_flux(flux, t, acc), Err(err(..)));
-        matches!(b.eval_deriv_theta(flux, t, acc), Err(err(..)));
+        matches!(b.eval_b(flux, th, acc), Err(err(..)));
+        matches!(b.eval_deriv_flux(flux, th, acc), Err(err(..)));
+        matches!(b.eval_deriv_theta(flux, th, acc), Err(err(..)));
     }
 }
 

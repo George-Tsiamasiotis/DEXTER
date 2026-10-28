@@ -2,6 +2,7 @@
 
 use std::sync::Arc;
 
+use ndarray::Array1;
 use numpy::{IntoPyArray, PyArray1, PyArray2};
 use pyo3::{prelude::*, types::PyType};
 
@@ -97,8 +98,8 @@ impl PyGeometry {
     }
 
     #[getter]
-    pub fn psi_state(&self) -> String {
-        format!("{:?}", self.inner().psi_state())
+    pub fn psit_state(&self) -> String {
+        format!("{:?}", self.inner().psit_state())
     }
 
     #[getter]
@@ -135,31 +136,31 @@ impl PyGeometry {
         self.inner().rlast()
     }
 
-    pub fn eval_r(&self, psi: f64, psip: f64) -> Result<f64> {
-        let flux = flux_from_params(psi, psip);
+    pub fn eval_r(&self, psit: f64, psip: f64) -> Result<f64> {
+        let flux = flux_from_params(psit, psip);
         Ok(self.inner().eval_r(flux, &mut Accelerator::new())?)
     }
 
-    pub fn eval_psi_of_r(&self, r: f64) -> Result<f64> {
-        Ok(self.inner().eval_psi_of_r(r, &mut Accelerator::new())?.value())
+    pub fn eval_psit_of_r(&self, r: f64) -> Result<f64> {
+        Ok(self.inner().eval_psit_of_r(r, &mut Accelerator::new())?.value())
     }
 
     pub fn eval_psip_of_r(&self, r: f64) -> Result<f64> {
         Ok(self.inner().eval_psip_of_r(r, &mut Accelerator::new())?.value())
     }
 
-    pub fn eval_rlab(&self, theta: f64, psi: f64, psip: f64) -> Result<f64> {
-        let flux = flux_from_params(psi, psip);
+    pub fn eval_rlab(&self, theta: f64, psit: f64, psip: f64) -> Result<f64> {
+        let flux = flux_from_params(psit, psip);
         Ok(self.inner().eval_rlab(flux, theta, &mut Accelerator2d::new())?)
     }
 
-    pub fn eval_zlab(&self, theta: f64, psi: f64, psip: f64) -> Result<f64> {
-        let flux = flux_from_params(psi, psip);
+    pub fn eval_zlab(&self, theta: f64, psit: f64, psip: f64) -> Result<f64> {
+        let flux = flux_from_params(psit, psip);
         Ok(self.inner().eval_zlab(flux, theta, &mut Accelerator2d::new())?)
     }
 
-    pub fn eval_jacobian(&self, theta: f64, psi: f64, psip: f64) -> Result<f64> {
-        let flux = flux_from_params(psi, psip);
+    pub fn eval_jacobian(&self, theta: f64, psit: f64, psip: f64) -> Result<f64> {
+        let flux = flux_from_params(psit, psip);
         Ok(self.inner().eval_jacobian(flux, theta, &mut Accelerator2d::new())?)
     }
 
@@ -179,10 +180,10 @@ impl PyGeometry {
 #[pymethods] // "Common" but not provided by the `Geometry` trait
 impl PyGeometry {
     #[getter]
-    pub fn psi_last(&self) -> Option<PyMagneticFlux> {
+    pub fn psit_last(&self) -> Option<PyMagneticFlux> {
         match self {
-            Self::Lar(inner) => Some(inner.0.psi_last().into()), // guaranteed to exist
-            Self::Nc(inner) => inner.0.psi_last().map(Into::into),
+            Self::Lar(inner) => Some(inner.0.psit_last().into()), // guaranteed to exist
+            Self::Nc(inner) => inner.0.psit_last().map(Into::into),
         }
     }
 
@@ -231,40 +232,48 @@ impl PyGeometry {
         name: &str,
     ) -> Result<Option<Bound<'py, PyArray1<f64>>>> {
         let geometry = self.nc()?;
-        match name {
-            "theta_array" => return Ok(Some(geometry.theta_array().into_pyarray(py))),
-            "r_array" => return Ok(Some(geometry.r_array().into_pyarray(py))),
-            "psi_array" => match geometry.psi_array() {
-                Some(array) => return Ok(Some(array.into_pyarray(py))),
+        let values: &[f64] = match name {
+            "theta_array" => geometry.theta_values(),
+            "r_array" => geometry.r_values(),
+            "psit_array" => match geometry.psit_values() {
+                Some(values) => values,
                 None => return Ok(None),
             },
-            "psip_array" => match geometry.psip_array() {
-                Some(array) => return Ok(Some(array.into_pyarray(py))),
+            "psip_array" => match geometry.psip_values() {
+                Some(values) => values,
                 None => return Ok(None),
             },
-            _ => (),
-        }
-        Err(DexterError::AttributeError {
-            obj: "NcGeometry".into(),
-            attr: name.into(),
-        })
+            _ => {
+                return Err(DexterError::AttributeError {
+                    obj: "NcGeometry".into(),
+                    attr: name.into(),
+                });
+            }
+        };
+        Ok(Some(Array1::from(values.to_vec()).into_pyarray(py)))
     }
 
     pub fn get_array2d<'py>(
         &self,
         py: Python<'py>,
         name: &str,
-    ) -> Result<Bound<'py, PyArray2<f64>>> {
+    ) -> Result<Option<Bound<'py, PyArray2<f64>>>> {
         let geometry = self.nc()?;
-        match name {
-            "rlab_array" => Ok(geometry.rlab_array().into_pyarray(py)),
-            "zlab_array" => Ok(geometry.zlab_array().into_pyarray(py)),
-            "jacobian_array" => Ok(geometry.jacobian_array().into_pyarray(py)),
-            _ => Err(DexterError::AttributeError {
-                obj: "NcGeometry".into(),
-                attr: name.into(),
-            }),
-        }
+        let view = match name {
+            "rlab_array" => geometry.rlab_array(),
+            "zlab_array" => geometry.zlab_array(),
+            "jacobian_array" => match geometry.jacobian_array() {
+                Some(array) => array,
+                None => return Ok(None),
+            },
+            _ => {
+                return Err(DexterError::AttributeError {
+                    obj: "NcGeometry".into(),
+                    attr: name.into(),
+                });
+            }
+        };
+        Ok(Some(view.to_owned().into_pyarray(py)))
     }
 }
 

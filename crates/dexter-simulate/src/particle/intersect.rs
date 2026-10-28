@@ -225,14 +225,14 @@ pub(super) fn intersect(
 /// Creates a [`GCState`] on the modified system (6) from `state1` by making `θ` or `ζ` the
 /// independent variable and `t` a dependent variable.
 ///
-/// By assigning both `psi_dot` and `psip_dot` we cover both `FluxCoordinate` cases.
+/// By assigning both `psit_dot` and `psip_dot` we cover both `FluxCoordinate` cases.
 pub(crate) fn calculate_mod_state1(state1: &GCState, intersection: &Intersection) -> GCState {
     // Do not evaluate the state!
     let mut mod_state1 = state1.clone();
     match *intersection {
         Intersection::ConstTheta => {
             let kappa = 1.0 / state1.theta_dot;
-            let dpsi_dtheta = kappa * state1.psi_dot;
+            let dpsit_dtheta = kappa * state1.psit_dot;
             let dpsip_dtheta = kappa * state1.psip_dot;
             let dt_dtheta = kappa;
             let dzeta_dtheta = kappa * state1.zeta_dot;
@@ -241,7 +241,7 @@ pub(crate) fn calculate_mod_state1(state1: &GCState, intersection: &Intersection
 
             mod_state1.t = state1.theta;
             mod_state1.theta = state1.t;
-            mod_state1.psi_dot = dpsi_dtheta;
+            mod_state1.psit_dot = dpsit_dtheta;
             mod_state1.psip_dot = dpsip_dtheta;
             mod_state1.theta_dot = dt_dtheta;
             mod_state1.zeta_dot = dzeta_dtheta;
@@ -250,7 +250,7 @@ pub(crate) fn calculate_mod_state1(state1: &GCState, intersection: &Intersection
         }
         Intersection::ConstZeta => {
             let kappa = 1.0 / state1.zeta_dot;
-            let dpsi_dzeta = kappa * state1.psi_dot;
+            let dpsit_dzeta = kappa * state1.psit_dot;
             let dpsip_dzeta = kappa * state1.psip_dot;
             let dtheta_dzeta = kappa * state1.theta_dot;
             let dt_dzeta = kappa;
@@ -259,7 +259,7 @@ pub(crate) fn calculate_mod_state1(state1: &GCState, intersection: &Intersection
 
             mod_state1.t = state1.zeta;
             mod_state1.zeta = state1.t;
-            mod_state1.psi_dot = dpsi_dzeta;
+            mod_state1.psit_dot = dpsit_dzeta;
             mod_state1.psip_dot = dpsip_dzeta;
             mod_state1.theta_dot = dtheta_dzeta;
             mod_state1.zeta_dot = dt_dzeta;
@@ -321,7 +321,7 @@ pub(crate) fn calculate_intersection_state(
     match intersect_params.intersection {
         Intersection::ConstTheta => {
             let kappa = 1.0;
-            let dpsi_dt = kappa * mod_state2.psi_dot;
+            let dpsit_dt = kappa * mod_state2.psit_dot;
             let dpsip_dt = kappa * mod_state2.psip_dot;
             let dt_dt = kappa;
             let dzeta_dt = kappa * mod_state2.zeta_dot;
@@ -330,7 +330,7 @@ pub(crate) fn calculate_intersection_state(
 
             intersection_state.t = mod_state2.theta;
             intersection_state.theta = mod_state2.t;
-            intersection_state.psi_dot = dpsi_dt;
+            intersection_state.psit_dot = dpsit_dt;
             intersection_state.psip_dot = dpsip_dt;
             intersection_state.theta_dot = dt_dt;
             intersection_state.zeta_dot = dzeta_dt;
@@ -339,7 +339,7 @@ pub(crate) fn calculate_intersection_state(
         }
         Intersection::ConstZeta => {
             let kappa = 1.0;
-            let dpsi_dt = kappa * mod_state2.psi_dot;
+            let dpsit_dt = kappa * mod_state2.psit_dot;
             let dpsip_dt = kappa * mod_state2.psip_dot;
             let dtheta_dt = kappa * mod_state2.theta_dot;
             let dt_dt = kappa;
@@ -348,7 +348,7 @@ pub(crate) fn calculate_intersection_state(
 
             intersection_state.t = mod_state2.zeta;
             intersection_state.zeta = mod_state2.t;
-            intersection_state.psi_dot = dpsi_dt;
+            intersection_state.psit_dot = dpsit_dt;
             intersection_state.psip_dot = dpsip_dt;
             intersection_state.theta_dot = dtheta_dt;
             intersection_state.zeta_dot = dt_dt;

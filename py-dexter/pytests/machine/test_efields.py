@@ -11,8 +11,8 @@ def test_gaussian_efield(lar_machine: dex.Machine):
     strength = (
         lar_machine.quantity(750, "kiloVolt / meter").to("NormVolt / NormMeter").m
     )
-    mean = lar_machine.psi_last / 2
-    width = lar_machine.psi_last.value / 50
+    mean = lar_machine.psit_last / 2
+    width = lar_machine.psit_last.value / 50
     efield = dex.GaussianEfield(strength, mean, width)
 
     assert efield.strength == strength
@@ -28,7 +28,7 @@ def _test_efield_base(efield: dex.EfieldObject):
     efield.__str__()
 
     assert efield.machine_type in ["Numerical", "Analytical"]
-    assert efield.psi_state in ["Good", "Bad"]
+    assert efield.psit_state in ["Good", "Bad"]
     assert efield.psip_state in ["Good", "Bad"]
 
     flux = 0.02
@@ -36,23 +36,23 @@ def _test_efield_base(efield: dex.EfieldObject):
 
     try:
 
-        efield.eval_e(psi=flux)
-        efield.eval_e(psi=fluxes)
+        efield.eval_e(psit=flux)
+        efield.eval_e(psit=fluxes)
         efield.eval_e(psip=flux)
         efield.eval_e(psip=fluxes)
 
-        efield.eval_phi(psi=flux)
-        efield.eval_phi(psi=fluxes)
+        efield.eval_phi(psit=flux)
+        efield.eval_phi(psit=fluxes)
         efield.eval_phi(psip=flux)
         efield.eval_phi(psip=fluxes)
 
-        efield.eval_phi_deriv(psi=flux)
-        efield.eval_phi_deriv(psi=fluxes)
+        efield.eval_phi_deriv(psit=flux)
+        efield.eval_phi_deriv(psit=fluxes)
         efield.eval_phi_deriv(psip=flux)
         efield.eval_phi_deriv(psip=fluxes)
 
-        efield.eval_phi_deriv2(psi=flux)
-        efield.eval_phi_deriv2(psi=fluxes)
+        efield.eval_phi_deriv2(psit=flux)
+        efield.eval_phi_deriv2(psit=fluxes)
         efield.eval_phi_deriv2(psip=flux)
         efield.eval_phi_deriv2(psip=fluxes)
 

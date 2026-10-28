@@ -32,12 +32,12 @@ class LarGeometry(MachineObject, Geometry):
 
     Attributes
     ----------
-    psi_last
+    psit_last
         The value of the toroidal flux at the last closed flux surface, in Normalized units.
 
     Notes
     -----
-    + No $\psi/\psi_p$ bounds checks are performed in evaluations.
+    + No $\psi$ bounds checks are performed in evaluations.
 
     + Evaluations methods that calculate or accept $\psi_p$ as a parameter always raise an Exception, since
     $\psi_p$ is defined through the q-factor.
@@ -45,8 +45,6 @@ class LarGeometry(MachineObject, Geometry):
     + The Jacobian is not available, since it is defined through $q$, $g$, $I$ and $B$.
 
     + In LAR equilibria, it holds that $R_0 \equiv R_{geo}$.
-
-    + The definitions are not very strict at the moment.
 
     Example
     -------
@@ -61,15 +59,15 @@ class LarGeometry(MachineObject, Geometry):
     """
 
     _r: _PyGeometry
-    psi_last: MagneticFlux
+    psit_last: MagneticFlux
 
     def __init__(self, baxis: float, raxis: float, rlast: float) -> None:
         self._r = _PyGeometry.build_lar(baxis, raxis, rlast)
         MachineObject.__init__(self)
         Geometry.__init__(self)
 
-        assert self._r.psi_last is not None, "always defined"
-        self.psi_last = MagneticFlux._wrap(self._r.psi_last)
+        assert self._r.psit_last is not None, "always defined"
+        self.psit_last = MagneticFlux._wrap(self._r.psit_last)
 
 
 class NcGeometry(MachineObject, Geometry):
@@ -97,12 +95,12 @@ class NcGeometry(MachineObject, Geometry):
     interp2d_type
         The 2D interpolation type.
     shape
-        The $(\psi/\psi_p,\theta)$ shape of the 2D arrays.
-    psi_last
-        The value of the last closed toroidal flux $\psi_{LCFS}$.
+        The $(\psi,\theta)$ shape of the 2D arrays.
+    psit_last
+        The value of the last closed toroidal flux $\psi_{t,LCFS}$.
     psip_last
-        The value of the last closed toroidal flux $\psi_{LCFS}$.
-    psi_array
+        The value of the last closed poloidal flux $\psi_{p,LCFS}$.
+    psit_array
         The toroidal flux' values.
     psip_array
         The poloidal flux' values.
@@ -131,7 +129,7 @@ class NcGeometry(MachineObject, Geometry):
     interp1d_type: Interpolation1dType
     interp2d_type: Interpolation2dType
     shape: ArrayShape
-    psi_last: MagneticFlux | None
+    psit_last: MagneticFlux | None
     psip_last: MagneticFlux | None
 
     def __init__(
@@ -150,14 +148,14 @@ class NcGeometry(MachineObject, Geometry):
         self.interp2d_type = self._r.interp2d_type
         self.shape = self._r.shape
 
-        last = self._r.psi_last
-        self.psi_last = MagneticFlux._wrap(last) if last is not None else None
+        last = self._r.psit_last
+        self.psit_last = MagneticFlux._wrap(last) if last is not None else None
         last = self._r.psip_last
         self.psip_last = MagneticFlux._wrap(last) if last is not None else None
 
     @cached_property  # immutable type
-    def psi_array(self) -> Array1 | None:
-        return self._r.get_array("psi_array")
+    def psit_array(self) -> Array1 | None:
+        return self._r.get_array("psit_array")
 
     @cached_property  # immutable type
     def psip_array(self) -> Array1 | None:

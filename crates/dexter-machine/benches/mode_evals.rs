@@ -12,7 +12,7 @@ use std::path::PathBuf;
 fn mode_evals(c: &mut Criterion) {
     let lcfs = MagneticFlux::Toroidal(0.45);
     let path = PathBuf::from(TEST_NETCDF_PATH);
-    let (t, psi, theta, zeta) = (10000.0, MagneticFlux::Toroidal(0.01), 1.0, 4.0);
+    let (t, psit, theta, zeta) = (10000.0, MagneticFlux::Toroidal(0.01), 1.0, 4.0);
 
     let flute_mode = FluteMode::new(1e-3, lcfs, 1, 2, 0.0);
     let nc_flute_mode = NcFluteModeBuilder::new(&path, Interpolation1dType::Steffen, 2, 1)
@@ -28,12 +28,12 @@ fn mode_evals(c: &mut Criterion) {
 
     group.bench_with_input(
         "Analytical flute mode",
-        &(psi, theta, zeta, t),
-        |b, &(psi, theta, zeta, t)| {
+        &(psit, theta, zeta, t),
+        |b, &(psit, theta, zeta, t)| {
             b.iter(|| {
                 flute_mode
                     .eval_m(
-                        black_box(psi),
+                        black_box(psit),
                         black_box(theta),
                         black_box(zeta),
                         black_box(t),
@@ -45,12 +45,12 @@ fn mode_evals(c: &mut Criterion) {
     );
     group.bench_with_input(
         "Nc flute mode",
-        &(psi, theta, zeta, t),
-        |b, &(psi, theta, zeta, t)| {
+        &(psit, theta, zeta, t),
+        |b, &(psit, theta, zeta, t)| {
             b.iter(|| {
                 nc_flute_mode
                     .eval_m(
-                        black_box(psi),
+                        black_box(psit),
                         black_box(theta),
                         black_box(zeta),
                         black_box(t),
@@ -68,12 +68,12 @@ fn mode_evals(c: &mut Criterion) {
 
     group.bench_with_input(
         "Analytical flute mode",
-        &(psi, theta, zeta, t),
-        |b, &(psi, theta, zeta, t)| {
+        &(psit, theta, zeta, t),
+        |b, &(psit, theta, zeta, t)| {
             b.iter(|| {
                 flute_mode
                     .eval_deriv_flux(
-                        black_box(psi),
+                        black_box(psit),
                         black_box(theta),
                         black_box(zeta),
                         black_box(t),
@@ -85,12 +85,12 @@ fn mode_evals(c: &mut Criterion) {
     );
     group.bench_with_input(
         "Nc flute mode",
-        &(psi, theta, zeta, t),
-        |b, &(psi, theta, zeta, t)| {
+        &(psit, theta, zeta, t),
+        |b, &(psit, theta, zeta, t)| {
             b.iter(|| {
                 nc_flute_mode
                     .eval_deriv_flux(
-                        black_box(psi),
+                        black_box(psit),
                         black_box(theta),
                         black_box(zeta),
                         black_box(t),
@@ -108,12 +108,12 @@ fn mode_evals(c: &mut Criterion) {
 
     group.bench_with_input(
         "Analytical flute mode",
-        &(psi, theta, zeta, t),
-        |b, &(psi, theta, zeta, t)| {
+        &(psit, theta, zeta, t),
+        |b, &(psit, theta, zeta, t)| {
             b.iter(|| {
                 flute_mode
                     .eval_deriv_theta(
-                        black_box(psi),
+                        black_box(psit),
                         black_box(theta),
                         black_box(zeta),
                         black_box(t),
@@ -125,12 +125,12 @@ fn mode_evals(c: &mut Criterion) {
     );
     group.bench_with_input(
         "Nc flute mode",
-        &(psi, theta, zeta, t),
-        |b, &(psi, theta, zeta, t)| {
+        &(psit, theta, zeta, t),
+        |b, &(psit, theta, zeta, t)| {
             b.iter(|| {
                 nc_flute_mode
                     .eval_deriv_theta(
-                        black_box(psi),
+                        black_box(psit),
                         black_box(theta),
                         black_box(zeta),
                         black_box(t),
@@ -148,12 +148,12 @@ fn mode_evals(c: &mut Criterion) {
 
     group.bench_with_input(
         "Analytical flute mode",
-        &(psi, theta, zeta, t),
-        |b, &(psi, theta, zeta, t)| {
+        &(psit, theta, zeta, t),
+        |b, &(psit, theta, zeta, t)| {
             b.iter(|| {
                 flute_mode
                     .eval_deriv_zeta(
-                        black_box(psi),
+                        black_box(psit),
                         black_box(theta),
                         black_box(zeta),
                         black_box(t),
@@ -165,12 +165,12 @@ fn mode_evals(c: &mut Criterion) {
     );
     group.bench_with_input(
         "Nc flute mode",
-        &(psi, theta, zeta, t),
-        |b, &(psi, theta, zeta, t)| {
+        &(psit, theta, zeta, t),
+        |b, &(psit, theta, zeta, t)| {
             b.iter(|| {
                 nc_flute_mode
                     .eval_deriv_zeta(
-                        black_box(psi),
+                        black_box(psit),
                         black_box(theta),
                         black_box(zeta),
                         black_box(t),

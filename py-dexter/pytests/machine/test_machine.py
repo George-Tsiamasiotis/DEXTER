@@ -22,7 +22,7 @@ def test_analytical():
     assert machine.rlast == 0.5
     assert machine.zaxis == 0
     assert machine.rgeo == machine.raxis
-    assert isinstance(machine.psi_last, dex.MagneticFlux)
+    assert isinstance(machine.psit_last, dex.MagneticFlux)
     assert isinstance(machine.psip_last, dex.MagneticFlux)
     assert isinstance(machine.geometry, dex.GeometryObject)
     assert isinstance(machine.qfactor, dex.QfactorObject)
@@ -46,7 +46,7 @@ def test_analytical_no_geometry():
             ]
         ),
     )
-    assert isinstance(machine.psi_last, dex.MagneticFlux)
+    assert isinstance(machine.psit_last, dex.MagneticFlux)
     assert isinstance(machine.psip_last, dex.MagneticFlux)
     assert machine.geometry is None
     with pytest.raises(AttributeError):
@@ -83,7 +83,7 @@ def test_normalizations():
 
 def test_gcmotion_units():
     geometry = dex.LarGeometry(3.5, 1.75, 0.5)
-    LCFS = dex.MagneticFlux.Toroidal(geometry.psi_last.value)
+    LCFS = dex.MagneticFlux.Toroidal(geometry.psit_last.value)
     machine = dex.Machine(
         geometry=geometry,
         qfactor=dex.UnityQfactor(LCFS),

@@ -24,15 +24,15 @@ def test_plot_efield_both_fluxes(lar_machine: dex.Machine):
 
     strength = machine.quantity(75, "kiloVolt / meter").to("NormVolt / NormMeter")
     rmean = 0.96 * machine.geometry.rlast
-    width = machine.geometry.psi_last.value * 0.02
+    width = machine.geometry.psit_last.value * 0.02
 
-    mean = dex.MagneticFlux.Toroidal(float(machine.geometry.eval_psi_of_r(rmean)))
+    mean = dex.MagneticFlux.Toroidal(float(machine.geometry.eval_psit_of_r(rmean)))
     efield = dex.GaussianEfield(strength, mean, width)
     machine.efield = efield
 
     dex.plot_efield(machine, flux="Toroidal", points=10)
 
-    mean = dex.MagneticFlux.Poloidal(float(machine.geometry.eval_psi_of_r(rmean)))
+    mean = dex.MagneticFlux.Poloidal(float(machine.geometry.eval_psit_of_r(rmean)))
     efield = dex.GaussianEfield(strength, mean, width)
     machine.efield = efield
 
@@ -54,8 +54,8 @@ def test_plot_mode_numerical(nc_flute_mode: dex.NcFluteMode):
 
 
 def test_plot_particle_analytical(lar_machine: dex.Machine):
-    psi_last = lar_machine.psi_last.value
-    flux0 = dex.MagneticFlux.Toroidal(psi_last * 0.5)
+    psit_last = lar_machine.psit_last.value
+    flux0 = dex.MagneticFlux.Toroidal(psit_last * 0.5)
     initial = dex.InitialConditions.Boozer(0, flux0, 1, 2, 1e-6, 1e-7)
     particle = dex.Particle(initial)
     particle.close(lar_machine)
@@ -68,8 +68,8 @@ def test_plot_particle_analytical(lar_machine: dex.Machine):
 
 
 def test_plot_particle_numerical(nc_machine: dex.Machine):
-    psi_last = nc_machine.psi_last.value
-    flux0 = dex.MagneticFlux.Toroidal(psi_last * 0.5)
+    psit_last = nc_machine.psit_last.value
+    flux0 = dex.MagneticFlux.Toroidal(psit_last * 0.5)
     initial = dex.InitialConditions.Boozer(0, flux0, 1, 2, 1e-6, 1e-7)
     particle = dex.Particle(initial)
     particle.close(nc_machine)
@@ -83,12 +83,12 @@ def test_plot_particle_numerical(nc_machine: dex.Machine):
 
 def test_plot_queue_analytical(lar_machine: dex.Machine):
     num = 4
-    psi0s = dex.MagneticFluxArray.Toroidal(
-        np.linspace(1e-6, lar_machine.psi_last.value, num)
+    psit0s = dex.MagneticFluxArray.Toroidal(
+        np.linspace(1e-6, lar_machine.psit_last.value, num)
     )
     initial = dex.QueueInitialConditions.Boozer(
         t0=np.zeros(num),
-        flux0=psi0s,
+        flux0=psit0s,
         theta0=np.zeros(num),
         zeta0=np.zeros(num),
         rho0=np.full(num, 1e-5),
@@ -108,12 +108,12 @@ def test_plot_queue_analytical(lar_machine: dex.Machine):
 
 def test_plot_queue_numerical(nc_machine: dex.Machine):
     num = 4
-    psi0s = dex.MagneticFluxArray.Toroidal(
-        np.linspace(1e-6, nc_machine.psi_last.value, num)
+    psit0s = dex.MagneticFluxArray.Toroidal(
+        np.linspace(1e-6, nc_machine.psit_last.value, num)
     )
     initial = dex.QueueInitialConditions.Boozer(
         t0=np.zeros(num),
-        flux0=psi0s,
+        flux0=psit0s,
         theta0=np.zeros(num),
         zeta0=np.zeros(num),
         rho0=np.full(num, 1e-5),

@@ -23,7 +23,7 @@ class InitialConditions(_ReprStrImpl, _RustTypeWrapper):
     t0
         The initial time $t_0$.
     flux0
-        The initial magnetic flux $\psi_0$ or $\psi_{p,0}$.
+        The initial magnetic flux $\psi_{t,0}$ or $\psi_{p,0}$.
     theta0
         The initial $\theta$ angle.
     theta0
@@ -56,7 +56,7 @@ class InitialConditions(_ReprStrImpl, _RustTypeWrapper):
         r"""Creates initial conditions for a Particle in Boozer coordinates.
 
         The initial conditions are defined on the
-        $(t, \psi, \theta, \zeta, \rho, \mu)$ or
+        $(t, \psi_t, \theta, \zeta, \rho, \mu)$ or
         $(t, \psi_p, \theta, \zeta, \rho, \mu)$
         space, depending on the value of `flux0`.
 
@@ -65,7 +65,7 @@ class InitialConditions(_ReprStrImpl, _RustTypeWrapper):
         t0
             The initial time, in Normalized Units.
         flux0
-            The initial $\psi / \psi_p$, in Normalized Units.
+            The initial $\psi$, in Normalized Units.
         theta0
             The initial $\theta$ angle, in rads.
         zeta0
@@ -80,7 +80,7 @@ class InitialConditions(_ReprStrImpl, _RustTypeWrapper):
         ```python title="InitialConditions definition in Boozer-Toroidal coordinates"
         >>> initial_conditions = dex.InitialConditions.Boozer(
         ...     t0=0,
-        ...     flux0=dex.MagneticFlux.Toroidal(0.01),  # ψ0 = 0.01
+        ...     flux0=dex.MagneticFlux.Toroidal(0.01),  # ψt0 = 0.01
         ...     theta0=3.14,
         ...     zeta0=0,
         ...     rho0=1e-4,
@@ -107,7 +107,7 @@ class InitialConditions(_ReprStrImpl, _RustTypeWrapper):
         r"""Creates initial conditions for a Particle in Mixed coordinates.
 
         The initial conditions are defined on the
-        $(t, \psi, \theta, \zeta, P_\zeta, \mu)$ or
+        $(t, \psi_t, \theta, \zeta, P_\zeta, \mu)$ or
         $(t, \psi_p, \theta, \zeta, P_\zeta, \mu)$
         space, depending on the value of `flux0`.
 
@@ -116,7 +116,7 @@ class InitialConditions(_ReprStrImpl, _RustTypeWrapper):
         t0
             The initial time, in Normalized Units.
         flux0
-            The initial $\psi / \psi_p$, in Normalized Units.
+            The initial $\psi$, in Normalized Units.
         theta0
             The initial $\theta$ angle, in rads.
         zeta0
@@ -129,7 +129,7 @@ class InitialConditions(_ReprStrImpl, _RustTypeWrapper):
         Example
         -------
         ```python title="InitialConditions definition in Mixed-Poloidal coordinates"
-        >>> flux0=dex.MagneticFlux.Poloidal(0.02)  # ψ0 = 0.02
+        >>> flux0=dex.MagneticFlux.Poloidal(0.02)  # ψp0 = 0.02
         >>> initial_conditions = dex.InitialConditions.Mixed(
         ...     t0=0,
         ...     flux0=flux0,
@@ -216,7 +216,7 @@ class QueueInitialConditions(_ReprStrImpl, _RustTypeWrapper):
         r"""Creates sets of initial conditions for a Particle in Boozer coordinates.
 
         The initial conditions are defined on the
-        $(t, \psi, \theta, \zeta, \rho, \mu)$ or
+        $(t, \psi_t, \theta, \zeta, \rho, \mu)$ or
         $(t, \psi_p, \theta, \zeta, \rho, \mu)$
         space, depending on the value of `flux0`.
 
@@ -225,7 +225,7 @@ class QueueInitialConditions(_ReprStrImpl, _RustTypeWrapper):
         t0
             The initial times, in Normalized Units.
         flux0
-            The initial $\psi / \psi_p$ values, in Normalized Units.
+            The initial $\psi$ values, in Normalized Units.
         theta0
             The initial $\theta$ angles, in rads.
         zeta0
@@ -239,10 +239,10 @@ class QueueInitialConditions(_ReprStrImpl, _RustTypeWrapper):
         -------
         ```python title="QueueInitialConditions definition in Boozer-Toroidal coordinates"
         >>> num = 10
-        >>> psi0s = dex.MagneticFluxArray.Toroidal(np.linspace(0, 0.05, num))
+        >>> psit0s = dex.MagneticFluxArray.Toroidal(np.linspace(0, 0.05, num))
         >>> initial_conditions = dex.QueueInitialConditions.Boozer(
         ...     t0=np.zeros(num),
-        ...     flux0=psi0s,
+        ...     flux0=psit0s,
         ...     theta0=np.zeros(num),
         ...     zeta0=np.zeros(num),
         ...     rho0=np.full(num, 1e-5),
@@ -275,7 +275,7 @@ class QueueInitialConditions(_ReprStrImpl, _RustTypeWrapper):
         r"""Creates sets of initial conditions for a Particle in Boozer coordinates.
 
         The initial conditions are defined on the
-        $(t, \psi, \theta, \zeta, P_\zeta, \mu)$ or
+        $(t, \psi_t, \theta, \zeta, P_\zeta, \mu)$ or
         $(t, \psi_p, \theta, \zeta, P_\zeta, \mu)$
         space, depending on the value of `flux0`.
 
@@ -284,7 +284,7 @@ class QueueInitialConditions(_ReprStrImpl, _RustTypeWrapper):
         t0
             The initial times, in Normalized Units.
         flux0
-            The initial $\psi / \psi_p$ values, in Normalized Units.
+            The initial $\psi$ values, in Normalized Units.
         theta0
             The initial $\theta$ angles, in rads.
         zeta0

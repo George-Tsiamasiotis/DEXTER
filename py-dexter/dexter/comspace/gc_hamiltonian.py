@@ -16,7 +16,7 @@ class GCHamiltonian(_ReprStrImpl):
     The guiding center Hamiltonian is defined as:
 
     $$
-    \mathcal{H}(\theta, \psi/\psi_p; P_\zeta, \mu)
+    \mathcal{H}(\theta, \psi; P_\zeta, \mu)
     = \dfrac{(P_\zeta+\psi_p)^2B^2}{2g^2} + \mu B.
     $$
 
@@ -38,7 +38,7 @@ class GCHamiltonian(_ReprStrImpl):
         pzeta: float | MagneticFlux,
         mu: float,
     ) -> Array1:
-        r"""Evaluates the Hamiltonian $\mathcal{H}(\theta, \psi/\psi_p; P_\zeta, \mu)$.
+        r"""Evaluates the Hamiltonian $\mathcal{H}(\theta, \psi; P_\zeta, \mu)$.
 
         Parameters
         ----------
@@ -47,7 +47,7 @@ class GCHamiltonian(_ReprStrImpl):
         theta
             The $\theta$ value.
         flux
-            The magnetic flux value $\psi$ or $\psi_p$.
+            The magnetic flux $\psi$.
         pzeta
             The $P_\zeta$ constant of motion.
         mu
@@ -58,7 +58,7 @@ class GCHamiltonian(_ReprStrImpl):
 
         ``` py
         >>> geometry = dex.LarGeometry(baxis=3, raxis=1.75, rlast=0.5)
-        >>> LCFS = geometry.psi_last
+        >>> LCFS = geometry.psit_last
         >>> machine = dex.Machine(
         ...     geometry=geometry,
         ...     qfactor=dex.ParabolicQfactor(qaxis=1.1, qlast=3.9, lcfs=LCFS),
@@ -66,9 +66,9 @@ class GCHamiltonian(_ReprStrImpl):
         ...     bfield=dex.LarBfield(),
         ... )
         >>>
-        >>> psi = dex.MagneticFlux.Toroidal(0.01)
+        >>> psit = dex.MagneticFlux.Toroidal(0.01)
         >>> pzeta = -0.1 * machine.psip_last
-        >>> h = dex.GCHamiltonian.eval(machine, 3.14, psi, pzeta, 1e-4)
+        >>> h = dex.GCHamiltonian.eval(machine, 3.14, psit, pzeta, 1e-4)
 
         ```
 
@@ -98,7 +98,7 @@ class GCHamiltonian(_ReprStrImpl):
         pzeta: float | MagneticFlux,
         mu: float,
     ) -> Array1:
-        r"""Evaluates the Hamiltonian $\mathcal{H}(\theta, \psi/\psi_p; P_\zeta, \mu)$ over a 1D array.
+        r"""Evaluates the Hamiltonian $\mathcal{H}(\theta, \psi; P_\zeta, \mu)$ over a 1D array.
 
         !!! note
 
@@ -120,7 +120,7 @@ class GCHamiltonian(_ReprStrImpl):
         theta_array
             The $\theta$ values.
         flux_array
-            The $\psi/\psi_p$ values.
+            The flux $\psi$ values.
         pzeta
             The $P_\zeta$ constant of motion.
         mu
@@ -131,15 +131,15 @@ class GCHamiltonian(_ReprStrImpl):
 
         ``` py
         >>> geometry = dex.LarGeometry(baxis=3, raxis=1.75, rlast=0.5)
-        >>> LCFS = geometry.psi_last
+        >>> LCFS = geometry.psit_last
         >>> machine = dex.Machine.FromNetcdf(path, "Akima", "Bicubic")
         >>>
         >>> pzeta, mu = -0.1 * machine.psip_last, 1e-4
         >>> theta_array = np.linspace(0, 6.28, 10)
         >>>
-        >>> # H(ψ, θ)
-        >>> psi_array = dex.MagneticFluxArray.Toroidal(np.linspace(0, machine.psi_last.value, 10))
-        >>> h = dex.GCHamiltonian.eval_array(machine, theta_array, psi_array, pzeta, mu)
+        >>> # H(ψt, θ)
+        >>> psit_array = dex.MagneticFluxArray.Toroidal(np.linspace(0, machine.psit_last.value, 10))
+        >>> h = dex.GCHamiltonian.eval_array(machine, theta_array, psit_array, pzeta, mu)
         >>>
         >>> # H(ψp, θ)
         >>> psip_array = dex.MagneticFluxArray.Poloidal(np.linspace(0, machine.psip_last.value, 10))
@@ -173,11 +173,11 @@ class GCHamiltonian(_ReprStrImpl):
         pzeta: float | MagneticFlux,
         mu: float,
     ) -> Array2:
-        r"""Evaluates the Hamiltonian $\mathcal{H}(\theta, \psi/\psi_p; P_\zeta, \mu)$ over a 2D grid.
+        r"""Evaluates the Hamiltonian $\mathcal{H}(\theta, \psi; P_\zeta, \mu)$ over a 2D grid.
 
         !!! note
 
-            The $\theta$ and $\psi/\psi_p$ arrays do not need to have the same length. The produced
+            The $\theta$ and $\psi$ arrays do not need to have the same length. The produced
             grid has the form:
 
             $$|\ \mathcal{H}(\theta_0, \psi_0),
@@ -205,7 +205,7 @@ class GCHamiltonian(_ReprStrImpl):
         theta_array
             The $\theta$ values.
         flux_array
-            The $\psi/\psi_p$ values.
+            The flux $\psi$ values.
         pzeta
             The $P_\zeta$ constant of motion.
         mu
@@ -216,15 +216,15 @@ class GCHamiltonian(_ReprStrImpl):
 
         ``` py
         >>> geometry = dex.LarGeometry(baxis=3, raxis=1.75, rlast=0.5)
-        >>> LCFS = geometry.psi_last
+        >>> LCFS = geometry.psit_last
         >>> machine = dex.Machine.FromNetcdf(path, "Akima", "Bicubic")
         >>>
         >>> pzeta, mu = -0.1 * machine.psip_last, 1e-4
         >>> theta_array = np.linspace(0, 6.28, 4)
         >>>
-        >>> # H(ψ, θ)
-        >>> psi_array = dex.MagneticFluxArray.Toroidal(np.linspace(0, machine.psi_last.value, 5))
-        >>> h = dex.GCHamiltonian.eval_grid(machine, theta_array, psi_array, pzeta, mu)
+        >>> # H(ψt, θ)
+        >>> psit_array = dex.MagneticFluxArray.Toroidal(np.linspace(0, machine.psit_last.value, 5))
+        >>> h = dex.GCHamiltonian.eval_grid(machine, theta_array, psit_array, pzeta, mu)
         >>>
         >>> # H(ψp, θ)
         >>> psip_array = dex.MagneticFluxArray.Poloidal(np.linspace(0, machine.psip_last.value, 5))
@@ -258,7 +258,7 @@ class GCHamiltonian(_ReprStrImpl):
         pzeta: float | MagneticFlux,
         mu: float,
     ) -> Array1:
-        r"""Evaluates $\dot\theta = \partial\mathcal{H}(\theta, \psi/\psi_p; P_\zeta, \mu)/\partial P_\theta$
+        r"""Evaluates $\dot\theta = \partial\mathcal{H}(\theta, \psi; P_\zeta, \mu)/\partial P_\theta$
         over a 1D array
 
         This method uses the [`#!python flux_array.kind`][dexter.MagneticFluxKind] flux coordinate
@@ -273,7 +273,7 @@ class GCHamiltonian(_ReprStrImpl):
         theta_array
             The $\theta$ values.
         flux_array
-            The $\psi/\psi_p$ values.
+            The flux $\psi$ values.
         pzeta
             The $P_\zeta$ constant of motion.
         mu
@@ -284,18 +284,18 @@ class GCHamiltonian(_ReprStrImpl):
 
         ``` py
         >>> geometry = dex.LarGeometry(baxis=3, raxis=1.75, rlast=0.5)
-        >>> LCFS = geometry.psi_last
+        >>> LCFS = geometry.psit_last
         >>> machine = dex.Machine.FromNetcdf(path, "Akima", "Bicubic")
         >>>
         >>> pzeta, mu = -0.1 * machine.psip_last, 1e-4
         >>> theta_array = np.linspace(0, 6.28, 10)
         >>>
-        >>> # dot(θ(ψ, θ))
-        >>> psi_array = dex.MagneticFluxArray.Toroidal(np.linspace(0, machine.psi_last.value, 10))
+        >>> # dot(θ(ψt, θ))
+        >>> psit_array = dex.MagneticFluxArray.Toroidal(np.linspace(0, machine.psit_last.value, 10))
         >>> theta_dot = dex.GCHamiltonian.eval_theta_dot_array(
         ...     machine,
         ...     theta_array,
-        ...     psi_array,
+        ...     psit_array,
         ...     pzeta,
         ...     mu
         ... )
@@ -341,7 +341,7 @@ class CriticalPoint(_ReprStrImpl, _RustTypeWrapper):
     theta
         The point's $\theta$ position.
     flux
-        The point's $\psi/\psi_p$ position.
+        The point's $\psi$ position.
     energy
         The point's energy.
     pzeta
@@ -390,7 +390,7 @@ class BoundaryExtremum(_ReprStrImpl, _RustTypeWrapper):
     theta
         The point's $\theta$ position.
     flux
-        The point's $\psi/\psi_p$ position.
+        The point's $\psip$ position.
     energy
         The point's energy.
     pzeta

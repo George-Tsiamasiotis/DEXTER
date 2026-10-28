@@ -4,7 +4,7 @@
 
 mod common;
 
-use crate::common::check_integrated_particle_arrays;
+use crate::common::check_integrated_particle_time_series;
 use approx::{RelativeEq, assert_abs_diff_eq, assert_relative_eq};
 use dexter_machine::{
     Interpolation1dType::Akima,
@@ -13,7 +13,7 @@ use dexter_machine::{
     *,
 };
 use dexter_simulate::*;
-use ndarray::Array1;
+use ndarray::{Array1, ArrayView1};
 use std::{f64::consts::TAU, path::PathBuf};
 
 #[test]
@@ -44,13 +44,13 @@ fn gc_toroidal_integration_uniQ_larC_larB_cosP() {
 
     assert!(matches!(particle.integration_status(), IntegrationStatus::Integrated));
     assert_eq!(particle.steps_stored(), particle.steps_taken());
-    assert!(particle.t_array().last().copied().unwrap() >= teval.1);
+    assert!(particle.t_values().last().copied().unwrap() >= teval.1);
     assert!(particle.steps_stored() > 1000);
     assert!(particle.steps_stored() < 10000);
     assert!(particle.energy_rsd().unwrap() < 1e-7);
     assert_relative_eq!(particle.initial_energy().unwrap(), particle.final_energy().unwrap(), epsilon = 1e-10);
 
-    check_integrated_particle_arrays(&particle);
+    check_integrated_particle_time_series(&particle);
 }
 
 #[test]
@@ -82,13 +82,13 @@ fn gc_toroidal_integration_ncdQ_ncdC_ncdB_ncdP() {
 
     assert!(matches!(particle.integration_status(), IntegrationStatus::Integrated));
     assert_eq!(particle.steps_stored(), particle.steps_taken());
-    assert!(particle.t_array().last().copied().unwrap() >= teval.1);
+    assert!(particle.t_values().last().copied().unwrap() >= teval.1);
     assert!(particle.steps_stored() > 1000);
     assert!(particle.steps_stored() < 10000);
     assert!(particle.energy_rsd().unwrap() < 1e-7);
     assert_relative_eq!(particle.initial_energy().unwrap(), particle.final_energy().unwrap(), epsilon = 1e-10);
 
-    check_integrated_particle_arrays(&particle);
+    check_integrated_particle_time_series(&particle);
 }
 
 #[test]
@@ -120,13 +120,13 @@ fn gc_poloidal_integration_ncdQ_ncdC_ncdB_ncdP() {
 
     assert!(matches!(particle.integration_status(), IntegrationStatus::Integrated));
     assert_eq!(particle.steps_stored(), particle.steps_taken());
-    assert!(particle.t_array().last().copied().unwrap() >= teval.1);
+    assert!(particle.t_values().last().copied().unwrap() >= teval.1);
     assert!(particle.steps_stored() > 1000);
     assert!(particle.steps_stored() < 10000);
     assert!(particle.energy_rsd().unwrap() < 1e-7);
     assert_relative_eq!(particle.initial_energy().unwrap(), particle.final_energy().unwrap(), epsilon = 1e-10);
 
-    check_integrated_particle_arrays(&particle);
+    check_integrated_particle_time_series(&particle);
 }
 
 #[test]
@@ -141,8 +141,8 @@ fn gc_toroidal_integration_gcmotion_check_uniQ_larC_larB_cosP() {
 
     let solver_params = SolverParams::default();
 
-    let psi0 = Toroidal(0.018365472910927463);
-    let initial = InitialConditions::boozer(0.0, psi0, 0.0, 0.0, -0.006634527089072539, 1e-6);
+    let psit0 = Toroidal(0.018365472910927463);
+    let initial = InitialConditions::boozer(0.0, psit0, 0.0, 0.0, -0.006634527089072539, 1e-6);
 
     let mut particle = Particle::new(&initial);
     assert!(matches!(
@@ -158,27 +158,27 @@ fn gc_toroidal_integration_gcmotion_check_uniQ_larC_larB_cosP() {
         IntegrationStatus::Integrated
     ));
     assert_eq!(particle.steps_stored(), particle.steps_taken());
-    assert!(particle.t_array().last().copied().unwrap() >= teval.1);
+    assert!(particle.t_values().last().copied().unwrap() >= teval.1);
     assert!(particle.steps_stored() > 1000);
     assert!(particle.steps_stored() < 20000);
     assert!(particle.energy_rsd().unwrap() < 1e-6);
     assert_relative_eq!(particle.initial_energy().unwrap(), particle.final_energy().unwrap(), epsilon = 1e-8);
 
     assert_relative_eq!(particle.initial_energy().unwrap(), 1.5189224863170239e-05, epsilon = 1e-20);
-    assert_relative_eq!(initial.mu0() * machine.bfield().eval_b(psi0, 0.0, &mut Accelerator2d::new()).unwrap(),
+    assert_relative_eq!(initial.mu0() * machine.bfield().eval_b(psit0, 0.0, &mut Accelerator2d::new()).unwrap(),
         8.083468084746437e-07,
         epsilon = 1e-15
     );
-    assert_relative_eq!(*particle.psi_array().last().unwrap(), 0.02059090128879661, epsilon = 1e-5);
-    assert_abs_diff_eq!(*particle.theta_array().last().unwrap(), -15.887142479457443, epsilon = 0.1);
-    assert_abs_diff_eq!(*particle.zeta_array().last().unwrap(), -15.80106331080741, epsilon = 0.1);
-    assert_relative_eq!(*particle.rho_array().last().unwrap(), -0.004409098711254563, epsilon = 1e-5);
-    assert_relative_eq!(*particle.ptheta_array().last().unwrap(), 0.020590901288745446, epsilon = 1e-5);
-    assert_relative_eq!(particle.pzeta_array().var(1.0), 0.0, epsilon = 1e-10);
-    assert_relative_eq!(*particle.pzeta_array().first().unwrap(), -0.025, epsilon = 1e-4);
-    assert_relative_eq!(*particle.pzeta_array().last().unwrap(), -0.025, epsilon = 1e-4);
+    assert_relative_eq!(*particle.psit_values().last().unwrap(), 0.02059090128879661, epsilon = 1e-5);
+    assert_abs_diff_eq!(*particle.theta_values().last().unwrap(), -15.887142479457443, epsilon = 0.1);
+    assert_abs_diff_eq!(*particle.zeta_values().last().unwrap(), -15.80106331080741, epsilon = 0.1);
+    assert_relative_eq!(*particle.rho_values().last().unwrap(), -0.004409098711254563, epsilon = 1e-5);
+    assert_relative_eq!(*particle.ptheta_values().last().unwrap(), 0.020590901288745446, epsilon = 1e-5);
+    assert_relative_eq!(ArrayView1::from(particle.pzeta_values()).var(1.0), 0.0, epsilon = 1e-10);
+    assert_relative_eq!(*particle.pzeta_values().first().unwrap(), -0.025, epsilon = 1e-4);
+    assert_relative_eq!(*particle.pzeta_values().last().unwrap(), -0.025, epsilon = 1e-4);
 
-    check_integrated_particle_arrays(&particle);
+    check_integrated_particle_time_series(&particle);
 }
 
 #[test]
@@ -200,9 +200,9 @@ fn gc_toroidal_poloidal_equivalence() {
 
     let solver_params = SolverParams::default();
 
-    let psi0 = Toroidal(0.2);
-    let psip0 = machine.qfactor().eval_other(psi0, &mut Accelerator::new()).unwrap();
-    let tor_initial = InitialConditions::boozer(0.0, psi0, 0.0, 0.0, 1e-4, 1e-6);
+    let psit0 = Toroidal(0.2);
+    let psip0 = machine.qfactor().eval_other(psit0, &mut Accelerator::new()).unwrap();
+    let tor_initial = InitialConditions::boozer(0.0, psit0, 0.0, 0.0, 1e-4, 1e-6);
     let pol_initial = InitialConditions::boozer(0.0, psip0, 0.0, 0.0, 1e-4, 1e-6);
 
     let mut tor_particle = Particle::new(&tor_initial);
@@ -220,7 +220,7 @@ fn gc_toroidal_poloidal_equivalence() {
     assert!(matches!(pol_particle.integration_status(), IntegrationStatus::Integrated));
 
     // Make sure we dont integrate the same particle twice. The energy should have a small
-    // arithmetic error due to the ψ-ψp interpolation.
+    // arithmetic error due to the ψ interpolation.
     assert_ne!(tor_particle.initial_energy(), pol_particle.initial_energy());
 
     assert!(tor_particle.steps_stored() > 10_000);
@@ -228,50 +228,50 @@ fn gc_toroidal_poloidal_equivalence() {
     assert!(tor_particle.steps_stored() < 10_100);
     assert!(pol_particle.steps_stored() < 10_100);
 
-    check_integrated_particle_arrays(&tor_particle);
-    check_integrated_particle_arrays(&pol_particle);
+    check_integrated_particle_time_series(&tor_particle);
+    check_integrated_particle_time_series(&pol_particle);
 
     assert_relative_eq!(tor_particle.initial_energy().unwrap(), pol_particle.initial_energy().unwrap(), epsilon=1e-12);
     assert_relative_eq!(tor_particle.final_energy().unwrap(), pol_particle.final_energy().unwrap(), epsilon=1e-11);
 
     assert_abs_diff_eq!(
-        tor_particle.t_array().last().copied().unwrap(),
-        pol_particle.t_array().last().copied().unwrap(),
+        tor_particle.t_values().last().copied().unwrap(),
+        pol_particle.t_values().last().copied().unwrap(),
         epsilon = teval.1 * 1e-3
     );
     assert_abs_diff_eq!(
-        tor_particle.psi_array().last().copied().unwrap(),
-        pol_particle.psi_array().last().copied().unwrap(),
-        epsilon = 1e-3*machine.qfactor().psi_last().value()
+        tor_particle.psit_values().last().copied().unwrap(),
+        pol_particle.psit_values().last().copied().unwrap(),
+        epsilon = 1e-3*machine.qfactor().psit_last().value()
     );
     assert_abs_diff_eq!(
-        tor_particle.psip_array().last().copied().unwrap(),
-        pol_particle.psip_array().last().copied().unwrap(),
+        tor_particle.psip_values().last().copied().unwrap(),
+        pol_particle.psip_values().last().copied().unwrap(),
         epsilon = 1e-3*machine.qfactor().psip_last().value()
     );
     assert_abs_diff_eq!(
-        tor_particle.rho_array().last().copied().unwrap(),
-        pol_particle.rho_array().last().copied().unwrap(),
+        tor_particle.rho_values().last().copied().unwrap(),
+        pol_particle.rho_values().last().copied().unwrap(),
         epsilon = 1e-2*tor_initial.rho0().unwrap() // This deviation might be because rho varies quite fast
     );
     assert_abs_diff_eq!(
-        tor_particle.theta_array().last().copied().unwrap(),
-        pol_particle.theta_array().last().copied().unwrap(),
+        tor_particle.theta_values().last().copied().unwrap(),
+        pol_particle.theta_values().last().copied().unwrap(),
         epsilon = 1e-3*TAU
     );
     assert_abs_diff_eq!(
-        tor_particle.zeta_array().last().copied().unwrap(),
-        pol_particle.zeta_array().last().copied().unwrap(),
+        tor_particle.zeta_values().last().copied().unwrap(),
+        pol_particle.zeta_values().last().copied().unwrap(),
         epsilon = 1e-3*TAU
     );
     assert_relative_eq!(
-        tor_particle.ptheta_array().last().copied().unwrap(),
-        pol_particle.ptheta_array().last().copied().unwrap(),
+        tor_particle.ptheta_values().last().copied().unwrap(),
+        pol_particle.ptheta_values().last().copied().unwrap(),
         epsilon = 1e-5
     );
     assert_relative_eq!(
-        tor_particle.pzeta_array().last().copied().unwrap(),
-        pol_particle.pzeta_array().last().copied().unwrap(),
+        tor_particle.pzeta_values().last().copied().unwrap(),
+        pol_particle.pzeta_values().last().copied().unwrap(),
         epsilon = 1e-5
     );
 }
@@ -318,7 +318,7 @@ fn gc_mixed_boozer_equivalence() {
     assert!(matches!(mixed_particle.integration_status(), IntegrationStatus::Integrated));
 
     // Make sure we dont integrate the same particle twice. The energy should have a small
-    // arithmetic error due to the ψ-ψp interpolation.
+    // arithmetic error due to the ψ interpolation.
     assert_ne!(boozer_particle.initial_energy(), mixed_particle.initial_energy());
 
     assert!(boozer_particle.steps_stored() > 10_000);
@@ -326,50 +326,50 @@ fn gc_mixed_boozer_equivalence() {
     assert!(boozer_particle.steps_stored() < 10_100);
     assert!(mixed_particle.steps_stored() < 10_100);
 
-    check_integrated_particle_arrays(&boozer_particle);
-    check_integrated_particle_arrays(&mixed_particle);
+    check_integrated_particle_time_series(&boozer_particle);
+    check_integrated_particle_time_series(&mixed_particle);
 
     assert_relative_eq!(boozer_particle.initial_energy().unwrap(), mixed_particle.initial_energy().unwrap(), epsilon=1e-12);
     assert_relative_eq!(boozer_particle.final_energy().unwrap(), mixed_particle.final_energy().unwrap(), epsilon=1e-11);
 
     assert_abs_diff_eq!(
-        boozer_particle.t_array().last().copied().unwrap(),
-        mixed_particle.t_array().last().copied().unwrap(),
+        boozer_particle.t_values().last().copied().unwrap(),
+        mixed_particle.t_values().last().copied().unwrap(),
         epsilon = teval.1 * 1e-3
     );
     assert_abs_diff_eq!(
-        boozer_particle.psi_array().last().copied().unwrap(),
-        mixed_particle.psi_array().last().copied().unwrap(),
-        epsilon = 1e-3*machine.qfactor().psi_last().value()
+        boozer_particle.psit_values().last().copied().unwrap(),
+        mixed_particle.psit_values().last().copied().unwrap(),
+        epsilon = 1e-3*machine.qfactor().psit_last().value()
     );
     assert_abs_diff_eq!(
-        boozer_particle.psip_array().last().copied().unwrap(),
-        mixed_particle.psip_array().last().copied().unwrap(),
+        boozer_particle.psip_values().last().copied().unwrap(),
+        mixed_particle.psip_values().last().copied().unwrap(),
         epsilon = 1e-3*machine.qfactor().psip_last().value()
     );
     assert_abs_diff_eq!(
-        boozer_particle.rho_array().last().copied().unwrap(),
-        mixed_particle.rho_array().last().copied().unwrap(),
-        epsilon = 1e-2*boozer_initial.rho0().unwrap() // This deviation might be because rho varies quite fast
+        boozer_particle.rho_values().last().copied().unwrap(),
+        mixed_particle.rho_values().last().copied().unwrap(),
+        epsilon = 1e-3*boozer_initial.rho0().unwrap()
     );
     assert_abs_diff_eq!(
-        boozer_particle.theta_array().last().copied().unwrap(),
-        mixed_particle.theta_array().last().copied().unwrap(),
+        boozer_particle.theta_values().last().copied().unwrap(),
+        mixed_particle.theta_values().last().copied().unwrap(),
         epsilon = 1e-3*TAU
     );
     assert_abs_diff_eq!(
-        boozer_particle.zeta_array().last().copied().unwrap(),
-        mixed_particle.zeta_array().last().copied().unwrap(),
+        boozer_particle.zeta_values().last().copied().unwrap(),
+        mixed_particle.zeta_values().last().copied().unwrap(),
         epsilon = 1e-3*TAU
     );
     assert_relative_eq!(
-        boozer_particle.ptheta_array().last().copied().unwrap(),
-        mixed_particle.ptheta_array().last().copied().unwrap(),
+        boozer_particle.ptheta_values().last().copied().unwrap(),
+        mixed_particle.ptheta_values().last().copied().unwrap(),
         epsilon = 1e-5
     );
     assert_relative_eq!(
-        boozer_particle.pzeta_array().last().copied().unwrap(),
-        mixed_particle.pzeta_array().last().copied().unwrap(),
+        boozer_particle.pzeta_values().last().copied().unwrap(),
+        mixed_particle.pzeta_values().last().copied().unwrap(),
         epsilon = 1e-5
     );
 }
@@ -392,12 +392,12 @@ fn gc_const_pzeta_toroidal_integration_uniQ_larC_larB_cosP() {
 
     let teval = (0.0, 6e5);
     particle.integrate(machine, teval, &solver_params);
-    let pzeta_array = particle.pzeta_array();
+    let pzeta_array = ArrayView1::from(particle.pzeta_values());
     dbg!(&particle);
 
     assert!(matches!(particle.integration_status(), IntegrationStatus::Integrated));
     assert_eq!(particle.steps_stored(), particle.steps_taken());
-    assert!(particle.t_array().last().copied().unwrap() >= teval.1);
+    assert!(particle.t_values().last().copied().unwrap() >= teval.1);
     assert!(particle.steps_stored() > 1000);
     assert!(particle.steps_stored() < 10000);
     assert!(particle.energy_rsd().unwrap() < 1e-7);
@@ -411,5 +411,5 @@ fn gc_const_pzeta_toroidal_integration_uniQ_larC_larB_cosP() {
     );
     assert!(pzeta_array.std(1.0) <= 1e-15);
 
-    check_integrated_particle_arrays(&particle);
+    check_integrated_particle_time_series(&particle);
 }

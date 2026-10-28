@@ -8,11 +8,11 @@ use crate::{MagneticFlux, SimulationError};
 /// The kind of [`InitialConditions`] set.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum CoordinateSet {
-    /// Initial conditions set in the `(t, ψ, θ, ζ, ρ, μ)` space.
+    /// Initial conditions set in the `(t, ψt, θ, ζ, ρ, μ)` space.
     BoozerToroidal,
     /// Initial conditions set in the `(t, ψp, θ, ζ, ρ, μ)` space.
     BoozerPoloidal,
-    /// Initial conditions set in the `(t, Pζ, ψ, θ, ζ, μ)` space.
+    /// Initial conditions set in the `(t, Pζ, ψt, θ, ζ, μ)` space.
     MixedToroidal,
     /// Initial conditions set in the `(t, Pζ, ψp, θ, ζ, μ)` space.
     MixedPoloidal,
@@ -22,16 +22,16 @@ pub enum CoordinateSet {
 ///
 /// The set can be created from one the following combinations:
 ///
-/// + Boozer-Toroidal: Initial conditions set in the `(t, ψ, θ, ζ, ρ, μ)` space.
+/// + Boozer-Toroidal: Initial conditions set in the `(t, ψt, θ, ζ, ρ, μ)` space.
 /// + Boozer-Poloidal: Initial conditions set in the `(t, ψp, θ, ζ, ρ, μ)` space.
-/// + Mixed-Toroidal: Initial conditions set in the `(t, Pζ, ψ, θ, ζ, μ)` space.
+/// + Mixed-Toroidal: Initial conditions set in the `(t, Pζ, ψt, θ, ζ, μ)` space.
 /// + Mixed-Poloidal: Initial conditions set in the `(t, Pζ, ψp, θ, ζ, μ)` space.
 #[derive(Clone)]
 #[non_exhaustive]
 pub struct InitialConditions {
     /// The initial time.
     pub(crate) t0: f64,
-    /// The initial toroidal/poloidal flux, depending on the value of [`InitialFlux`].
+    /// The initial toroidal/poloidal flux, depending on the kind of [`MagneticFlux`].
     pub(crate) flux0: MagneticFlux,
     /// The initial `θ` angle.
     pub(crate) theta0: f64,
@@ -50,13 +50,13 @@ pub struct InitialConditions {
 impl InitialConditions {
     /// Constructs an `InitialConditions` from a set of Boozer variables.
     ///
-    /// The set can be in either the `(t, ψ, θ, ζ, ρ, μ)` or `(t, ψp, θ, ζ, ρ, μ)` configuration space.
+    /// The set can be in either the `(t, ψt, θ, ζ, ρ, μ)` or `(t, ψp, θ, ζ, ρ, μ)` configuration space.
     ///
     /// # Example
     /// ```
     /// # use dexter_simulate::*;
-    /// let psi0 = MagneticFlux::Toroidal(0.2);
-    /// let initial = InitialConditions::boozer(0.0, psi0, 0.0, 0.0, 1e-4, 1e-6);
+    /// let psit0 = MagneticFlux::Toroidal(0.2);
+    /// let initial = InitialConditions::boozer(0.0, psit0, 0.0, 0.0, 1e-4, 1e-6);
     /// ```
     #[must_use]
     pub fn boozer(
@@ -85,7 +85,7 @@ impl InitialConditions {
 
     /// Constructs an `InitialConditions` from a set of Boozer variables.
     ///
-    /// The set can be in either the `(t, ψ, θ, ζ, ρ, μ)` or `(t, ψp, θ, ζ, ρ, μ)` configuration space.
+    /// The set can be in either the `(t, ψt, θ, ζ, ρ, μ)` or `(t, ψp, θ, ζ, ρ, μ)` configuration space.
     ///
     /// # Example
     /// ```
@@ -141,7 +141,7 @@ impl InitialConditions {
         }
         // Not all `Current` objects perform bounds checks.
         let last = match self.flux0 {
-            MagneticFlux::Toroidal(_) => machine.qfactor().psi_last(),
+            MagneticFlux::Toroidal(_) => machine.qfactor().psit_last(),
             MagneticFlux::Poloidal(_) => machine.qfactor().psip_last(),
         };
         if self.flux0.value() > last.value() {
@@ -152,13 +152,13 @@ impl InitialConditions {
         match self.coordinate_set {
             // Calculate `pzeta0`
             CoordinateSet::BoozerToroidal => {
-                let psi0 = self.flux0;
-                let g = machine.current().eval_g(psi0, acc)?;
-                let psip0 = machine.qfactor().eval_other(psi0, acc)?;
+                let psit0 = self.flux0;
+                let g = machine.current().eval_g(psit0, acc)?;
+                let psip0 = machine.qfactor().eval_other(psit0, acc)?;
                 let p = machine
                     .perturbation()
                     .eval_p(
-                        psi0,
+                        psit0,
                         self.theta0,
                         self.zeta0,
                         self.t0,
@@ -184,13 +184,13 @@ impl InitialConditions {
             }
             // Calculate `rho0`
             CoordinateSet::MixedToroidal => {
-                let psi0 = self.flux0;
-                let g = machine.current().eval_g(psi0, acc)?;
-                let psip0 = machine.qfactor().eval_other(psi0, acc)?;
+                let psit0 = self.flux0;
+                let g = machine.current().eval_g(psit0, acc)?;
+                let psip0 = machine.qfactor().eval_other(psit0, acc)?;
                 let p = machine
                     .perturbation()
                     .eval_p(
-                        psi0,
+                        psit0,
                         self.theta0,
                         self.zeta0,
                         self.t0,
@@ -329,7 +329,7 @@ mod test {
         assert!(i1.rho0.is_some());
         assert!(i1.pzeta0.is_some());
 
-        // Flute modes are defined with respect to `psi_last`, therefore cannot evaluate w.r.t `psip`
+        // Flute modes are defined with respect to `psit_last`, therefore cannot evaluate w.r.t `psip`
         let mut i2 = InitialConditions::boozer(0.0, Poloidal(0.02), PI, PI, 1e-4, 1e-6);
         assert!(i2.finalize(machine).is_err());
 
@@ -369,7 +369,7 @@ mod test {
         assert!(particle.steps_taken() > 10);
         assert!(particle.integration_status() == IntegrationStatus::Integrated);
 
-        // Flute modes are defined with respect to `psi_last`, therefore cannot evaluate w.r.t `psip`
+        // Flute modes are defined with respect to `psit_last`, therefore cannot evaluate w.r.t `psip`
         assert!(
             InitialConditions::mixed(0.0, Poloidal(0.01), PI, PI, -0.027, 1e-6)
                 .finalize(machine)

@@ -6,17 +6,17 @@ Functions
 ---------
 plot_qfactor
     Plots a [`QfactorObject`][dexter.QfactorObject]'s
-    $q(\psi)$, $q(\psi_p)$, $q'(\psi)$, $q'(\psi_p)$, $\psi_p(\psi)$ and $\psi(\psi_p)$.
+    $q(\psi_t)$, $q(\psi_p)$, $q'(\psi_t)$, $q'(\psi_p)$, $\psi_p(\psi_t)$ and $\psi_t(\psi_p)$.
 plot_current
     Plots a [`CurrentObject`][dexter.CurrentObject]'s $g$, $I$ and their derivatives, with respect
-    to $\psi$ and $\psi_p$.
+    to $\psi_t$ and $\psi_p$.
 plot_bfield
     Plots a [`BfieldObject`][dexter.BfieldObject]'s $B$ and its derivatives on the $R-Z$ plane.
 plot_mode
     Plots a [`ModeObject`][dexter.ModeObject]'s $\alpha$, $\phi$ and its derivatives with respect
-    to $\psi$ or $\psi_p$.
+    to $\psi_t$ or $\psi_p$.
 plot_efield
-    Plots an [`EfieldObject`][dexter.EfieldObject]'s $E$, $Φ$, with respect to $\psi$ or $\psi_p$.
+    Plots an [`EfieldObject`][dexter.EfieldObject]'s $E$, $Φ$, with respect to $\psi_t$ or $\psi_p$.
 
 """
 
@@ -47,10 +47,10 @@ def plot_qfactor(
     show: bool = True,
 ) -> tuple[Figure, tuple[Axes, Axes, Axes]]:
     r"""Plots a [`QfactorObject`][dexter.QfactorObject]'s
-    $q(\psi)$, $q(\psi_p)$, $q'(\psi)$, $q'(\psi_p)$, $\psi_p(\psi)$ and $\psi(\psi_p)$.
+    $q(\psi_t)$, $q(\psi_p)$, $q'(\psi_t)$, $q'(\psi_p)$, $\psi_p(\psi_t)$ and $\psi_t(\psi_p)$.
 
-    The derivatives $d\psi_p/d\psi$ and $(d\psi/d\psi_p)^{-1}$ are calculated independently from
-    $q(\psi)$ and $q(\psi_p)$. It is a good sanity check to ensure the two curves coincide.
+    The derivatives $d\psi_t/d\psi_p$ and $(d\psi_p/d\psi_t)^{-1}$ are calculated independently from
+    $q(\psi_p)$ and $\iota(\psi_t)$. It is a good sanity check to ensure the two curves coincide.
 
     Parameters
     ----------
@@ -101,50 +101,50 @@ def plot_qfactor(
     DATA_LABEL = r"$data\ points$"
     DATA_ZORDER = 2
 
-    # ======================================================= q(ψ)
+    # ======================================================= q(ψt)
 
-    axqt.set_xlabel(r"$\psi/\psi_{LCFS}$")
-    axqt.set_ylabel(r"$q(\psi)$")
+    axqt.set_xlabel(r"$\psi_t/\psi_{LCFS}$")
+    axqt.set_ylabel(r"$q(\psi_t)$")
     axqt.yaxis.label.set_color(QFACTOR_COLOR)
     axqt.tick_params("y", which="both", colors=QFACTOR_COLOR)
     axdqt = axqt.twinx()
-    axdqt.set_ylabel(r"$dq(\psi)/d\psi$")
+    axdqt.set_ylabel(r"$dq(\psi_t)/d\psi_t$")
     axdqt.spines["left"].set_color(QFACTOR_COLOR)
     axdqt.spines["right"].set_color(QFACTOR_DERIV_COLOR)
     axdqt.yaxis.label.set_color(QFACTOR_DERIV_COLOR)
     axdqt.tick_params("y", which="both", colors=QFACTOR_DERIV_COLOR)
-    if qfactor.psi_state == "Good":
-        psis = np.linspace(0, qfactor.psi_last.value, points) * 0.99999
-        psis_norm = psis / qfactor.psi_last.value
-        q_values = qfactor.eval_q(psi=psis)
-        dq_values = qfactor.eval_q_deriv(psi=psis)
+    if qfactor.psit_state == "Good":
+        psits = np.linspace(0, qfactor.psit_last.value, points) * 0.99999
+        psits_norm = psits / qfactor.psit_last.value
+        q_values = qfactor.eval_q(psit=psits)
+        dq_values = qfactor.eval_q_deriv(psit=psits)
         axqt.plot(
-            psis_norm,
+            psits_norm,
             q_values,
             c=QFACTOR_COLOR,
-            label=rf"$q(\psi)$",
+            label=rf"$q(\psi_t)$",
         )
         axdqt.plot(
-            psis_norm,
+            psits_norm,
             dq_values,
             c=QFACTOR_DERIV_COLOR,
             alpha=QFACTOR_DERIV_ALPHA,
         )
         # axdqt.plot(  # debug
-        #     psis_norm, np.gradient(q_values, psis), c="k", linestyle="--"
+        #     psits_norm, np.gradient(q_values, psits), c="k", linestyle="--"
         # )
         axqt.plot(  # legend
             [],
             [],
             c=QFACTOR_DERIV_COLOR,
             alpha=QFACTOR_DERIV_ALPHA,
-            label=rf"$dq(\psi)/d\psi$",
+            label=rf"$dq(\psi_t)/d\psi_t$",
         )
         if qfactor.psip_state == "Good":
-            psips = qfactor.eval_other(psi=psis)
+            psips = qfactor.eval_other(psit=psits)
             d_values = qfactor.eval_deriv_of_other(psip=psips)
             axqt.plot(
-                psis_norm,
+                psits_norm,
                 d_values,
                 c=DERIV_COLOR,
                 linestyle=DERIV_STYLE,
@@ -153,10 +153,10 @@ def plot_qfactor(
         if data and qfactor.machine_type == "Numerical":
             qfactor = cast(NcQfactor, qfactor)
             q_data = qfactor.q_array
-            psi_data = qfactor.psi_array
-            psi_data_norm = psi_data / qfactor.psi_last.value
+            psit_data = qfactor.psit_array
+            psit_data_norm = psit_data / qfactor.psit_last.value
             axqt.plot(
-                psi_data_norm,
+                psit_data_norm,
                 q_data,
                 c=DATA_COLOR,
                 linewidth=0,
@@ -171,7 +171,9 @@ def plot_qfactor(
         axqt.grid()
     else:
         axqt.set_facecolor(EMPTY_PLOT_COLOR)
-        axqt.text(0.5, 0.5, ha="center", va="center", s=r"$q(\psi)\ is\ not\ defined$")
+        axqt.text(
+            0.5, 0.5, ha="center", va="center", s=r"$q(\psi_t)\ is\ not\ defined$"
+        )
 
     # ======================================================= q(ψp)
 
@@ -212,15 +214,15 @@ def plot_qfactor(
             alpha=QFACTOR_DERIV_ALPHA,
             label=rf"$dq(\psi_p)/d\psi_p$",
         )
-        if qfactor.psi_state == "Good":
-            psis = qfactor.eval_other(psip=psips)
-            d_values = 1 / qfactor.eval_deriv_of_other(psi=psis)
+        if qfactor.psit_state == "Good":
+            psits = qfactor.eval_other(psip=psips)
+            d_values = 1 / qfactor.eval_deriv_of_other(psit=psits)
             axqp.plot(
                 psips_norm,
                 d_values,
                 c=DERIV_COLOR,
                 linestyle=DERIV_STYLE,
-                label=r"$(d\psi_p/d\psi)^{-1}$",
+                label=r"$(d\psi_p/d\psi_t)^{-1}$",
             )
         if data and qfactor.machine_type == "Numerical":
             qfactor = cast(NcQfactor, qfactor)
@@ -247,29 +249,29 @@ def plot_qfactor(
             0.5, 0.5, ha="center", va="center", s=r"$q(\psi_p)\ is\ not\ defined$"
         )
 
-    # ======================================================= ψp(ψ)
+    # ======================================================= ψp(ψt)
 
-    axpt.set_xlabel(r"$\psi/\psi_{LCFS}$")
-    axpt.set_ylabel(r"$\psi_p(\psi)/\psi_{p,LCFS}$")
-    if qfactor.psi_state == "Good":
-        fluxes = np.linspace(0, qfactor.psi_last.value, points) * 0.99999
-        fluxes_norm = fluxes / qfactor.psi_last.value
-        other_values = qfactor.eval_other(psi=fluxes)
+    axpt.set_xlabel(r"$\psi_t/\psi_{t,LCFS}$")
+    axpt.set_ylabel(r"$\psi_p(\psi_t)/\psi_{p,LCFS}$")
+    if qfactor.psit_state == "Good":
+        fluxes = np.linspace(0, qfactor.psit_last.value, points) * 0.99999
+        fluxes_norm = fluxes / qfactor.psit_last.value
+        other_values = qfactor.eval_other(psit=fluxes)
         other_values_norm = other_values / qfactor.psip_last.value
         axpt.plot(
             fluxes_norm,
             other_values_norm,
             c=QFACTOR_COLOR,
-            label=rf"$\psi_p(\psi)$",
+            label=rf"$\psi_p(\psi_t)$",
         )
         if data and qfactor.machine_type == "Numerical":
             assert isinstance(qfactor, NcQfactor)
-            psi_data = qfactor.psi_array
+            psit_data = qfactor.psit_array
             psip_data = qfactor.psip_array
-            psi_data_norm = psi_data / qfactor.psi_last.value
+            psit_data_norm = psit_data / qfactor.psit_last.value
             psip_data_norm = psip_data / qfactor.psip_last.value
             axpt.plot(
-                psi_data_norm,
+                psit_data_norm,
                 psip_data_norm,
                 c=DATA_COLOR,
                 linewidth=0,
@@ -285,33 +287,33 @@ def plot_qfactor(
     else:
         axpt.set_facecolor(EMPTY_PLOT_COLOR)
         axpt.text(
-            0.5, 0.5, ha="center", va="center", s=r"$\psi_p(\psi)\ is\ not\ defined$"
+            0.5, 0.5, ha="center", va="center", s=r"$\psi_p(\psi_t)\ is\ not\ defined$"
         )
 
-    # ======================================================= ψ(ψp)
+    # ======================================================= ψt(ψp)
 
     axtp.set_xlabel(r"$\psi_p/\psi_{p,LCFS}$")
-    axtp.set_ylabel(r"$\psi(\psi_p)/\psi_{LCFS}$")
+    axtp.set_ylabel(r"$\psi_t(\psi_p)/\psi_{t,LCFS}$")
     if qfactor.psip_state == "Good":
         fluxes = np.linspace(0, qfactor.psip_last.value, points) * 0.99999
         fluxes_norm = fluxes / qfactor.psip_last.value
         other_values = qfactor.eval_other(psip=fluxes)
-        other_values_norm = other_values / qfactor.psi_last.value
+        other_values_norm = other_values / qfactor.psit_last.value
         axtp.plot(
             fluxes_norm,
             other_values_norm,
             c=QFACTOR_COLOR,
-            label=rf"$\psi(\psi_p)$",
+            label=rf"$\psi_t(\psi_p)$",
         )
         if data and qfactor.machine_type == "Numerical":
             assert isinstance(qfactor, NcQfactor)
-            psi_data = qfactor.psi_array
+            psit_data = qfactor.psit_array
             psip_data = qfactor.psip_array
-            psi_data_norm = psi_data / qfactor.psi_last.value
+            psit_data_norm = psit_data / qfactor.psit_last.value
             psip_data_norm = psip_data / qfactor.psip_last.value
             axtp.plot(
                 psip_data_norm,
-                psi_data_norm,
+                psit_data_norm,
                 c=DATA_COLOR,
                 linewidth=0,
                 marker=DATA_MARKER,
@@ -326,7 +328,7 @@ def plot_qfactor(
     else:
         axtp.set_facecolor(EMPTY_PLOT_COLOR)
         axtp.text(
-            0.5, 0.5, ha="center", va="center", s=r"$\psi(\psi_p)\ is\ not\ defined$"
+            0.5, 0.5, ha="center", va="center", s=r"$\psi_t(\psi_p)\ is\ not\ defined$"
         )
 
     if show:
@@ -343,7 +345,7 @@ def plot_current(
     show: bool = True,
 ) -> tuple[Figure, tuple[Axes, Axes]]:
     r"""Plots a [`CurrentObject`][dexter.CurrentObject]'s $g$, $I$ and their derivatives, with respect to
-    $\psi$ and $\psi_p$.
+    $\psi_t$ and $\psi_p$.
 
     The second order derivatives of $g$ and $I$ are plotted as well, but in arbitrary units and origin.
 
@@ -388,10 +390,10 @@ def plot_current(
     flux = _resolve_magnetic_flux_kind(current, flux)
 
     if flux == "Toroidal":
-        lcfs = machine.psi_last
-        flux_arg_name = "psi"
-        flux_tex = r"\psi"
-        flux_last_tex = r"\psi_{LCFS}"
+        lcfs = machine.psit_last
+        flux_arg_name = "psit"
+        flux_tex = r"\psi_t"
+        flux_last_tex = r"\psi_{t,LCFS}"
     else:
         lcfs = machine.psip_last
         flux_arg_name = "psip"
@@ -414,8 +416,8 @@ def plot_current(
         g_data = current.g_array
         i_data = current.i_array
         if flux == "Toroidal":
-            flux_data = cast(Array1, current.psi_array)
-            flux_data_norm = flux_data / machine.psi_last.value
+            flux_data = cast(Array1, current.psit_array)
+            flux_data_norm = flux_data / machine.psit_last.value
         else:
             flux_data = cast(Array1, current.psip_array)
             flux_data_norm = flux_data / machine.psip_last.value
@@ -606,16 +608,16 @@ def plot_bfield(
         bfield, "shape", (300, 300)
     )  # for analytical bfields
     thetas = np.linspace(0, TAU, theta_points)
-    if bfield.psi_state == "Good":
-        psi_last = machine.psi_last.value
-        fluxes = np.linspace(1e-10, psi_last, flux_points) * 0.99999
-        flux_arg_name = "psi"
-        flux_tex = "psi"
+    if bfield.psit_state == "Good":
+        psit_last = machine.psit_last.value
+        fluxes = np.linspace(1e-10, psit_last, flux_points) * 0.99999
+        flux_arg_name = "psit"
+        flux_tex = r"\psi_t"
     else:
         psip_last = machine.psip_last.value
         fluxes = np.linspace(1e-10, psip_last, flux_points) * 0.99999
         flux_arg_name = "psip"
-        flux_tex = "psi_p"
+        flux_tex = r"\psi_p"
 
     flux_grid, theta_grid = np.meshgrid(fluxes, thetas)
     lab_eval_args = {flux_arg_name: flux_grid, "theta": theta_grid}
@@ -678,7 +680,7 @@ def plot_bfield(
     axsc.legend(loc="upper right", prop={"size": 7})
 
     plt.colorbar(csbb, label=r"$B(R, Z)\ [Tesla]$")
-    plt.colorbar(csbf, label=rf"$dB(R, Z)/d\{flux_tex}$")
+    plt.colorbar(csbf, label=rf"$dB(R, Z)/d{flux_tex}$")
     plt.colorbar(csbt, label=rf"$dB(R, Z)/d\theta$")
     plt.colorbar(cssc, label=rf"$dB(R, Z)/d\theta$")
 
@@ -709,7 +711,7 @@ def plot_mode(
     show: bool = True,
 ) -> tuple[Figure, tuple[Axes, Axes]]:
     r"""Plots a [`ModeObject`][dexter.ModeObject]'s $\alpha$, $\phi$ and its derivatives with
-    respect to $\psi$ or $\psi_p$.
+    respect to $\psi_t$ or $\psi_p$.
 
     Parameters
     ----------
@@ -756,14 +758,14 @@ def plot_mode(
 
     if flux == "Toroidal":
         if isinstance(mode, FluteMode):
-            psi_last = mode.lcfs.value
+            psit_last = mode.lcfs.value
         else:
-            psi_last: float = getattr(mode, "psi_array")[-1]
-        fluxes = np.linspace(1e-10, psi_last, points)
-        fluxes_norm = fluxes / psi_last
-        flux_arg_name = "psi"
-        flux_tex = r"\psi"
-        flux_last_tex = r"\psi_{LCFS}"
+            psit_last: float = getattr(mode, "psit_array")[-1]
+        fluxes = np.linspace(1e-10, psit_last, points)
+        fluxes_norm = fluxes / psit_last
+        flux_arg_name = "psit"
+        flux_tex = r"\psi_t"
+        flux_last_tex = r"\psi_{t, LCFS}"
     else:
         if isinstance(mode, FluteMode):
             psip_last = mode.lcfs.value
@@ -837,8 +839,8 @@ def plot_mode(
     twp.tick_params("y", which="both", colors=PHASE_DERIV_COLOR)
 
     if data and mode.machine_type == "Numerical":
-        if mode.psi_state == "Good":
-            flux_data = getattr(mode, "psi_array")
+        if mode.psit_state == "Good":
+            flux_data = getattr(mode, "psit_array")
         else:
             flux_data = getattr(mode, "psip_array")
 
@@ -915,7 +917,7 @@ def plot_efield(
     points: int = 1000,
     show: bool = True,
 ) -> tuple[Figure, tuple[Axes, Axes]]:
-    r"""Plots an [`EfieldObject`][dexter.EfieldObject]'s $E$, $Φ$, with respect to $\psi$ or $\psi_p$.
+    r"""Plots an [`EfieldObject`][dexter.EfieldObject]'s $E$, $Φ$, with respect to $\psi_t$ or $\psi_p$.
 
     The first and second derivatives of $\Phi$ are plotted as well, but in arbitrary units and origin.
 
@@ -937,11 +939,11 @@ def plot_efield(
     ``` py title="Electric field plot"
     >>> machine = dex.Machine.FromNetcdf(path, "Akima", "Bicubic")
     >>> geometry = machine.geometry
-    >>> LCFS = geometry.psi_last
+    >>> LCFS = geometry.psit_last
     >>>
     >>> strength = machine.quantity(75, "kiloVolt / meter")
     >>> rmean = 0.96 * machine.rlast
-    >>> mean = dex.MagneticFlux.Toroidal(float(machine.geometry.eval_psi_of_r(rmean)))
+    >>> mean = dex.MagneticFlux.Toroidal(float(machine.geometry.eval_psit_of_r(rmean)))
     >>> waist = LCFS.value * 0.02
     >>> efield = dex.GaussianEfield(strength, mean, waist)
     >>> machine.efield = efield
@@ -963,10 +965,10 @@ def plot_efield(
     flux = _resolve_magnetic_flux_kind(efield, flux)
 
     if flux == "Toroidal":
-        lcfs = machine.psi_last
-        flux_arg_name = "psi"
-        flux_tex = r"\psi"
-        flux_last_tex = r"\psi_{LCFS}"
+        lcfs = machine.psit_last
+        flux_arg_name = "psit"
+        flux_tex = r"\psi_t"
+        flux_last_tex = r"\psi_{t,LCFS}"
     else:
         lcfs = machine.psip_last
         flux_arg_name = "psip"
@@ -1074,17 +1076,17 @@ def _resolve_magnetic_flux_kind(
 ) -> MagneticFluxKind:
     match passed:
         case "Toroidal":
-            if obj.psi_state == "Good":
+            if obj.psit_state == "Good":
                 return "Toroidal"
             elif obj.psip_state == "Good":
-                print('psi_state = "Bad", using poloidal flux')
+                print('psit_state = "Bad", using poloidal flux')
                 return "Poloidal"
             else:
                 assert False, "unreachable"
         case "Poloidal":
             if obj.psip_state == "Good":
                 return "Poloidal"
-            elif obj.psi_state == "Good":
+            elif obj.psit_state == "Good":
                 print('psip_state = "Bad", using toroidal flux')
                 return "Toroidal"
             else:

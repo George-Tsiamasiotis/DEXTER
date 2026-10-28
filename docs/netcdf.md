@@ -1,5 +1,7 @@
 # NetCDF Convention
 
+TODO: solidify
+
 Version 0.0.1
 
 DEXTER reads configuration data from a [netCDF] file. The variables must follow the following conventions:

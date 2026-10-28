@@ -85,8 +85,8 @@ impl PyEfield {
     }
 
     #[getter]
-    pub fn psi_state(&self) -> String {
-        format!("{:?}", self.inner().psi_state())
+    pub fn psit_state(&self) -> String {
+        format!("{:?}", self.inner().psit_state())
     }
 
     #[getter]
@@ -97,23 +97,23 @@ impl PyEfield {
 
 #[pymethods] // Efield Trait
 impl PyEfield {
-    pub fn eval_e(&self, psi: f64, psip: f64) -> Result<f64> {
-        let flux = flux_from_params(psi, psip);
+    pub fn eval_e(&self, psit: f64, psip: f64) -> Result<f64> {
+        let flux = flux_from_params(psit, psip);
         Ok(self.inner().eval_e(flux)?)
     }
 
-    pub fn eval_phi(&self, psi: f64, psip: f64) -> Result<f64> {
-        let flux = flux_from_params(psi, psip);
+    pub fn eval_phi(&self, psit: f64, psip: f64) -> Result<f64> {
+        let flux = flux_from_params(psit, psip);
         Ok(self.inner().eval_phi(flux)?)
     }
 
-    pub fn eval_phi_deriv(&self, psi: f64, psip: f64) -> Result<f64> {
-        let flux = flux_from_params(psi, psip);
+    pub fn eval_phi_deriv(&self, psit: f64, psip: f64) -> Result<f64> {
+        let flux = flux_from_params(psit, psip);
         Ok(self.inner().eval_phi_deriv(flux)?)
     }
 
-    pub fn eval_phi_deriv2(&self, psi: f64, psip: f64) -> Result<f64> {
-        let flux = flux_from_params(psi, psip);
+    pub fn eval_phi_deriv2(&self, psit: f64, psip: f64) -> Result<f64> {
+        let flux = flux_from_params(psit, psip);
         Ok(self.inner().eval_phi_deriv2(flux)?)
     }
 }

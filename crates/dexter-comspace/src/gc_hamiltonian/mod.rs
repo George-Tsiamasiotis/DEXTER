@@ -36,7 +36,7 @@ pub struct GCHamiltonian;
 
 /// Evaluations over scalar values.
 impl GCHamiltonian {
-    /// Evaluates the Hamiltonian in a `(θ, ψ/ψp; Pζ, μ)` point.
+    /// Evaluates the Hamiltonian in a `(θ, ψ; Pζ, μ)` point.
     ///
     /// # Errors
     ///
@@ -62,11 +62,11 @@ impl GCHamiltonian {
     /// // ===========
     ///
     /// let theta = 3.1415;
-    /// let psi = MagneticFlux::Toroidal(0.015);
+    /// let psit = MagneticFlux::Toroidal(0.015);
     /// let pzeta = -0.1*qfactor.psip_last().value();
     /// let mu = 1e-4;
     ///
-    /// let energy: f64 = GCHamiltonian::eval(machine, theta, psi, pzeta, mu)?;
+    /// let energy: f64 = GCHamiltonian::eval(machine, theta, psit, pzeta, mu)?;
     /// # Ok::<_, EvalError>(())
     ///
     /// ```
@@ -99,10 +99,10 @@ impl GCHamiltonian {
             }
             // Convert to the other flux and use `machine.good_flux()` in the `b` and `g` calculations
             (Toroidal, Poloidal) => {
-                let psi = machine.qfactor().eval_other(flux, acc.xacc())?;
-                b = machine.bfield().eval_b(psi, theta, acc)?;
-                g = machine.current().eval_g(psi, acc.xacc())?;
-                phi = machine.efield().eval_phi(psi)?;
+                let psit = machine.qfactor().eval_other(flux, acc.xacc())?;
+                b = machine.bfield().eval_b(psit, theta, acc)?;
+                g = machine.current().eval_g(psit, acc.xacc())?;
+                phi = machine.efield().eval_phi(psit)?;
                 psip = flux;
             }
             (Poloidal, Toroidal) => {
@@ -119,7 +119,7 @@ impl GCHamiltonian {
         Ok(parallel + perpendicular + phi)
     }
 
-    /// Evaluates `dot(θ)` in a `(θ, ψ/ψp; Pζ, μ)` point.
+    /// Evaluates `dot(θ)` in a `(θ, ψ; Pζ, μ)` point.
     ///
     /// `dot(θ)` is calculated from the canonical equation of motion `dot(θ) = 𝜕H/𝜕P𝜃`.
     ///
@@ -148,11 +148,11 @@ impl GCHamiltonian {
     /// // ===========
     ///
     /// let theta = 3.1415;
-    /// let psi = MagneticFlux::Toroidal(0.015);
+    /// let psit = MagneticFlux::Toroidal(0.015);
     /// let pzeta = -0.1*qfactor.psip_last().value();
     /// let mu = 1e-4;
     ///
-    /// let theta_dot: f64 = GCHamiltonian::eval_theta_dot(machine, theta, psi, pzeta, mu)?;
+    /// let theta_dot: f64 = GCHamiltonian::eval_theta_dot(machine, theta, psit, pzeta, mu)?;
     /// # Ok::<_, EvalError>(())
     ///
     /// ```
@@ -228,19 +228,19 @@ mod test {
     }
 
     #[test]
-    fn gc_hamiltonian_evaluate_machine_good_psi() {
+    fn gc_hamiltonian_evaluate_machine_good_psit() {
         let path = std::path::PathBuf::from(TOROIDAL_TEST_NETCDF_PATH);
         let qfactor = NcQfactorBuilder::new(&path, Steffen).build().unwrap();
         let current = NcCurrentBuilder::new(&path, Steffen).build().unwrap();
         let bfield = NcBfieldBuilder::new(&path, Bicubic).build().unwrap();
-        let lcfs = qfactor.psi_last();
+        let lcfs = qfactor.psit_last();
         let efield = GaussianEfield::new(5e-4, lcfs * 0.9, 0.02 * lcfs.value());
         let machine = MachineBuilder::new(&qfactor, &current, &bfield)
             .with_efield(&efield)
             .build();
 
         let _ = GCHamiltonian::eval(machine, 0.0, Toroidal(0.01), -0.01, 1e-4).unwrap();
-        // `psip` is `Bad` so we cannot calculate `psi`
+        // `psip` is `Bad` so we cannot calculate `psit`
         let _ = GCHamiltonian::eval(machine, 0.0, Poloidal(0.01), -0.01, 1e-4).unwrap_err();
     }
 
@@ -257,7 +257,7 @@ mod test {
             .build();
 
         let _ = GCHamiltonian::eval(machine, 0.0, Poloidal(0.01), -0.01, 1e-4).unwrap();
-        // `psi` is `Bad` so we cannot calculate `psip`
+        // `psit` is `Bad` so we cannot calculate `psip`
         let _ = GCHamiltonian::eval(machine, 0.0, Toroidal(0.01), -0.01, 1e-4).unwrap_err();
     }
 }

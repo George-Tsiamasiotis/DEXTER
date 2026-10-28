@@ -6,7 +6,7 @@ def test_energy_pzeta_plane(lar_machine: dex.Machine):
     plane = dex.EnergyPzetaPlane(lar_machine, 1e-5)
     plane.show(show=False, curves=True)
 
-    flux0 = lar_machine.psi_last / 2
+    flux0 = lar_machine.psit_last / 2
     initial = dex.InitialConditions.Mixed(0, flux0, 3, 2, 1e-6, 1e-7)
     particle = dex.Particle(initial)
     particle.classify(lar_machine)  # calculate energy

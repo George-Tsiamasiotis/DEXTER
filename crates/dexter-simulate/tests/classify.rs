@@ -24,9 +24,9 @@ fn orbit_alpha() {
     let (qfactor, current, bfield )= create_objects();
     let machine = MachineBuilder::new(&qfactor, &current, &bfield).build();
 
-    let psi0 =MagneticFlux::Toroidal(0.001);
+    let psit0 =MagneticFlux::Toroidal(0.001);
     let pzeta0 = - 0.8 * machine.qfactor().psip_last().value();
-    let initial = InitialConditions::mixed(0.0, psi0, 1.0, 0.0, pzeta0, MU);
+    let initial = InitialConditions::mixed(0.0, psit0, 1.0, 0.0, pzeta0, MU);
 
     let mut particle = Particle::new(&initial);
     assert_eq!(particle.orbit_type(), OrbitType::Unclassified);
@@ -48,9 +48,9 @@ fn orbit_beta() {
     let (qfactor, current, bfield )= create_objects();
     let machine = MachineBuilder::new(&qfactor, &current, &bfield).build();
 
-    let psi0 = MagneticFlux::Toroidal(0.02);
+    let psit0 = MagneticFlux::Toroidal(0.02);
     let pzeta0 = - 1.5 * machine.qfactor().psip_last().value();
-    let initial = InitialConditions::mixed(0.0, psi0, 1.0, 0.0, pzeta0, MU);
+    let initial = InitialConditions::mixed(0.0, psit0, 1.0, 0.0, pzeta0, MU);
 
     let mut particle = Particle::new(&initial);
     assert_eq!(particle.orbit_type(), OrbitType::Unclassified);
@@ -71,9 +71,9 @@ fn orbit_gamma() {
     let (qfactor, current, bfield )= create_objects();
     let machine = MachineBuilder::new(&qfactor, &current, &bfield).build();
 
-    let psi0 = MagneticFlux::Toroidal(0.01);
+    let psit0 = MagneticFlux::Toroidal(0.01);
     let pzeta0 = - 0.8 * machine.qfactor().psip_last().value();
-    let initial = InitialConditions::mixed(0.0, psi0, 1.0, 0.0, pzeta0, MU);
+    let initial = InitialConditions::mixed(0.0, psit0, 1.0, 0.0, pzeta0, MU);
 
     let mut particle = Particle::new(&initial);
     assert_eq!(particle.orbit_type(), OrbitType::Unclassified);
@@ -95,9 +95,9 @@ fn orbit_delta() {
     let (qfactor, current, bfield )= create_objects();
     let machine = MachineBuilder::new(&qfactor, &current, &bfield).build();
 
-    let psi0 = MagneticFlux::Toroidal(0.018);
+    let psit0 = MagneticFlux::Toroidal(0.018);
     let pzeta0 = - 0.6 * machine.qfactor().psip_last().value();
-    let initial = InitialConditions::mixed(0.0, psi0, PI, 0.0, pzeta0, MU);
+    let initial = InitialConditions::mixed(0.0, psit0, PI, 0.0, pzeta0, MU);
 
     let mut particle = Particle::new(&initial);
     assert_eq!(particle.orbit_type(), OrbitType::Unclassified);
@@ -119,9 +119,9 @@ fn orbit_epsilon() {
     let (qfactor, current, bfield )= create_objects();
     let machine = MachineBuilder::new(&qfactor, &current, &bfield).build();
 
-    let psi0 = MagneticFlux::Toroidal(0.003);
+    let psit0 = MagneticFlux::Toroidal(0.003);
     let pzeta0 = - 0.6 * machine.qfactor().psip_last().value();
-    let initial = InitialConditions::mixed(0.0, psi0, PI, 0.0, pzeta0, MU);
+    let initial = InitialConditions::mixed(0.0, psit0, PI, 0.0, pzeta0, MU);
 
     let mut particle = Particle::new(&initial);
     assert_eq!(particle.orbit_type(), OrbitType::Unclassified);
@@ -142,9 +142,9 @@ fn orbit_zeta() {
     let (qfactor, current, bfield )= create_objects();
     let machine = MachineBuilder::new(&qfactor, &current, &bfield).build();
 
-    let psi0 = MagneticFlux::Toroidal(0.025);
+    let psit0 = MagneticFlux::Toroidal(0.025);
     let pzeta0 = - 0.4 * machine.qfactor().psip_last().value();
-    let initial = InitialConditions::mixed(0.0, psi0, PI, 0.0, pzeta0, MU);
+    let initial = InitialConditions::mixed(0.0, psit0, PI, 0.0, pzeta0, MU);
 
     let mut particle = Particle::new(&initial);
     assert_eq!(particle.orbit_type(), OrbitType::Unclassified);
@@ -165,9 +165,9 @@ fn orbit_eta() {
     let (qfactor, current, bfield )= create_objects();
     let machine = MachineBuilder::new(&qfactor, &current, &bfield).build();
 
-    let psi0 = MagneticFlux::Toroidal(0.015);
+    let psit0 = MagneticFlux::Toroidal(0.015);
     let pzeta0 = - 0.1 * machine.qfactor().psip_last().value();
-    let initial = InitialConditions::mixed(0.0, psi0, 1.0, 0.0, pzeta0, MU);
+    let initial = InitialConditions::mixed(0.0, psit0, 1.0, 0.0, pzeta0, MU);
 
     let mut particle = Particle::new(&initial);
     assert_eq!(particle.orbit_type(), OrbitType::Unclassified);
@@ -188,9 +188,9 @@ fn orbit_theta() {
     let (qfactor, current, bfield )= create_objects();
     let machine = MachineBuilder::new(&qfactor, &current, &bfield).build();
 
-    let psi0 = MagneticFlux::Toroidal(0.0045);
+    let psit0 = MagneticFlux::Toroidal(0.0045);
     let pzeta0 = - 0.0448 * machine.qfactor().psip_last().value();
-    let initial = InitialConditions::mixed(0.0, psi0, 1.0, 0.0, pzeta0, MU);
+    let initial = InitialConditions::mixed(0.0, psit0, 1.0, 0.0, pzeta0, MU);
 
     let mut particle = Particle::new(&initial);
     assert_eq!(particle.orbit_type(), OrbitType::Unclassified);
@@ -211,9 +211,9 @@ fn orbit_iota() {
     let (qfactor, current, bfield )= create_objects();
     let machine = MachineBuilder::new(&qfactor, &current, &bfield).build();
 
-    let psi0 = MagneticFlux::Toroidal(0.016);
+    let psit0 = MagneticFlux::Toroidal(0.016);
     let pzeta0 = - 0.6 * machine.qfactor().psip_last().value();
-    let initial = InitialConditions::mixed(0.0, psi0, 1.0, 0.0, pzeta0, MU);
+    let initial = InitialConditions::mixed(0.0, psit0, 1.0, 0.0, pzeta0, MU);
 
     let mut particle = Particle::new(&initial);
     assert_eq!(particle.orbit_type(), OrbitType::Unclassified);
@@ -234,9 +234,9 @@ fn orbit_kappa() {
     let (qfactor, current, bfield )= create_objects();
     let machine = MachineBuilder::new(&qfactor, &current, &bfield).build();
 
-    let psi0 = MagneticFlux::Toroidal(0.025);
+    let psit0 = MagneticFlux::Toroidal(0.025);
     let pzeta0 = -0.36 * machine.qfactor().psip_last().value();
-    let initial = InitialConditions::mixed(0.0, psi0, 0.0, 0.0, pzeta0, MU);
+    let initial = InitialConditions::mixed(0.0, psit0, 0.0, 0.0, pzeta0, MU);
 
     let mut particle = Particle::new(&initial);
     assert_eq!(particle.orbit_type(), OrbitType::Unclassified);
@@ -257,9 +257,9 @@ fn orbit_lambda() {
     let (qfactor, current, bfield )= create_objects();
     let machine = MachineBuilder::new(&qfactor, &current, &bfield).build();
 
-    let psi0 = MagneticFlux::Toroidal(0.001);
+    let psit0 = MagneticFlux::Toroidal(0.001);
     let pzeta0 = -0.36 * machine.qfactor().psip_last().value();
-    let initial = InitialConditions::mixed(0.0, psi0, 0.0, 0.0, pzeta0, MU);
+    let initial = InitialConditions::mixed(0.0, psit0, 0.0, 0.0, pzeta0, MU);
 
     let mut particle = Particle::new(&initial);
     assert_eq!(particle.orbit_type(), OrbitType::Unclassified);
@@ -280,9 +280,9 @@ fn orbit_mu() {
     let (qfactor, current, bfield )= create_objects();
     let machine = MachineBuilder::new(&qfactor, &current, &bfield).build();
 
-    let psi0 = MagneticFlux::Toroidal(0.0014);
+    let psit0 = MagneticFlux::Toroidal(0.0014);
     let pzeta0 = - 0.0 * machine.qfactor().psip_last().value();
-    let initial = InitialConditions::mixed(0.0, psi0, 1.0, 0.0, pzeta0, MU);
+    let initial = InitialConditions::mixed(0.0, psit0, 1.0, 0.0, pzeta0, MU);
 
     let mut particle = Particle::new(&initial);
     assert_eq!(particle.orbit_type(), OrbitType::Unclassified);

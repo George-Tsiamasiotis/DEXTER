@@ -25,11 +25,11 @@ fn queue_intersect_const_theta_parQ_larC_larB_cosP() -> Result<(), SimulationErr
 
     // Initial Conditions setup
     let particle_count = 10;
-    let psi0_values =
-        machine.qfactor().psi_last().value() * Array1::linspace(0.1, 0.5, particle_count);
+    let psit0_values =
+        machine.qfactor().psit_last().value() * Array1::linspace(0.1, 0.5, particle_count);
     let initial_conditions = QueueInitialConditions::boozer(
         &vec![0.0; particle_count],
-        &MagneticFluxArray::Toroidal(psi0_values),
+        &MagneticFluxArray::Toroidal(psit0_values),
         &vec![0.0; particle_count],
         &vec![0.0; particle_count],
         &vec![1e-6; particle_count],

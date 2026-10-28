@@ -2,6 +2,7 @@
 
 use std::sync::Arc;
 
+use ndarray::Array1;
 use numpy::{IntoPyArray, PyArray1, PyArray2};
 use pyo3::{prelude::*, types::PyType};
 
@@ -91,8 +92,8 @@ impl PyBfield {
     }
 
     #[getter]
-    pub fn psi_state(&self) -> String {
-        format!("{:?}", self.inner().psi_state())
+    pub fn psit_state(&self) -> String {
+        format!("{:?}", self.inner().psit_state())
     }
 
     #[getter]
@@ -103,43 +104,43 @@ impl PyBfield {
 
 #[pymethods] // Bfield Trait
 impl PyBfield {
-    pub fn eval_b(&self, theta: f64, psi: f64, psip: f64) -> Result<f64> {
-        let flux = flux_from_params(psi, psip);
+    pub fn eval_b(&self, theta: f64, psit: f64, psip: f64) -> Result<f64> {
+        let flux = flux_from_params(psit, psip);
         Ok(self
             .inner()
             .eval_b(flux, theta, &mut Accelerator2d::new())?)
     }
 
-    pub fn eval_deriv_flux(&self, theta: f64, psi: f64, psip: f64) -> Result<f64> {
-        let flux = flux_from_params(psi, psip);
+    pub fn eval_deriv_flux(&self, theta: f64, psit: f64, psip: f64) -> Result<f64> {
+        let flux = flux_from_params(psit, psip);
         Ok(self
             .inner()
             .eval_deriv_flux(flux, theta, &mut Accelerator2d::new())?)
     }
 
-    pub fn eval_deriv_theta(&self, theta: f64, psi: f64, psip: f64) -> Result<f64> {
-        let flux = flux_from_params(psi, psip);
+    pub fn eval_deriv_theta(&self, theta: f64, psit: f64, psip: f64) -> Result<f64> {
+        let flux = flux_from_params(psit, psip);
         Ok(self
             .inner()
             .eval_deriv_theta(flux, theta, &mut Accelerator2d::new())?)
     }
 
-    pub fn eval_deriv_flux2(&self, theta: f64, psi: f64, psip: f64) -> Result<f64> {
-        let flux = flux_from_params(psi, psip);
+    pub fn eval_deriv_flux2(&self, theta: f64, psit: f64, psip: f64) -> Result<f64> {
+        let flux = flux_from_params(psit, psip);
         Ok(self
             .inner()
             .eval_deriv_flux2(flux, theta, &mut Accelerator2d::new())?)
     }
 
-    pub fn eval_deriv_theta2(&self, theta: f64, psi: f64, psip: f64) -> Result<f64> {
-        let flux = flux_from_params(psi, psip);
+    pub fn eval_deriv_theta2(&self, theta: f64, psit: f64, psip: f64) -> Result<f64> {
+        let flux = flux_from_params(psit, psip);
         Ok(self
             .inner()
             .eval_deriv_theta2(flux, theta, &mut Accelerator2d::new())?)
     }
 
-    pub fn eval_deriv_mixed(&self, theta: f64, psi: f64, psip: f64) -> Result<f64> {
-        let flux = flux_from_params(psi, psip);
+    pub fn eval_deriv_mixed(&self, theta: f64, psit: f64, psip: f64) -> Result<f64> {
+        let flux = flux_from_params(psit, psip);
         Ok(self
             .inner()
             .eval_deriv_mixed(flux, theta, &mut Accelerator2d::new())?)
@@ -199,22 +200,25 @@ impl PyBfield {
         name: &str,
     ) -> Result<Option<Bound<'py, PyArray1<f64>>>> {
         let bfield = self.nc()?;
-        match name {
-            "theta_array" => return Ok(Some(bfield.theta_array().into_pyarray(py))),
-            "theta_array_padded" => return Ok(Some(bfield.theta_array_padded().into_pyarray(py))),
-            "psi_array" => match bfield.psi_array() {
-                Some(array) => return Ok(Some(array.into_pyarray(py))),
+        let values: &[f64] = match name {
+            "theta_array" => bfield.theta_values(),
+            "theta_array_padded" => bfield.theta_array_padded(),
+            "psit_array" => match bfield.psit_values() {
+                Some(values) => values,
                 None => return Ok(None),
             },
-            "psip_array" => match bfield.psip_array() {
-                Some(array) => return Ok(Some(array.into_pyarray(py))),
+            "psip_array" => match bfield.psip_values() {
+                Some(values) => values,
                 None => return Ok(None),
             },
-            _ => Err(DexterError::AttributeError {
-                obj: "NcBfield".into(),
-                attr: name.into(),
-            }),
-        }
+            _ => {
+                return Err(DexterError::AttributeError {
+                    obj: "NcBfield".into(),
+                    attr: name.into(),
+                });
+            }
+        };
+        Ok(Some(Array1::from(values.to_vec()).into_pyarray(py)))
     }
 
     pub fn get_array2d<'py>(
@@ -223,15 +227,17 @@ impl PyBfield {
         name: &str,
     ) -> Result<Bound<'py, PyArray2<f64>>> {
         let bfield = self.nc()?;
-        match name {
-            "b_array" => return Ok(bfield.b_array().into_pyarray(py)),
-            "b_array_padded" => return Ok(bfield.b_array_padded().into_pyarray(py)),
-            _ => (),
-        }
-        Err(DexterError::AttributeError {
-            obj: "NcBfield".into(),
-            attr: name.into(),
-        })
+        let view = match name {
+            "b_array" => bfield.b_array(),
+            "b_array_padded" => bfield.b_array_padded(),
+            _ => {
+                return Err(DexterError::AttributeError {
+                    obj: "NcBfield".into(),
+                    attr: name.into(),
+                });
+            }
+        };
+        Ok(view.to_owned().into_pyarray(py))
     }
 }
 

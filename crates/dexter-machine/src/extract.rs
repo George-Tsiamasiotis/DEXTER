@@ -13,6 +13,8 @@ pub mod netcdf_fields {
     pub const NC_DATE: &str = "date";
     /// The script used to create the netCDF file.
     pub const NC_SCRIPT: &str = "script";
+    /// The magnetic flux coordinate with respect to which the quantities are expressed.
+    pub const NC_FLUX: &str = "flux";
     /// The netCDF's convention version ([`semver::Version`]).
     pub const NC_CONVENTION_VERSION: &str = "version";
 
@@ -33,8 +35,8 @@ pub mod netcdf_fields {
 
     /// The boozer toroidal angle `θ` in **\[rads\]**.
     pub const NC_THETA: &str = "theta";
-    /// The toroidal flux `ψ` in **Normalized Units**.
-    pub const NC_PSI_NORM: &str = "psi_norm";
+    /// The toroidal flux `ψt` in **Normalized Units**.
+    pub const NC_PSIT_NORM: &str = "psit_norm";
     /// The poloidal flux `ψp` in **Normalized Units**.
     pub const NC_PSIP_NORM: &str = "psip_norm";
     /// The radial coordinate `r` in **Normalized Units**.
@@ -43,8 +45,8 @@ pub mod netcdf_fields {
     pub const NC_M_MODES: &str = "m";
     /// The toroidal mode numbers `n`.
     pub const NC_N_MODES: &str = "n";
-    /// The toroidal flux `ψ` in **\[Tm\]**.
-    pub const NC_PSI: &str = "psi";
+    /// The toroidal flux `ψt` in **\[Tm\]**.
+    pub const NC_PSIT: &str = "psit";
     /// The poloidal flux `ψp` in **\[Tm\]**.
     pub const NC_PSIP: &str = "psip";
     /// The radial coordinate `r` in **\[m\]**.
@@ -52,37 +54,37 @@ pub mod netcdf_fields {
 
     // ================ 1D Variables ================
 
-    /// The safety factor `q(ψ/ψp)`.
+    /// The safety factor `q(ψ)`.
     pub const NC_Q: &str = "q";
-    /// The covariant toroidal plasma current `g(ψ/ψp)` in **\[Tm\]**.
+    /// The covariant toroidal plasma current `g(ψ)` in **\[Tm\]**.
     pub const NC_G: &str = "g";
-    /// The covariant poloidal plasma current `I(ψ/ψp)` in **\[Tm\]**.
+    /// The covariant poloidal plasma current `I(ψ)` in **\[Tm\]**.
     pub const NC_I: &str = "i";
-    /// The covariant toroidal plasma current `g(ψ/ψp)` in **Normalized Units**.
+    /// The covariant toroidal plasma current `g(ψ)` in **Normalized Units**.
     pub const NC_G_NORM: &str = "g_norm";
-    /// The covariant poloidal plasma current `I(ψ/ψp)` in **Normalized Units**.
+    /// The covariant poloidal plasma current `I(ψ)` in **Normalized Units**.
     pub const NC_I_NORM: &str = "i_norm";
 
     // ================ 2D Variables ================
 
-    /// The magnetic field strength `B(ψ/ψp, θ)` in **\[T\]**.
+    /// The magnetic field strength `B(ψ, θ)` in **\[T\]**.
     pub const NC_B: &str = "b";
-    /// The magnetic field strength in `B(ψ/ψp, θ)` in **Normalized Units**.
+    /// The magnetic field strength in `B(ψ, θ)` in **Normalized Units**.
     pub const NC_B_NORM: &str = "b_norm";
-    /// The `R` coordinate with respect to boozer coordinates `R(ψ/ψp, θ)` in **\[m\]**.
+    /// The `R` coordinate with respect to boozer coordinates `R(ψ, θ)` in **\[m\]**.
     pub const NC_RLAB: &str = "rlab";
-    /// The `Z` coordinate with respect to boozer coordinates `Z(ψ/ψp, θ)` in **\[m\]**.
+    /// The `Z` coordinate with respect to boozer coordinates `Z(ψ, θ)` in **\[m\]**.
     pub const NC_ZLAB: &str = "zlab";
-    /// The VMEC to Boozer Jacobian `J(ψ/ψp, θ)` in **\[ m/T \]**.
+    /// The VMEC to Boozer Jacobian `J(ψ, θ)` in **\[ m/T \]**.
     pub const NC_JACOBIAN: &str = "jacobian";
 
     // ================ 3D Variables ================
 
-    /// The 3D array containing all the `α{m,n}(ψ/ψp)` 1D arrays in **Normalized Units**.
+    /// The 3D array containing all the `α{m,n}(ψ)` 1D arrays in **Normalized Units**.
     pub const NC_ALPHAS_NORM: &str = "alphas_norm";
-    /// The 3D array containing all the `α{m,n}(ψ/ψp)` 1D arrays in **\[m\]**.
+    /// The 3D array containing all the `α{m,n}(ψ)` 1D arrays in **\[m\]**.
     pub const NC_ALPHAS: &str = "alphas";
-    /// The 3D array containing all the `φ{m,n}(ψ/ψp)` 1D arrays in **\[rads\]**.
+    /// The 3D array containing all the `φ{m,n}(ψ)` 1D arrays in **\[rads\]**.
     pub const NC_PHASES: &str = "phases";
 }
 
@@ -105,7 +107,7 @@ use crate::NcError;
 /// `tools/create_<>_test_netcdf.py`.
 pub const TEST_NETCDF_PATH: &str = "test_netcdf.nc";
 
-/// Test netcdf file with ψ the only good coordinate.
+/// Test netcdf file with ψt the only good coordinate.
 pub const TOROIDAL_TEST_NETCDF_PATH: &str = "toroidal_test_netcdf.nc";
 /// Test netcdf file with ψp the only good coordinate.
 pub const POLOIDAL_TEST_NETCDF_PATH: &str = "poloidal_test_netcdf.nc";
@@ -372,7 +374,7 @@ pub fn array_3d<T: NcType>(file: &NcFile, name: &str) -> Result<Array3<T>, NcErr
     array_nd(file, name)
 }
 
-/// Extracts the `α{m,n}(ψp)` and `φ{m,n}(ψp)` 1D arrays of the specified {m,n} mode.
+/// Extracts the `α{m,n}(ψ)` and `φ{m,n}(ψ)` 1D arrays of the specified {m,n} mode.
 ///
 /// # Example
 /// ```
@@ -503,12 +505,12 @@ mod test {
 
         array_1d::<f64>(&file, NC_THETA).unwrap();
         array_1d::<f64>(&file, NC_PSIP_NORM).unwrap();
-        array_1d::<f64>(&file, NC_PSI_NORM).unwrap();
+        array_1d::<f64>(&file, NC_PSIT_NORM).unwrap();
         array_1d::<f64>(&file, NC_R_NORM).unwrap();
         array_1d::<i64>(&file, NC_M_MODES).unwrap();
         array_1d::<i64>(&file, NC_N_MODES).unwrap();
         array_1d::<f64>(&file, NC_PSIP).unwrap();
-        array_1d::<f64>(&file, NC_PSI).unwrap();
+        array_1d::<f64>(&file, NC_PSIT).unwrap();
         array_1d::<f64>(&file, NC_R).unwrap();
 
         array_1d::<f64>(&file, NC_Q).unwrap();

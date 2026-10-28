@@ -24,10 +24,10 @@ class Queue(_ReprStrImpl):
 
     ``` py title="Queue Instantiation"
     >>> num = 100
-    >>> psi0s = np.linspace(0, 0.15, num)
+    >>> psit0s = np.linspace(0, 0.15, num)
     >>> initial_conditions = dex.QueueInitialConditions.Boozer(
     ...     t0=np.zeros(num),
-    ...     flux0=dex.MagneticFluxArray.Toroidal(psi0s),
+    ...     flux0=dex.MagneticFluxArray.Toroidal(psit0s),
     ...     theta0=np.zeros(num),
     ...     zeta0=np.zeros(num),
     ...     rho0=np.full(num, 1e-5),
@@ -118,10 +118,10 @@ class Queue(_ReprStrImpl):
         >>>
         >>> # Initial conditions setup
         >>> num = 10
-        >>> psi0s = dex.MagneticFluxArray.Toroidal(np.linspace(0, machine.psi_last.value, num))
+        >>> psit0s = dex.MagneticFluxArray.Toroidal(np.linspace(0, machine.psit_last.value, num))
         >>> initial_conditions = dex.QueueInitialConditions.Boozer(
         ...     t0=np.zeros(num),
-        ...     flux0=psi0s,
+        ...     flux0=psit0s,
         ...     theta0=np.zeros(num),
         ...     zeta0=np.zeros(num),
         ...     rho0=np.full(num, 1e-5),
@@ -192,10 +192,10 @@ class Queue(_ReprStrImpl):
         >>>
         >>> # Initial conditions and Intersection Parameters setup
         >>> num = 10
-        >>> psi0s = dex.MagneticFluxArray.Toroidal(np.linspace(0, machine.psi_last.value, num))
+        >>> psit0s = dex.MagneticFluxArray.Toroidal(np.linspace(0, machine.psit_last.value, num))
         >>> initial_conditions = dex.QueueInitialConditions.Boozer(
         ...     t0=np.zeros(num),
-        ...     flux0=psi0s,
+        ...     flux0=psit0s,
         ...     theta0=np.zeros(num),
         ...     zeta0=np.zeros(num),
         ...     rho0=np.full(num, 1e-6),
@@ -256,10 +256,10 @@ class Queue(_ReprStrImpl):
         >>>
         >>> # Initial conditions and Intersection Parameters setup
         >>> num = 10
-        >>> psi0s = dex.MagneticFluxArray.Toroidal(np.linspace(0, machine.psi_last.value, num))
+        >>> psit0s = dex.MagneticFluxArray.Toroidal(np.linspace(0, machine.psit_last.value, num))
         >>> initial_conditions = dex.QueueInitialConditions.Boozer(
         ...     t0=np.zeros(num),
-        ...     flux0=psi0s,
+        ...     flux0=psit0s,
         ...     theta0=np.zeros(num),
         ...     zeta0=np.zeros(num),
         ...     rho0=np.full(num, 1e-5),
@@ -312,10 +312,10 @@ class Queue(_ReprStrImpl):
         >>>
         >>> # Initial conditions and Intersection Parameters setup
         >>> num = 10
-        >>> psi0s = dex.MagneticFluxArray.Toroidal(np.linspace(0, machine.psi_last.value, num))
+        >>> psit0s = dex.MagneticFluxArray.Toroidal(np.linspace(0, machine.psit_last.value, num))
         >>> initial_conditions = dex.QueueInitialConditions.Boozer(
         ...     t0=np.zeros(num),
-        ...     flux0=psi0s,
+        ...     flux0=psit0s,
         ...     theta0=np.zeros(num),
         ...     zeta0=np.zeros(num),
         ...     rho0=np.full(num, 1e-5),
@@ -347,6 +347,8 @@ class Queue(_ReprStrImpl):
         r"""Iterates through `self`'s particles, keeping only the ones with an initial $P_\zeta$
         within the given span, discarding the rest.
 
+        The span must be in Normalized Units.
+
         Parameters
         ----------
         start
@@ -359,6 +361,8 @@ class Queue(_ReprStrImpl):
     def retain_energy(self, start: float, end: float) -> None:
         r"""Iterates through `self`'s particles, keeping only the ones with an initial energy
         within the given span, discarding the rest.
+
+        The span must be in Normalized Units.
 
         Parameters
         ----------

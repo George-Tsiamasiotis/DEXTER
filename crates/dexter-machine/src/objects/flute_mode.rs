@@ -4,17 +4,14 @@ use core::hint::cold_path;
 use rsl_interpolation::Accelerator;
 use std::f64::consts::TAU;
 
-use crate::{
-    DynModeCache, EvalError, FluxCoordinateState, MachineObject, MachineType, Mode, ModeCache,
-};
-use crate::{MagneticFlux, MagneticFlux::*};
+use crate::{DynModeCache, EvalError, MachineObject, MachineType, Mode, ModeCache};
+use crate::{FluxCoordinateState, MagneticFlux, MagneticFlux::*, MagneticFluxKind};
 use crate::{debug_assert_is_finite, debug_assert_non_negative_flux, mode_cache_getters_impl};
 
 // ===============================================================================================
 
-/// A simple analytical flute mode of the form `ε*sqrt(ψ/ψlast)*cos(mθ-nζ+φ)` or
-/// `ε*sqrt(ψp/ψplast)*cos(mθ-nζ+φ)`, where `ε` and `φ` are constants and `ψlast/ψplast` the last
-/// closed flux surface.
+/// A simple analytical flute mode of the form `ε*sqrt(ψ/ψlast)*cos(mθ-nζ+φ)`, where `ε` and `φ`
+/// are constants and `ψlast` the last closed flux surface.
 ///
 /// The square root is necessary since the modes must behave like the square root of the
 /// magnetic flux close to the axis.
@@ -36,7 +33,7 @@ pub struct FluteMode {
     lcfs: MagneticFlux,
     /// The value of the last closed toroidal flux surface, if the mode was defined through the
     /// toroidal flux.
-    psi_last: Option<f64>,
+    psit_last: Option<f64>,
     /// The value of the last closed poloidal flux surface, if the mode was defined through the
     /// poloidal flux.
     psip_last: Option<f64>,
@@ -53,15 +50,15 @@ impl FluteMode {
     /// ```
     #[must_use]
     pub fn new(epsilon: f64, lcfs: MagneticFlux, m: i64, n: i64, phase: f64) -> Self {
-        let psi_last: Option<f64>;
+        let psit_last: Option<f64>;
         let psip_last: Option<f64>;
         match lcfs {
             Toroidal(last) => {
-                psi_last = Some(last);
+                psit_last = Some(last);
                 psip_last = None;
             }
             Poloidal(last) => {
-                psi_last = None;
+                psit_last = None;
                 psip_last = Some(last)
             }
         }
@@ -72,7 +69,7 @@ impl FluteMode {
             n,
             phase,
             lcfs,
-            psi_last,
+            psit_last,
             psip_last,
         }
     }
@@ -94,6 +91,14 @@ impl FluteMode {
     pub fn phase(&self) -> f64 {
         self.phase
     }
+
+    /// Returns `true` if `kind` is a [`Good`][`FluxCoordinateState::Good`] magnetic flux coordinate.
+    fn is_good_flux(&self, kind: MagneticFluxKind) -> bool {
+        match kind {
+            MagneticFluxKind::Toroidal => self.psit_state() == FluxCoordinateState::Good,
+            MagneticFluxKind::Poloidal => self.psip_state() == FluxCoordinateState::Good,
+        }
+    }
 }
 
 impl MachineObject for FluteMode {
@@ -101,8 +106,8 @@ impl MachineObject for FluteMode {
         MachineType::Analytical
     }
 
-    fn psi_state(&self) -> FluxCoordinateState {
-        match self.psi_last {
+    fn psit_state(&self) -> FluxCoordinateState {
+        match self.psit_last {
             Some(_) => FluxCoordinateState::Good,
             None => FluxCoordinateState::Bad,
         }
@@ -234,28 +239,18 @@ impl Mode for FluteMode {
         cache: &mut DynModeCache,
     ) -> Result<f64, EvalError> {
         debug_assert_non_negative_flux!(flux);
-        match flux {
-            Toroidal(psi) if self.psi_state() == FluxCoordinateState::Good => {
-                if !cache.is_updated(psi, theta, zeta, t) {
-                    cache.update(psi, theta, zeta, t);
-                }
-                Ok(debug_assert_is_finite!(
-                    self.epsilon * cache.cache()[3] / cache.params()[4]
-                ))
-            }
-            Poloidal(psip) if self.psip_state() == FluxCoordinateState::Good => {
-                if !cache.is_updated(psip, theta, zeta, t) {
-                    cache.update(psip, theta, zeta, t);
-                }
-                Ok(debug_assert_is_finite!(
-                    self.epsilon * cache.cache()[3] / cache.params()[4]
-                ))
-            }
-            _ => {
-                let msg = format!("α({})", flux.symbol());
-                Err(EvalError::UndefinedEvaluation(msg))
-            }
+        if !self.is_good_flux(flux.kind()) {
+            cold_path();
+            let msg = format!("α({})", flux.symbol());
+            return Err(EvalError::UndefinedEvaluation(msg));
         }
+        let flux = flux.value();
+        if !cache.is_updated(flux, theta, zeta, t) {
+            cache.update(flux, theta, zeta, t);
+        }
+        Ok(debug_assert_is_finite!(
+            self.epsilon * cache.cache()[3] / cache.params()[4]
+        ))
     }
 
     fn eval_phase(
@@ -279,29 +274,18 @@ impl Mode for FluteMode {
         cache: &mut DynModeCache,
     ) -> Result<f64, EvalError> {
         debug_assert_non_negative_flux!(flux);
-        match flux {
-            Toroidal(psi) if self.psi_state() == FluxCoordinateState::Good => {
-                if !cache.is_updated(psi, theta, zeta, t) {
-                    cache.update(psi, theta, zeta, t);
-                }
-                Ok(debug_assert_is_finite!(
-                    cache.params()[0] * cache.cache()[3] / cache.params()[4] * cache.cache()[6]
-                ))
-            }
-            Poloidal(psip) if self.psip_state() == FluxCoordinateState::Good => {
-                if !cache.is_updated(psip, theta, zeta, t) {
-                    cache.update(psip, theta, zeta, t);
-                }
-                Ok(debug_assert_is_finite!(
-                    cache.params()[0] * cache.cache()[3] / cache.params()[4] * cache.cache()[6]
-                ))
-            }
-            _ => {
-                cold_path();
-                let msg = format!("m({})", flux.symbol());
-                Err(EvalError::UndefinedEvaluation(msg))
-            }
+        if !self.is_good_flux(flux.kind()) {
+            cold_path();
+            let msg = format!("m({})", flux.symbol());
+            return Err(EvalError::UndefinedEvaluation(msg));
         }
+        let flux = flux.value();
+        if !cache.is_updated(flux, theta, zeta, t) {
+            cache.update(flux, theta, zeta, t);
+        }
+        Ok(debug_assert_is_finite!(
+            cache.params()[0] * cache.cache()[3] / cache.params()[4] * cache.cache()[6]
+        ))
     }
 
     fn eval_deriv_flux(
@@ -313,31 +297,18 @@ impl Mode for FluteMode {
         cache: &mut DynModeCache,
     ) -> Result<f64, EvalError> {
         debug_assert_non_negative_flux!(flux);
-        match flux {
-            Toroidal(psi) if self.psi_state() == FluxCoordinateState::Good => {
-                if !cache.is_updated(psi, theta, zeta, t) {
-                    cache.update(psi, theta, zeta, t);
-                }
-                Ok(debug_assert_is_finite!(
-                    cache.params()[0] / (2.0 * cache.params()[4] * cache.cache()[3])
-                        * cache.cache()[6]
-                ))
-            }
-            Poloidal(psip) if self.psip_state() == FluxCoordinateState::Good => {
-                if !cache.is_updated(psip, theta, zeta, t) {
-                    cache.update(psip, theta, zeta, t);
-                }
-                Ok(debug_assert_is_finite!(
-                    cache.params()[0] / (2.0 * cache.params()[4] * cache.cache()[3])
-                        * cache.cache()[6]
-                ))
-            }
-            _ => {
-                cold_path();
-                let msg = format!("dm({}, θ, ζ, t)/d{}", flux.symbol(), flux.symbol());
-                Err(EvalError::UndefinedEvaluation(msg))
-            }
+        if !self.is_good_flux(flux.kind()) {
+            cold_path();
+            let msg = format!("dm({}, θ, ζ, t)/d{}", flux.symbol(), flux.symbol());
+            return Err(EvalError::UndefinedEvaluation(msg));
         }
+        let flux = flux.value();
+        if !cache.is_updated(flux, theta, zeta, t) {
+            cache.update(flux, theta, zeta, t);
+        }
+        Ok(debug_assert_is_finite!(
+            cache.params()[0] / (2.0 * cache.params()[4] * cache.cache()[3]) * cache.cache()[6]
+        ))
     }
 
     fn eval_deriv_theta(
@@ -349,31 +320,19 @@ impl Mode for FluteMode {
         cache: &mut DynModeCache,
     ) -> Result<f64, EvalError> {
         debug_assert_non_negative_flux!(flux);
-        match flux {
-            Toroidal(psi) if self.psi_state() == FluxCoordinateState::Good => {
-                if !cache.is_updated(psi, theta, zeta, t) {
-                    cache.update(psi, theta, zeta, t);
-                }
-                Ok(debug_assert_is_finite!(
-                    -cache.params()[1] * cache.params()[0] * cache.cache()[3] / cache.params()[4]
-                        * cache.cache()[5]
-                ))
-            }
-            Poloidal(psip) if self.psip_state() == FluxCoordinateState::Good => {
-                if !cache.is_updated(psip, theta, zeta, t) {
-                    cache.update(psip, theta, zeta, t);
-                }
-                Ok(debug_assert_is_finite!(
-                    -cache.params()[1] * cache.params()[0] * cache.cache()[3] / cache.params()[4]
-                        * cache.cache()[5]
-                ))
-            }
-            _ => {
-                cold_path();
-                let msg = format!("dm({}, θ, ζ, t)/dθ", flux.symbol());
-                Err(EvalError::UndefinedEvaluation(msg))
-            }
+        if !self.is_good_flux(flux.kind()) {
+            cold_path();
+            let msg = format!("dm({}, θ, ζ, t)/dθ", flux.symbol());
+            return Err(EvalError::UndefinedEvaluation(msg));
         }
+        let flux = flux.value();
+        if !cache.is_updated(flux, theta, zeta, t) {
+            cache.update(flux, theta, zeta, t);
+        }
+        Ok(debug_assert_is_finite!(
+            -cache.params()[1] * cache.params()[0] * cache.cache()[3] / cache.params()[4]
+                * cache.cache()[5]
+        ))
     }
 
     fn eval_deriv_zeta(
@@ -385,31 +344,19 @@ impl Mode for FluteMode {
         cache: &mut DynModeCache,
     ) -> Result<f64, EvalError> {
         debug_assert_non_negative_flux!(flux);
-        match flux {
-            Toroidal(psi) if self.psi_state() == FluxCoordinateState::Good => {
-                if !cache.is_updated(psi, theta, zeta, t) {
-                    cache.update(psi, theta, zeta, t);
-                }
-                Ok(debug_assert_is_finite!(
-                    cache.params()[2] * cache.params()[0] * cache.cache()[3] / cache.params()[4]
-                        * cache.cache()[5]
-                ))
-            }
-            Poloidal(psip) if self.psip_state() == FluxCoordinateState::Good => {
-                if !cache.is_updated(psip, theta, zeta, t) {
-                    cache.update(psip, theta, zeta, t);
-                }
-                Ok(debug_assert_is_finite!(
-                    cache.params()[2] * cache.params()[0] * cache.cache()[3] / cache.params()[4]
-                        * cache.cache()[5]
-                ))
-            }
-            _ => {
-                cold_path();
-                let msg = format!("dm({}, θ, ζ, t)/dζ", flux.symbol());
-                Err(EvalError::UndefinedEvaluation(msg))
-            }
+        if !self.is_good_flux(flux.kind()) {
+            cold_path();
+            let msg = format!("dm({}, θ, ζ, t)/dζ", flux.symbol());
+            return Err(EvalError::UndefinedEvaluation(msg));
         }
+        let flux = flux.value();
+        if !cache.is_updated(flux, theta, zeta, t) {
+            cache.update(flux, theta, zeta, t);
+        }
+        Ok(debug_assert_is_finite!(
+            cache.params()[2] * cache.params()[0] * cache.cache()[3] / cache.params()[4]
+                * cache.cache()[5]
+        ))
     }
 
     fn eval_deriv_t(
@@ -434,11 +381,11 @@ mod flute_mode_values {
     #[rustfmt::skip]
     fn desmos_values_toroidal_lcfs() -> Result<(), EvalError> {
         let lcfs = Toroidal(0.45);
-        let har = dbg!(FluteMode::new(10.0, lcfs, 3, 2, 1.0));
-        assert_eq!(har.psi_state(), FluxCoordinateState::Good);
-        assert_eq!(har.psip_state(), FluxCoordinateState::Bad);
+        let m = dbg!(FluteMode::new(10.0, lcfs, 3, 2, 1.0));
+        assert_eq!(m.psit_state(), FluxCoordinateState::Good);
+        assert_eq!(m.psip_state(), FluxCoordinateState::Bad);
 
-        let c = &mut har.generate_cache();
+        let c = &mut m.generate_cache();
 
         let theta = 0.2;
         let zeta = 0.3;
@@ -446,19 +393,19 @@ mod flute_mode_values {
         let eps = 1e-10;
 
         let flux = Toroidal(0.1);
-        assert_relative_eq!(har.eval_amplitude(flux, theta, zeta, t, c)?, 4.71404520791, epsilon = eps);
-        assert_relative_eq!(har.eval_phase(flux, theta, zeta, t, c)?, 1.0, epsilon = eps);
-        assert_relative_eq!(har.eval_m(flux, theta, zeta, t, c)?, 2.5470094958, epsilon = eps);
-        assert_relative_eq!(har.eval_deriv_flux(flux, theta, zeta, t, c)?, 12.735047479, epsilon = eps);
-        assert_relative_eq!(har.eval_deriv_theta(flux, theta, zeta, t, c)?, -11.9001967906, epsilon = eps);
-        assert_relative_eq!(har.eval_deriv_zeta(flux, theta, zeta, t, c)?, 7.93346452706, epsilon = eps);
+        assert_relative_eq!(m.eval_amplitude(flux, theta, zeta, t, c)?, 4.71404520791, epsilon = eps);
+        assert_relative_eq!(m.eval_phase(flux, theta, zeta, t, c)?, 1.0, epsilon = eps);
+        assert_relative_eq!(m.eval_m(flux, theta, zeta, t, c)?, 2.5470094958, epsilon = eps);
+        assert_relative_eq!(m.eval_deriv_flux(flux, theta, zeta, t, c)?, 12.735047479, epsilon = eps);
+        assert_relative_eq!(m.eval_deriv_theta(flux, theta, zeta, t, c)?, -11.9001967906, epsilon = eps);
+        assert_relative_eq!(m.eval_deriv_zeta(flux, theta, zeta, t, c)?, 7.93346452706, epsilon = eps);
 
         let flux = Poloidal(0.1);
-        assert!(har.eval_amplitude(flux, theta, zeta, t,c).is_err());
-        assert!(har.eval_m(flux, theta, zeta, t,c).is_err());
-        assert!(har.eval_deriv_flux(flux, theta, zeta, t,c).is_err());
-        assert!(har.eval_deriv_theta(flux, theta, zeta, t,c).is_err());
-        assert!(har.eval_deriv_zeta(flux, theta, zeta, t,c).is_err());
+        assert!(m.eval_amplitude(flux, theta, zeta, t,c).is_err());
+        assert!(m.eval_m(flux, theta, zeta, t,c).is_err());
+        assert!(m.eval_deriv_flux(flux, theta, zeta, t,c).is_err());
+        assert!(m.eval_deriv_theta(flux, theta, zeta, t,c).is_err());
+        assert!(m.eval_deriv_zeta(flux, theta, zeta, t,c).is_err());
 
         assert_eq!(c.misses(), 1);
         assert_eq!(c.hits(), 4);
@@ -470,11 +417,11 @@ mod flute_mode_values {
     #[rustfmt::skip]
     fn desmos_values_poloidal_lcfs() -> Result<(), EvalError> {
         let lcfs = Poloidal(0.45);
-        let har = dbg!(FluteMode::new(10.0, lcfs, 3, 2, 1.0));
-        assert_eq!(har.psi_state(), FluxCoordinateState::Bad);
-        assert_eq!(har.psip_state(), FluxCoordinateState::Good);
+        let m = dbg!(FluteMode::new(10.0, lcfs, 3, 2, 1.0));
+        assert_eq!(m.psit_state(), FluxCoordinateState::Bad);
+        assert_eq!(m.psip_state(), FluxCoordinateState::Good);
 
-        let c = &mut har.generate_cache();
+        let c = &mut m.generate_cache();
 
         let theta = 0.2;
         let zeta = 0.3;
@@ -482,19 +429,19 @@ mod flute_mode_values {
         let eps = 1e-10;
 
         let flux = Poloidal(0.1);
-        assert_relative_eq!(har.eval_amplitude(flux, theta, zeta, t, c)?, 4.71404520791, epsilon = eps);
-        assert_relative_eq!(har.eval_phase(flux, theta, zeta, t, c)?, 1.0, epsilon = eps);
-        assert_relative_eq!(har.eval_m(flux, theta, zeta, t, c)?, 2.5470094958, epsilon = eps);
-        assert_relative_eq!(har.eval_deriv_flux(flux, theta, zeta, t, c)?, 12.735047479, epsilon = eps);
-        assert_relative_eq!(har.eval_deriv_theta(flux, theta, zeta, t, c)?, -11.9001967906, epsilon = eps);
-        assert_relative_eq!(har.eval_deriv_zeta(flux, theta, zeta, t, c)?, 7.93346452706, epsilon = eps);
+        assert_relative_eq!(m.eval_amplitude(flux, theta, zeta, t, c)?, 4.71404520791, epsilon = eps);
+        assert_relative_eq!(m.eval_phase(flux, theta, zeta, t, c)?, 1.0, epsilon = eps);
+        assert_relative_eq!(m.eval_m(flux, theta, zeta, t, c)?, 2.5470094958, epsilon = eps);
+        assert_relative_eq!(m.eval_deriv_flux(flux, theta, zeta, t, c)?, 12.735047479, epsilon = eps);
+        assert_relative_eq!(m.eval_deriv_theta(flux, theta, zeta, t, c)?, -11.9001967906, epsilon = eps);
+        assert_relative_eq!(m.eval_deriv_zeta(flux, theta, zeta, t, c)?, 7.93346452706, epsilon = eps);
 
         let flux = Toroidal(0.1);
-        assert!(har.eval_amplitude(flux, theta, zeta, t,c).is_err());
-        assert!(har.eval_m(flux, theta, zeta, t,c).is_err());
-        assert!(har.eval_deriv_flux(flux, theta, zeta, t,c).is_err());
-        assert!(har.eval_deriv_theta(flux, theta, zeta, t,c).is_err());
-        assert!(har.eval_deriv_zeta(flux, theta, zeta, t,c).is_err());
+        assert!(m.eval_amplitude(flux, theta, zeta, t,c).is_err());
+        assert!(m.eval_m(flux, theta, zeta, t, c).is_err());
+        assert!(m.eval_deriv_flux(flux, theta, zeta, t,c).is_err());
+        assert!(m.eval_deriv_theta(flux, theta, zeta, t,c).is_err());
+        assert!(m.eval_deriv_zeta(flux, theta, zeta, t,c).is_err());
 
         assert_eq!(c.misses(), 1);
         assert_eq!(c.hits(), 4);

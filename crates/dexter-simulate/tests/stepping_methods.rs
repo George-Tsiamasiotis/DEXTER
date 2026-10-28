@@ -2,10 +2,10 @@
 
 mod common;
 
-use crate::common::check_integrated_particle_arrays;
+use crate::common::check_integrated_particle_time_series;
 use dexter_machine::*;
 use dexter_simulate::*;
-use ndarray::Axis;
+use ndarray::{ArrayView1, Axis};
 
 #[test]
 #[rustfmt::skip]
@@ -59,9 +59,10 @@ fn different_stepping_methods() {
     assert!(matches!(error_particle.integration_status(), IntegrationStatus::Integrated));
     assert!(matches!(fixed_particle.integration_status(), IntegrationStatus::Integrated));
 
-    assert!(fixed_particle.t_array().diff(1, Axis(0)).iter().all(|d| *d == 10.0));
+    let t_array = ArrayView1::from(fixed_particle.t_values());
+    assert!(t_array.diff(1, Axis(0)).iter().all(|d| *d == 10.0));
 
-    check_integrated_particle_arrays(&energy_particle);
-    check_integrated_particle_arrays(&error_particle);
-    check_integrated_particle_arrays(&fixed_particle);
+    check_integrated_particle_time_series(&energy_particle);
+    check_integrated_particle_time_series(&error_particle);
+    check_integrated_particle_time_series(&fixed_particle);
 }

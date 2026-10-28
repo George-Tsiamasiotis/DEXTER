@@ -16,7 +16,7 @@ use crate::gc_hamiltonian::ParametrizedSegment;
 use crate::{CriticalPoint, GCHamiltonian};
 use roots::{Convergency, find_root_brent, find_root_secant};
 
-/// The density of the (θ, ψ/ψp) grid on which to search the stationary curve contours.
+/// The density of the (θ, ψ) grid on which to search the stationary curve contours.
 const SC_CONTOUR_DENSITY: (usize, usize) = (300, 300);
 
 // ===============================================================================================
@@ -100,7 +100,7 @@ impl StationaryCurve {
     ///
     /// # Process
     ///
-    /// 1. Build the (θ, ψ/ψp) *orthogonal* grid.
+    /// 1. Build the (θ, ψ) *orthogonal* grid.
     /// 2. Set up the [`ContourBuilder`].
     /// 3. Extract [`ContourBuilder::lines`] into a [`Box<StationaryCurveSegment>`] and store it.
     ///
@@ -214,7 +214,7 @@ impl StationaryCurve {
     }
 }
 
-/// Builds the (θ, ψ/ψp) grid on which to search for stationary curve contours.
+/// Builds the (θ, ψ) grid on which to search for stationary curve contours.
 fn build_grid(machine: Machine) -> (Array1<f64>, MagneticFluxArray, Array2<f64>) {
     let flux_kind = machine.good_flux();
     let flux_last = machine.last(flux_kind);
@@ -584,7 +584,7 @@ impl StationaryCurveSegment {
     }
 
     /// Calculates the critical points by interpolating each exact root to the corresponding `θ` and
-    /// `ψ/ψp` points.
+    /// `ψ` points.
     pub(crate) fn critical_points_from_exact_roots(
         &self,
         machine: Machine,

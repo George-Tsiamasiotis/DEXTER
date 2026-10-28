@@ -11,9 +11,9 @@
 
 Flux coordinates behavior:
 
-    1. -c = "both": equispaced ψ values, parabolic q.
-    2. -c = "toroidal": equispaced ψ values, ψp = sin(2πψ), and q(ψ) = dψp/dψ.
-    3. -c = "poloidal": equispaced ψp values, ψ = sin(2πψp), and q(ψ) = dψp/dψ = 1/(dψ/dψ).
+    1. -c = "both": equispaced ψt values, parabolic q.
+    2. -c = "toroidal": equispaced ψt values, ψp = sin(2πψt), and q(ψt) = dψp/dψt.
+    3. -c = "poloidal": equispaced ψp values, ψt = sin(2πψp), and q(ψp) = dψp/dψt = 1/(dψt/dψp).
 
 """
 
@@ -83,23 +83,28 @@ match args.coord:
     case "both":  # Parabolic
         qaxis = 1.1
         qlast = 3.9
-        psi_norm = np.linspace(0, flux_last_value_norm, FLUX_SURFACES)
-        atan_arg = psi_norm * sqrt(qlast - qaxis) / (flux_last_value_norm * sqrt(qaxis))
+        psit_norm = np.linspace(0, flux_last_value_norm, FLUX_SURFACES)
+        atanarg = psit_norm * sqrt(qlast - qaxis) / (flux_last_value_norm * sqrt(qaxis))
         coef = flux_last_value_norm / sqrt(qaxis * (qlast - qaxis))
-        psip_norm = coef * np.atan(atan_arg)
-        q = qaxis + (qlast - qaxis) * (psi_norm / flux_last_value_norm) ** 2
+        psip_norm = coef * np.atan(atanarg)
+        q = qaxis + (qlast - qaxis) * (psit_norm / flux_last_value_norm) ** 2
+        coord_str = "psit_norm"
     case "toroidal":  # equispaced ψ values, ψp = sin(2πψ), and q(ψ) = dψp/dψ.
-        psi_norm = np.linspace(0, flux_last_value_norm, FLUX_SURFACES)
-        psip_norm = np.sin(2 * np.pi * psi_norm)  # no longer monotonic in [0, psi_last]
-        q = np.gradient(psip_norm, psi_norm)
+        psit_norm = np.linspace(0, flux_last_value_norm, FLUX_SURFACES)
+        psip_norm = np.sin(
+            2 * np.pi * psit_norm
+        )  # no longer monotonic in [0, psi_last]
+        q = np.gradient(psip_norm, psit_norm)
         assert not np.all(np.diff(psip_norm) > 0)
+        coord_str = "psit_norm"
     case "poloidal":  # equispaced ψp values, ψ = sin(2πψp), and q(ψ) = 1/(dψp/dψ).
         psip_norm = np.linspace(0, flux_last_value_norm, FLUX_SURFACES)
-        psi_norm = 1.0 - np.sin(
+        psit_norm = 1.0 - np.sin(
             2 * np.pi * psip_norm
         )  # no longer monotonic in [0, psi_last]
-        q = np.gradient(psi_norm, psip_norm)  # inverse
-        assert not np.all(np.diff(psi_norm) > 0)
+        q = np.gradient(psit_norm, psip_norm)  # inverse
+        assert not np.all(np.diff(psit_norm) > 0)
+        coord_str = "psip_norm"
     case _:
         assert_never(args.coord)
 
@@ -144,7 +149,7 @@ alphas_norm[1, 1, -1] = 11111
 # Misc quantities
 #################
 
-psi = psi_norm * (baxis * raxis**2)
+psit = psit_norm * (baxis * raxis**2)
 psip = psip_norm * (baxis * raxis**2)
 r = r_norm * raxis
 g = g_norm * baxis * raxis
@@ -194,9 +199,9 @@ theta_coord = xr.Variable(
     attrs=dict(description="Boozer theta coordinate", units="[rads]"),
 )
 
-psi_norm_coord = xr.Variable(
-    data=psi_norm,
-    dims=["psi_norm"],
+psit_norm_coord = xr.Variable(
+    data=psit_norm,
+    dims=[coord_str],
     attrs=dict(description="Toroidal flux coordinate", units="Normalized"),
 )
 
@@ -214,77 +219,76 @@ n_coord = xr.Variable(
 
 psip_norm_coord = xr.Variable(
     data=psip_norm,
-    dims=["psip_norm"],
+    dims=[coord_str],
     attrs=dict(description="Poloidal flux coordinate", units="Normalized"),
 )
 
 r_norm_coord = xr.Variable(
     data=r_norm,
-    dims=["r_norm"],
+    dims=[coord_str],
     attrs=dict(description="Radial coordinate", units="Normalized"),
 )
 
 
 # ======================= SI Variables
 
+psit_var = xr.Variable(
+    data=psit,
+    dims=[coord_str],
+    attrs=dict(description="Toroidal flux coordinate", units="[Tm]"),
+)
+
 psip_var = xr.Variable(
     data=psip,
-    dims=["psip_norm"],
+    dims=[coord_str],
     attrs=dict(description="Poloidal flux coordinate", units="[Tm]"),
 )
 
 r_var = xr.Variable(
     data=r,
-    dims=["r_norm"],
+    dims=[coord_str],
     attrs=dict(description="Radial coordinate", units="[m]"),
 )
 
 q_var = xr.Variable(
     data=q,
-    dims=["psip_norm"],
+    dims=[coord_str],
     attrs=dict(description="Magnetic q-factor", units="dimensionless"),
 )
 
-psi_var = xr.Variable(
-    data=psi,
-    dims=["psi_norm"],
-    attrs=dict(description="Toroidal flux coordinate", units="[Tm]"),
-)
-
-
 g_var = xr.Variable(
     data=g,
-    dims=["psip_norm"],
+    dims=[coord_str],
     attrs=dict(description="Toroidal current", units="[Tm]"),
 )
 
 i_var = xr.Variable(
     data=i,
-    dims=["psip_norm"],
+    dims=[coord_str],
     attrs=dict(description="Poloidal current", units="[Tm]"),
 )
 
 b_var = xr.Variable(
     data=b,
-    dims=["psip_norm", "theta"],
+    dims=[coord_str, "theta"],
     attrs=dict(description="Magnetic field strength", units="[T]"),
 )
 
 jacobian_var = xr.Variable(
     data=jacobian,
-    dims=["psip_norm", "theta"],
+    dims=[coord_str, "theta"],
     attrs=dict(description="VMEC to Boozer Jacobian", units="[m/T]"),
 )
 
 rlab_var = xr.Variable(
     data=rlab,
-    dims=["psip_norm", "theta"],
+    dims=[coord_str, "theta"],
     attrs=dict(description="Lab horizontal coordinate", units="[m]"),
 )
 
 zlab_var = xr.Variable(
     data=zlab,
-    dims=["psip_norm", "theta"],
+    dims=[coord_str, "theta"],
     attrs=dict(description="Lab vertical coordinate", units="[m]"),
 )
 
@@ -294,19 +298,19 @@ zlab_var = xr.Variable(
 
 g_norm_var = xr.Variable(
     data=g_norm,
-    dims=["psip_norm"],
+    dims=[coord_str],
     attrs=dict(description="Toroidal current normalized", units="Normalized"),
 )
 
 i_norm_var = xr.Variable(
     data=i_norm,
-    dims=["psip_norm"],
+    dims=[coord_str],
     attrs=dict(description="Poloidal current normalized", units="Normalized"),
 )
 
 b_norm_var = xr.Variable(
     data=b_norm,
-    dims=["psip_norm", "theta"],
+    dims=[coord_str, "theta"],
     attrs=dict(description="Magnetic field strength", units="Normalized"),
 )
 
@@ -316,21 +320,21 @@ b_norm_var = xr.Variable(
 
 alphas_var = xr.Variable(
     data=alphas,
-    dims=["m", "n", "psip_norm"],
-    attrs=dict(description="Mode amplitudes α{m,n}(ψp)", units="[m]"),
+    dims=["m", "n", coord_str],
+    attrs=dict(description="Mode amplitudes α{m,n}(ψ)", units="[m]"),
 )
 
 
 phases_var = xr.Variable(
     data=phases,
-    dims=["m", "n", "psip_norm"],
-    attrs=dict(description="Mode phases φ{m,n}(ψp)", units="[rads]"),
+    dims=["m", "n", coord_str],
+    attrs=dict(description="Mode phases φ{m,n}(ψ)", units="[rads]"),
 )
 
 alphas_norm_var = xr.Variable(
     data=alphas_norm,
-    dims=["m", "n", "psip_norm"],
-    attrs=dict(description="Mode amplitudes α{m,n}(ψp)", units="Normalized"),
+    dims=["m", "n", coord_str],
+    attrs=dict(description="Mode amplitudes α{m,n}(ψ)", units="Normalized"),
 )
 
 
@@ -342,7 +346,7 @@ COORDS = {
     "theta": theta_coord,
     "m": m_coord,
     "n": n_coord,
-    "psi_norm": psi_norm_coord,
+    "psit_norm": psit_norm_coord,
     "r_norm": r_norm,
 }
 
@@ -352,7 +356,7 @@ VARIABLES = {
     "zaxis": zaxis_var,
     "rgeo": rgeo_var,
     "psip": psip_var,
-    "psi": psi_var,
+    "psit": psit_var,
     "r": r_var,
     "q": q_var,
     "g": g_var,

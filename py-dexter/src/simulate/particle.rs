@@ -4,6 +4,7 @@ use crate::*;
 use dexter::dexter_machine::*;
 use dexter::dexter_simulate::*;
 
+use ndarray::Array1;
 use numpy::{IntoPyArray, PyArray1};
 use pyo3::prelude::*;
 use pyo3::types::PyType;
@@ -191,23 +192,23 @@ impl PyParticle {
 
     #[rustfmt::skip]
     pub fn get_array<'py>(&self, py: Python<'py>, name: &str) -> Result<Bound<'py, PyArray1<f64>>> {
-        let array = match name {
-            "t_array"      => self.0.t_array(),
-            "psi_array"    => self.0.psi_array(),
-            "psip_array"   => self.0.psip_array(),
-            "theta_array"  => self.0.theta_array(),
-            "zeta_array"   => self.0.zeta_array(),
-            "rho_array"    => self.0.rho_array(),
-            "mu_array"     => self.0.mu_array(),
-            "ptheta_array" => self.0.ptheta_array(),
-            "pzeta_array"  => self.0.pzeta_array(),
-            "energy_array" => self.0.energy_array(),
+        let values: &[f64] = match name {
+            "t_array"      => self.0.t_values(),
+            "psit_array"   => self.0.psit_values(),
+            "psip_array"   => self.0.psip_values(),
+            "theta_array"  => self.0.theta_values(),
+            "zeta_array"   => self.0.zeta_values(),
+            "rho_array"    => self.0.rho_values(),
+            "mu_array"     => self.0.mu_values(),
+            "ptheta_array" => self.0.ptheta_values(),
+            "pzeta_array"  => self.0.pzeta_values(),
+            "energy_array" => self.0.energy_values(),
             _ => return Err(DexterError::AttributeError {
                 obj: "NcQfactor".into(),
                 attr: name.into(),
             }),
         };
-        Ok(array.into_pyarray(py))
+        Ok(Array1::from(values.to_vec()).into_pyarray(py))
     }
 }
 

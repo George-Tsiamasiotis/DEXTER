@@ -2,7 +2,7 @@ import numpy as np
 import dexter as dex
 
 geometry = dex.LarGeometry(1, 1.75, 0.5)
-LCFS = geometry.psi_last
+LCFS = geometry.psit_last
 machine = dex.Machine(
     geometry=geometry,
     qfactor=dex.ParabolicQfactor(qaxis=1.1, qlast=6.5, lcfs=LCFS),
@@ -19,11 +19,11 @@ machine = dex.Machine(
 num = 42
 rs = np.linspace(0.01, geometry.rlast * 0.99, num)
 num = len(rs)
-psis = (rs / geometry.raxis) ** 2 / 2
+psits = (rs / geometry.raxis) ** 2 / 2
 
 initial_conditions = dex.QueueInitialConditions.Boozer(
     t0=np.zeros(num),
-    flux0=dex.MagneticFluxArray.Toroidal(psis),
+    flux0=dex.MagneticFluxArray.Toroidal(psits),
     theta0=np.zeros(num),
     zeta0=np.zeros(num),
     rho0=np.full(num, 1e-8),

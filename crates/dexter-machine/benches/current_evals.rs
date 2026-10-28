@@ -12,7 +12,7 @@ use std::path::PathBuf;
 fn current_evals(c: &mut Criterion) {
     let path = PathBuf::from(TEST_NETCDF_PATH);
     let acc = &mut Accelerator::new();
-    let psi = MagneticFlux::Toroidal(0.01);
+    let psit = MagneticFlux::Toroidal(0.01);
 
     let lar_current = LarCurrent;
     let nc_current = NcCurrentBuilder::new(&path, Interpolation1dType::Cubic)
@@ -23,11 +23,11 @@ fn current_evals(c: &mut Criterion) {
 
     let mut group = c.benchmark_group("Current g(ψ) evaluation");
 
-    group.bench_with_input("LarCurrent", &psi, |b, &psi| {
-        b.iter(|| lar_current.eval_g(black_box(psi), black_box(acc)).unwrap());
+    group.bench_with_input("LarCurrent", &psit, |b, &psit| {
+        b.iter(|| lar_current.eval_g(black_box(psit), black_box(acc)).unwrap());
     });
-    group.bench_with_input("NcCurrent", &psi, |b, &psi| {
-        b.iter(|| nc_current.eval_g(black_box(psi), black_box(acc)).unwrap());
+    group.bench_with_input("NcCurrent", &psit, |b, &psit| {
+        b.iter(|| nc_current.eval_g(black_box(psit), black_box(acc)).unwrap());
     });
     group.finish();
 
@@ -35,11 +35,11 @@ fn current_evals(c: &mut Criterion) {
 
     let mut group = c.benchmark_group("Current I(ψ) evaluation");
 
-    group.bench_with_input("LarCurrent", &psi, |b, &psi| {
-        b.iter(|| lar_current.eval_i(black_box(psi), black_box(acc)).unwrap());
+    group.bench_with_input("LarCurrent", &psit, |b, &psit| {
+        b.iter(|| lar_current.eval_i(black_box(psit), black_box(acc)).unwrap());
     });
-    group.bench_with_input("NcCurrent", &psi, |b, &psi| {
-        b.iter(|| nc_current.eval_i(black_box(psi), black_box(acc)).unwrap());
+    group.bench_with_input("NcCurrent", &psit, |b, &psit| {
+        b.iter(|| nc_current.eval_i(black_box(psit), black_box(acc)).unwrap());
     });
     group.finish();
 
@@ -47,17 +47,17 @@ fn current_evals(c: &mut Criterion) {
 
     let mut group = c.benchmark_group("Current dg(ψ)/dψ evaluation");
 
-    group.bench_with_input("LarCurrent", &psi, |b, &psi| {
+    group.bench_with_input("LarCurrent", &psit, |b, &psit| {
         b.iter(|| {
             lar_current
-                .eval_g_deriv(black_box(psi), black_box(acc))
+                .eval_g_deriv(black_box(psit), black_box(acc))
                 .unwrap()
         });
     });
-    group.bench_with_input("NcCurrent", &psi, |b, &psi| {
+    group.bench_with_input("NcCurrent", &psit, |b, &psit| {
         b.iter(|| {
             nc_current
-                .eval_g_deriv(black_box(psi), black_box(acc))
+                .eval_g_deriv(black_box(psit), black_box(acc))
                 .unwrap()
         });
     });
@@ -67,17 +67,57 @@ fn current_evals(c: &mut Criterion) {
 
     let mut group = c.benchmark_group("Current dI(ψ)/dψ evaluation");
 
-    group.bench_with_input("LarCurrent", &psi, |b, &psi| {
+    group.bench_with_input("LarCurrent", &psit, |b, &psit| {
         b.iter(|| {
             lar_current
-                .eval_i_deriv(black_box(psi), black_box(acc))
+                .eval_i_deriv(black_box(psit), black_box(acc))
                 .unwrap()
         });
     });
-    group.bench_with_input("NcCurrent", &psi, |b, &psi| {
+    group.bench_with_input("NcCurrent", &psit, |b, &psit| {
         b.iter(|| {
             nc_current
-                .eval_i_deriv(black_box(psi), black_box(acc))
+                .eval_i_deriv(black_box(psit), black_box(acc))
+                .unwrap()
+        });
+    });
+    group.finish();
+
+    // ===========================================================================================
+
+    let mut group = c.benchmark_group("Current d²g(ψ)/dψ² evaluation");
+
+    group.bench_with_input("LarCurrent", &psit, |b, &psit| {
+        b.iter(|| {
+            lar_current
+                .eval_g_deriv2(black_box(psit), black_box(acc))
+                .unwrap()
+        });
+    });
+    group.bench_with_input("NcCurrent", &psit, |b, &psit| {
+        b.iter(|| {
+            nc_current
+                .eval_g_deriv2(black_box(psit), black_box(acc))
+                .unwrap()
+        });
+    });
+    group.finish();
+
+    // ===========================================================================================
+
+    let mut group = c.benchmark_group("Current d²I(ψ)/dψ² evaluation");
+
+    group.bench_with_input("LarCurrent", &psit, |b, &psit| {
+        b.iter(|| {
+            lar_current
+                .eval_i_deriv2(black_box(psit), black_box(acc))
+                .unwrap()
+        });
+    });
+    group.bench_with_input("NcCurrent", &psit, |b, &psit| {
+        b.iter(|| {
+            nc_current
+                .eval_i_deriv2(black_box(psit), black_box(acc))
                 .unwrap()
         });
     });

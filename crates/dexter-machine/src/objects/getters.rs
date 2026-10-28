@@ -4,17 +4,17 @@
 /// The Vec is assumed to be in Fortran order, since it is intended for use by the splines.
 #[doc(hidden)]
 #[macro_export]
-macro_rules! fortran_vec_to_carray2d_impl {
+macro_rules! fortran_vec_to_carrayview2d_impl {
     ($meth_name:ident, $($field:ident).+, $var_name:ident) => {
-        #[doc = "Returns the `"]
+        #[doc = "Returns an `ArrayView2` of the `"]
         #[doc = stringify!($var_name)]
         #[doc = "` values as a 2D array." ]
         #[must_use]
-        pub fn $meth_name(&self) -> Array2<f64> {
+        pub fn $meth_name(&self) -> ArrayView2<'_, f64> {
             // Array is in Fortran order, so we must reverse the shape
             let actual_shape = self.shape();
             let shape = (actual_shape.1, actual_shape.0);
-            Array2::from_shape_vec(shape, self.$($field).+.clone())
+            ArrayView2::from_shape(shape, &self.$($field).+)
                 .expect("Shape is correct by definition")
                 .reversed_axes()
         }
@@ -24,22 +24,18 @@ macro_rules! fortran_vec_to_carray2d_impl {
 /// Generates getters for the fluxes' values.
 #[doc(hidden)]
 #[macro_export]
-macro_rules! fluxes_values_array_getter_impl {
+macro_rules! nc_fluxes_values_getter_impl {
     () => {
-        /// Returns the toroidal flux's values as a 1D array, if they exist.
+        /// Returns a reference to the toroidal flux's values, if they exist.
         #[must_use]
-        pub fn psi_array(&self) -> Option<Array1<f64>> {
-            self.psi
-                .values()
-                .map(|values| Array1::from(Vec::from(values)))
+        pub fn psit_values(&self) -> Option<&[f64]> {
+            self.psit.values()
         }
 
-        /// Returns the poloidal flux's values as a 1D array, if they exist.
+        /// Returns a reference to the poloidal flux's values, if they exist.
         #[must_use]
-        pub fn psip_array(&self) -> Option<Array1<f64>> {
-            self.psip
-                .values()
-                .map(|values| Array1::from(Vec::from(values)))
+        pub fn psip_values(&self) -> Option<&[f64]> {
+            self.psip.values()
         }
     };
 }

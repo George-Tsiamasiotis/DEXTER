@@ -22,7 +22,7 @@ def test_nc(nc_flute_mode: dex.NcFluteMode):
     assert nc_flute_mode.phase_method == "Interpolation"
     assert nc_flute_mode.analytical_threshold_index == 3
     assert nc_flute_mode.phase_average is None
-    assert isinstance(nc_flute_mode.psi_array, np.ndarray)
+    assert isinstance(nc_flute_mode.psit_array, np.ndarray)
     assert isinstance(nc_flute_mode.psip_array, np.ndarray)
     assert isinstance(nc_flute_mode.alpha_array, np.ndarray)
     assert isinstance(nc_flute_mode.phase_array, np.ndarray)
@@ -34,7 +34,7 @@ def _test_mode_base(mode: dex.ModeObject):
     mode.__str__()
 
     assert mode.machine_type in ["Numerical", "Analytical"]
-    assert mode.psi_state in ["Good", "Bad"]
+    assert mode.psit_state in ["Good", "Bad"]
     assert mode.psip_state in ["Good", "Bad"]
 
     assert mode.m == 3
@@ -47,38 +47,38 @@ def _test_mode_base(mode: dex.ModeObject):
 
     try:
 
-        mode.eval_amplitude(psi=flux, theta=theta, zeta=zeta, t=t)
-        mode.eval_amplitude(psi=fluxes, theta=thetas, zeta=zetas, t=ts)
+        mode.eval_amplitude(psit=flux, theta=theta, zeta=zeta, t=t)
+        mode.eval_amplitude(psit=fluxes, theta=thetas, zeta=zetas, t=ts)
         mode.eval_amplitude(psip=flux, theta=theta, zeta=zeta, t=t)
         mode.eval_amplitude(psip=fluxes, theta=thetas, zeta=zetas, t=ts)
 
-        mode.eval_phase(psi=flux, theta=theta, zeta=zeta, t=t)
-        mode.eval_phase(psi=fluxes, theta=thetas, zeta=zetas, t=ts)
+        mode.eval_phase(psit=flux, theta=theta, zeta=zeta, t=t)
+        mode.eval_phase(psit=fluxes, theta=thetas, zeta=zetas, t=ts)
         mode.eval_phase(psip=flux, theta=theta, zeta=zeta, t=t)
         mode.eval_phase(psip=fluxes, theta=thetas, zeta=zetas, t=ts)
 
-        mode.eval_m(psi=flux, theta=theta, zeta=zeta, t=t)
-        mode.eval_m(psi=fluxes, theta=thetas, zeta=zetas, t=ts)
+        mode.eval_m(psit=flux, theta=theta, zeta=zeta, t=t)
+        mode.eval_m(psit=fluxes, theta=thetas, zeta=zetas, t=ts)
         mode.eval_m(psip=flux, theta=theta, zeta=zeta, t=t)
         mode.eval_m(psip=fluxes, theta=thetas, zeta=zetas, t=ts)
 
-        mode.eval_deriv_flux(psi=flux, theta=theta, zeta=zeta, t=t)
-        mode.eval_deriv_flux(psi=fluxes, theta=thetas, zeta=zetas, t=ts)
+        mode.eval_deriv_flux(psit=flux, theta=theta, zeta=zeta, t=t)
+        mode.eval_deriv_flux(psit=fluxes, theta=thetas, zeta=zetas, t=ts)
         mode.eval_deriv_flux(psip=flux, theta=theta, zeta=zeta, t=t)
         mode.eval_deriv_flux(psip=fluxes, theta=thetas, zeta=zetas, t=ts)
 
-        mode.eval_deriv_theta(psi=flux, theta=theta, zeta=zeta, t=t)
-        mode.eval_deriv_theta(psi=fluxes, theta=thetas, zeta=zetas, t=ts)
+        mode.eval_deriv_theta(psit=flux, theta=theta, zeta=zeta, t=t)
+        mode.eval_deriv_theta(psit=fluxes, theta=thetas, zeta=zetas, t=ts)
         mode.eval_deriv_theta(psip=flux, theta=theta, zeta=zeta, t=t)
         mode.eval_deriv_theta(psip=fluxes, theta=thetas, zeta=zetas, t=ts)
 
-        mode.eval_deriv_zeta(psi=flux, theta=theta, zeta=zeta, t=t)
-        mode.eval_deriv_zeta(psi=fluxes, theta=thetas, zeta=zetas, t=ts)
+        mode.eval_deriv_zeta(psit=flux, theta=theta, zeta=zeta, t=t)
+        mode.eval_deriv_zeta(psit=fluxes, theta=thetas, zeta=zetas, t=ts)
         mode.eval_deriv_zeta(psip=flux, theta=theta, zeta=zeta, t=t)
         mode.eval_deriv_zeta(psip=fluxes, theta=thetas, zeta=zetas, t=ts)
 
-        mode.eval_deriv_t(psi=flux, theta=theta, zeta=zeta, t=t)
-        mode.eval_deriv_t(psi=fluxes, theta=thetas, zeta=zetas, t=ts)
+        mode.eval_deriv_t(psit=flux, theta=theta, zeta=zeta, t=t)
+        mode.eval_deriv_t(psit=fluxes, theta=thetas, zeta=zetas, t=ts)
         mode.eval_deriv_t(psip=flux, theta=theta, zeta=zeta, t=t)
         mode.eval_deriv_t(psip=fluxes, theta=thetas, zeta=zetas, t=ts)
 

@@ -16,7 +16,7 @@ from dexter.types import (
 
 
 class UnityQfactor(MachineObject, Qfactor):
-    r"""Analytical q-factor profile of $q=1$ and $\psi=\psi_p$.
+    r"""Analytical q-factor profile of $q=1$ and $\psi_t=\psi_p$.
 
     Parameters
     ----------
@@ -72,8 +72,8 @@ class NcQfactor(MachineObject, Qfactor):
 
     Related quantities are computed by interpolating over the data arrays.
 
-    If either psi_norm or psip_norm is missing from the netCDF file, it is calculated from the
-    other by integrating $q(\psi_p)$ or $\iota(\psi)$ respectively. In the case that the calculated
+    If either `psit_norm` or `psip_norm` is missing from the netCDF file, it is calculated from the
+    other by integrating $q(\psi_p)$ or $\iota(\psi_t)$ respectively. In the case that the calculated
     values are monotonic, the other flux can be used as a flux coordinate as well.
 
     Parameters
@@ -91,7 +91,7 @@ class NcQfactor(MachineObject, Qfactor):
         The netCDF file's version (SemVer).
     interp_type
         The 1D interpolation type.
-    psi_array
+    psit_array
         The toroidal flux' values.
     psip_array
         The poloidal flux' values.
@@ -121,8 +121,8 @@ class NcQfactor(MachineObject, Qfactor):
         self.interp_type = self._r.interp_type
 
     @cached_property  # immutable type
-    def psi_array(self) -> Array1:
-        return self._r.get_array("psi_array")
+    def psit_array(self) -> Array1:
+        return self._r.get_array("psit_array")
 
     @cached_property  # immutable type
     def psip_array(self) -> Array1:
@@ -136,7 +136,7 @@ class NcQfactor(MachineObject, Qfactor):
 QfactorObject: TypeAlias = UnityQfactor | ParabolicQfactor | NcQfactor
 r"""Available [`Qfactor`][dexter.machine.base.Qfactor] objects.
 
-+ [`UnityQfactor`][dexter.UnityQfactor]: Analytical q-factor profile of $q=1$ and $\psi=\psi_p$.
++ [`UnityQfactor`][dexter.UnityQfactor]: Analytical q-factor profile of $q=1$ and $\psi_t=\psi_p$.
 + [`ParabolicQfactor`][dexter.ParabolicQfactor]: Analytical parabolic q-factor profile.
 + [`NcQfactor`][dexter.NcQfactor]: Numerical q-factor profile reconstructed from a netCDF file.
 """

@@ -4,7 +4,7 @@
 
 mod common;
 
-use crate::common::check_integrated_particle_arrays;
+use crate::common::check_integrated_particle_time_series;
 use approx::*;
 use dexter_machine::extract::{POLOIDAL_TEST_NETCDF_PATH, TEST_NETCDF_PATH};
 use dexter_machine::*;
@@ -39,7 +39,7 @@ fn gc_toroidal_intersect_uniQ_larC_larB_noP() {
     assert!(particle.energy_rsd().unwrap() < 1e-5);
     assert_relative_eq!(particle.initial_energy().unwrap(), particle.final_energy().unwrap(), epsilon = 1e-8);
 
-    check_integrated_particle_arrays(&particle);
+    check_integrated_particle_time_series(&particle);
 
     // ConstTheta
     let intersect_params = IntersectParams::new(Intersection::ConstTheta, 3.14, 10, Directionality::Initial);
@@ -55,7 +55,7 @@ fn gc_toroidal_intersect_uniQ_larC_larB_noP() {
     assert!(particle.energy_rsd().unwrap() < 1e-5);
     assert_relative_eq!(particle.initial_energy().unwrap(), particle.final_energy().unwrap(), epsilon = 1e-8);
 
-    check_integrated_particle_arrays(&particle);
+    check_integrated_particle_time_series(&particle);
 }
 
 #[test]
@@ -86,7 +86,7 @@ fn gc_poloidal_intersect_ncdQ_ncdC_ncdB_noP() {
     assert!(particle.energy_rsd().unwrap() < 1e-5);
     assert_relative_eq!(particle.initial_energy().unwrap(), particle.final_energy().unwrap(), epsilon = 1e-8);
 
-    check_integrated_particle_arrays(&particle);
+    check_integrated_particle_time_series(&particle);
 
     // ConstTheta
     let intersect_params = IntersectParams::new(Intersection::ConstTheta, 3.14, 3, Directionality::Initial);
@@ -103,7 +103,7 @@ fn gc_poloidal_intersect_ncdQ_ncdC_ncdB_noP() {
     assert!(particle.energy_rsd().unwrap() < 1e-5);
     assert_relative_eq!(particle.initial_energy().unwrap(), particle.final_energy().unwrap(), epsilon = 1e-8);
 
-    check_integrated_particle_arrays(&particle);
+    check_integrated_particle_time_series(&particle);
 }
 
 #[test]
@@ -123,9 +123,9 @@ fn gc_toroidal_poloidal_equivalence_const_theta() {
 
     let solver_params = SolverParams::default();
 
-    let psi0 = Toroidal(0.2);
-    let psip0 = machine.qfactor().eval_other(psi0, &mut Accelerator::new()).unwrap();
-    let tor_initial = InitialConditions::boozer(0.0, psi0, 0.0, 0.0, 1e-4, 0.0);
+    let psit0 = Toroidal(0.2);
+    let psip0 = machine.qfactor().eval_other(psit0, &mut Accelerator::new()).unwrap();
+    let tor_initial = InitialConditions::boozer(0.0, psit0, 0.0, 0.0, 1e-4, 0.0);
     let pol_initial = InitialConditions::boozer(0.0, psip0, 0.0, 0.0, 1e-4, 0.0);
 
     let mut tor_particle = Particle::new(&tor_initial);
@@ -146,21 +146,21 @@ fn gc_toroidal_poloidal_equivalence_const_theta() {
     assert_eq!(tor_particle.steps_stored(), 10);
     assert_eq!(pol_particle.steps_stored(), 10);
 
-    check_integrated_particle_arrays(&tor_particle);
-    check_integrated_particle_arrays(&pol_particle);
+    check_integrated_particle_time_series(&tor_particle);
+    check_integrated_particle_time_series(&pol_particle);
 
     assert_relative_eq!(tor_particle.initial_energy().unwrap(), pol_particle.initial_energy().unwrap(), epsilon=1e-12);
     assert_relative_eq!(tor_particle.final_energy().unwrap(), pol_particle.final_energy().unwrap(), epsilon=1e-11);
 
-    assert!(tor_particle.t_array().relative_eq(&pol_particle.t_array(), 1e-6, 1e-4));
-    assert!(tor_particle.psi_array().relative_eq(&pol_particle.psi_array(), 1e-8, 1e-5));
-    assert!(tor_particle.psip_array().relative_eq(&pol_particle.psip_array(), 1e-8, 1e-5));
-    assert!(tor_particle.theta_array().relative_eq(&pol_particle.theta_array(), 1e-8, 1e-5));
-    assert!(tor_particle.zeta_array().relative_eq(&pol_particle.zeta_array(), 1e-8, 1e-5));
-    assert!(tor_particle.rho_array().relative_eq(&pol_particle.rho_array(), 1e-8, 1e-5));
-    assert!(tor_particle.ptheta_array().relative_eq(&pol_particle.ptheta_array(), 1e-8, 1e-5));
-    assert!(tor_particle.pzeta_array().relative_eq(&pol_particle.pzeta_array(), 1e-8, 1e-5));
-    assert!(tor_particle.energy_array().relative_eq(&pol_particle.energy_array(), 1e-8, 1e-5));
+    assert!(tor_particle.t_values().relative_eq(&pol_particle.t_values(), 1e-6, 1e-4));
+    assert!(tor_particle.psit_values().relative_eq(&pol_particle.psit_values(), 1e-8, 1e-5));
+    assert!(tor_particle.psip_values().relative_eq(&pol_particle.psip_values(), 1e-8, 1e-5));
+    assert!(tor_particle.theta_values().relative_eq(&pol_particle.theta_values(), 1e-8, 1e-5));
+    assert!(tor_particle.zeta_values().relative_eq(&pol_particle.zeta_values(), 1e-8, 1e-5));
+    assert!(tor_particle.rho_values().relative_eq(&pol_particle.rho_values(), 1e-8, 1e-5));
+    assert!(tor_particle.ptheta_values().relative_eq(&pol_particle.ptheta_values(), 1e-8, 1e-5));
+    assert!(tor_particle.pzeta_values().relative_eq(&pol_particle.pzeta_values(), 1e-8, 1e-5));
+    assert!(tor_particle.energy_values().relative_eq(&pol_particle.energy_values(), 1e-8, 1e-5));
 }
 
 #[test]
@@ -181,9 +181,9 @@ fn gc_toroidal_poloidal_equivalence_const_zeta() {
 
     let solver_params = SolverParams::default();
 
-    let psi0 = Toroidal(0.2);
-    let psip0 = machine.qfactor().eval_other(psi0, &mut Accelerator::new()).unwrap();
-    let tor_initial = InitialConditions::boozer(0.0, psi0, 0.0, 0.0, 1e-4, 0.0);
+    let psit0 = Toroidal(0.2);
+    let psip0 = machine.qfactor().eval_other(psit0, &mut Accelerator::new()).unwrap();
+    let tor_initial = InitialConditions::boozer(0.0, psit0, 0.0, 0.0, 1e-4, 0.0);
     let pol_initial = InitialConditions::boozer(0.0, psip0, 0.0, 0.0, 1e-4, 0.0);
 
     let mut tor_particle = Particle::new(&tor_initial);
@@ -204,19 +204,19 @@ fn gc_toroidal_poloidal_equivalence_const_zeta() {
     assert_eq!(tor_particle.steps_stored(), 10);
     assert_eq!(pol_particle.steps_stored(), 10);
 
-    check_integrated_particle_arrays(&tor_particle);
-    check_integrated_particle_arrays(&pol_particle);
+    check_integrated_particle_time_series(&tor_particle);
+    check_integrated_particle_time_series(&pol_particle);
 
     assert_relative_eq!(tor_particle.initial_energy().unwrap(), pol_particle.initial_energy().unwrap(), epsilon=1e-12);
     assert_relative_eq!(tor_particle.final_energy().unwrap(), pol_particle.final_energy().unwrap(), epsilon=1e-11);
 
-    assert!(tor_particle.t_array().relative_eq(&pol_particle.t_array(), 1e-6, 1e-4));
-    assert!(tor_particle.psi_array().relative_eq(&pol_particle.psi_array(), 1e-8, 1e-5));
-    assert!(tor_particle.psip_array().relative_eq(&pol_particle.psip_array(), 1e-8, 1e-5));
-    assert!(tor_particle.theta_array().relative_eq(&pol_particle.theta_array(), 1e-8, 1e-5));
-    assert!(tor_particle.zeta_array().relative_eq(&pol_particle.zeta_array(), 1e-8, 1e-5));
-    assert!(tor_particle.rho_array().relative_eq(&pol_particle.rho_array(), 1e-8, 1e-5));
-    assert!(tor_particle.ptheta_array().relative_eq(&pol_particle.ptheta_array(), 1e-8, 1e-5));
-    assert!(tor_particle.pzeta_array().relative_eq(&pol_particle.pzeta_array(), 1e-8, 1e-5));
-    assert!(tor_particle.energy_array().relative_eq(&pol_particle.energy_array(), 1e-8, 1e-5));
+    assert!(tor_particle.t_values().relative_eq(&pol_particle.t_values(), 1e-6, 1e-4));
+    assert!(tor_particle.psit_values().relative_eq(&pol_particle.psit_values(), 1e-8, 1e-5));
+    assert!(tor_particle.psip_values().relative_eq(&pol_particle.psip_values(), 1e-8, 1e-5));
+    assert!(tor_particle.theta_values().relative_eq(&pol_particle.theta_values(), 1e-8, 1e-5));
+    assert!(tor_particle.zeta_values().relative_eq(&pol_particle.zeta_values(), 1e-8, 1e-5));
+    assert!(tor_particle.rho_values().relative_eq(&pol_particle.rho_values(), 1e-8, 1e-5));
+    assert!(tor_particle.ptheta_values().relative_eq(&pol_particle.ptheta_values(), 1e-8, 1e-5));
+    assert!(tor_particle.pzeta_values().relative_eq(&pol_particle.pzeta_values(), 1e-8, 1e-5));
+    assert!(tor_particle.energy_values().relative_eq(&pol_particle.energy_values(), 1e-8, 1e-5));
 }

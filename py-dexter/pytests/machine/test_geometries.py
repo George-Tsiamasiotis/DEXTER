@@ -18,11 +18,11 @@ def test_nc(nc_geometry: dex.NcGeometry):
     assert isinstance(nc_geometry.netcdf_version, Version)
     assert nc_geometry.interp1d_type == "Cubic"
     assert nc_geometry.interp2d_type == "Bicubic"
-    assert nc_geometry.psi_last is not None
+    assert nc_geometry.psit_last is not None
     assert nc_geometry.psip_last is not None
-    assert isfinite(nc_geometry.psi_last.value)
+    assert isfinite(nc_geometry.psit_last.value)
     assert isfinite(nc_geometry.psip_last.value)
-    assert isinstance(nc_geometry.psi_array, np.ndarray)
+    assert isinstance(nc_geometry.psit_array, np.ndarray)
     assert isinstance(nc_geometry.psip_array, np.ndarray)
     assert isinstance(nc_geometry.theta_array, np.ndarray)
     assert isinstance(nc_geometry.r_array, np.ndarray)
@@ -43,7 +43,7 @@ def _test_geometry_base(geometry: dex.GeometryObject):
     geometry.__str__()
 
     assert geometry.machine_type in ["Numerical", "Analytical"]
-    assert geometry.psi_state in ["Good", "Bad"]
+    assert geometry.psit_state in ["Good", "Bad"]
     assert geometry.psip_state in ["Good", "Bad"]
 
     assert isfinite(geometry.baxis)
@@ -67,23 +67,23 @@ def _test_geometry_base(geometry: dex.GeometryObject):
         geometry.eval_r(psip=flux)
         geometry.eval_r(psip=fluxes)
 
-        geometry.eval_psi_of_r(r=r)
-        geometry.eval_psi_of_r(r=rs)
+        geometry.eval_psit_of_r(r=r)
+        geometry.eval_psit_of_r(r=rs)
         geometry.eval_psip_of_r(r=r)
         geometry.eval_psip_of_r(r=rs)
 
-        geometry.eval_rlab(psi=flux, theta=theta)
-        geometry.eval_rlab(psi=fluxes, theta=thetas)
+        geometry.eval_rlab(psit=flux, theta=theta)
+        geometry.eval_rlab(psit=fluxes, theta=thetas)
         geometry.eval_rlab(psip=flux, theta=theta)
         geometry.eval_rlab(psip=fluxes, theta=thetas)
 
-        geometry.eval_zlab(psi=flux, theta=theta)
-        geometry.eval_zlab(psi=fluxes, theta=thetas)
+        geometry.eval_zlab(psit=flux, theta=theta)
+        geometry.eval_zlab(psit=fluxes, theta=thetas)
         geometry.eval_zlab(psip=flux, theta=theta)
         geometry.eval_zlab(psip=fluxes, theta=thetas)
 
-        geometry.eval_jacobian(psi=flux, theta=theta)
-        geometry.eval_jacobian(psi=fluxes, theta=thetas)
+        geometry.eval_jacobian(psit=flux, theta=theta)
+        geometry.eval_jacobian(psit=fluxes, theta=thetas)
         geometry.eval_jacobian(psip=flux, theta=theta)
         geometry.eval_jacobian(psip=fluxes, theta=thetas)
 

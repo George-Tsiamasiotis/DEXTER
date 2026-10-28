@@ -11,7 +11,7 @@ from dexter._utils import _ReprStrImpl, _RustTypeWrapper, _into_pyarray1f64
 
 
 class MagneticFlux(_ReprStrImpl, _RustTypeWrapper):
-    r"""Helper type to define the magnetic flux $\psi$ or $\psi_p$.
+    r"""Helper type to define the magnetic flux $\psi_t$ or $\psi_p$.
 
     This type is instantiated through the [`Toroidal`][dexter.MagneticFlux.Toroidal] and
     [`Poloidal`][dexter.MagneticFlux.Poloidal] class methods.
@@ -33,7 +33,7 @@ class MagneticFlux(_ReprStrImpl, _RustTypeWrapper):
 
     @classmethod
     def Toroidal(cls, value: float) -> MagneticFlux:
-        r"""Defines a toroidal `MagneticFlux` $\psi$.
+        r"""Defines a toroidal magnetic flux $\psi_t$.
 
         Parameters
         ----------
@@ -43,7 +43,7 @@ class MagneticFlux(_ReprStrImpl, _RustTypeWrapper):
         Example
         -------
         ```python title="Toroidal MagneticFlux creation"
-        >>> flux = dex.MagneticFlux.Toroidal(0.05)
+        >>> psit = dex.MagneticFlux.Toroidal(0.05)
 
         ```
         """
@@ -51,7 +51,7 @@ class MagneticFlux(_ReprStrImpl, _RustTypeWrapper):
 
     @classmethod
     def Poloidal(cls, value: float) -> MagneticFlux:
-        r"""Defines a poloidal `MagneticFlux` $\psi_p$.
+        r"""Defines a poloidal magnetic flux $\psi_p$.
 
         Parameters
         ----------
@@ -61,7 +61,7 @@ class MagneticFlux(_ReprStrImpl, _RustTypeWrapper):
         Example
         -------
         ```python title="Poloidal MagneticFlux creation"
-        >>> flux = dex.MagneticFlux.Poloidal(0.04)
+        >>> psip = dex.MagneticFlux.Poloidal(0.04)
 
         ```
         """
@@ -148,7 +148,7 @@ class MagneticFluxArray(_ReprStrImpl, _RustTypeWrapper):
 
     @classmethod
     def Toroidal(cls, array: ArrayLike) -> MagneticFluxArray:
-        r"""Defines an array of toroidal fluxes $\psi$.
+        r"""Defines an array of toroidal fluxes $\psi_t$.
 
         Parameters
         ----------
@@ -158,7 +158,7 @@ class MagneticFluxArray(_ReprStrImpl, _RustTypeWrapper):
         Example
         -------
         ```python title="Toroidal MagneticFluxArray creation"
-        >>> psi0s = dex.MagneticFluxArray.Toroidal(np.linspace(0, 0.05, 30))
+        >>> psit_array = dex.MagneticFluxArray.Toroidal(np.linspace(0, 0.05, 30))
 
         ```
         """
@@ -176,7 +176,7 @@ class MagneticFluxArray(_ReprStrImpl, _RustTypeWrapper):
         Example
         -------
         ```python title="Poloidal MagneticFluxArray creation"
-        >>> psip0s = dex.MagneticFluxArray.Poloidal([0.1, 0.2, 0.3])
+        >>> psip_array = dex.MagneticFluxArray.Poloidal([0.1, 0.2, 0.3])
 
         ```
         """

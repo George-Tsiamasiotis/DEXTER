@@ -1,7 +1,7 @@
 import dexter as dex
 
 geometry = dex.LarGeometry(baxis=3, raxis=1.75, rlast=0.5)
-LCFS = geometry.psi_last
+LCFS = geometry.psit_last
 machine = dex.Machine(
     geometry=geometry,
     qfactor=dex.ParabolicQfactor(qaxis=1.1, qlast=3.9, lcfs=LCFS),
@@ -11,7 +11,7 @@ machine = dex.Machine(
 
 initial = dex.InitialConditions.Mixed(
     t0=0,
-    flux0=0.6 * machine.psi_last,
+    flux0=0.6 * machine.psit_last,
     theta0=0,
     zeta0=0,
     pzeta0=-0.4 * machine.psip_last.value,
@@ -43,7 +43,7 @@ machine.perturbation = dex.Perturbation(
 
 initial = dex.InitialConditions.Mixed(
     t0=0,
-    flux0=0.15 * machine.psi_last,
+    flux0=0.15 * machine.psit_last,
     theta0=0,
     zeta0=0,
     pzeta0=-0.5 * machine.psip_last.value,
@@ -63,7 +63,7 @@ assert particle.integration_status == "Integrated"
 
 initial = dex.InitialConditions.Mixed(
     t0=0,
-    flux0=0.5 * machine.psi_last,
+    flux0=0.5 * machine.psit_last,
     theta0=0,
     zeta0=0,
     pzeta0=0.1 * machine.psip_last.value,

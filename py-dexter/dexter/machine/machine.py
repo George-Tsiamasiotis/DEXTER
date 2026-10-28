@@ -62,10 +62,10 @@ class Machine:
         conversion to laboratory coordinates and SI units.
     species
         The particle species under study. This only affects unit conversions to SI.
-    psi_last
-        The value of the last closed toroidal flux $\psi_{LCFS}$.
+    psit_last
+        The value of the last closed toroidal flux $\psi_{t,LCFS}$.
     psip_last
-        The value of the last closed toroidal flux $\psi_{LCFS}$.
+        The value of the last closed poloidal flux $\psi_{p,LCFS}$.
     baxis
         The magnetic field strength on the axis, $B_{axis}$.
     raxis
@@ -199,7 +199,7 @@ class Machine:
 
         ``` py
         >>> geometry=dex.LarGeometry(baxis=2, raxis=2.75, rlast=0.5)
-        >>> lcfs = geometry.psi_last
+        >>> lcfs = geometry.psit_last
         >>> machine = dex.Machine(
         ...     geometry=geometry,
         ...     qfactor=dex.UnityQfactor(lcfs),
@@ -225,8 +225,8 @@ class Machine:
         return self._reg.Quantity(value, units)
 
     @property
-    def psi_last(self) -> MagneticFlux:
-        return self.qfactor.psi_last
+    def psit_last(self) -> MagneticFlux:
+        return self.qfactor.psit_last
 
     @property
     def psip_last(self) -> MagneticFlux:

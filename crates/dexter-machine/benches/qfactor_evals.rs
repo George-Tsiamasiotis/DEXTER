@@ -13,7 +13,7 @@ fn qfactor_evals(c: &mut Criterion) {
     let lcfs = MagneticFlux::Toroidal(0.45);
     let path = PathBuf::from(TEST_NETCDF_PATH);
     let acc = &mut Accelerator::new();
-    let psi = MagneticFlux::Toroidal(0.01);
+    let psit = MagneticFlux::Toroidal(0.01);
 
     let unity = UnityQfactor::new(lcfs);
     let parabolic = ParabolicQfactor::new(1.1, 3.9, lcfs);
@@ -25,14 +25,37 @@ fn qfactor_evals(c: &mut Criterion) {
 
     let mut group = c.benchmark_group("Qfactor q(ψ) evaluation");
 
-    group.bench_with_input("Unity", &psi, |b, &psi| {
-        b.iter(|| unity.eval_q(black_box(psi), black_box(acc)).unwrap());
+    group.bench_with_input("Unity", &psit, |b, &psit| {
+        b.iter(|| unity.eval_q(black_box(psit), black_box(acc)).unwrap());
     });
-    group.bench_with_input("Parabolic", &psi, |b, &psi| {
-        b.iter(|| parabolic.eval_q(black_box(psi), black_box(acc)).unwrap());
+    group.bench_with_input("Parabolic", &psit, |b, &psit| {
+        b.iter(|| parabolic.eval_q(black_box(psit), black_box(acc)).unwrap());
     });
-    group.bench_with_input("NcQfactor", &psi, |b, &psi| {
-        b.iter(|| nc_qfactor.eval_q(black_box(psi), black_box(acc)).unwrap());
+    group.bench_with_input("NcQfactor", &psit, |b, &psit| {
+        b.iter(|| nc_qfactor.eval_q(black_box(psit), black_box(acc)).unwrap());
+    });
+    group.finish();
+
+    // ===========================================================================================
+
+    let mut group = c.benchmark_group("Qfactor dq(ψ)/dψ evaluation");
+
+    group.bench_with_input("Unity", &psit, |b, &psit| {
+        b.iter(|| unity.eval_q_deriv(black_box(psit), black_box(acc)).unwrap());
+    });
+    group.bench_with_input("Parabolic", &psit, |b, &psit| {
+        b.iter(|| {
+            parabolic
+                .eval_q_deriv(black_box(psit), black_box(acc))
+                .unwrap()
+        });
+    });
+    group.bench_with_input("NcQfactor", &psit, |b, &psit| {
+        b.iter(|| {
+            nc_qfactor
+                .eval_q_deriv(black_box(psit), black_box(acc))
+                .unwrap()
+        });
     });
     group.finish();
 
@@ -40,20 +63,20 @@ fn qfactor_evals(c: &mut Criterion) {
 
     let mut group = c.benchmark_group("Qfactor ψ(ψp) evaluation");
 
-    group.bench_with_input("Unity", &psi, |b, &psi| {
-        b.iter(|| unity.eval_other(black_box(psi), black_box(acc)).unwrap());
+    group.bench_with_input("Unity", &psit, |b, &psit| {
+        b.iter(|| unity.eval_other(black_box(psit), black_box(acc)).unwrap());
     });
-    group.bench_with_input("Parabolic", &psi, |b, &psi| {
+    group.bench_with_input("Parabolic", &psit, |b, &psit| {
         b.iter(|| {
             parabolic
-                .eval_other(black_box(psi), black_box(acc))
+                .eval_other(black_box(psit), black_box(acc))
                 .unwrap()
         });
     });
-    group.bench_with_input("NcQfactor", &psi, |b, &psi| {
+    group.bench_with_input("NcQfactor", &psit, |b, &psit| {
         b.iter(|| {
             nc_qfactor
-                .eval_other(black_box(psi), black_box(acc))
+                .eval_other(black_box(psit), black_box(acc))
                 .unwrap()
         });
     });

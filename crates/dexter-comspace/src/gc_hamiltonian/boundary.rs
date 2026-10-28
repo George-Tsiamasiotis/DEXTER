@@ -169,7 +169,7 @@ impl Boundary {
     }
 
     /// Calculates the boundary extrema by interpolating each exact root to the corresponding `θ` and
-    /// `ψ/ψp` points.
+    /// `ψ` points.
     pub(crate) fn extrema_from_exact_roots(
         &self,
         machine: Machine,

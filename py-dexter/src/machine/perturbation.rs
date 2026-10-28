@@ -46,28 +46,28 @@ impl PyPerturbation {
 #[pymethods] // Evaluations
 #[rustfmt::skip]
 impl PyPerturbation {
-    pub fn eval_p(&self, theta: f64, zeta: f64, t: f64, psi:f64, psip: f64) -> Result<f64> {
-        let flux = flux_from_params(psi, psip);
+    pub fn eval_p(&self, theta: f64, zeta: f64, t: f64, psit:f64, psip: f64) -> Result<f64> {
+        let flux = flux_from_params(psit, psip);
         Ok(self.0.eval_p(flux, theta, zeta, t, &mut self.0.generate_caches())?)
     }
 
-    pub fn eval_deriv_flux(&self, theta: f64, zeta: f64, t: f64, psi:f64, psip: f64) -> Result<f64> {
-        let flux = flux_from_params(psi, psip);
+    pub fn eval_deriv_flux(&self, theta: f64, zeta: f64, t: f64, psit:f64, psip: f64) -> Result<f64> {
+        let flux = flux_from_params(psit, psip);
         Ok(self.0.eval_deriv_flux(flux, theta, zeta, t, &mut self.0.generate_caches())?)
     }
 
-    pub fn eval_deriv_theta(&self, theta: f64, zeta: f64, t: f64, psi:f64, psip: f64) -> Result<f64> {
-        let flux = flux_from_params(psi, psip);
+    pub fn eval_deriv_theta(&self, theta: f64, zeta: f64, t: f64, psit:f64, psip: f64) -> Result<f64> {
+        let flux = flux_from_params(psit, psip);
         Ok(self.0.eval_deriv_theta(flux, theta, zeta, t, &mut self.0.generate_caches())?)
     }
 
-    pub fn eval_deriv_zeta(&self, theta: f64, zeta: f64, t: f64, psi:f64, psip: f64) -> Result<f64> {
-        let flux = flux_from_params(psi, psip);
+    pub fn eval_deriv_zeta(&self, theta: f64, zeta: f64, t: f64, psit:f64, psip: f64) -> Result<f64> {
+        let flux = flux_from_params(psit, psip);
         Ok(self.0.eval_deriv_zeta(flux, theta, zeta, t, &mut self.0.generate_caches())?)
     }
 
-    pub fn eval_deriv_t(&self, theta: f64, zeta: f64, t: f64, psi:f64, psip: f64) -> Result<f64> {
-        let flux = flux_from_params(psi, psip);
+    pub fn eval_deriv_t(&self, theta: f64, zeta: f64, t: f64, psit:f64, psip: f64) -> Result<f64> {
+        let flux = flux_from_params(psit, psip);
         Ok(self.0.eval_deriv_t(flux, theta, zeta, t, &mut self.0.generate_caches())?)
     }
 }

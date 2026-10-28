@@ -99,7 +99,7 @@ class NcFluteMode(MachineObject, Mode):
     n
         The toroidal mode number.
     phase_method
-        The phase $\phi(\psi/\psi_p)$ calculation method.
+        The phase $\phi(\psi)$ calculation method.
     analytical_threshold_index
         The modes’s analytical threshold point. Defines the index of the magnetic flux values under
         which to switch to the analytica formula.
@@ -139,7 +139,7 @@ class NcFluteMode(MachineObject, Mode):
         The analytical threshold index.
     phase_average
         The average value of the phase array, if `PhaseMethod == 'Average'`.
-    psi_array
+    psit_array
         The toroidal flux' values.
     psip_array
         The poloidal flux' values.
@@ -197,8 +197,8 @@ class NcFluteMode(MachineObject, Mode):
         )
 
     @cached_property  # immutable type
-    def psi_array(self) -> Array1 | None:
-        return self._r.get_array("psi_array")
+    def psit_array(self) -> Array1 | None:
+        return self._r.get_array("psit_array")
 
     @cached_property  # immutable type
     def psip_array(self) -> Array1 | None:

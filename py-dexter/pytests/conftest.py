@@ -92,7 +92,7 @@ def nc_machine(
     nc_bfield: dex.NcBfield,
 ) -> dex.Machine:
     """Creates a typical Nc configuration."""
-    LCFS = nc_geometry.psi_last
+    LCFS = nc_geometry.psit_last
     assert LCFS is not None
     return dex.Machine(
         geometry=nc_geometry,
@@ -111,7 +111,7 @@ def nc_machine_perturbed(
     nc_flute_mode: dex.NcFluteMode,
 ) -> dex.Machine:
     """Creates a typical Nc configuration with one flute mode."""
-    LCFS = nc_geometry.psi_last
+    LCFS = nc_geometry.psit_last
     assert LCFS is not None
     return dex.Machine(
         geometry=nc_geometry,

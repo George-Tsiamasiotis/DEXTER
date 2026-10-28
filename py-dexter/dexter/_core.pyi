@@ -6,7 +6,7 @@ implementors. The higher level wrappers are responsible for re-exporting the cor
 have. It should not be visible to the user unless they access `._r` explicitly.
 """
 
-from typing import override
+from typing import Literal, override
 
 from dexter.types import (
     Array1,
@@ -75,7 +75,7 @@ class _PyMagneticFluxArray:
 
 class _PyGeometry:  # Trait and all possible getters
     machine_type: MachineType
-    psi_state: FluxCoordinateState
+    psit_state: FluxCoordinateState
     psip_state: FluxCoordinateState
     baxis: float
     raxis: float
@@ -89,7 +89,7 @@ class _PyGeometry:  # Trait and all possible getters
     rlab_last: Array1
     zlab_last: Array1
     shape: ArrayShape
-    psi_last: _PyMagneticFlux | None
+    psit_last: _PyMagneticFlux | None
     psip_last: _PyMagneticFlux | None
 
     @classmethod
@@ -101,14 +101,20 @@ class _PyGeometry:  # Trait and all possible getters
         interp1d_type: Interpolation1dType,
         interp2d_type: Interpolation2dType,
     ) -> _PyGeometry: ...
-    def eval_r(self, psi: float, psip: float) -> float: ...
-    def eval_psi_of_r(self, r: float) -> float: ...
+    def eval_r(self, psit: float, psip: float) -> float: ...
+    def eval_psit_of_r(self, r: float) -> float: ...
     def eval_psip_of_r(self, r: float) -> float: ...
-    def eval_rlab(self, theta: float, psi: float, psip: float) -> float: ...
-    def eval_zlab(self, theta: float, psi: float, psip: float) -> float: ...
-    def eval_jacobian(self, theta: float, psi: float, psip: float) -> float: ...
-    def get_array(self, name: str) -> Array1 | None: ...
-    def get_array2d(self, name: str) -> Array2 | None: ...
+    def eval_rlab(self, theta: float, psit: float, psip: float) -> float: ...
+    def eval_zlab(self, theta: float, psit: float, psip: float) -> float: ...
+    def eval_jacobian(self, theta: float, psit: float, psip: float) -> float: ...
+    def get_array(
+        self,
+        name: Literal["theta_array", "r_array", "psit_array", "psip_array"],
+    ) -> Array1 | None: ...
+    def get_array2d(
+        self,
+        name: Literal["rlab_array", "zlab_array", "jacobian_array"],
+    ) -> Array2 | None: ...
     @override
     def __repr__(self) -> str: ...
     @override
@@ -116,9 +122,9 @@ class _PyGeometry:  # Trait and all possible getters
 
 class _PyQfactor:  # Trait and all possible getters
     machine_type: MachineType
-    psi_state: FluxCoordinateState
+    psit_state: FluxCoordinateState
     psip_state: FluxCoordinateState
-    psi_last: _PyMagneticFlux
+    psit_last: _PyMagneticFlux
     psip_last: _PyMagneticFlux
     qlast: float
     qaxis: float
@@ -137,16 +143,19 @@ class _PyQfactor:  # Trait and all possible getters
     ) -> _PyQfactor: ...
     @classmethod
     def build_nc(cls, path: str, interp_type: Interpolation1dType) -> _PyQfactor: ...
-    def eval_q(self, psi: float, psip: float) -> float: ...
-    def eval_q_deriv(self, psi: float, psip: float) -> float: ...
-    def eval_other(self, psi: float, psip: float) -> float: ...
-    def eval_psi_of_q(self, q: float) -> float: ...
+    def eval_q(self, psit: float, psip: float) -> float: ...
+    def eval_q_deriv(self, psit: float, psip: float) -> float: ...
+    def eval_other(self, psit: float, psip: float) -> float: ...
+    def eval_psit_of_q(self, q: float) -> float: ...
     def eval_psip_of_q(self, q: float) -> float: ...
-    def eval_deriv_of_other(self, psi: float, psip: float) -> float: ...
-    def eval_deriv_wrt_other(self, psi: float, psip: float) -> float: ...
-    def eval_iota(self, psi: float, psip: float) -> float: ...
-    def eval_iota_deriv(self, psi: float, psip: float) -> float: ...
-    def get_array(self, name: str) -> Array1: ...
+    def eval_deriv_of_other(self, psit: float, psip: float) -> float: ...
+    def eval_deriv_wrt_other(self, psit: float, psip: float) -> float: ...
+    def eval_iota(self, psit: float, psip: float) -> float: ...
+    def eval_iota_deriv(self, psit: float, psip: float) -> float: ...
+    def get_array(
+        self,
+        name: Literal["q_array", "psit_array", "psip_array"],
+    ) -> Array1: ...
     @override
     def __repr__(self) -> str: ...
     @override
@@ -154,7 +163,7 @@ class _PyQfactor:  # Trait and all possible getters
 
 class _PyCurrent:  # Trait and all possible getters
     machine_type: MachineType
-    psi_state: FluxCoordinateState
+    psit_state: FluxCoordinateState
     psip_state: FluxCoordinateState
     path: str
     netcdf_version: str
@@ -164,13 +173,16 @@ class _PyCurrent:  # Trait and all possible getters
     def build_lar(cls) -> _PyCurrent: ...
     @classmethod
     def build_nc(cls, path: str, interp_type: Interpolation1dType) -> _PyCurrent: ...
-    def eval_g(self, psi: float, psip: float) -> float: ...
-    def eval_i(self, psi: float, psip: float) -> float: ...
-    def eval_g_deriv(self, psi: float, psip: float) -> float: ...
-    def eval_i_deriv(self, psi: float, psip: float) -> float: ...
-    def eval_g_deriv2(self, psi: float, psip: float) -> float: ...
-    def eval_i_deriv2(self, psi: float, psip: float) -> float: ...
-    def get_array(self, name: str) -> Array1 | None: ...
+    def eval_g(self, psit: float, psip: float) -> float: ...
+    def eval_i(self, psit: float, psip: float) -> float: ...
+    def eval_g_deriv(self, psit: float, psip: float) -> float: ...
+    def eval_i_deriv(self, psit: float, psip: float) -> float: ...
+    def eval_g_deriv2(self, psit: float, psip: float) -> float: ...
+    def eval_i_deriv2(self, psit: float, psip: float) -> float: ...
+    def get_array(
+        self,
+        name: Literal["g_array", "i_array", "psit_array", "psip_array"],
+    ) -> Array1 | None: ...
     @override
     def __repr__(self) -> str: ...
     @override
@@ -178,7 +190,7 @@ class _PyCurrent:  # Trait and all possible getters
 
 class _PyBfield:  # Trait and all possible getters
     machine_type: MachineType
-    psi_state: FluxCoordinateState
+    psit_state: FluxCoordinateState
     psip_state: FluxCoordinateState
     path: str
     netcdf_version: str
@@ -201,41 +213,44 @@ class _PyBfield:  # Trait and all possible getters
     def eval_b(
         self,
         theta: float,
-        psi: float,
+        psit: float,
         psip: float,
     ) -> float: ...
     def eval_deriv_flux(
         self,
         theta: float,
-        psi: float,
+        psit: float,
         psip: float,
     ) -> float: ...
     def eval_deriv_theta(
         self,
         theta: float,
-        psi: float,
+        psit: float,
         psip: float,
     ) -> float: ...
     def eval_deriv_flux2(
         self,
         theta: float,
-        psi: float,
+        psit: float,
         psip: float,
     ) -> float: ...
     def eval_deriv_theta2(
         self,
         theta: float,
-        psi: float,
+        psit: float,
         psip: float,
     ) -> float: ...
     def eval_deriv_mixed(
         self,
         theta: float,
-        psi: float,
+        psit: float,
         psip: float,
     ) -> float: ...
-    def get_array(self, name: str) -> Array1 | None: ...
-    def get_array2d(self, name: str) -> Array2: ...
+    def get_array(
+        self,
+        name: Literal["theta_array", "theta_array_padded", "psit_array", "psip_array"],
+    ) -> Array1 | None: ...
+    def get_array2d(self, name: Literal["b_array", "b_array_padded"]) -> Array2: ...
     @override
     def __repr__(self) -> str: ...
     @override
@@ -243,7 +258,7 @@ class _PyBfield:  # Trait and all possible getters
 
 class _PyEfield:  # Trait and all possible getters
     machine_type: MachineType
-    psi_state: FluxCoordinateState
+    psit_state: FluxCoordinateState
     psip_state: FluxCoordinateState
     strength: float
     mean: _PyMagneticFlux
@@ -260,22 +275,22 @@ class _PyEfield:  # Trait and all possible getters
     ) -> _PyEfield: ...
     def eval_e(
         self,
-        psi: float,
+        psit: float,
         psip: float,
     ) -> float: ...
     def eval_phi(
         self,
-        psi: float,
+        psit: float,
         psip: float,
     ) -> float: ...
     def eval_phi_deriv(
         self,
-        psi: float,
+        psit: float,
         psip: float,
     ) -> float: ...
     def eval_phi_deriv2(
         self,
-        psi: float,
+        psit: float,
         psip: float,
     ) -> float: ...
     @override
@@ -285,7 +300,7 @@ class _PyEfield:  # Trait and all possible getters
 
 class _PyMode:  # Trait and all possible getters
     machine_type: MachineType
-    psi_state: FluxCoordinateState
+    psit_state: FluxCoordinateState
     psip_state: FluxCoordinateState
     m: int
     n: int
@@ -323,7 +338,7 @@ class _PyMode:  # Trait and all possible getters
         theta: float,
         zeta: float,
         t: float,
-        psi: float,
+        psit: float,
         psip: float,
     ) -> float: ...
     def eval_phase(
@@ -331,7 +346,7 @@ class _PyMode:  # Trait and all possible getters
         theta: float,
         zeta: float,
         t: float,
-        psi: float,
+        psit: float,
         psip: float,
     ) -> float: ...
     def eval_m(
@@ -339,7 +354,7 @@ class _PyMode:  # Trait and all possible getters
         theta: float,
         zeta: float,
         t: float,
-        psi: float,
+        psit: float,
         psip: float,
     ) -> float: ...
     def eval_deriv_flux(
@@ -347,7 +362,7 @@ class _PyMode:  # Trait and all possible getters
         theta: float,
         zeta: float,
         t: float,
-        psi: float,
+        psit: float,
         psip: float,
     ) -> float: ...
     def eval_deriv_theta(
@@ -355,7 +370,7 @@ class _PyMode:  # Trait and all possible getters
         theta: float,
         zeta: float,
         t: float,
-        psi: float,
+        psit: float,
         psip: float,
     ) -> float: ...
     def eval_deriv_zeta(
@@ -363,7 +378,7 @@ class _PyMode:  # Trait and all possible getters
         theta: float,
         zeta: float,
         t: float,
-        psi: float,
+        psit: float,
         psip: float,
     ) -> float: ...
     def eval_deriv_t(
@@ -371,10 +386,13 @@ class _PyMode:  # Trait and all possible getters
         theta: float,
         zeta: float,
         t: float,
-        psi: float,
+        psit: float,
         psip: float,
     ) -> float: ...
-    def get_array(self, name: str) -> Array1 | None: ...
+    def get_array(
+        self,
+        name: Literal["alpha_array", "phase_array", "psit_array", "psip_array"],
+    ) -> Array1 | None: ...
     @override
     def __repr__(self) -> str: ...
     @override
@@ -387,7 +405,7 @@ class _PyPerturbation:
         theta: float,
         zeta: float,
         t: float,
-        psi: float,
+        psit: float,
         psip: float,
     ) -> float: ...
     def eval_deriv_flux(
@@ -395,7 +413,7 @@ class _PyPerturbation:
         theta: float,
         zeta: float,
         t: float,
-        psi: float,
+        psit: float,
         psip: float,
     ) -> float: ...
     def eval_deriv_theta(
@@ -403,7 +421,7 @@ class _PyPerturbation:
         theta: float,
         zeta: float,
         t: float,
-        psi: float,
+        psit: float,
         psip: float,
     ) -> float: ...
     def eval_deriv_zeta(
@@ -411,7 +429,7 @@ class _PyPerturbation:
         theta: float,
         zeta: float,
         t: float,
-        psi: float,
+        psit: float,
         psip: float,
     ) -> float: ...
     def eval_deriv_t(
@@ -419,7 +437,7 @@ class _PyPerturbation:
         theta: float,
         zeta: float,
         t: float,
-        psi: float,
+        psit: float,
         psip: float,
     ) -> float: ...
     def __len__(self) -> int: ...
@@ -580,7 +598,21 @@ class _PyParticle:
     ) -> None: ...
     def print_caches(self) -> None: ...
     def discard_arrays(self) -> None: ...
-    def get_array(self, name: str) -> Array1: ...
+    def get_array(
+        self,
+        name: Literal[
+            "t_array",
+            "psit_array",
+            "psip_array",
+            "theta_array",
+            "zeta_array",
+            "rho_array",
+            "mu_array",
+            "ptheta_array",
+            "pzeta_array",
+            "energy_array",
+        ],
+    ) -> Array1: ...
     @override
     def __repr__(self) -> str: ...
     @override

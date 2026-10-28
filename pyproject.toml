@@ -1,6 +1,6 @@
 [project]
 name = "dexter"
-version = "0.2.4-pre.4"
+version = "0.2.4-pre.5"
 description = "Calculations and simulations in analytical and reconstructed configurations of toroidal fusion devices."
 readme = "README.md"
 authors = [
@@ -37,16 +37,13 @@ dev = [
     "patchelf>=0.19.1.0",
     "xarray>=2026.9.0",
 ]
-plot = [
-    "pygobject>=3.58.0",
-]
 test = [
     "pytest>=9.1.1",
     "pytest-cov>=7.1.0",
 ]
 docs = [
     "mkdocstrings-python>=2.0.9",
-    "zensical==0.0.71",
+    "zensical==0.0.73",
 ]
 
 [tool.pytest.ini_options]

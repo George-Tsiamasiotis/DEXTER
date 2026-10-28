@@ -21,8 +21,8 @@ pub trait MachineObject: Debug + Send + Sync {
     /// Returns the machine object's type.
     fn machine_type(&self) -> MachineType;
 
-    /// Returns the [`FluxCoordinateState`] of the toroidal `ψ` flux coordinate.
-    fn psi_state(&self) -> FluxCoordinateState;
+    /// Returns the [`FluxCoordinateState`] of the toroidal `ψt` flux coordinate.
+    fn psit_state(&self) -> FluxCoordinateState;
 
     /// Returns the [`FluxCoordinateState`] of the toroidal `ψp` flux coordinate.
     fn psip_state(&self) -> FluxCoordinateState;
@@ -45,7 +45,7 @@ pub trait Geometry: MachineObject + Debug + Send + Sync {
     /// Returns the `r` coordinate's value at the last closed flux surface **in \[m\]**.
     fn rlast(&self) -> f64;
 
-    /// Calculates the radial coordinate `r(ψ/ψp)` in **\[m\]**.
+    /// Calculates the radial coordinate `r(ψ)` in **\[m\]**.
     ///
     /// # Errors
     ///
@@ -63,16 +63,16 @@ pub trait Geometry: MachineObject + Debug + Send + Sync {
     /// # let geometry = NcGeometryBuilder::new(&path, interp1d_type, interp2d_type).build()?;
     /// #
     /// let acc = &mut Accelerator::new();
-    /// let psi = MagneticFlux::Toroidal(0.01);
+    /// let psit = MagneticFlux::Toroidal(0.01);
     /// let psip = MagneticFlux::Poloidal(0.015);
     ///
-    /// let r_of_psi: f64 = geometry.eval_r(psi, acc)?;
+    /// let r_of_psit: f64 = geometry.eval_r(psit, acc)?;
     /// let r_of_psip: f64 = geometry.eval_r(psip, acc)?;
     /// # Ok::<_, MachineError>(())
     /// ```
     fn eval_r(&self, flux: MagneticFlux, acc: &mut Accelerator) -> Result<f64, EvalError>;
 
-    /// Calculates the toroidal flux `ψ(r)` from the radial coordinate `r` **in \[m\]**.
+    /// Calculates the toroidal flux `ψt(r)` from the radial coordinate `r` **in \[m\]**.
     ///
     /// # Errors
     ///
@@ -91,10 +91,10 @@ pub trait Geometry: MachineObject + Debug + Send + Sync {
     /// # let geometry = NcGeometryBuilder::new(&path, interp1d_type, interp2d_type).build()?;
     /// #
     /// let acc = &mut Accelerator::new();
-    /// let psi_of_r: MagneticFlux = geometry.eval_psi_of_r(0.02, acc)?;
+    /// let psit_of_r: MagneticFlux = geometry.eval_psit_of_r(0.02, acc)?;
     /// # Ok::<_, MachineError>(())
     /// ```
-    fn eval_psi_of_r(&self, r: f64, acc: &mut Accelerator) -> Result<MagneticFlux, EvalError>;
+    fn eval_psit_of_r(&self, r: f64, acc: &mut Accelerator) -> Result<MagneticFlux, EvalError>;
 
     /// Calculates the poloidal flux `ψp(r)` from the radial coordinate `r` **in \[m\]**.
     ///
@@ -120,7 +120,7 @@ pub trait Geometry: MachineObject + Debug + Send + Sync {
     /// ```
     fn eval_psip_of_r(&self, r: f64, acc: &mut Accelerator) -> Result<MagneticFlux, EvalError>;
 
-    /// Calculates `R(ψ/ψp, θ)` **in \[m\]**.
+    /// Calculates `R(ψ, θ)` **in \[m\]**.
     ///
     /// # Errors
     ///
@@ -139,10 +139,10 @@ pub trait Geometry: MachineObject + Debug + Send + Sync {
     /// # let geometry = NcGeometryBuilder::new(&path, interp1d_type, interp2d_type).build()?;
     /// #
     /// let acc = &mut Accelerator2d::new();
-    /// let psi = MagneticFlux::Toroidal(0.01);
+    /// let psip = MagneticFlux::Toroidal(0.01);
     /// let psip = MagneticFlux::Poloidal(0.015);
     ///
-    /// let rlab_of_psi = geometry.eval_rlab(psi, 3.14, acc)?;
+    /// let rlab_of_psip = geometry.eval_rlab(psip, 3.14, acc)?;
     /// let rlab_of_psip = geometry.eval_rlab(psip, 3.14, acc)?;
     /// # Ok::<_, MachineError>(())
     /// ```
@@ -153,7 +153,7 @@ pub trait Geometry: MachineObject + Debug + Send + Sync {
         acc: &mut Accelerator2d,
     ) -> Result<f64, EvalError>;
 
-    /// Calculates `Z(ψ/ψp, θ)` **in \[m\]**.
+    /// Calculates `Z(ψ, θ)` **in \[m\]**.
     ///
     /// # Errors
     ///
@@ -172,10 +172,10 @@ pub trait Geometry: MachineObject + Debug + Send + Sync {
     /// # let geometry = NcGeometryBuilder::new(&path, interp1d_type, interp2d_type).build()?;
     /// #
     /// let acc = &mut Accelerator2d::new();
-    /// let psi = MagneticFlux::Toroidal(0.01);
+    /// let psip = MagneticFlux::Toroidal(0.01);
     /// let psip = MagneticFlux::Poloidal(0.015);
     ///
-    /// let zlab_of_psi = geometry.eval_zlab(psi, 3.14, acc)?;
+    /// let zlab_of_psip = geometry.eval_zlab(psip, 3.14, acc)?;
     /// let zlab_of_psip = geometry.eval_zlab(psip, 3.14, acc)?;
     /// # Ok::<_, MachineError>(())
     /// ```
@@ -186,7 +186,7 @@ pub trait Geometry: MachineObject + Debug + Send + Sync {
         acc: &mut Accelerator2d,
     ) -> Result<f64, EvalError>;
 
-    /// Calculates `J(ψ/ψp, θ)`.
+    /// Calculates `J(ψ, θ)`.
     ///
     /// # Errors
     ///
@@ -205,10 +205,10 @@ pub trait Geometry: MachineObject + Debug + Send + Sync {
     /// # let geometry = NcGeometryBuilder::new(&path, interp1d_type, interp2d_type).build()?;
     /// #
     /// let acc = &mut Accelerator2d::new();
-    /// let psi = MagneticFlux::Toroidal(0.01);
+    /// let psit = MagneticFlux::Toroidal(0.01);
     /// let psip = MagneticFlux::Poloidal(0.015);
     ///
-    /// let j_of_psi = geometry.eval_jacobian(psi, 3.14, acc)?;
+    /// let j_of_psit = geometry.eval_jacobian(psit, 3.14, acc)?;
     /// let j_of_psip = geometry.eval_jacobian(psip, 3.14, acc)?;
     /// # Ok::<_, MachineError>(())
     /// ```
@@ -228,8 +228,8 @@ pub trait Geometry: MachineObject + Debug + Send + Sync {
 
 /// q-factor related quantities computation.
 pub trait Qfactor: MachineObject + Debug + Send + Sync {
-    /// Returns the value of the last closed toroidal flux `ψ_last`.
-    fn psi_last(&self) -> MagneticFlux;
+    /// Returns the value of the last closed toroidal flux `ψt_last`.
+    fn psit_last(&self) -> MagneticFlux;
 
     /// Returns the value of the last closed poloidal flux `ψp_last`.
     fn psip_last(&self) -> MagneticFlux;
@@ -240,7 +240,7 @@ pub trait Qfactor: MachineObject + Debug + Send + Sync {
     /// Returns the qfactor's value at the magnetic axis.
     fn qaxis(&self) -> f64;
 
-    /// Calculates the safety factor `q(ψ/ψp)`.
+    /// Calculates the safety factor `q(ψ)`.
     ///
     /// # Errors
     ///
@@ -257,16 +257,16 @@ pub trait Qfactor: MachineObject + Debug + Send + Sync {
     /// # let qfactor = ParabolicQfactor::new(1.1, 3.8, lcfs);
     /// #
     /// let acc = &mut Accelerator::new();
-    /// let psi = MagneticFlux::Toroidal(0.01);
-    /// let psip = MagneticFlux::Toroidal(0.015);
+    /// let psit = MagneticFlux::Toroidal(0.01);
+    /// let psip = MagneticFlux::Poloidal(0.015);
     ///
-    /// let q_of_psi = qfactor.eval_q(psi, acc)?;
+    /// let q_of_psit = qfactor.eval_q(psit, acc)?;
     /// let q_of_psip = qfactor.eval_q(psip, acc)?;
     /// # Ok::<_, MachineError>(())
     /// ```
     fn eval_q(&self, flux: MagneticFlux, acc: &mut Accelerator) -> Result<f64, EvalError>;
 
-    /// Calculates the safety factor's derivative `dq(ψ/ψp)/d(ψ/ψp)`.
+    /// Calculates the safety factor's derivative `dq(ψ)/dψ`.
     ///
     /// # Errors
     ///
@@ -283,10 +283,10 @@ pub trait Qfactor: MachineObject + Debug + Send + Sync {
     /// # let qfactor = ParabolicQfactor::new(1.1, 3.8, lcfs);
     /// #
     /// let acc = &mut Accelerator::new();
-    /// let psi = MagneticFlux::Toroidal(0.01);
-    /// let psip = MagneticFlux::Toroidal(0.015);
+    /// let psit = MagneticFlux::Toroidal(0.01);
+    /// let psip = MagneticFlux::Poloidal(0.015);
     ///
-    /// let dq_dpsi = qfactor.eval_q_deriv(psi, acc)?;
+    /// let dq_dpsit = qfactor.eval_q_deriv(psit, acc)?;
     /// let dq_dpsip = qfactor.eval_q_deriv(psip, acc)?;
     /// # Ok::<_, MachineError>(())
     /// ```
@@ -309,11 +309,14 @@ pub trait Qfactor: MachineObject + Debug + Send + Sync {
     /// # let qfactor = ParabolicQfactor::new(1.1, 3.8, lcfs);
     /// #
     /// let acc = &mut Accelerator::new();
-    /// let psi = MagneticFlux::Toroidal(0.01);
+    /// let psit = MagneticFlux::Toroidal(0.01);
     /// let psip = MagneticFlux::Toroidal(0.015);
     ///
-    /// let psip_of_psi: MagneticFlux = qfactor.eval_other(psi, acc)?;
-    /// let psi_of_psip: MagneticFlux = qfactor.eval_other(psip, acc)?;
+    /// let psip_of_psit: MagneticFlux = qfactor.eval_other(psit, acc)?;
+    /// let psit_of_psip: MagneticFlux = qfactor.eval_other(psip, acc)?;
+    ///
+    /// assert_eq!(psit.to_other(&qfactor)?, psip_of_psit);
+    /// assert_eq!(psip.to_other(&qfactor)?, psit_of_psip);
     /// # Ok::<_, MachineError>(())
     /// ```
     fn eval_other(
@@ -322,7 +325,7 @@ pub trait Qfactor: MachineObject + Debug + Send + Sync {
         acc: &mut Accelerator,
     ) -> Result<MagneticFlux, EvalError>;
 
-    /// Calculates `ψ(q)`.
+    /// Calculates `ψt(q)`.
     ///
     /// # Errors
     ///
@@ -339,10 +342,10 @@ pub trait Qfactor: MachineObject + Debug + Send + Sync {
     /// # let qfactor = ParabolicQfactor::new(1.1, 3.8, lcfs);
     /// #
     /// let acc = &mut Accelerator::new();
-    /// let psi_of_q: MagneticFlux = qfactor.eval_psi_of_q(1.2, acc)?;
+    /// let psit_of_q: MagneticFlux = qfactor.eval_psit_of_q(1.2, acc)?;
     /// # Ok::<_, MachineError>(())
     /// ```
-    fn eval_psi_of_q(&self, q: f64, acc: &mut Accelerator) -> Result<MagneticFlux, EvalError>;
+    fn eval_psit_of_q(&self, q: f64, acc: &mut Accelerator) -> Result<MagneticFlux, EvalError>;
 
     /// Calculates `ψp(q)`.
     ///
@@ -368,13 +371,13 @@ pub trait Qfactor: MachineObject + Debug + Send + Sync {
 
     /// Calculates the derivative of the **other** [`MagneticFlux`] with respect to `flux`.
     ///
-    /// + If a [`MagneticFlux::Toroidal`] is passed, then `dψp/dψ` is calculated.
-    /// + If a [`MagneticFlux::Poloidal`] is passed, then `dψ/dψp` is calculated.
+    /// + If a [`MagneticFlux::Toroidal`] is passed, then `dψp/dψt` is calculated.
+    /// + If a [`MagneticFlux::Poloidal`] is passed, then `dψt/dψp` is calculated.
     ///
     /// In contrast to [`Qfactor::eval_deriv_wrt_other`], this method only requires one of the
     /// fluxes to be in a "good" state (the one corresponding to the passed `flux` argument).
     ///
-    /// This method is useful for ensuring that `dψ/dψp = q` and `dψp/dψ = ι`. The corresponding
+    /// This method is useful for ensuring that `dψt/dψp = q` and `dψp/dψt = ι`. The corresponding
     /// methods [`Qfactor::eval_q`] and [`Qfactor::eval_iota`] should be used in calculations as
     /// they are faster and more accurate.
     ///
@@ -394,16 +397,16 @@ pub trait Qfactor: MachineObject + Debug + Send + Sync {
     /// # let qfactor = ParabolicQfactor::new(1.1, 3.8, lcfs);
     /// #
     /// let acc = &mut Accelerator::new();
-    /// let psi = MagneticFlux::Toroidal(0.1);
+    /// let psit = MagneticFlux::Toroidal(0.1);
     /// let psip = MagneticFlux::Poloidal(0.15);
     ///
-    /// let dpsip_dpsi: f64 = qfactor.eval_deriv_of_other(psi, acc)?;
-    /// let dpsi_dpsip: f64 = qfactor.eval_deriv_of_other(psip, acc)?;
+    /// let dpsip_dpsit: f64 = qfactor.eval_deriv_of_other(psit, acc)?;
+    /// let dpsit_dpsip: f64 = qfactor.eval_deriv_of_other(psip, acc)?;
     ///
     /// let q = qfactor.eval_q(psip, acc)?;
-    /// let i = qfactor.eval_iota(psi, acc)?;
-    /// assert_relative_eq!(dpsi_dpsip, q);
-    /// assert_relative_eq!(dpsip_dpsi, i);
+    /// let i = qfactor.eval_iota(psit, acc)?;
+    /// assert_relative_eq!(dpsit_dpsip, q);
+    /// assert_relative_eq!(dpsip_dpsit, i);
     /// # Ok::<_, MachineError>(())
     /// ```
     fn eval_deriv_of_other(
@@ -414,13 +417,13 @@ pub trait Qfactor: MachineObject + Debug + Send + Sync {
 
     /// Calculates a [`MagneticFlux`]'s derivative with respect to the other.
     ///
-    /// + If a [`MagneticFlux::Toroidal`] is passed, then `dψ/dψp` is calculated.
-    /// + If a [`MagneticFlux::Poloidal`] is passed, then `dψp/dψ` is calculated.
+    /// + If a [`MagneticFlux::Toroidal`] is passed, then `dψt/dψp` is calculated.
+    /// + If a [`MagneticFlux::Poloidal`] is passed, then `dψp/dψt` is calculated.
     ///
     /// This method requires **both** fluxes to be in a "good" state. If this is not true,
     /// [`Qfactor::eval_deriv_of_other`] should be used.
     ///
-    /// This method is useful for ensuring that `dψ/dψp = q` and `dψp/dψ = ι`. The corresponding
+    /// This method is useful for ensuring that `dψt/dψp = q` and `dψp/dψt = ι`. The corresponding
     /// methods [`Qfactor::eval_q`] and [`Qfactor::eval_iota`] should be used in calculations as
     /// they are faster and more accurate.
     ///
@@ -440,16 +443,16 @@ pub trait Qfactor: MachineObject + Debug + Send + Sync {
     /// # let qfactor = ParabolicQfactor::new(1.1, 3.8, lcfs);
     /// #
     /// let acc = &mut Accelerator::new();
-    /// let psi = MagneticFlux::Toroidal(0.1);
+    /// let psit = MagneticFlux::Toroidal(0.1);
     /// let psip = MagneticFlux::Poloidal(0.15);
     ///
-    /// let dpsi_dpsip: f64 = qfactor.eval_deriv_wrt_other(psi, acc)?;
-    /// let dpsip_dpsi: f64 = qfactor.eval_deriv_wrt_other(psip, acc)?;
+    /// let dpsit_dpsip: f64 = qfactor.eval_deriv_wrt_other(psit, acc)?;
+    /// let dpsip_dpsit: f64 = qfactor.eval_deriv_wrt_other(psip, acc)?;
     ///
-    /// let q = qfactor.eval_q(psi, acc)?;
+    /// let q = qfactor.eval_q(psit, acc)?;
     /// let i = qfactor.eval_iota(psip, acc)?;
-    /// assert_relative_eq!(dpsi_dpsip, q);
-    /// assert_relative_eq!(dpsip_dpsi, i);
+    /// assert_relative_eq!(dpsit_dpsip, q);
+    /// assert_relative_eq!(dpsip_dpsit, i);
     /// # Ok::<_, MachineError>(())
     /// ```
     fn eval_deriv_wrt_other(
@@ -458,7 +461,7 @@ pub trait Qfactor: MachineObject + Debug + Send + Sync {
         acc: &mut Accelerator,
     ) -> Result<f64, EvalError>;
 
-    /// Calculates the rotational number `ι(ψ/ψp) = 1/q(ψ/ψp)`.
+    /// Calculates the rotational number `ι(ψ) = 1/q(ψ)`.
     ///
     /// # Errors
     ///
@@ -475,10 +478,10 @@ pub trait Qfactor: MachineObject + Debug + Send + Sync {
     /// # let qfactor = ParabolicQfactor::new(1.1, 3.8, lcfs);
     /// #
     /// let acc = &mut Accelerator::new();
-    /// let psi = MagneticFlux::Toroidal(0.01);
-    /// let psip = MagneticFlux::Toroidal(0.015);
+    /// let psit = MagneticFlux::Toroidal(0.01);
+    /// let psip = MagneticFlux::Poloidal(0.015);
     ///
-    /// let iota_of_psi = qfactor.eval_iota(psi, acc)?;
+    /// let iota_of_psit = qfactor.eval_iota(psit, acc)?;
     /// let iota_of_psip = qfactor.eval_iota(psip, acc)?;
     /// # Ok::<_, MachineError>(())
     /// ```
@@ -486,7 +489,7 @@ pub trait Qfactor: MachineObject + Debug + Send + Sync {
         Ok(self.eval_q(flux, acc)?.recip())
     }
 
-    /// Calculates the rotational number's derivative `dι(ψ/ψp)/d(ψ/ψp) = -q'/q²`.
+    /// Calculates the rotational number's derivative `dι(ψ)/dψ = -q'/q²`.
     ///
     /// # Errors
     ///
@@ -503,10 +506,10 @@ pub trait Qfactor: MachineObject + Debug + Send + Sync {
     /// # let qfactor = ParabolicQfactor::new(1.1, 3.8, lcfs);
     /// #
     /// let acc = &mut Accelerator::new();
-    /// let psi = MagneticFlux::Toroidal(0.01);
-    /// let psip = MagneticFlux::Toroidal(0.015);
+    /// let psit = MagneticFlux::Toroidal(0.01);
+    /// let psip = MagneticFlux::Poloidal(0.015);
     ///
-    /// let diota_dpsi = qfactor.eval_iota_deriv(psi, acc)?;
+    /// let diota_dpsit = qfactor.eval_iota_deriv(psit, acc)?;
     /// let diota_dpsip = qfactor.eval_iota_deriv(psip, acc)?;
     /// # Ok::<_, MachineError>(())
     /// ```
@@ -517,7 +520,7 @@ pub trait Qfactor: MachineObject + Debug + Send + Sync {
 
 /// Plasma current related quantities computation.
 pub trait Current: MachineObject + Debug + Send + Sync {
-    /// Calculates the poloidal current `g(ψ/ψp)`.
+    /// Calculates the poloidal current `g(ψ)`.
     ///
     /// # Errors
     ///
@@ -533,16 +536,16 @@ pub trait Current: MachineObject + Debug + Send + Sync {
     /// # let current = LarCurrent;
     /// #
     /// let acc = &mut Accelerator::new();
-    /// let psi = MagneticFlux::Toroidal(0.01);
-    /// let psip = MagneticFlux::Toroidal(0.015);
+    /// let psit = MagneticFlux::Toroidal(0.01);
+    /// let psip = MagneticFlux::Poloidal(0.015);
     ///
-    /// let g_of_psi = current.eval_g(psi, acc)?;
+    /// let g_of_psit = current.eval_g(psit, acc)?;
     /// let g_of_psip = current.eval_g(psip, acc)?;
     /// # Ok::<_, MachineError>(())
     /// ```
     fn eval_g(&self, flux: MagneticFlux, acc: &mut Accelerator) -> Result<f64, EvalError>;
 
-    /// Calculates the toroidal current `I(ψ/ψp)`.
+    /// Calculates the toroidal current `I(ψ)`.
     ///
     /// # Errors
     ///
@@ -558,16 +561,16 @@ pub trait Current: MachineObject + Debug + Send + Sync {
     /// # let current = LarCurrent;
     /// #
     /// let acc = &mut Accelerator::new();
-    /// let psi = MagneticFlux::Toroidal(0.01);
-    /// let psip = MagneticFlux::Toroidal(0.015);
+    /// let psit = MagneticFlux::Toroidal(0.01);
+    /// let psip = MagneticFlux::Poloidal(0.015);
     ///
-    /// let i_of_psi = current.eval_i(psi, acc)?;
+    /// let i_of_psit = current.eval_i(psit, acc)?;
     /// let i_of_psip = current.eval_i(psip, acc)?;
     /// # Ok::<_, MachineError>(())
     /// ```
     fn eval_i(&self, flux: MagneticFlux, acc: &mut Accelerator) -> Result<f64, EvalError>;
 
-    /// Calculates the poloidal current's derivative `dg/d(ψ/ψp)`.
+    /// Calculates the poloidal current's derivative `dg/dψ`.
     ///
     /// # Errors
     ///
@@ -583,16 +586,16 @@ pub trait Current: MachineObject + Debug + Send + Sync {
     /// # let current = LarCurrent;
     /// #
     /// let acc = &mut Accelerator::new();
-    /// let psi = MagneticFlux::Toroidal(0.01);
-    /// let psip = MagneticFlux::Toroidal(0.015);
+    /// let psit = MagneticFlux::Toroidal(0.01);
+    /// let psip = MagneticFlux::Poloidal(0.015);
     ///
-    /// let dg_dpsi = current.eval_g_deriv(psi, acc)?;
+    /// let dg_dpsit = current.eval_g_deriv(psit, acc)?;
     /// let dg_dpsip = current.eval_g_deriv(psip, acc)?;
     /// # Ok::<_, MachineError>(())
     /// ```
     fn eval_g_deriv(&self, flux: MagneticFlux, acc: &mut Accelerator) -> Result<f64, EvalError>;
 
-    /// Calculates the toroidal current's derivative `dI/d(ψ/ψp)`.
+    /// Calculates the toroidal current's derivative `dI/dψ`.
     ///
     /// # Errors
     ///
@@ -608,16 +611,16 @@ pub trait Current: MachineObject + Debug + Send + Sync {
     /// # let current = LarCurrent;
     /// #
     /// let acc = &mut Accelerator::new();
-    /// let psi = MagneticFlux::Toroidal(0.01);
-    /// let psip = MagneticFlux::Toroidal(0.015);
+    /// let psit = MagneticFlux::Toroidal(0.01);
+    /// let psip = MagneticFlux::Poloidal(0.015);
     ///
-    /// let di_dpsi = current.eval_i_deriv(psi, acc)?;
+    /// let di_dpsit = current.eval_i_deriv(psit, acc)?;
     /// let di_dpsip = current.eval_i_deriv(psip, acc)?;
     /// # Ok::<_, MachineError>(())
     /// ```
     fn eval_i_deriv(&self, flux: MagneticFlux, acc: &mut Accelerator) -> Result<f64, EvalError>;
 
-    /// Calculates the poloidal current's second derivative `d²g/d(ψ/ψp)²`.
+    /// Calculates the poloidal current's second derivative `d²g/dψ²`.
     ///
     /// # Errors
     ///
@@ -633,16 +636,16 @@ pub trait Current: MachineObject + Debug + Send + Sync {
     /// # let current = LarCurrent;
     /// #
     /// let acc = &mut Accelerator::new();
-    /// let psi = MagneticFlux::Toroidal(0.01);
-    /// let psip = MagneticFlux::Toroidal(0.015);
+    /// let psit = MagneticFlux::Toroidal(0.01);
+    /// let psip = MagneticFlux::Poloidal(0.015);
     ///
-    /// let dg_dpsi2 = current.eval_g_deriv2(psi, acc)?;
+    /// let dg_dpsit2 = current.eval_g_deriv2(psit, acc)?;
     /// let dg_dpsip2 = current.eval_g_deriv2(psip, acc)?;
     /// # Ok::<_, MachineError>(())
     /// ```
     fn eval_g_deriv2(&self, flux: MagneticFlux, acc: &mut Accelerator) -> Result<f64, EvalError>;
 
-    /// Calculates the toroidal current's second derivative `d²I/d(ψ/ψp)²`.
+    /// Calculates the toroidal current's second derivative `d²I/dψ²`.
     ///
     /// # Errors
     ///
@@ -658,10 +661,10 @@ pub trait Current: MachineObject + Debug + Send + Sync {
     /// # let current = LarCurrent;
     /// #
     /// let acc = &mut Accelerator::new();
-    /// let psi = MagneticFlux::Toroidal(0.01);
-    /// let psip = MagneticFlux::Toroidal(0.015);
+    /// let psit = MagneticFlux::Toroidal(0.01);
+    /// let psip = MagneticFlux::Poloidal(0.015);
     ///
-    /// let di_dpsi2 = current.eval_i_deriv2(psi, acc)?;
+    /// let di_dpsit2 = current.eval_i_deriv2(psit, acc)?;
     /// let di_dpsip2 = current.eval_i_deriv2(psip, acc)?;
     /// # Ok::<_, MachineError>(())
     /// ```
@@ -670,7 +673,7 @@ pub trait Current: MachineObject + Debug + Send + Sync {
 
 /// Magnetic field related quantities computation.
 pub trait Bfield: MachineObject + Debug + Send + Sync {
-    /// Calculates `B(ψ/ψp, θ)`.
+    /// Calculates `B(ψ, θ)`.
     ///
     /// # Errors
     ///
@@ -687,10 +690,10 @@ pub trait Bfield: MachineObject + Debug + Send + Sync {
     /// # let bfield = NcBfieldBuilder::new(&path, Interpolation2dType::Bilinear).build()?;
     /// #
     /// let acc = &mut Accelerator2d::new();
-    /// let psi = MagneticFlux::Toroidal(0.01);
+    /// let psit = MagneticFlux::Toroidal(0.01);
     /// let psip = MagneticFlux::Poloidal(0.015);
     ///
-    /// let b_of_psi = bfield.eval_b(psi, 3.14, acc)?;
+    /// let b_of_psit = bfield.eval_b(psit, 3.14, acc)?;
     /// let b_of_psip = bfield.eval_b(psip, 3.14, acc)?;
     /// # Ok::<_, MachineError>(())
     /// ```
@@ -701,7 +704,7 @@ pub trait Bfield: MachineObject + Debug + Send + Sync {
         acc: &mut Accelerator2d,
     ) -> Result<f64, EvalError>;
 
-    /// Calculates `dB(ψ/ψp, θ)/d(ψ/ψp)`.
+    /// Calculates `dB(ψ, θ)/dψ`.
     ///
     /// # Errors
     ///
@@ -718,10 +721,10 @@ pub trait Bfield: MachineObject + Debug + Send + Sync {
     /// # let bfield = NcBfieldBuilder::new(&path, Interpolation2dType::Bilinear).build()?;
     /// #
     /// let acc = &mut Accelerator2d::new();
-    /// let psi = MagneticFlux::Toroidal(0.01);
+    /// let psit = MagneticFlux::Toroidal(0.01);
     /// let psip = MagneticFlux::Poloidal(0.015);
     ///
-    /// let db_dpsi = bfield.eval_deriv_flux(psi, 3.14, acc)?;
+    /// let db_dpsit = bfield.eval_deriv_flux(psit, 3.14, acc)?;
     /// let db_dpsip = bfield.eval_deriv_flux(psip, 3.14, acc)?;
     /// # Ok::<_, MachineError>(())
     /// ```
@@ -732,7 +735,7 @@ pub trait Bfield: MachineObject + Debug + Send + Sync {
         acc: &mut Accelerator2d,
     ) -> Result<f64, EvalError>;
 
-    /// Calculates `dB(ψ/ψp, θ)/dθ`.
+    /// Calculates `dB(ψ, θ)/dθ`.
     ///
     /// # Errors
     ///
@@ -749,10 +752,10 @@ pub trait Bfield: MachineObject + Debug + Send + Sync {
     /// # let bfield = NcBfieldBuilder::new(&path, Interpolation2dType::Bilinear).build()?;
     /// #
     /// let acc = &mut Accelerator2d::new();
-    /// let psi = MagneticFlux::Toroidal(0.01);
+    /// let psit = MagneticFlux::Toroidal(0.01);
     /// let psip = MagneticFlux::Poloidal(0.015);
     ///
-    /// let db_of_psi_dtheta = bfield.eval_deriv_theta(psi, 3.14, acc)?;
+    /// let db_of_psit_dtheta = bfield.eval_deriv_theta(psit, 3.14, acc)?;
     /// let db_of_psip_dtheta = bfield.eval_deriv_theta(psip, 3.14, acc)?;
     /// # Ok::<_, MachineError>(())
     /// ```
@@ -763,7 +766,7 @@ pub trait Bfield: MachineObject + Debug + Send + Sync {
         acc: &mut Accelerator2d,
     ) -> Result<f64, EvalError>;
 
-    /// Calculates `d²B(ψ/ψp, θ)/d(ψ/ψp)²`.
+    /// Calculates `d²B(ψ, θ)/dψ²`.
     ///
     /// # Errors
     ///
@@ -780,10 +783,10 @@ pub trait Bfield: MachineObject + Debug + Send + Sync {
     /// # let bfield = NcBfieldBuilder::new(&path, Interpolation2dType::Bilinear).build()?;
     /// #
     /// let acc = &mut Accelerator2d::new();
-    /// let psi = MagneticFlux::Toroidal(0.01);
+    /// let psit = MagneticFlux::Toroidal(0.01);
     /// let psip = MagneticFlux::Poloidal(0.015);
     ///
-    /// let db_dpsi2 = bfield.eval_deriv_flux2(psi, 3.14, acc)?;
+    /// let db_dpsit2 = bfield.eval_deriv_flux2(psit, 3.14, acc)?;
     /// let db_dpsip2 = bfield.eval_deriv_flux2(psip, 3.14, acc)?;
     /// # Ok::<_, MachineError>(())
     /// ```
@@ -794,7 +797,7 @@ pub trait Bfield: MachineObject + Debug + Send + Sync {
         acc: &mut Accelerator2d,
     ) -> Result<f64, EvalError>;
 
-    /// Calculates `d²B(ψ/ψp, θ)/dθ²`.
+    /// Calculates `d²B(ψ, θ)/dθ²`.
     ///
     /// # Errors
     ///
@@ -811,10 +814,10 @@ pub trait Bfield: MachineObject + Debug + Send + Sync {
     /// # let bfield = NcBfieldBuilder::new(&path, Interpolation2dType::Bilinear).build()?;
     /// #
     /// let acc = &mut Accelerator2d::new();
-    /// let psi = MagneticFlux::Toroidal(0.01);
+    /// let psit = MagneticFlux::Toroidal(0.01);
     /// let psip = MagneticFlux::Poloidal(0.015);
     ///
-    /// let db_of_psi_dtheta2 = bfield.eval_deriv_theta2(psi, 3.14, acc)?;
+    /// let db_of_psit_dtheta2 = bfield.eval_deriv_theta2(psit, 3.14, acc)?;
     /// let db_of_psip_dtheta2 = bfield.eval_deriv_theta2(psip, 3.14, acc)?;
     /// # Ok::<_, MachineError>(())
     /// ```
@@ -825,7 +828,7 @@ pub trait Bfield: MachineObject + Debug + Send + Sync {
         acc: &mut Accelerator2d,
     ) -> Result<f64, EvalError>;
 
-    /// Calculates `d²B(ψ/ψp, θ)/dθd(ψ/ψp)`.
+    /// Calculates `d²B(ψ, θ)/dθdψ`.
     ///
     /// # Errors
     ///
@@ -842,11 +845,11 @@ pub trait Bfield: MachineObject + Debug + Send + Sync {
     /// # let bfield = NcBfieldBuilder::new(&path, Interpolation2dType::Bilinear).build()?;
     /// #
     /// let acc = &mut Accelerator2d::new();
-    /// let psi = MagneticFlux::Toroidal(0.01);
+    /// let psit = MagneticFlux::Toroidal(0.01);
     /// let psip = MagneticFlux::Poloidal(0.015);
     ///
-    /// let db_dpsi_dtheta = bfield.eval_deriv_mixed(psi, 3.14, acc)?;
-    /// let db_dpsip_dtheta  = bfield.eval_deriv_mixed(psip, 3.14, acc)?;
+    /// let db_dpsit_dtheta = bfield.eval_deriv_mixed(psit, 3.14, acc)?;
+    /// let db_dpsip_dtheta = bfield.eval_deriv_mixed(psip, 3.14, acc)?;
     /// # Ok::<_, MachineError>(())
     /// ```
     fn eval_deriv_mixed(
@@ -859,7 +862,7 @@ pub trait Bfield: MachineObject + Debug + Send + Sync {
 
 /// Electric field related quantities computation.
 pub trait Efield: MachineObject + Debug + Send + Sync {
-    /// Calculates `E(ψ/ψp)`.
+    /// Calculates `E(ψ)`.
     ///
     /// # Errors
     ///
@@ -872,13 +875,13 @@ pub trait Efield: MachineObject + Debug + Send + Sync {
     /// let lcfs = MagneticFlux::Toroidal(0.45);
     /// let efield = GaussianEfield::new(5e-4, lcfs * 0.9, 0.02 * lcfs.value());
     ///
-    /// let psi = MagneticFlux::Toroidal(0.01);
-    /// let e = efield.eval_e(psi)?;
+    /// let psit = MagneticFlux::Toroidal(0.01);
+    /// let e = efield.eval_e(psit)?;
     /// # Ok::<_, MachineError>(())
     /// ```
     fn eval_e(&self, flux: MagneticFlux) -> Result<f64, EvalError>;
 
-    /// Calculates `Φ(ψ/ψp)`.
+    /// Calculates `Φ(ψ)`.
     ///
     /// # Errors
     ///
@@ -899,9 +902,9 @@ pub trait Efield: MachineObject + Debug + Send + Sync {
     /// ```
     fn eval_phi(&self, flux: MagneticFlux) -> Result<f64, EvalError>;
 
-    /// Calculates `dΦ(ψ/ψp)/d(ψ/ψp)`.
+    /// Calculates `dΦ(ψ)/dψ`.
     ///
-    /// Since the field is radial, this method is equivalent to `-E(ψ/ψp)`.
+    /// Since the field is radial, this method is equivalent to `-E(ψ)`.
     ///
     /// # Errors
     ///
@@ -914,19 +917,19 @@ pub trait Efield: MachineObject + Debug + Send + Sync {
     /// let lcfs = MagneticFlux::Toroidal(0.45);
     /// let efield = GaussianEfield::new(5e-4, lcfs * 0.9, 0.02 * lcfs.value());
     ///
-    /// let psi = MagneticFlux::Toroidal(0.01);
-    /// let dphi = efield.eval_phi_deriv(psi)?;
+    /// let psit = MagneticFlux::Toroidal(0.01);
+    /// let dphi = efield.eval_phi_deriv(psit)?;
     ///
-    /// assert_eq!(dphi, -efield.eval_e(psi)?);
+    /// assert_eq!(dphi, -efield.eval_e(psit)?);
     /// # Ok::<_, MachineError>(())
     /// ```
     fn eval_phi_deriv(&self, flux: MagneticFlux) -> Result<f64, EvalError> {
         Ok(-self.eval_e(flux)?)
     }
 
-    /// Calculates `d²Φ(ψ/ψp)/d(ψ/ψp)²`.
+    /// Calculates `d²Φ(ψ)/dψ²`.
     ///
-    /// Since the field is radial, this method is equivalent to `-dE(ψ/ψp)/d(ψ/ψp)`.
+    /// Since the field is radial, this method is equivalent to `-dE(ψ)/d(ψ)`.
     ///
     /// # Errors
     ///
@@ -939,8 +942,8 @@ pub trait Efield: MachineObject + Debug + Send + Sync {
     /// let lcfs = MagneticFlux::Toroidal(0.45);
     /// let efield = GaussianEfield::new(5e-4, lcfs * 0.9, 0.02 * lcfs.value());
     ///
-    /// let psi = MagneticFlux::Toroidal(0.01);
-    /// let dphi2 = efield.eval_phi_deriv2(psi)?;
+    /// let psit = MagneticFlux::Toroidal(0.01);
+    /// let dphi2 = efield.eval_phi_deriv2(psit)?;
     ///
     /// # Ok::<_, MachineError>(())
     /// ```
@@ -1004,12 +1007,12 @@ pub trait Mode: MachineObject + DynModeClone + Debug + Send + Sync {
     /// # use dexter_machine::*;
     /// let lcfs = MagneticFlux::Toroidal(0.45);
     /// let mode = FluteMode::new(1e-3, lcfs, 3, 2, 0.0);
-    /// let cache1 = mode.generate_cache();
+    /// let cache = mode.generate_cache();
     /// # Ok::<_, MachineError>(())
     /// ```
     fn generate_cache(&self) -> DynModeCache;
 
-    /// Calculates the mode's amplitude `α(ψ/ψp)`.
+    /// Calculates the mode's amplitude `α(ψ)`.
     ///
     /// # Errors
     ///
@@ -1023,9 +1026,9 @@ pub trait Mode: MachineObject + DynModeClone + Debug + Send + Sync {
     /// let mode = FluteMode::new(1e-3, lcfs, 3, 2, 0.0);
     ///
     /// let mut cache = mode.generate_cache();
-    /// let psi = MagneticFlux::Toroidal(0.01);
+    /// let psit = MagneticFlux::Toroidal(0.01);
     ///
-    /// let a_of_psi = mode.eval_amplitude(psi, 0.2, 0.3, 0.0, &mut cache)?;
+    /// let a_of_psit = mode.eval_amplitude(psit, 0.2, 0.3, 0.0, &mut cache)?;
     /// # Ok::<_, MachineError>(())
     /// ```
     fn eval_amplitude(
@@ -1037,7 +1040,7 @@ pub trait Mode: MachineObject + DynModeClone + Debug + Send + Sync {
         cache: &mut DynModeCache,
     ) -> Result<f64, EvalError>;
 
-    /// Calculates the mode's phase `φ(ψ/ψp)`.
+    /// Calculates the mode's phase `φ(ψ)`.
     ///
     /// # Errors
     ///
@@ -1065,7 +1068,7 @@ pub trait Mode: MachineObject + DynModeClone + Debug + Send + Sync {
         cache: &mut DynModeCache,
     ) -> Result<f64, EvalError>;
 
-    /// Calculates the mode's value `m(ψ/ψp, θ, ζ, t)`.
+    /// Calculates the mode's value `m(ψ, θ, ζ, t)`.
     ///
     /// # Errors
     ///
@@ -1093,7 +1096,7 @@ pub trait Mode: MachineObject + DynModeClone + Debug + Send + Sync {
         cache: &mut DynModeCache,
     ) -> Result<f64, EvalError>;
 
-    /// Calculates the mode's derivative with respect to the magnetic flux `dm(ψ/ψp, θ, ζ, t)/d(ψ/ψp)`.
+    /// Calculates the mode's derivative with respect to the magnetic flux `dm(ψ, θ, ζ, t)/dψ`.
     ///
     /// # Errors
     ///
@@ -1107,9 +1110,9 @@ pub trait Mode: MachineObject + DynModeClone + Debug + Send + Sync {
     /// let mode = FluteMode::new(1e-3, lcfs, 3, 2, 0.0);
     ///
     /// let mut cache = mode.generate_cache();
-    /// let psi = MagneticFlux::Toroidal(0.01);
+    /// let psit = MagneticFlux::Toroidal(0.01);
     ///
-    /// let dm_dpsi = mode.eval_deriv_flux(psi, 0.2, 0.3, 0.0, &mut cache)?;
+    /// let dm_dpsit = mode.eval_deriv_flux(psit, 0.2, 0.3, 0.0, &mut cache)?;
     /// # Ok::<_, MachineError>(())
     /// ```
     fn eval_deriv_flux(
@@ -1121,7 +1124,7 @@ pub trait Mode: MachineObject + DynModeClone + Debug + Send + Sync {
         cache: &mut DynModeCache,
     ) -> Result<f64, EvalError>;
 
-    /// Calculates the mode's derivative with respect to `θ`, `dm(ψ/ψp, θ, ζ, t)/dθ`.
+    /// Calculates the mode's derivative with respect to `θ`, `dm(ψ, θ, ζ, t)/dθ`.
     ///
     /// # Errors
     ///
@@ -1135,9 +1138,9 @@ pub trait Mode: MachineObject + DynModeClone + Debug + Send + Sync {
     /// let mode = FluteMode::new(1e-3, lcfs, 3, 2, 0.0);
     ///
     /// let mut cache = mode.generate_cache();
-    /// let psi = MagneticFlux::Toroidal(0.01);
+    /// let psit = MagneticFlux::Toroidal(0.01);
     ///
-    /// let dm_dtheta = mode.eval_deriv_theta(psi, 0.2, 0.3, 0.0, &mut cache)?;
+    /// let dm_dtheta = mode.eval_deriv_theta(psit, 0.2, 0.3, 0.0, &mut cache)?;
     /// # Ok::<_, MachineError>(())
     /// ```
     fn eval_deriv_theta(
@@ -1149,7 +1152,7 @@ pub trait Mode: MachineObject + DynModeClone + Debug + Send + Sync {
         cache: &mut DynModeCache,
     ) -> Result<f64, EvalError>;
 
-    /// Calculates the mode's derivative with respect to `ζ`, `dm(ψ/ψp, θ, ζ, t)/dζ`.
+    /// Calculates the mode's derivative with respect to `ζ`, `dm(ψ, θ, ζ, t)/dζ`.
     ///
     /// # Errors
     ///
@@ -1177,7 +1180,7 @@ pub trait Mode: MachineObject + DynModeClone + Debug + Send + Sync {
         cache: &mut DynModeCache,
     ) -> Result<f64, EvalError>;
 
-    /// Calculates the mode's derivative with respect to `t`, `dm(ψ/ψp, θ, ζ, t)/dt`.
+    /// Calculates the mode's derivative with respect to `t`, `dm(ψ, θ, ζ, t)/dt`.
     ///
     /// # Errors
     ///

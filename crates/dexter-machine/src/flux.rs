@@ -8,7 +8,7 @@ use crate::{EvalError, MagneticFluxArray, Qfactor};
 /// The kind of a magnetic flux coordinate.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum MagneticFluxKind {
-    /// Toroidal magnetic flux `ψ`.
+    /// Toroidal magnetic flux `ψt`.
     Toroidal,
     /// Poloidal magnetic flux `ψp`.
     Poloidal,
@@ -43,11 +43,11 @@ impl MagneticFluxKind {
         }
     }
 
-    /// Returns the symbol of `self` ("ψ" or "ψp") as a `Box<str>`.
+    /// Returns the symbol of `self` ("ψt" or "ψp") as a `Box<str>`.
     #[must_use]
     pub fn symbol(&self) -> Box<str> {
         match *self {
-            Self::Toroidal => "ψ".into(),
+            Self::Toroidal => "ψt".into(),
             Self::Poloidal => "ψp".into(),
         }
     }
@@ -56,7 +56,7 @@ impl MagneticFluxKind {
 /// Representation of the magnetic flux and its kind.
 #[derive(Clone, Copy, PartialEq)]
 pub enum MagneticFlux {
-    /// Toroidal magnetic flux `ψ`.
+    /// Toroidal magnetic flux `ψt`.
     Toroidal(f64),
     /// Poloidal magnetic flux `ψp`.
     Poloidal(f64),
@@ -79,11 +79,11 @@ impl MagneticFlux {
         }
     }
 
-    /// Returns the symbol of `self` ("ψ" or "ψp") as a `Box<str>`.
+    /// Returns the symbol of `self` ("ψt" or "ψp") as a `Box<str>`.
     #[must_use]
     pub fn symbol(&self) -> Box<str> {
         match *self {
-            Self::Toroidal(_) => "ψ".into(),
+            Self::Toroidal(_) => "ψt".into(),
             Self::Poloidal(_) => "ψp".into(),
         }
     }
@@ -111,10 +111,10 @@ impl MagneticFlux {
     /// # use rsl_interpolation::*;
     /// # let acc = &mut Accelerator::new();
     /// let qfactor = ParabolicQfactor::new(1.1, 3.9, MagneticFlux::Toroidal(0.5));
-    /// let psi = MagneticFlux::Toroidal(0.1);
-    /// let psip = psi.to_other(&qfactor)?;
+    /// let psit = MagneticFlux::Toroidal(0.1);
+    /// let psip = psit.to_other(&qfactor)?;
     /// assert_eq!(psip.kind(), MagneticFluxKind::Poloidal);
-    /// assert_eq!(psip, qfactor.eval_other(psi, acc)?);
+    /// assert_eq!(psip, qfactor.eval_other(psit, acc)?);
     /// # Ok::<_, EvalError>(())
     /// ```
     pub fn to_other(&self, qfactor: &dyn Qfactor) -> Result<Self, EvalError> {
@@ -348,7 +348,7 @@ mod test {
     #[test]
     fn to_other() {
         let lcfs = Toroidal(1.0);
-        let qfactor = ParabolicQfactor::new(1.0, 2.0, lcfs); // q = ψ^2 + 1
+        let qfactor = ParabolicQfactor::new(1.0, 2.0, lcfs); // q = ψt^2 + 1
 
         let tor = Toroidal(0.3);
         let other_pol = tor.to_other(&qfactor).unwrap();

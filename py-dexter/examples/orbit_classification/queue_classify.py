@@ -1,4 +1,4 @@
-"""Orbit classification for particles with `ψ=const` and constant `ρ` and `μ` in an analytical machine."""
+"""Orbit classification for particles with `ψt=const` and constant `ρ` and `μ` in an analytical machine."""
 
 import numpy as np
 import dexter as dex
@@ -8,7 +8,7 @@ RNG = np.random.default_rng(42)
 
 # Equilibrium setup
 geometry = dex.LarGeometry(1, 1.75, 0.5)
-LCFS = geometry.psi_last
+LCFS = geometry.psit_last
 machine = dex.Machine(
     geometry=geometry,
     qfactor=dex.ParabolicQfactor(qaxis=1.1, qlast=3.9, lcfs=LCFS),
@@ -21,11 +21,11 @@ mu = 7e-6
 
 # Initial Conditions setup
 num = 50000
-psi0s = dex.MagneticFluxArray.Toroidal(RNG.random(num) * LCFS.value)
+psit0s = dex.MagneticFluxArray.Toroidal(RNG.random(num) * LCFS.value)
 
 initial_conditions = dex.QueueInitialConditions.Mixed(
     t0=np.zeros(num),
-    flux0=psi0s,
+    flux0=psit0s,
     theta0=2 * PI * RNG.random(num),
     zeta0=np.zeros(num),
     pzeta0=np.linspace(-1.4, 0.2, num) * machine.psip_last.value,

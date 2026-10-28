@@ -36,14 +36,14 @@ fn field_line_single_period_uniQ() {
     let expected_omega_zeta = TAU / expected_dt;
 
     let eps=1e-10;
-    ar!(particle.t_array().last().copied().unwrap(), expected_dt, epsilon=eps);
-    ar!(particle.psi_array().first().copied().unwrap(), particle.psi_array().last().copied().unwrap(), epsilon=eps);
-    ar!(particle.psip_array().first().copied().unwrap(), particle.psip_array().last().copied().unwrap(), epsilon=eps);
-    ar!(particle.theta_array().first().copied().unwrap(), particle.theta_array().last().copied().unwrap() - TAU, epsilon=eps);
-    ar!(particle.zeta_array().first().copied().unwrap(), particle.zeta_array().last().copied().unwrap() - TAU, epsilon=eps);
-    ar!(particle.rho_array().first().copied().unwrap(), particle.rho_array().last().copied().unwrap(), epsilon=eps);
-    ar!(particle.pzeta_array().first().copied().unwrap(), particle.pzeta_array().last().copied().unwrap(), epsilon=eps);
-    ar!(particle.ptheta_array().first().copied().unwrap(), particle.ptheta_array().last().copied().unwrap(), epsilon=eps);
+    ar!(particle.t_values().last().copied().unwrap(), expected_dt, epsilon=eps);
+    ar!(particle.psit_values().first().copied().unwrap(), particle.psit_values().last().copied().unwrap(), epsilon=eps);
+    ar!(particle.psip_values().first().copied().unwrap(), particle.psip_values().last().copied().unwrap(), epsilon=eps);
+    ar!(particle.theta_values().first().copied().unwrap(), particle.theta_values().last().copied().unwrap() - TAU, epsilon=eps);
+    ar!(particle.zeta_values().first().copied().unwrap(), particle.zeta_values().last().copied().unwrap() - TAU, epsilon=eps);
+    ar!(particle.rho_values().first().copied().unwrap(), particle.rho_values().last().copied().unwrap(), epsilon=eps);
+    ar!(particle.pzeta_values().first().copied().unwrap(), particle.pzeta_values().last().copied().unwrap(), epsilon=eps);
+    ar!(particle.ptheta_values().first().copied().unwrap(), particle.ptheta_values().last().copied().unwrap(), epsilon=eps);
     ar!(particle.frequencies().omega_theta.unwrap(), expected_omega_theta, epsilon=eps);
     ar!(particle.frequencies().omega_zeta.unwrap(), expected_omega_zeta, epsilon=eps);
     ar!(particle.frequencies().qkinetic.unwrap(), 1.0, epsilon=eps);
@@ -70,10 +70,10 @@ fn trapped_particle_single_period_uniQ() {
     let expected_omega_zeta = expected_dzeta / expected_dt;
 
     let eps = 1e-6;
-    ar!(particle.t_array().last().copied().unwrap(), expected_dt, epsilon=eps);
-    ar!(particle.psi_array().first().copied().unwrap(), particle.psi_array().last().copied().unwrap(), epsilon=eps);
-    ar!(particle.theta_array().first().copied().unwrap(), particle.theta_array().last().copied().unwrap(), epsilon=eps);
-    ar!(particle.ptheta_array().first().copied().unwrap(), particle.ptheta_array().last().copied().unwrap(), epsilon=eps);
+    ar!(particle.t_values().last().copied().unwrap(), expected_dt, epsilon=eps);
+    ar!(particle.psit_values().first().copied().unwrap(), particle.psit_values().last().copied().unwrap(), epsilon=eps);
+    ar!(particle.theta_values().first().copied().unwrap(), particle.theta_values().last().copied().unwrap(), epsilon=eps);
+    ar!(particle.ptheta_values().first().copied().unwrap(), particle.ptheta_values().last().copied().unwrap(), epsilon=eps);
     ar!(particle.frequencies().omega_theta.unwrap(), expected_omega_theta, epsilon=eps);
     ar!(particle.frequencies().omega_zeta.unwrap(), expected_omega_zeta, epsilon=eps);
     ar!(particle.frequencies().qkinetic.unwrap(), 0.012222584887591207, epsilon=eps); // derived

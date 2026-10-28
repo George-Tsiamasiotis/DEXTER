@@ -39,28 +39,28 @@ def _test_evals(per: dex.Perturbation):
 
     try:
 
-        per.eval_p(psi=flux, theta=theta, zeta=zeta, t=t)
-        per.eval_p(psi=fluxes, theta=thetas, zeta=zetas, t=ts)
+        per.eval_p(psit=flux, theta=theta, zeta=zeta, t=t)
+        per.eval_p(psit=fluxes, theta=thetas, zeta=zetas, t=ts)
         per.eval_p(psip=flux, theta=theta, zeta=zeta, t=t)
         per.eval_p(psip=fluxes, theta=thetas, zeta=zetas, t=ts)
 
-        per.eval_deriv_flux(psi=flux, theta=theta, zeta=zeta, t=t)
-        per.eval_deriv_flux(psi=fluxes, theta=thetas, zeta=zetas, t=ts)
+        per.eval_deriv_flux(psit=flux, theta=theta, zeta=zeta, t=t)
+        per.eval_deriv_flux(psit=fluxes, theta=thetas, zeta=zetas, t=ts)
         per.eval_deriv_flux(psip=flux, theta=theta, zeta=zeta, t=t)
         per.eval_deriv_flux(psip=fluxes, theta=thetas, zeta=zetas, t=ts)
 
-        per.eval_deriv_theta(psi=flux, theta=theta, zeta=zeta, t=t)
-        per.eval_deriv_theta(psi=fluxes, theta=thetas, zeta=zetas, t=ts)
+        per.eval_deriv_theta(psit=flux, theta=theta, zeta=zeta, t=t)
+        per.eval_deriv_theta(psit=fluxes, theta=thetas, zeta=zetas, t=ts)
         per.eval_deriv_theta(psip=flux, theta=theta, zeta=zeta, t=t)
         per.eval_deriv_theta(psip=fluxes, theta=thetas, zeta=zetas, t=ts)
 
-        per.eval_deriv_zeta(psi=flux, theta=theta, zeta=zeta, t=t)
-        per.eval_deriv_zeta(psi=fluxes, theta=thetas, zeta=zetas, t=ts)
+        per.eval_deriv_zeta(psit=flux, theta=theta, zeta=zeta, t=t)
+        per.eval_deriv_zeta(psit=fluxes, theta=thetas, zeta=zetas, t=ts)
         per.eval_deriv_zeta(psip=flux, theta=theta, zeta=zeta, t=t)
         per.eval_deriv_zeta(psip=fluxes, theta=thetas, zeta=zetas, t=ts)
 
-        per.eval_deriv_t(psi=flux, theta=theta, zeta=zeta, t=t)
-        per.eval_deriv_t(psi=fluxes, theta=thetas, zeta=zetas, t=ts)
+        per.eval_deriv_t(psit=flux, theta=theta, zeta=zeta, t=t)
+        per.eval_deriv_t(psit=fluxes, theta=thetas, zeta=zetas, t=ts)
         per.eval_deriv_t(psip=flux, theta=theta, zeta=zeta, t=t)
         per.eval_deriv_t(psip=fluxes, theta=thetas, zeta=zetas, t=ts)
 

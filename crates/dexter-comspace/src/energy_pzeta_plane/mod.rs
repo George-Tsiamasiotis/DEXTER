@@ -92,17 +92,17 @@ impl EnergyPzetaPlane {
     ///
     /// E(Pζ) = Pζ²B²/2g² + μB + Φ.
     ///
-    /// where all values are evaluated at `(ψ/ψp, θ) = (0, 0)`.
+    /// where all values are evaluated at `(ψ, θ) = (0, 0)`.
     #[must_use]
     fn build_magnetic_axis_parabola(machine: Machine, mu: f64) -> Parabola {
         let acc = &mut Accelerator2d::new();
-        let psi_axis = Toroidal(0.0);
+        let psit_axis = Toroidal(0.0);
         let psip_axis = Poloidal(0.0);
 
-        // Use `unwrap_or_else` for lazy evaluation.
+        // Use `unwrap_or_else` for lazy evaluation and avoid panic
         let gaxis = machine
             .current()
-            .eval_g(psi_axis, acc.xacc())
+            .eval_g(psit_axis, acc.xacc())
             .unwrap_or_else(|_| {
                 machine
                     .current()
@@ -111,14 +111,14 @@ impl EnergyPzetaPlane {
             });
         let baxis = machine
             .bfield() // This might be redundant
-            .eval_b(psi_axis, 0.0, acc)
+            .eval_b(psit_axis, 0.0, acc)
             .unwrap_or_else(|_| {
                 machine
                     .bfield()
                     .eval_b(psip_axis, 0.0, acc)
                     .expect("At least one of the evaluations will always succeed")
             });
-        let phi_axis = machine.efield().eval_phi(psi_axis).unwrap_or_else(|_| {
+        let phi_axis = machine.efield().eval_phi(psit_axis).unwrap_or_else(|_| {
             machine
                 .efield()
                 .eval_phi(psip_axis)
@@ -136,18 +136,18 @@ impl EnergyPzetaPlane {
     ///
     /// E(Pζ) = (Pζ + ψp)²B²/2g² + μB + Φ.
     ///
-    /// where all values are evaluated at `(ψ/ψp, θ) = (ψlast/ψplast, π)`.
+    /// where all values are evaluated at `(ψ, θ) = (ψlast, π)`.
     #[must_use]
     fn build_left_wall_parabola(machine: Machine, mu: f64) -> Parabola {
         use std::f64::consts::PI;
-        let psi_last = machine.qfactor().psi_last();
+        let psit_last = machine.qfactor().psit_last();
         let psip_last = machine.qfactor().psip_last();
         let acc = &mut Accelerator2d::new();
 
-        // Use `unwrap_or_else` for lazy evaluation.
+        // Use `unwrap_or_else` for lazy evaluation and avoid panic
         let glast = machine
             .current()
-            .eval_g(psi_last, acc.xacc())
+            .eval_g(psit_last, acc.xacc())
             .unwrap_or_else(|_| {
                 machine
                     .current()
@@ -156,14 +156,14 @@ impl EnergyPzetaPlane {
             });
         let blast = machine
             .bfield()
-            .eval_b(psi_last, PI, acc)
+            .eval_b(psit_last, PI, acc)
             .unwrap_or_else(|_| {
                 machine
                     .bfield()
                     .eval_b(psip_last, PI, acc)
                     .expect("At least one of the evaluations will always succeed")
             });
-        let phi_last = machine.efield().eval_phi(psi_last).unwrap_or_else(|_| {
+        let phi_last = machine.efield().eval_phi(psit_last).unwrap_or_else(|_| {
             machine
                 .efield()
                 .eval_phi(psip_last)
@@ -180,17 +180,17 @@ impl EnergyPzetaPlane {
     ///
     /// E(Pζ) = (Pζ + ψp)²B²/2g² + μB + Φ.
     ///
-    /// where all values are evaluated at `(ψ/ψp, θ) = (ψlast/ψplast, 0)`.
+    /// where all values are evaluated at `(ψ, θ) = (ψlast, 0)`.
     #[must_use]
     fn build_right_wall_parabola(machine: Machine, mu: f64) -> Parabola {
-        let psi_last = machine.qfactor().psi_last();
+        let psit_last = machine.qfactor().psit_last();
         let psip_last = machine.qfactor().psip_last();
         let acc = &mut Accelerator2d::new();
 
-        // Use `unwrap_or_else` for lazy evaluation.
+        // Use `unwrap_or_else` for lazy evaluation and avoid panic
         let glast = machine
             .current()
-            .eval_g(psi_last, acc.xacc())
+            .eval_g(psit_last, acc.xacc())
             .unwrap_or_else(|_| {
                 machine
                     .current()
@@ -199,14 +199,14 @@ impl EnergyPzetaPlane {
             });
         let blast = machine
             .bfield()
-            .eval_b(psi_last, 0.0, acc)
+            .eval_b(psit_last, 0.0, acc)
             .unwrap_or_else(|_| {
                 machine
                     .bfield()
                     .eval_b(psip_last, 0.0, acc)
                     .expect("At least one of the evaluations will always succeed")
             });
-        let phi_last = machine.efield().eval_phi(psi_last).unwrap_or_else(|_| {
+        let phi_last = machine.efield().eval_phi(psit_last).unwrap_or_else(|_| {
             machine
                 .efield()
                 .eval_phi(psip_last)

@@ -12,19 +12,19 @@
 A LAR configuration's geometry is described by the following formulas:
 
 $$
-r(\psi) = \sqrt{2\psi}
+r(\psi_t) = \sqrt{2\psi_t}
 $$
 
 $$
-\psi(r) = r^2/2
+\psi_t(r) = r^2/2
 $$
 
 $$
-R(\psi, \theta) = R_{geo} + R_{geo}\sqrt{2\psi}\cos\theta
+R(\psi_t, \theta) = R_{geo} + R_{geo}\sqrt{2\psi_t}\cos\theta
 $$
 
 $$
-Z(\psi, \theta) = R_{geo}\sqrt{2\psi}\sin\theta
+Z(\psi_t, \theta) = R_{geo}\sqrt{2\psi_t}\sin\theta
 $$
 
 ---

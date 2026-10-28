@@ -2,17 +2,15 @@
 
 use crate::{
     debug_assert_is_finite, debug_assert_non_negative_flux, debug_assert_non_negative_r,
-    fluxes_values_array_getter_impl, fortran_vec_to_carray2d_impl, netcdf_path_getter_impl,
+    fortran_vec_to_carrayview2d_impl, nc_fluxes_values_getter_impl, netcdf_path_getter_impl,
     netcdf_version_getter_impl,
 };
 use core::f64::consts::PI;
-use dexter_common::array1D_getter_impl;
-use ndarray::{Array1, Array2, Order::ColumnMajor};
+use ndarray::{Array1, ArrayView2, Order::ColumnMajor};
 use rsl_interpolation::{Accelerator, Accelerator2d};
 use std::hint::cold_path;
 use std::path::{Path, PathBuf};
 
-use super::debug_assert_all_finite_values;
 use crate::objects::nc_flux::{FluxCoordinateState, NcFlux};
 use crate::{EvalError, MachineError};
 use crate::{Geometry, MachineObject, MachineType};
@@ -28,7 +26,7 @@ use dexter_common::{DynInterpolator, DynInterpolator2d, make_interp, make_interp
 ///
 /// # Note
 ///
-/// No ψ/ψp bounds checks are performed in evaluations.
+/// No ψ bounds checks are performed in evaluations.
 #[non_exhaustive]
 #[derive(Debug)]
 pub struct LarGeometry {
@@ -40,14 +38,14 @@ pub struct LarGeometry {
     ///
     /// In LAR configuration, `rlast` coincides with the device's minor radius.
     rlast: f64,
-    /// The value of the last closed toroidal flux surface `ψ_last` in Normalized units.
+    /// The value of the last closed toroidal flux surface `ψt_last` in Normalized units.
     ///
     /// In LAR configuration, the wall coincides with the last closed flux surface.
-    psi_last: f64,
+    psit_last: f64,
 }
 
 impl LarGeometry {
-    /// Creates a new `LarCurrent`.
+    /// Creates a new `LarGeometry`.
     ///
     /// # Example
     /// ```
@@ -56,20 +54,20 @@ impl LarGeometry {
     /// ```
     #[must_use]
     pub fn new(baxis: f64, raxis: f64, rlast: f64) -> Self {
-        let psi_last_si = baxis * rlast.powi(2) / 2.0;
-        let psi_last = psi_last_si / (baxis * raxis.powi(2));
+        let psit_last_si = baxis * rlast.powi(2) / 2.0;
+        let psit_last = psit_last_si / (baxis * raxis.powi(2));
         Self {
             baxis,
             raxis,
             rlast,
-            psi_last,
+            psit_last,
         }
     }
 
     /// Returns the last closed toroidal flux surface.
     #[must_use]
-    pub fn psi_last(&self) -> MagneticFlux {
-        Toroidal(self.psi_last)
+    pub fn psit_last(&self) -> MagneticFlux {
+        Toroidal(self.psit_last)
     }
 }
 
@@ -78,7 +76,7 @@ impl MachineObject for LarGeometry {
         MachineType::Analytical
     }
 
-    fn psi_state(&self) -> FluxCoordinateState {
+    fn psit_state(&self) -> FluxCoordinateState {
         FluxCoordinateState::Good
     }
 
@@ -112,14 +110,14 @@ impl Geometry for LarGeometry {
         debug_assert_non_negative_flux!(flux);
         match flux {
             // Must normalize `r`
-            Toroidal(psi) => Ok(debug_assert_is_finite!(self.raxis * (2.0 * psi).sqrt())),
+            Toroidal(psit) => Ok(debug_assert_is_finite!(self.raxis * (2.0 * psit).sqrt())),
             Poloidal(_) => Err(EvalError::UndefinedEvaluation(
                 "r(ψp) (defined through q)".into(),
             )),
         }
     }
 
-    fn eval_psi_of_r(&self, r: f64, _: &mut Accelerator) -> Result<MagneticFlux, EvalError> {
+    fn eval_psit_of_r(&self, r: f64, _: &mut Accelerator) -> Result<MagneticFlux, EvalError> {
         debug_assert_non_negative_r!(r);
         // Must normalize `r` first
         Ok(Toroidal(debug_assert_is_finite!(
@@ -141,8 +139,8 @@ impl Geometry for LarGeometry {
     ) -> Result<f64, EvalError> {
         debug_assert_non_negative_flux!(flux);
         match flux {
-            Toroidal(psi) => Ok(debug_assert_is_finite!(
-                self.raxis + self.raxis * (2.0 * psi).sqrt() * theta.cos()
+            Toroidal(psit) => Ok(debug_assert_is_finite!(
+                self.raxis + self.raxis * (2.0 * psit).sqrt() * theta.cos()
             )),
             Poloidal(_) => Err(EvalError::UndefinedEvaluation(
                 "R(ψp, θ) (defined through q)".into(),
@@ -158,8 +156,8 @@ impl Geometry for LarGeometry {
     ) -> Result<f64, EvalError> {
         debug_assert_non_negative_flux!(flux);
         match flux {
-            Toroidal(psi) => Ok(debug_assert_is_finite!(
-                self.raxis * (2.0 * psi).sqrt() * theta.sin()
+            Toroidal(psit) => Ok(debug_assert_is_finite!(
+                self.raxis * (2.0 * psit).sqrt() * theta.sin()
             )),
             Poloidal(_) => Err(EvalError::UndefinedEvaluation(
                 "Z(ψp, θ) (defined through q)".into(),
@@ -182,7 +180,7 @@ impl Geometry for LarGeometry {
         let arr = Array1::linspace(0.0, 2.0 * PI, 1000);
         let acc = &mut Accelerator2d::new();
         arr.mapv(
-            |theta| match self.eval_rlab(Toroidal(self.psi_last), theta, acc) {
+            |theta| match self.eval_rlab(Toroidal(self.psit_last), theta, acc) {
                 Ok(rlab_lcfs_value) => rlab_lcfs_value,
                 Err(_) => unreachable!("Expression is analytical, cannot fail"),
             },
@@ -193,7 +191,7 @@ impl Geometry for LarGeometry {
         let arr = Array1::linspace(0.0, 2.0 * PI, 1000);
         let acc = &mut Accelerator2d::new();
         arr.mapv(
-            |theta| match self.eval_zlab(Toroidal(self.psi_last), theta, acc) {
+            |theta| match self.eval_zlab(Toroidal(self.psit_last), theta, acc) {
                 Ok(zlab_lcfs_value) => zlab_lcfs_value,
                 Err(_) => unreachable!("Expression is analytical, cannot fail"),
             },
@@ -293,41 +291,41 @@ pub struct NcGeometry {
     rgeo: f64,
 
     /// The boozer toroidal angle `θ` in [rads].
-    theta_values: Vec<f64>,
+    theta_values: Box<[f64]>,
     /// The toroidal flux coordinate.
-    psi: NcFlux,
+    psit: NcFlux,
     /// The poloidal flux coordinate.
     psip: NcFlux,
 
     /// The radial coordinate r in [m].
-    r_values: Vec<f64>,
-    /// The `r(ψ)` interpolator.
-    r_of_psi_interp: Option<DynInterpolator>,
+    r_values: Box<[f64]>,
+    /// The `r(ψt)` interpolator.
+    r_of_psit_interp: Option<DynInterpolator>,
     /// The `r(ψp)` interpolator.
     r_of_psip_interp: Option<DynInterpolator>,
-    /// The `ψ(r)` interpolator.
-    psi_of_r_interp: Option<DynInterpolator>,
+    /// The `ψt(r)` interpolator.
+    psit_of_r_interp: Option<DynInterpolator>,
     /// The `ψp(r)` interpolator.
     psip_of_r_interp: Option<DynInterpolator>,
 
     /// The `R` coordinate in [m], flattened in F order.
-    rlab_values_fortran_flat: Vec<f64>,
-    /// `R(ψ, θ)` interpolator.
-    rlab_of_psi_interp: Option<DynInterpolator2d>,
+    rlab_values_fortran_flat: Box<[f64]>,
+    /// `R(ψt, θ)` interpolator.
+    rlab_of_psit_interp: Option<DynInterpolator2d>,
     /// `R(ψp, θ)` interpolator.
     rlab_of_psip_interp: Option<DynInterpolator2d>,
 
     /// The `Z` coordinate in [m], flattened in F order.
-    zlab_values_fortran_flat: Vec<f64>,
-    /// `Z(ψ, θ)` interpolator.
-    zlab_of_psi_interp: Option<DynInterpolator2d>,
+    zlab_values_fortran_flat: Box<[f64]>,
+    /// `Z(ψt, θ)` interpolator.
+    zlab_of_psit_interp: Option<DynInterpolator2d>,
     /// `Z(ψp, θ)` interpolator.
     zlab_of_psip_interp: Option<DynInterpolator2d>,
 
     /// The VMEC output to Boozer Jacobian in [m/T], flattened in F order.
-    jacobian_values_fortran_flat: Vec<f64>,
-    /// `J(ψ, θ)` interpolator.
-    jacobian_of_psi_interp: Option<DynInterpolator2d>,
+    jacobian_values_fortran_flat: Option<Box<[f64]>>,
+    /// `J(ψt, θ)` interpolator.
+    jacobian_of_psit_interp: Option<DynInterpolator2d>,
     /// `J(ψp, θ)` interpolator.
     jacobian_of_psip_interp: Option<DynInterpolator2d>,
 }
@@ -346,7 +344,7 @@ impl NcGeometry {
         let netcdf_version = extract::version(&file)?;
 
         let theta_values = extract::array_1d(&file, NC_THETA)?.to_vec();
-        let psi = NcFlux::toroidal(&file);
+        let psit = NcFlux::toroidal(&file);
         let psip = NcFlux::poloidal(&file);
 
         let baxis: f64 = extract::scalar(&file, NC_BAXIS)?;
@@ -360,24 +358,14 @@ impl NcGeometry {
         let zlab_values_fortran_flat = extract::array_2d(&file, NC_ZLAB)?
             .flatten_with_order(ColumnMajor)
             .to_vec();
-        let jacobian_values_fortran_flat = extract::array_2d(&file, NC_JACOBIAN)?
-            .flatten_with_order(ColumnMajor)
-            .to_vec();
-
-        debug_assert!(baxis.is_finite(), "NaN 'baxis' field encountered");
-        debug_assert!(raxis.is_finite(), "NaN 'raxis' field encountered");
-        debug_assert!(zaxis.is_finite(), "NaN 'zaxis' field encountered");
-        debug_assert!(rgeo.is_finite(), "NaN 'rgeo' field encountered");
-        debug_assert_all_finite_values(&theta_values);
-        debug_assert_all_finite_values(&r_values);
-        debug_assert_all_finite_values(&rlab_values_fortran_flat);
-        debug_assert_all_finite_values(&zlab_values_fortran_flat);
-        debug_assert_all_finite_values(&jacobian_values_fortran_flat);
+        let jacobian_values_fortran_flat = extract::array_2d(&file, NC_JACOBIAN)
+            .map(|array| array.flatten_with_order(ColumnMajor).to_vec())
+            .ok();
 
         // Create interpolators, if possible
         use FluxCoordinateState::Good;
-        let r_of_psi_interp = match psi.state() {
-            Good => make_interp(builder.interp1d_type, psi.uvalues(), &r_values).ok(),
+        let r_of_psit_interp = match psit.state() {
+            Good => make_interp(builder.interp1d_type, psit.uvalues(), &r_values).ok(),
             _ => None,
         };
         let r_of_psip_interp = match psip.state() {
@@ -387,19 +375,19 @@ impl NcGeometry {
 
         // Neither the fluxes or `r` is guaranteed to exist.
         // If `r` exists, then it is guaranteed it's in increasing order.
-        let psi_of_r_interp = match psi.state() {
+        let psit_of_r_interp = match psit.state() {
             FluxCoordinateState::NoValues => None,
-            _ => make_interp(builder.interp1d_type, &r_values, psi.uvalues()).ok(),
+            _ => make_interp(builder.interp1d_type, &r_values, psit.uvalues()).ok(),
         };
         let psip_of_r_interp = match psip.state() {
             FluxCoordinateState::NoValues => None,
             _ => make_interp(builder.interp1d_type, &r_values, psip.uvalues()).ok(),
         };
 
-        let rlab_of_psi_interp = match psi.state() {
+        let rlab_of_psit_interp = match psit.state() {
             Good => make_interp2d(
                 builder.interp2d_type,
-                psi.uvalues(),
+                psit.uvalues(),
                 &theta_values,
                 &rlab_values_fortran_flat,
             )
@@ -417,10 +405,10 @@ impl NcGeometry {
             _ => None,
         };
 
-        let zlab_of_psi_interp = match psi.state() {
+        let zlab_of_psit_interp = match psit.state() {
             Good => make_interp2d(
                 builder.interp2d_type,
-                psi.uvalues(),
+                psit.uvalues(),
                 &theta_values,
                 &zlab_values_fortran_flat,
             )
@@ -438,24 +426,16 @@ impl NcGeometry {
             _ => None,
         };
 
-        let jacobian_of_psi_interp = match psi.state() {
-            Good => make_interp2d(
-                builder.interp2d_type,
-                psi.uvalues(),
-                &theta_values,
-                &jacobian_values_fortran_flat,
-            )
-            .ok(),
+        let jacobian_of_psit_interp = match psit.state() {
+            Good => jacobian_values_fortran_flat.as_ref().and_then(|values| {
+                make_interp2d(builder.interp2d_type, psit.uvalues(), &theta_values, values).ok()
+            }),
             _ => None,
         };
         let jacobian_of_psip_interp = match psip.state() {
-            Good => make_interp2d(
-                builder.interp2d_type,
-                psip.uvalues(),
-                &theta_values,
-                &jacobian_values_fortran_flat,
-            )
-            .ok(),
+            Good => jacobian_values_fortran_flat.as_ref().and_then(|values| {
+                make_interp2d(builder.interp2d_type, psip.uvalues(), &theta_values, values).ok()
+            }),
             _ => None,
         };
 
@@ -464,26 +444,26 @@ impl NcGeometry {
             path,
             interp1d_type: builder.interp1d_type,
             interp2d_type: builder.interp2d_type,
-            theta_values,
-            psi,
+            theta_values: theta_values.into_boxed_slice(),
+            psit,
             psip,
             baxis,
             raxis,
             zaxis,
             rgeo,
-            r_values,
-            r_of_psi_interp,
+            r_values: r_values.into_boxed_slice(),
+            r_of_psit_interp,
             r_of_psip_interp,
-            psi_of_r_interp,
+            psit_of_r_interp,
             psip_of_r_interp,
-            rlab_values_fortran_flat,
-            rlab_of_psi_interp,
+            rlab_values_fortran_flat: rlab_values_fortran_flat.into_boxed_slice(),
+            rlab_of_psit_interp,
             rlab_of_psip_interp,
-            zlab_values_fortran_flat,
-            zlab_of_psi_interp,
+            zlab_values_fortran_flat: zlab_values_fortran_flat.into_boxed_slice(),
+            zlab_of_psit_interp,
             zlab_of_psip_interp,
-            jacobian_values_fortran_flat,
-            jacobian_of_psi_interp,
+            jacobian_values_fortran_flat: jacobian_values_fortran_flat.map(Vec::into_boxed_slice),
+            jacobian_of_psit_interp,
             jacobian_of_psip_interp,
         })
     }
@@ -494,8 +474,8 @@ impl MachineObject for NcGeometry {
         MachineType::Numerical
     }
 
-    fn psi_state(&self) -> FluxCoordinateState {
-        self.psi.state()
+    fn psit_state(&self) -> FluxCoordinateState {
+        self.psit.state()
     }
 
     fn psip_state(&self) -> FluxCoordinateState {
@@ -530,7 +510,7 @@ impl Geometry for NcGeometry {
     fn eval_r(&self, flux: MagneticFlux, acc: &mut Accelerator) -> Result<f64, EvalError> {
         debug_assert_non_negative_flux!(flux);
         let interp_opt = match flux {
-            Toroidal(_) => self.r_of_psi_interp.as_ref(),
+            Toroidal(_) => self.r_of_psit_interp.as_ref(),
             Poloidal(_) => self.r_of_psip_interp.as_ref(),
         };
         let Some(interp) = interp_opt else {
@@ -540,19 +520,19 @@ impl Geometry for NcGeometry {
         };
         // This cannot panic. If `interp` is `Some` then the corresponding values exist.
         let (val, xa) = match flux {
-            Toroidal(val) => (val, self.psi.uvalues()),
+            Toroidal(val) => (val, self.psit.uvalues()),
             Poloidal(val) => (val, self.psip.uvalues()),
         };
         let ya = &self.theta_values;
         Ok(debug_assert_is_finite!(interp.eval(xa, ya, val, acc)?))
     }
 
-    fn eval_psi_of_r(&self, r: f64, acc: &mut Accelerator) -> Result<MagneticFlux, EvalError> {
+    fn eval_psit_of_r(&self, r: f64, acc: &mut Accelerator) -> Result<MagneticFlux, EvalError> {
         debug_assert_non_negative_r!(r);
-        match self.psi_of_r_interp.as_ref() {
+        match self.psit_of_r_interp.as_ref() {
             Some(interp) => Ok(Toroidal(debug_assert_is_finite!(interp.eval(
                 &self.r_values,
-                self.psi.uvalues(),
+                self.psit.uvalues(),
                 r,
                 acc
             )?))),
@@ -581,7 +561,7 @@ impl Geometry for NcGeometry {
     ) -> Result<f64, EvalError> {
         debug_assert_non_negative_flux!(flux);
         let interp_opt = match flux {
-            Toroidal(_) => self.rlab_of_psi_interp.as_ref(),
+            Toroidal(_) => self.rlab_of_psit_interp.as_ref(),
             Poloidal(_) => self.rlab_of_psip_interp.as_ref(),
         };
         let Some(interp) = interp_opt else {
@@ -591,7 +571,7 @@ impl Geometry for NcGeometry {
         };
         // This cannot panic. If `interp` is `Some` then the corresponding values exist.
         let (val, xa) = match flux {
-            Toroidal(val) => (val, self.psi.uvalues()),
+            Toroidal(val) => (val, self.psit.uvalues()),
             Poloidal(val) => (val, self.psip.uvalues()),
         };
         let ya = &self.theta_values;
@@ -609,7 +589,7 @@ impl Geometry for NcGeometry {
     ) -> Result<f64, EvalError> {
         debug_assert_non_negative_flux!(flux);
         let interp_opt = match flux {
-            Toroidal(_) => self.zlab_of_psi_interp.as_ref(),
+            Toroidal(_) => self.zlab_of_psit_interp.as_ref(),
             Poloidal(_) => self.zlab_of_psip_interp.as_ref(),
         };
         let Some(interp) = interp_opt else {
@@ -619,7 +599,7 @@ impl Geometry for NcGeometry {
         };
         // This cannot panic. If `interp` is `Some` then the corresponding values exist.
         let (val, xa) = match flux {
-            Toroidal(val) => (val, self.psi.uvalues()),
+            Toroidal(val) => (val, self.psit.uvalues()),
             Poloidal(val) => (val, self.psip.uvalues()),
         };
         let ya = &self.theta_values;
@@ -629,6 +609,7 @@ impl Geometry for NcGeometry {
         ))
     }
 
+    #[expect(clippy::manual_let_else, reason = "clarity")]
     fn eval_jacobian(
         &self,
         flux: MagneticFlux,
@@ -637,7 +618,7 @@ impl Geometry for NcGeometry {
     ) -> Result<f64, EvalError> {
         debug_assert_non_negative_flux!(flux);
         let interp_opt = match flux {
-            Toroidal(_) => self.jacobian_of_psi_interp.as_ref(),
+            Toroidal(_) => self.jacobian_of_psit_interp.as_ref(),
             Poloidal(_) => self.jacobian_of_psip_interp.as_ref(),
         };
         let Some(interp) = interp_opt else {
@@ -647,11 +628,14 @@ impl Geometry for NcGeometry {
         };
         // This cannot panic. If `interp` is `Some` then the corresponding values exist.
         let (val, xa) = match flux {
-            Toroidal(val) => (val, self.psi.uvalues()),
+            Toroidal(val) => (val, self.psit.uvalues()),
             Poloidal(val) => (val, self.psip.uvalues()),
         };
         let ya = &self.theta_values;
-        let za = &self.jacobian_values_fortran_flat;
+        let za = match self.jacobian_values_fortran_flat.as_ref() {
+            Some(values) => values,
+            None => unreachable!("interp is Some"),
+        };
         Ok(debug_assert_is_finite!(
             interp.eval(xa, ya, za, val, theta, acc)?
         ))
@@ -685,25 +669,25 @@ impl NcGeometry {
         self.interp2d_type
     }
 
-    /// Returns the (ψ/ψp, θ) shape of the 2D arrays.
+    /// Returns the (ψ, θ) shape of the 2D arrays.
     #[must_use]
     pub fn shape(&self) -> (usize, usize) {
-        let psi_len = match self.psi_state() {
+        let psit_len = match self.psit_state() {
             FluxCoordinateState::NoValues => 0,
-            _ => self.psi.uvalues().len(),
+            _ => self.psit.uvalues().len(),
         };
         let psip_len = match self.psip_state() {
             FluxCoordinateState::NoValues => 0,
             _ => self.psip.uvalues().len(),
         };
-        let xlen = psi_len.max(psip_len);
+        let xlen = psit_len.max(psip_len);
         (xlen, self.theta_values.len())
     }
 
     /// Returns the last closed toroidal flux surface.
     #[must_use]
-    pub fn psi_last(&self) -> Option<MagneticFlux> {
-        self.psi.last_value().map(Toroidal)
+    pub fn psit_last(&self) -> Option<MagneticFlux> {
+        self.psit.last_value().map(Toroidal)
     }
 
     /// Returns the last closed poloidal flux surface.
@@ -712,12 +696,34 @@ impl NcGeometry {
         self.psip.last_value().map(Poloidal)
     }
 
-    fluxes_values_array_getter_impl!();
-    array1D_getter_impl!(theta_array, theta_values, theta);
-    array1D_getter_impl!(r_array, r_values, r);
-    fortran_vec_to_carray2d_impl!(rlab_array, rlab_values_fortran_flat, R);
-    fortran_vec_to_carray2d_impl!(zlab_array, zlab_values_fortran_flat, Z);
-    fortran_vec_to_carray2d_impl!(jacobian_array, jacobian_values_fortran_flat, J);
+    /// Returns the Jacobian values as a 2D array view.
+    #[must_use]
+    pub fn jacobian_array(&self) -> Option<ArrayView2<'_, f64>> {
+        self.jacobian_values_fortran_flat.as_ref().map(|values| {
+            let actual_shape = self.shape();
+            let shape = (actual_shape.1, actual_shape.0);
+            match ArrayView2::from_shape(shape, values) {
+                Ok(view) => view.reversed_axes(),
+                Err(_) => unreachable!("Shape is correct by definition"),
+            }
+        })
+    }
+
+    /// Returns a reference to the `θ` values.
+    #[must_use]
+    pub fn theta_values(&self) -> &[f64] {
+        &self.theta_values
+    }
+
+    /// Returns a reference to the `r` values.
+    #[must_use]
+    pub fn r_values(&self) -> &[f64] {
+        &self.r_values
+    }
+
+    nc_fluxes_values_getter_impl!();
+    fortran_vec_to_carrayview2d_impl!(rlab_array, rlab_values_fortran_flat, R);
+    fortran_vec_to_carrayview2d_impl!(zlab_array, zlab_values_fortran_flat, Z);
 }
 
 impl std::fmt::Debug for NcGeometry {
@@ -732,9 +738,9 @@ impl std::fmt::Debug for NcGeometry {
             .field("zaxis [m]", &self.zaxis)
             .field("rgeo [m]", &self.rgeo)
             .field("rlast [m]", &self.rlast())
-            .field("shape (ψ/ψp, θ)", &self.shape())
-            .field("psi", &self.psi)
-            .field("psip", &self.psip)
+            .field("shape (ψ, θ)", &self.shape())
+            .field("ψt", &self.psit)
+            .field("ψp", &self.psip)
             .finish()
     }
 }
@@ -764,40 +770,40 @@ mod test_toroidal_nc_evals {
     #[test]
     fn flux_and_interp_states() {
         let geometry = create_nc_geometry(TOROIDAL_TEST_NETCDF_PATH);
-        assert_eq!(geometry.psi_state(), FluxCoordinateState::Good);
+        assert_eq!(geometry.psit_state(), FluxCoordinateState::Good);
         assert_eq!(geometry.psip_state(), FluxCoordinateState::Bad);
 
-        assert_eq!(geometry.psi.state(), FluxCoordinateState::Good);
+        assert_eq!(geometry.psit.state(), FluxCoordinateState::Good);
         assert_eq!(geometry.psip.state(), FluxCoordinateState::Bad);
-        assert!(geometry.r_of_psi_interp.is_some());
-        assert!(geometry.rlab_of_psi_interp.is_some());
-        assert!(geometry.zlab_of_psi_interp.is_some());
-        assert!(geometry.jacobian_of_psi_interp.is_some());
+        assert!(geometry.r_of_psit_interp.is_some());
+        assert!(geometry.rlab_of_psit_interp.is_some());
+        assert!(geometry.zlab_of_psit_interp.is_some());
+        assert!(geometry.jacobian_of_psit_interp.is_some());
 
         assert!(geometry.r_of_psip_interp.is_none());
         assert!(geometry.rlab_of_psip_interp.is_none());
         assert!(geometry.zlab_of_psip_interp.is_none());
         assert!(geometry.jacobian_of_psip_interp.is_none());
 
-        assert!(geometry.psi_of_r_interp.is_some());
+        assert!(geometry.psit_of_r_interp.is_some());
         assert!(geometry.psip_of_r_interp.is_some());
 
-        assert!(geometry.psi_array().is_some());
-        assert!(geometry.psip_array().is_some());
+        assert!(geometry.psit_values().is_some());
+        assert!(geometry.psip_values().is_some());
     }
 
     #[test]
     #[rustfmt::skip]
-    fn good_psi_evals() {
+    fn good_psit_evals() {
         let g = create_nc_geometry(TOROIDAL_TEST_NETCDF_PATH);
         let acc1 = &mut Accelerator::new();
         let acc2 = &mut Accelerator2d::new();
-        let t = 3.14;
+        let th = 3.14;
         let flux = Toroidal(0.01);
         assert!(g.eval_r(flux, acc1).unwrap().is_finite());
-        assert!(g.eval_rlab(flux, t, acc2).unwrap().is_finite());
-        assert!(g.eval_zlab(flux, t, acc2).unwrap().is_finite());
-        assert!(g.eval_jacobian(flux, t, acc2).unwrap().is_finite());
+        assert!(g.eval_rlab(flux, th, acc2).unwrap().is_finite());
+        assert!(g.eval_zlab(flux, th, acc2).unwrap().is_finite());
+        assert!(g.eval_jacobian(flux, th, acc2).unwrap().is_finite());
     }
 
     #[test]
@@ -805,13 +811,13 @@ mod test_toroidal_nc_evals {
         let g = create_nc_geometry(TOROIDAL_TEST_NETCDF_PATH);
         let acc1 = &mut Accelerator::new();
         let acc2 = &mut Accelerator2d::new();
-        let t = 3.14;
+        let th = 3.14;
         let flux = Poloidal(0.01);
         use EvalError::UndefinedEvaluation as err;
         matches!(g.eval_r(flux, acc1), Err(err(..)));
-        matches!(g.eval_rlab(flux, t, acc2), Err(err(..)));
-        matches!(g.eval_zlab(flux, t, acc2), Err(err(..)));
-        matches!(g.eval_jacobian(flux, t, acc2), Err(err(..)));
+        matches!(g.eval_rlab(flux, th, acc2), Err(err(..)));
+        matches!(g.eval_zlab(flux, th, acc2), Err(err(..)));
+        matches!(g.eval_jacobian(flux, th, acc2), Err(err(..)));
     }
 }
 
@@ -825,26 +831,26 @@ mod test_poloidal_nc_evals {
     #[test]
     fn flux_and_interp_states() {
         let geometry = create_nc_geometry(POLOIDAL_TEST_NETCDF_PATH);
-        assert_eq!(geometry.psi_state(), FluxCoordinateState::Bad);
+        assert_eq!(geometry.psit_state(), FluxCoordinateState::Bad);
         assert_eq!(geometry.psip_state(), FluxCoordinateState::Good);
 
-        assert_eq!(geometry.psi.state(), FluxCoordinateState::Bad);
+        assert_eq!(geometry.psit.state(), FluxCoordinateState::Bad);
         assert_eq!(geometry.psip.state(), FluxCoordinateState::Good);
-        assert!(geometry.r_of_psi_interp.is_none());
-        assert!(geometry.rlab_of_psi_interp.is_none());
-        assert!(geometry.zlab_of_psi_interp.is_none());
-        assert!(geometry.jacobian_of_psi_interp.is_none());
+        assert!(geometry.r_of_psit_interp.is_none());
+        assert!(geometry.rlab_of_psit_interp.is_none());
+        assert!(geometry.zlab_of_psit_interp.is_none());
+        assert!(geometry.jacobian_of_psit_interp.is_none());
 
         assert!(geometry.r_of_psip_interp.is_some());
         assert!(geometry.rlab_of_psip_interp.is_some());
         assert!(geometry.zlab_of_psip_interp.is_some());
         assert!(geometry.jacobian_of_psip_interp.is_some());
 
-        assert!(geometry.psi_of_r_interp.is_some());
+        assert!(geometry.psit_of_r_interp.is_some());
         assert!(geometry.psip_of_r_interp.is_some());
 
-        assert!(geometry.psi_array().is_some());
-        assert!(geometry.psip_array().is_some());
+        assert!(geometry.psit_values().is_some());
+        assert!(geometry.psip_values().is_some());
     }
 
     #[test]
@@ -853,25 +859,25 @@ mod test_poloidal_nc_evals {
         let g = create_nc_geometry(POLOIDAL_TEST_NETCDF_PATH);
         let acc1 = &mut Accelerator::new();
         let acc2 = &mut Accelerator2d::new();
-        let t = 3.14;
+        let th = 3.14;
         let flux = Poloidal(0.01);
         assert!(g.eval_r(flux, acc1).unwrap().is_finite());
-        assert!(g.eval_rlab(flux, t, acc2).unwrap().is_finite());
-        assert!(g.eval_zlab(flux, t, acc2).unwrap().is_finite());
-        assert!(g.eval_jacobian(flux, t, acc2).unwrap().is_finite());
+        assert!(g.eval_rlab(flux, th, acc2).unwrap().is_finite());
+        assert!(g.eval_zlab(flux, th, acc2).unwrap().is_finite());
+        assert!(g.eval_jacobian(flux, th, acc2).unwrap().is_finite());
     }
 
     #[test]
-    fn bad_psi_evals() {
+    fn bad_psit_evals() {
         let g = create_nc_geometry(POLOIDAL_TEST_NETCDF_PATH);
         let acc1 = &mut Accelerator::new();
         let acc2 = &mut Accelerator2d::new();
-        let t = 3.14;
+        let th = 3.14;
         let flux = Toroidal(0.01);
         use EvalError::UndefinedEvaluation as err;
         matches!(g.eval_r(flux, acc1), Err(err(..)));
-        matches!(g.eval_rlab(flux, t, acc2), Err(err(..)));
-        matches!(g.eval_zlab(flux, t, acc2), Err(err(..)));
-        matches!(g.eval_jacobian(flux, t, acc2), Err(err(..)));
+        matches!(g.eval_rlab(flux, th, acc2), Err(err(..)));
+        matches!(g.eval_zlab(flux, th, acc2), Err(err(..)));
+        matches!(g.eval_jacobian(flux, th, acc2), Err(err(..)));
     }
 }

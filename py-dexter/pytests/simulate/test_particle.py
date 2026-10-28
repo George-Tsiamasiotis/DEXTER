@@ -1,3 +1,5 @@
+from typing import cast
+
 import dexter as dex
 from math import isfinite
 
@@ -44,6 +46,9 @@ def test_getters(lar_machine: dex.Machine):
 
     assert isinstance(particle.initial_conditions, dex.InitialConditions)
     assert particle.integration_status == "ClosedPeriods(1)"
+    particle = cast(
+        dex.Particle, particle
+    )  # the above assertion confuses the type checker
     assert particle.steps_taken == particle.steps_stored - 1
     assert isinstance(particle.duration, str)
     assert particle.initial_energy is not None and isfinite(particle.initial_energy)
@@ -63,7 +68,7 @@ def test_getters(lar_machine: dex.Machine):
     assert particle.mode_cache_misses == 0
 
     assert len(particle.t_array) == particle.steps_stored
-    assert len(particle.psi_array) == particle.steps_stored
+    assert len(particle.psit_array) == particle.steps_stored
     assert len(particle.psip_array) == particle.steps_stored
     assert len(particle.theta_array) == particle.steps_stored
     assert len(particle.zeta_array) == particle.steps_stored

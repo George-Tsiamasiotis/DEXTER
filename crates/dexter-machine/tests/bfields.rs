@@ -6,26 +6,26 @@ use std::path::PathBuf;
 
 use approx::assert_abs_diff_eq;
 use dexter_machine::*;
-use ndarray::{Array1, Array2};
+use ndarray::ArrayView2;
 
 #[test]
 #[rustfmt::skip]
 fn lar_bfield() {
     let bfield = LarBfield;
-    assert_eq!(bfield.psi_state(), FluxCoordinateState::Good);
+    assert_eq!(bfield.psit_state(), FluxCoordinateState::Good);
     assert_eq!(bfield.psip_state(), FluxCoordinateState::Bad);
 
     let acc = &mut Accelerator2d::new();
-    let psi = MagneticFlux::Toroidal(0.01);
+    let psit = MagneticFlux::Toroidal(0.01);
     let psip = MagneticFlux::Poloidal(0.015);
     let theta = 3.14;
 
-    assert!(bfield.eval_b(psi, theta, acc).unwrap().is_finite());
-    assert!(bfield.eval_deriv_flux(psi, theta, acc).unwrap().is_finite());
-    assert!(bfield.eval_deriv_theta(psi, theta, acc).unwrap().is_finite());
-    assert!(bfield.eval_deriv_flux2(psi, theta, acc).unwrap().is_finite());
-    assert!(bfield.eval_deriv_theta2(psi, theta, acc).unwrap().is_finite());
-    assert!(bfield.eval_deriv_mixed(psi, theta, acc).unwrap().is_finite());
+    assert!(bfield.eval_b(psit, theta, acc).unwrap().is_finite());
+    assert!(bfield.eval_deriv_flux(psit, theta, acc).unwrap().is_finite());
+    assert!(bfield.eval_deriv_theta(psit, theta, acc).unwrap().is_finite());
+    assert!(bfield.eval_deriv_flux2(psit, theta, acc).unwrap().is_finite());
+    assert!(bfield.eval_deriv_theta2(psit, theta, acc).unwrap().is_finite());
+    assert!(bfield.eval_deriv_mixed(psit, theta, acc).unwrap().is_finite());
 
     assert!(matches!(
         bfield.eval_b(psip, theta, acc),
@@ -54,13 +54,13 @@ fn lar_bfield() {
 }
 
 #[test]
-    #[rustfmt::skip]
+#[rustfmt::skip]
 fn nc_bfield_no_pad() {
     let path = PathBuf::from(extract::TEST_NETCDF_PATH);
     let interp_type = Interpolation2dType::Bicubic;
     let builder = NcBfieldBuilder::new(&path, interp_type).with_padding(0);
     let bfield = dbg!(builder.build().unwrap());
-    assert_eq!(bfield.psi_state(), FluxCoordinateState::Good);
+    assert_eq!(bfield.psit_state(), FluxCoordinateState::Good);
     assert_eq!(bfield.psip_state(), FluxCoordinateState::Good);
 
     let machine_type: MachineType = bfield.machine_type();
@@ -69,14 +69,14 @@ fn nc_bfield_no_pad() {
     let interp_type: Interpolation2dType = bfield.interp_type();
     let baxis: f64 = bfield.baxis();
     let shape: (usize, usize) = bfield.shape();
-    let psi_state: FluxCoordinateState = bfield.psi_state();
+    let psit_state: FluxCoordinateState = bfield.psit_state();
     let psip_state: FluxCoordinateState = bfield.psip_state();
-    let psi_array: Array1<f64> = bfield.psi_array().unwrap();
-    let psip_array: Array1<f64> = bfield.psip_array().unwrap();
-    let theta_array: Array1<f64> = bfield.theta_array();
-    let theta_array_padded: Array1<f64> = bfield.theta_array_padded();
-    let b_array: Array2<f64> = bfield.b_array();
-    let b_array_padded: Array2<f64> = bfield.b_array_padded();
+    let psit_array: &[f64] = bfield.psit_values().unwrap();
+    let psip_array: &[f64] = bfield.psip_values().unwrap();
+    let theta_array: &[f64] = bfield.theta_values();
+    let theta_array_padded: &[f64] = bfield.theta_array_padded();
+    let b_array: ArrayView2<f64> = bfield.b_array();
+    let b_array_padded: ArrayView2<f64> = bfield.b_array_padded();
 
     assert_eq!(theta_array, theta_array_padded);
     assert_eq!(b_array, b_array_padded);
@@ -115,7 +115,7 @@ fn nc_bfield_pad() {
 
     // Since the `θ` values are equidistant by construction, the padding angle should be
     // equal to `-dθ * padding`, where `dθ` the distance between to neighboring `θ` values
-    let theta_array = pad_bfield.theta_array();
+    let theta_array = pad_bfield.theta_values();
     let dtheta0 = theta_array[1] - theta_array[0];
     assert_abs_diff_eq!(
         pad_bfield.padding_theta(),

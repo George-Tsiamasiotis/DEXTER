@@ -1,6 +1,5 @@
 """Common helper types to be used across all submodules."""
 
-import inspect
 import numpy as np
 from collections.abc import Callable
 from typing import Any, TypeAlias, Protocol, override
@@ -44,6 +43,8 @@ def get_default_args(func: Callable[[Any], Any]):
 
     Useful in providing `argparse` the default values.
     """
+    import inspect
+
     signature = inspect.signature(func)
     return {
         k: v.default
