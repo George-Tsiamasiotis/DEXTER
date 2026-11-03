@@ -22,6 +22,10 @@ pub enum MachineError {
     /// Analytical threshold index cannot be greater that the number of data points.
     #[error("Analytical threshold index cannot be greater that the number of data points")]
     InvalidFluteModeAnalyticalThresholdIndex,
+
+    /// Error constructing a Machine Object from data.
+    #[error("DataError: {0}")]
+    DataError(String),
 }
 
 /// Evaluation related errors.

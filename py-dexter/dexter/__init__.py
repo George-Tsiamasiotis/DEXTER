@@ -43,6 +43,7 @@ from dexter.machine.geometries import GeometryObject, LarGeometry, NcGeometry
 from dexter.machine.qfactors import (
     QfactorObject,
     UnityQfactor,
+    ArrayQfactor,
     ParabolicQfactor,
     NcQfactor,
 )
@@ -117,6 +118,7 @@ __all__ = [
     "LarGeometry",
     "NcGeometry",
     "UnityQfactor",
+    "ArrayQfactor",
     "ParabolicQfactor",
     "NcQfactor",
     "LarCurrent",

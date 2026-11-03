@@ -3,7 +3,7 @@
 use std::sync::Arc;
 
 use ndarray::Array1;
-use numpy::{IntoPyArray, PyArray1};
+use numpy::{IntoPyArray, PyArray1, PyReadonlyArray1};
 use pyo3::{prelude::*, types::PyType};
 
 use crate::*;
@@ -21,6 +21,10 @@ pub struct PyParabolicQfactor(Arc<ParabolicQfactor>);
 
 #[pyclass(frozen, immutable_type, from_py_object)]
 #[derive(Clone)]
+pub struct PyArrayQfactor(Arc<ArrayQfactor>);
+
+#[pyclass(frozen, immutable_type, from_py_object)]
+#[derive(Clone)]
 pub struct PyNcQfactor(Arc<NcQfactor>);
 
 // ===============================================================================================
@@ -30,6 +34,7 @@ pub struct PyNcQfactor(Arc<NcQfactor>);
 pub enum PyQfactor {
     Unity(PyUnityQfactor),
     Parabolic(PyParabolicQfactor),
+    Array(PyArrayQfactor),
     Nc(PyNcQfactor),
 }
 
@@ -53,6 +58,22 @@ impl PyQfactor {
     }
 
     #[classmethod]
+    pub fn build_array<'py>(
+        _: Bound<'py, PyType>,
+        flux_array: &PyMagneticFluxArray,
+        q_array: PyReadonlyArray1<f64>,
+        interp_type: String,
+    ) -> Result<Self> {
+        let typ = resolve_interpolation_1d_type(interp_type)?;
+        let inner = PyArrayQfactor(Arc::new(ArrayQfactor::build(
+            &flux_array.0,
+            q_array.as_slice()?,
+            typ,
+        )?));
+        Ok(Self::Array(inner))
+    }
+
+    #[classmethod]
     pub fn build_nc<'py>(_: Bound<'py, PyType>, path: String, interp_type: String) -> Result<Self> {
         let path = std::path::PathBuf::from(path);
         let typ = resolve_interpolation_1d_type(interp_type)?;
@@ -69,6 +90,7 @@ impl PyQfactor {
         match self {
             PyQfactor::Unity(qfactor) => qfactor.0.as_ref(),
             PyQfactor::Parabolic(qfactor) => qfactor.0.as_ref(),
+            PyQfactor::Array(qfactor) => qfactor.0.as_ref(),
             PyQfactor::Nc(qfactor) => qfactor.0.as_ref(),
         }
     }
@@ -93,12 +115,33 @@ impl PyQfactor {
         }
     }
 
+    pub fn array(&self) -> Result<&ArrayQfactor> {
+        match self {
+            Self::Array(qfactor) => Ok(&qfactor.0),
+            _ => Err(DexterError::InvalidVariant {
+                wrapper: "Qfactor".into(),
+                inner: "ArrayQfactor".into(),
+            }),
+        }
+    }
+
     pub fn nc(&self) -> Result<&NcQfactor> {
         match self {
             Self::Nc(qfactor) => Ok(&qfactor.0),
             _ => Err(DexterError::InvalidVariant {
                 wrapper: "Qfactor".into(),
                 inner: "NcQfactor".into(),
+            }),
+        }
+    }
+
+    pub fn inner_array(&self) -> Result<&ArrayQfactor> {
+        match self {
+            Self::Array(array) => Ok(array.0.as_ref()),
+            Self::Nc(nc) => Ok(nc.0.array_qfactor()),
+            _ => Err(DexterError::InvalidVariant {
+                wrapper: "Qfactor".into(),
+                inner: "NcQfactor/ArrayQfactor".into(),
             }),
         }
     }
@@ -207,11 +250,14 @@ impl PyQfactor {
 
 // ===============================================================================================
 
-#[pymethods] // Unity
-impl PyQfactor {}
-
-#[pymethods] // Parabolic
-impl PyQfactor {}
+// #[pymethods] // Unity
+// impl PyQfactor {}
+//
+// #[pymethods] // Parabolic
+// impl PyQfactor {}
+//
+// #[pymethods] // Array
+// impl PyQfactor {}
 
 #[pymethods] // Nc
 impl PyQfactor {
@@ -224,14 +270,22 @@ impl PyQfactor {
     pub fn netcdf_version(&self) -> Result<String> {
         Ok(self.nc()?.netcdf_version().to_string())
     }
+}
 
+#[pymethods] // Array wrappers
+impl PyQfactor {
     #[getter]
     pub fn interp_type(&self) -> Result<String> {
-        Ok(format!("{:?}", self.nc()?.interp_type()))
+        Ok(format!("{:?}", self.inner_array()?.interp_type()))
+    }
+
+    #[getter]
+    pub fn defining_flux(&self) -> Result<String> {
+        Ok(format!("{:?}", self.inner_array()?.defining_flux()))
     }
 
     pub fn get_array<'py>(&self, py: Python<'py>, name: &str) -> Result<Bound<'py, PyArray1<f64>>> {
-        let qfactor = self.nc()?;
+        let qfactor = self.inner_array()?;
         let values: &[f64] = match name {
             "q_array" => qfactor.q_values(),
             "psit_array" => qfactor.psit_values(),

@@ -2,19 +2,20 @@
 
 use crate::{
     debug_assert_is_finite, debug_assert_non_negative_flux, debug_assert_non_negative_psip,
-    debug_assert_non_negative_psit, interp_type_getter_impl, netcdf_path_getter_impl,
-    netcdf_version_getter_impl,
+    debug_assert_non_negative_psit, netcdf_path_getter_impl, netcdf_version_getter_impl,
 };
 use core::hint::cold_path;
+use dexter_common::{DynInterpolator, find, make_interp};
+use ndarray::Array1;
 use rsl_interpolation::Accelerator;
 use std::path::{Path, PathBuf};
 
 use crate::Interpolation1dType;
-use crate::objects::nc_flux::{FluxCoordinateState, NcFlux};
+use crate::objects::flux_coordinate_array::{FluxCoordinateArray, FluxCoordinateState};
 use crate::{EvalError, MachineError};
 use crate::{MachineObject, MachineType, Qfactor};
 use crate::{MagneticFlux, MagneticFlux::*};
-use dexter_common::{DynInterpolator, make_interp};
+use crate::{MagneticFluxArray, MagneticFluxKind};
 
 // ===============================================================================================
 
@@ -145,6 +146,7 @@ impl Qfactor for UnityQfactor {
         Ok(1.0)
     }
 
+    // overwrite for (possibly) better performance
     fn eval_deriv_wrt_other(
         &self,
         flux: MagneticFlux,
@@ -426,16 +428,6 @@ impl Qfactor for ParabolicQfactor {
             }
         }
     }
-
-    fn eval_deriv_wrt_other(
-        &self,
-        flux: MagneticFlux,
-        acc: &mut Accelerator,
-    ) -> Result<f64, EvalError> {
-        debug_assert_non_negative_flux!(flux);
-        let other = self.eval_other(flux, acc)?;
-        self.eval_deriv_of_other(other, &mut Accelerator::new())
-    }
 }
 
 impl std::fmt::Debug for ParabolicQfactor {
@@ -451,87 +443,29 @@ impl std::fmt::Debug for ParabolicQfactor {
 
 // ===============================================================================================
 
-/// Used to create a [`NcQfactor`].
+/// q-factor profile constructed from pairs of `ψ` and `q` values.
 ///
-/// Exists for future configuration flexibility.
-#[derive(Debug)]
-pub struct NcQfactorBuilder {
-    /// Path to the netCDF file.
-    path: PathBuf,
+/// The q-profile is then represented by interpolators of `interp_type` type. See [`Self::build`]
+/// for details.
+///
+/// This type is also used internally by [`NcQfactor`].
+pub struct ArrayQfactor {
     /// The interpolation type.
     interp_type: Interpolation1dType,
-}
-
-impl NcQfactorBuilder {
-    /// Creates a new `NcQfactorBuilder` from a netCDF file at `path`, with `interp_type`
-    /// interpolation type.
-    ///
-    /// # Example
-    /// ```
-    /// # use std::path::PathBuf;
-    /// # use dexter_machine::*;
-    /// let path = PathBuf::from("./netcdf.nc");
-    /// let builder = NcQfactorBuilder::new(&path, Interpolation1dType::Cubic);
-    /// ```
-    #[must_use]
-    pub fn new(path: &Path, interp_type: Interpolation1dType) -> Self {
-        Self {
-            path: path.to_path_buf(),
-            interp_type,
-        }
-    }
-
-    /// Creates a new [`NcQfactor`] with the Builder's configuration.
-    ///
-    /// # Example
-    /// ```
-    /// # use std::path::PathBuf;
-    /// # use dexter_machine::*;
-    /// let path = PathBuf::from("./netcdf.nc");
-    /// let qfactor = NcQfactorBuilder::new(&path, Interpolation1dType::Akima).build()?;
-    /// # Ok::<_, MachineError>(())
-    /// ```
-    ///
-    /// # Errors
-    ///
-    /// Returns an [`MachineError`] if it fails to build the [`NcQfactor`].
-    pub fn build(self) -> Result<NcQfactor, MachineError> {
-        NcQfactor::build(self)
-    }
-}
-
-/// Numerical q-factor profile reconstructed from a netCDF file.
-///
-/// Related quantities are computed by interpolating over the data arrays.
-///
-/// Should be created with an [`NcQfactorBuilder`].
-///
-/// If either `psit_norm` or `psip_norm` is missing from the netCDF file, it is calculated from the
-/// other by integrating `q(ψp)` or `ι(ψt)` respectively. In the case that the calculated values are
-/// monotonic, the other flux can be used as a flux coordinate as well.
-pub struct NcQfactor {
-    /// Path to the netCDF file.
-    path: PathBuf,
-    /// netCDF's [`semver::Version`].
-    netcdf_version: semver::Version,
-
-    /// The interpolation type.
-    interp_type: Interpolation1dType,
+    /// The flux with respect to which the `ArrayQfactor` was defined.
+    defining_flux: MagneticFluxKind,
 
     /// The toroidal flux coordinate.
-    psit: NcFlux,
+    psit: FluxCoordinateArray,
     /// The poloidal flux coordinate.
-    psip: NcFlux,
+    psip: FluxCoordinateArray,
 
-    /// `ψp(ψt)` interpolator.
-    psip_of_psit_interp: Option<DynInterpolator>,
-    /// `ψt(ψp)` interpolator.
-    psit_of_psip_interp: Option<DynInterpolator>,
-
+    /// The `ι` values.
+    i_values: Box<[f64]>,
     /// The `q` values.
     q_values: Box<[f64]>,
-    /// `q(ψt)` interpolator.
-    q_of_psit_interp: Option<DynInterpolator>,
+    /// `ι(ψt)` interpolator.
+    i_of_psit_interp: Option<DynInterpolator>,
     /// `q(ψp)` interpolator.
     q_of_psip_interp: Option<DynInterpolator>,
 
@@ -541,115 +475,144 @@ pub struct NcQfactor {
     psip_of_q_interp: Option<DynInterpolator>,
 }
 
-/// Creation.
-impl NcQfactor {
-    /// Constructs an `NcQfactor` from an [`NcQfactorBuilder`].
-    fn build(builder: NcQfactorBuilder) -> Result<Self, MachineError> {
-        use crate::extract;
-        use crate::extract::netcdf_fields::NC_Q;
+impl ArrayQfactor {
+    /// Builds an `ArrayQfactor` from a [`MagneticFluxArray`] and the corresponding `q` values.
+    ///
+    /// # Consistency of evaluations
+    ///
+    /// Regardless of the `kind` of the passed `flux_array`, two interpolators are built: a `ι(ψt)`
+    /// and a `q(ψp)` interpolator, where the values of the other flux are obtained by integrating
+    /// the corresponding interpolator.
+    ///
+    /// When calling an evaluation method, the kind of the passed `flux` argument determines the
+    /// interpolator that will be used; an evaluation with respect to a *toroidal* flux always uses
+    /// the `ι(ψt)` interpolator while an evaluation with resepct to a *poloidal* flux always uses
+    /// the `q(ψp)` interpolator. For example, `qfactor.eval_q(psi)` returns `1/qfactor.eval_iota(psi)`
+    /// and `qfactor.eval_iota_deriv(psip)` returns `-qfactor.eval_q_deriv(psip)/qfactor.eval_q(psip)^2`.
+    ///
+    /// The above rule guarantees that *no* evaluation will pass through both interpolators [^1].
+    /// This is important as passing through both interpolators introduces numerical
+    /// inconsistencies.
+    ///
+    /// However, when `flux_array.kind() == Toroidal`, the *very construction* of the `q(ψp)` interpolator
+    /// is inconsistent , as the extra step of calculating `ψp` from `ψt` is needed before constructing the
+    /// `q(ψp)` interpolator (similarly when `flux_array.kind() == Poloidal` for `i(ψt)`). Therefore,
+    /// while the evaluation methods guarantee that the correct interpolator will be used, it is up to
+    /// you to ensure you evaluate the `qfactor` with respect to the flux you constructed it with.
+    ///
+    /// The [`defining_flux()`][Self::defining_flux] method returns the kind of flux w.r.t. which the
+    /// `ArrayQfactor` was defined.
+    ///
+    /// # Errors
+    ///
+    /// This constructor returns a [`MachineError::DataError`] if:
+    ///   + Data arrays are empty,
+    ///   + Data arrays have different sizes,
+    ///   + The first element of `flux_array` is **not** `0.0`.
+    ///   + `flux_array` values are non-rising.
+    ///
+    /// This constructor returns a [`MachineError::InterpolationError`] if any of the interpolators
+    /// fails to build.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use dexter_machine::*;
+    /// # use ndarray::*;
+    /// let psit_values = array![0.0, 0.01, 0.02, 0.03, 0.04];
+    /// let q_values = [1.1, 1.8, 2.2, 3.4, 3.8];
+    /// let psit = MagneticFluxArray::Toroidal(psit_values);
+    ///
+    /// let qfactor = ArrayQfactor::build(&psit, &q_values, Interpolation1dType::Akima)?;
+    /// # Ok::<_, MachineError>(())
+    /// ```
+    ///
+    /// [^1]: with the exception of [`eval_deriv_wrt_other`][`Qfactor::eval_deriv_wrt_other`], which
+    /// is a shorthand of
+    /// [`eval_other`][`Qfactor::eval_other`] -> [`eval_deriv_of_other`][`Qfactor::eval_deriv_of_other`]
+    pub fn build(
+        flux_array: &MagneticFluxArray,
+        q_values: &[f64],
+        interp_type: Interpolation1dType,
+    ) -> Result<Self, MachineError> {
+        // This type is intended to be used as a wrapper of other types that might have their own
+        // way of defining/computing each flux as well, therefore we split the process in two stages.
+        let (psit, psip) = Self::build_flux_coordinate_arrays(flux_array, q_values, interp_type)?;
+        Self::from_existing_flux_coordinate_arrays(
+            psit,
+            psip,
+            q_values.into(),
+            interp_type,
+            flux_array.kind(),
+        )
+    }
 
-        // Make path absolute for display purposes.
-        let path = std::path::absolute(builder.path)?;
-        let file = extract::open(&path)?;
-        let netcdf_version = extract::version(&file)?;
+    /// Constructs the `ψt` and `ψp` `FluxCoordinateArrays`.
+    ///
+    /// Use this method when only *one* of the fluxes is available and the other must be computed
+    /// through integration of `q` or `ι`. If both fluxes are available, skip this step.
+    fn build_flux_coordinate_arrays(
+        flux_array: &MagneticFluxArray,
+        q_values: &[f64],
+        interp_type: Interpolation1dType,
+    ) -> Result<(FluxCoordinateArray, FluxCoordinateArray), MachineError> {
+        let Some(flux_values) = flux_array.values().to_slice() else {
+            return Err(MachineError::DataError(
+                "Input arrays cannot be empty".into(),
+            ));
+        };
 
-        let mut psit = NcFlux::toroidal(&file);
-        let mut psip = NcFlux::poloidal(&file);
-        let q_values = extract::array_1d(&file, NC_Q)?.to_vec();
+        let (psit, psip) = match flux_array.kind() {
+            MagneticFluxKind::Toroidal => (
+                FluxCoordinateArray::from_raw_values(flux_values, MagneticFluxKind::Toroidal),
+                FluxCoordinateArray::psip_from_psit(flux_values, q_values, interp_type)?,
+            ),
+            MagneticFluxKind::Poloidal => (
+                FluxCoordinateArray::psit_from_psip(flux_values, q_values, interp_type)?,
+                FluxCoordinateArray::from_raw_values(flux_values, MagneticFluxKind::Poloidal),
+            ),
+        };
+        Ok((psit, psip))
+    }
 
-        // If no `ψt` values found, integrate `q(ψp)` and create them. We create a temporary
-        // `q_of_psip_interp` since we cannot correctly define it yet.
-        //
-        // This operation cannot fail. If one of the fluxes is missing, then the other one is
-        // guaranteed to be `Good` and therefore the interpolation and integration can be defined.
-        if psit.state() == FluxCoordinateState::NoValues {
-            let acc = &mut Accelerator::new();
-            let psip_values = psip.values().expect("At least one of the fluxes exists");
-            let q_of_psip_interp = make_interp(builder.interp_type, psip_values, &q_values)?;
-            let psit_values: Vec<f64> = psip_values
-                .iter()
-                .map(|psip_value| {
-                    q_of_psip_interp
-                        .eval_integ(psip_values, &q_values, 0.0, *psip_value, acc)
-                        .expect("Cannot fail by definition of the interpolator")
-                })
-                .collect();
-            psit = NcFlux::from_raw_values(&psit_values);
-        }
+    /// Constructs the `ArrayQfactor` from the already present `ψt` and `ψp` `FluxCoordinateArrays`.
+    fn from_existing_flux_coordinate_arrays(
+        psit: FluxCoordinateArray,
+        psip: FluxCoordinateArray,
+        q_values: Box<[f64]>,
+        interp_type: Interpolation1dType,
+        defining_flux: MagneticFluxKind,
+    ) -> Result<Self, MachineError> {
+        use FluxCoordinateState::*;
 
-        // If no `ψp` values found, integrate `ι(ψt)` and create them. For this we must create a
-        // temporary `i_of_psit` interpolator.
-        //
-        // This operation cannot fail. If one of the fluxes is missing, then the other one is
-        // guaranteed to be `Good` and therefore the interpolation and integration can be defined.
-        if psip.state() == FluxCoordinateState::NoValues {
-            let acc = &mut Accelerator::new();
-            let psit_values = psit.values().expect("At least one of the fluxes exists");
-            let i_values: Vec<f64> = q_values.iter().map(|q| q.recip()).collect();
-            let i_of_psit_interp = make_interp(builder.interp_type, psit_values, &i_values)?;
-            let psip_values: Vec<f64> = psit_values
-                .iter()
-                .map(|psit_value| {
-                    i_of_psit_interp
-                        .eval_integ(psit_values, &i_values, 0.0, *psit_value, acc)
-                        .expect("Cannot fail by definition of the interpolator")
-                })
-                .collect();
-            psip = NcFlux::from_raw_values(&psip_values);
-        }
-
-        // Create interpolators, if possible
-        use FluxCoordinateState::Good;
-        let psip_of_psit_interp =
-            if (psit.state() == Good) & (psip.state() != FluxCoordinateState::NoValues) {
-                Some(make_interp(
-                    builder.interp_type,
-                    psit.uvalues(),
-                    psip.uvalues(),
-                )?)
-            } else {
-                None
-            };
-        let psit_of_psip_interp =
-            if (psip.state() == Good) & (psit.state() != FluxCoordinateState::NoValues) {
-                Some(make_interp(
-                    builder.interp_type,
-                    psip.uvalues(),
-                    psit.uvalues(),
-                )?)
-            } else {
-                None
-            };
-
-        let q_of_psit_interp = match psit.state() {
-            Good => Some(make_interp(builder.interp_type, psit.uvalues(), &q_values)?),
+        let i_values: Box<[f64]> = q_values.iter().map(|q| q.recip()).collect();
+        let i_of_psit_interp = match psit.state() {
+            Good => Some(make_interp(interp_type, psit.uvalues(), &i_values)?),
             _ => None,
         };
         let q_of_psip_interp = match psip.state() {
-            Good => Some(make_interp(builder.interp_type, psip.uvalues(), &q_values)?),
+            Good => Some(make_interp(interp_type, psip.uvalues(), &q_values)?),
             _ => None,
         };
 
         // If flux values exist, we must also check if q is monotonic
         let psit_of_q_interp = match psit.state() {
-            FluxCoordinateState::NoValues => None,
-            _ => make_interp(builder.interp_type, &q_values, psit.uvalues()).ok(),
+            NoValues => None,
+            _ => make_interp(interp_type, &q_values, psit.uvalues()).ok(),
         };
         let psip_of_q_interp = match psip.state() {
-            FluxCoordinateState::NoValues => None,
-            _ => make_interp(builder.interp_type, &q_values, psip.uvalues()).ok(),
+            NoValues => None,
+            _ => make_interp(interp_type, &q_values, psip.uvalues()).ok(),
         };
 
         Ok(Self {
-            netcdf_version,
-            path,
-            interp_type: builder.interp_type,
+            interp_type,
+            defining_flux,
             psit,
             psip,
-            psip_of_psit_interp,
-            psit_of_psip_interp,
-            q_values: q_values.into_boxed_slice(),
-            q_of_psit_interp,
+            i_values,
+            q_values,
+            i_of_psit_interp,
             q_of_psip_interp,
             psit_of_q_interp,
             psip_of_q_interp,
@@ -657,7 +620,7 @@ impl NcQfactor {
     }
 }
 
-impl MachineObject for NcQfactor {
+impl MachineObject for ArrayQfactor {
     fn machine_type(&self) -> MachineType {
         MachineType::Numerical
     }
@@ -671,7 +634,7 @@ impl MachineObject for NcQfactor {
     }
 }
 
-impl Qfactor for NcQfactor {
+impl Qfactor for ArrayQfactor {
     fn psit_last(&self) -> MagneticFlux {
         Toroidal(
             self.psit
@@ -704,35 +667,81 @@ impl Qfactor for NcQfactor {
 
     fn eval_q(&self, flux: MagneticFlux, acc: &mut Accelerator) -> Result<f64, EvalError> {
         debug_assert_non_negative_flux!(flux);
-        let (val, xa, interp) = match flux {
-            Toroidal(val) => (val, self.psit.uvalues(), self.q_of_psit_interp.as_ref()),
-            Poloidal(val) => (val, self.psip.uvalues(), self.q_of_psip_interp.as_ref()),
-        };
-        let ya = &self.q_values;
-        if let Some(interp) = interp {
-            Ok(debug_assert_is_finite!(interp.eval(xa, ya, val, acc)?))
-        } else {
-            cold_path();
-            let msg = format!("q({})", flux.symbol());
-            Err(EvalError::UndefinedEvaluation(msg))
+        // Use the `ι(ψt)` interpolator for `psit` and `q(ψp)` for `psip`
+        match flux {
+            Toroidal(_) => Ok(self.eval_iota(flux, acc)?.recip()),
+            Poloidal(psip) => {
+                let Some(interp) = self.q_of_psip_interp.as_ref() else {
+                    cold_path();
+                    return Err(EvalError::UndefinedEvaluation("q(ψp)".into()));
+                };
+                let xa = self.psip.uvalues();
+                let ya = &self.q_values;
+                Ok(debug_assert_is_finite!(interp.eval(xa, ya, psip, acc)?))
+            }
+        }
+    }
+
+    fn eval_iota(&self, flux: MagneticFlux, acc: &mut Accelerator) -> Result<f64, EvalError> {
+        debug_assert_non_negative_flux!(flux);
+        // Use the `ι(ψt)` interpolator for `psit` and `q(ψp)` for `psip`
+        match flux {
+            Toroidal(psit) => {
+                let Some(interp) = self.i_of_psit_interp.as_ref() else {
+                    cold_path();
+                    return Err(EvalError::UndefinedEvaluation("ι(ψt)".into()));
+                };
+                let xa = self.psit.uvalues();
+                let ya = &self.i_values;
+                Ok(debug_assert_is_finite!(interp.eval(xa, ya, psit, acc)?))
+            }
+            Poloidal(_) => Ok(self.eval_q(flux, acc)?.recip()),
         }
     }
 
     fn eval_q_deriv(&self, flux: MagneticFlux, acc: &mut Accelerator) -> Result<f64, EvalError> {
         debug_assert_non_negative_flux!(flux);
-        let (val, xa, interp) = match flux {
-            Toroidal(val) => (val, self.psit.uvalues(), self.q_of_psit_interp.as_ref()),
-            Poloidal(val) => (val, self.psip.uvalues(), self.q_of_psip_interp.as_ref()),
-        };
-        let ya = &self.q_values;
-        if let Some(interp) = interp {
-            Ok(debug_assert_is_finite!(
-                interp.eval_deriv(xa, ya, val, acc)?
-            ))
-        } else {
-            cold_path();
-            let msg = format!("dq({})/d({})", flux.symbol(), flux.symbol());
-            Err(EvalError::UndefinedEvaluation(msg))
+        // Use the `ι(ψt)` interpolator for `psit` and `q(ψp)` for `psip`
+        match flux {
+            Toroidal(_) => {
+                let numerator = self.eval_iota_deriv(flux, acc)?;
+                let denominator = self.eval_iota(flux, acc)?.powi(2);
+                Ok(-numerator / denominator)
+            }
+            Poloidal(psip) => {
+                let Some(interp) = self.q_of_psip_interp.as_ref() else {
+                    cold_path();
+                    return Err(EvalError::UndefinedEvaluation("dq(ψp)/dψp".into()));
+                };
+                let xa = self.psip.uvalues();
+                let ya = &self.q_values;
+                Ok(debug_assert_is_finite!(
+                    interp.eval_deriv(xa, ya, psip, acc)?
+                ))
+            }
+        }
+    }
+
+    fn eval_iota_deriv(&self, flux: MagneticFlux, acc: &mut Accelerator) -> Result<f64, EvalError> {
+        debug_assert_non_negative_flux!(flux);
+        // Use the `ι(ψt)` interpolator for `psit` and `q(ψp)` for `psip`
+        match flux {
+            Toroidal(psit) => {
+                let Some(interp) = self.i_of_psit_interp.as_ref() else {
+                    cold_path();
+                    return Err(EvalError::UndefinedEvaluation("dι(ψt)/dψt".into()));
+                };
+                let xa = self.psit.uvalues();
+                let ya = &self.i_values;
+                Ok(debug_assert_is_finite!(
+                    interp.eval_deriv(xa, ya, psit, acc)?
+                ))
+            }
+            Poloidal(_) => {
+                let numerator = self.eval_q_deriv(flux, acc)?;
+                let denominator = self.eval_q(flux, acc)?.powi(2);
+                Ok(-numerator / denominator)
+            }
         }
     }
 
@@ -743,24 +752,47 @@ impl Qfactor for NcQfactor {
     ) -> Result<MagneticFlux, EvalError> {
         debug_assert_non_negative_flux!(flux);
         match flux {
-            Toroidal(_) if self.psip_of_psit_interp.is_none() => {
+            Toroidal(_) if self.i_of_psit_interp.is_none() => {
                 cold_path();
                 return Err(EvalError::UndefinedEvaluation("ψp(ψt)".into()));
             }
-            Poloidal(_) if self.psit_of_psip_interp.is_none() => {
+            Poloidal(_) if self.q_of_psip_interp.is_none() => {
                 cold_path();
                 return Err(EvalError::UndefinedEvaluation("ψt(ψp)".into()));
             }
             _ => (),
         }
-        // This cannot panic. The above check ensures the flux values exist.
-        #[rustfmt::skip]
-        let (val, xa, ya, interp) = match flux {
-            Toroidal(val) => (val, self.psit.uvalues(), self.psip.uvalues(), self.psip_of_psit_interp.as_ref()),
-            Poloidal(val) => (val, self.psip.uvalues(), self.psit.uvalues(), self.psit_of_psip_interp.as_ref()),
+        // This cannot panic. The values always exist and the above check ensure the interpolators
+        // are defined.
+        let (interp, xa, ya, other_xa) = match flux.kind() {
+            MagneticFluxKind::Toroidal => (
+                self.i_of_psit_interp.as_ref(),
+                self.psit.uvalues(),
+                &self.i_values,
+                self.psip.uvalues(),
+            ),
+            MagneticFluxKind::Poloidal => (
+                self.q_of_psip_interp.as_ref(),
+                self.psip.uvalues(),
+                &self.q_values,
+                self.psit.uvalues(),
+            ),
         };
+        // NOTE: To avoid the unnecessary recalculation of the whole interval, we use the
+        // `other_flux_array` values as a cache. Note that the cached values are *exact*, as they
+        // have been calculate in the exact same way.
+
+        // Locate the i-th interval in which `flux` is contained:
+        //      flux_lo = flux_array[i] <= flux < flux_array[i+1].
+        let cache = find(xa, flux.value(), acc.cache());
+        // Use the lower index `i` to obtain the value of the other flux:
+        //      other_lo = other_flux_array[i] <= other_flux < other_flux_array[i+1]
+        let (flux_lo, other_lo) = (xa[cache], other_xa[cache]);
+        // Finally calculate the integral from `flux_lo` to `flux` and add it to `other_lo`
         let value = if let Some(interp) = interp {
-            debug_assert_is_finite!(interp.eval(xa, ya, val, acc)?)
+            debug_assert_is_finite!(
+                other_lo + interp.eval_integ(xa, ya, flux_lo, flux.value(), acc)?
+            )
         } else {
             let msg = match flux {
                 Toroidal(_) => "ψp(ψt)",
@@ -804,48 +836,15 @@ impl Qfactor for NcQfactor {
         flux: MagneticFlux,
         acc: &mut Accelerator,
     ) -> Result<f64, EvalError> {
-        debug_assert_non_negative_flux!(flux);
-        match flux {
-            Toroidal(_) if self.psit_of_psip_interp.is_none() => {
-                return Err(EvalError::UndefinedEvaluation("ψp(ψt)".into()));
-            }
-            Poloidal(_) if self.psip_of_psit_interp.is_none() => {
-                return Err(EvalError::UndefinedEvaluation("ψt(ψp)".into()));
-            }
-            _ => (),
+        match flux.kind() {
+            MagneticFluxKind::Toroidal => self.eval_iota(flux, acc),
+            MagneticFluxKind::Poloidal => self.eval_q(flux, acc),
         }
-        // This cannot panic. The above check ensures the flux values exist.
-        #[rustfmt::skip]
-        let (val, xa, ya, interp) = match flux {
-            Toroidal(val) => (val, self.psit.uvalues(), self.psip.uvalues(), self.psip_of_psit_interp.as_ref()),
-            Poloidal(val) => (val, self.psip.uvalues(), self.psit.uvalues(), self.psit_of_psip_interp.as_ref()),
-        };
-        if let Some(interp) = interp {
-            Ok(debug_assert_is_finite!(
-                interp.eval_deriv(xa, ya, val, acc)?
-            ))
-        } else {
-            let msg = match flux {
-                Toroidal(_) => "ψp(ψt)",
-                Poloidal(_) => "ψt(ψp)",
-            };
-            Err(EvalError::UndefinedEvaluation(msg.into()))
-        }
-    }
-
-    fn eval_deriv_wrt_other(
-        &self,
-        flux: MagneticFlux,
-        acc: &mut Accelerator,
-    ) -> Result<f64, EvalError> {
-        debug_assert_non_negative_flux!(flux);
-        let other = self.eval_other(flux, acc)?;
-        self.eval_deriv_of_other(other, &mut Accelerator::new())
     }
 }
 
 /// Getters.
-impl NcQfactor {
+impl ArrayQfactor {
     /// Returns a reference to the toroidal flux's values.
     #[must_use]
     #[expect(clippy::missing_panics_doc, reason = "expect")]
@@ -866,9 +865,267 @@ impl NcQfactor {
         &self.q_values
     }
 
+    /// Returns the interpolation type.
+    #[must_use]
+    pub fn interp_type(&self) -> Interpolation1dType {
+        self.interp_type
+    }
+
+    /// Returns the kind of the flux w.r.t. which `self` was defined.
+    ///
+    /// This flux kind ensures consistent evaluations.
+    #[must_use]
+    pub fn defining_flux(&self) -> MagneticFluxKind {
+        self.defining_flux
+    }
+}
+
+impl std::fmt::Debug for ArrayQfactor {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ArrayQfactor")
+            .field("interpolation type", &self.interp_type)
+            .field("ψt", &self.psit)
+            .field("ψp", &self.psip)
+            .field("qaxis", &self.q_values.first().expect("exists"))
+            .field("qlast", &self.q_values.last().expect("exists"))
+            .finish()
+    }
+}
+
+// ===============================================================================================
+
+/// Used to create a [`NcQfactor`].
+///
+/// Exists for future configuration flexibility.
+#[derive(Debug)]
+pub struct NcQfactorBuilder {
+    /// Path to the netCDF file.
+    path: PathBuf,
+    /// The interpolation type.
+    interp_type: Interpolation1dType,
+}
+
+impl NcQfactorBuilder {
+    /// Creates a new `NcQfactorBuilder` from a netCDF file at `path`, with `interp_type`
+    /// interpolation type.
+    ///
+    /// # Example
+    /// ```
+    /// # use std::path::PathBuf;
+    /// # use dexter_machine::*;
+    /// let path = PathBuf::from("./netcdf.nc");
+    /// let builder = NcQfactorBuilder::new(&path, Interpolation1dType::Cubic);
+    /// ```
+    #[must_use]
+    pub fn new(path: &Path, interp_type: Interpolation1dType) -> Self {
+        Self {
+            path: path.to_path_buf(),
+            interp_type,
+        }
+    }
+
+    /// Creates a new [`NcQfactor`] with the Builder's configuration.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`MachineError`] if it fails to build the [`NcQfactor`].
+    ///
+    /// # Example
+    /// ```
+    /// # use std::path::PathBuf;
+    /// # use dexter_machine::*;
+    /// let path = PathBuf::from("./netcdf.nc");
+    /// let qfactor = NcQfactorBuilder::new(&path, Interpolation1dType::Akima).build()?;
+    /// # Ok::<_, MachineError>(())
+    /// ```
+    pub fn build(self) -> Result<NcQfactor, MachineError> {
+        NcQfactor::build(self)
+    }
+}
+
+/// Numerical q-factor profile reconstructed from a netCDF file.
+///
+/// This type is a wrapper type of [`ArrayQfactor`] where the `flux` and `q` data are extracted
+/// from the netCDF file.
+///
+/// If both flux arrays are found in the netCDF file, they are used to construct the `ι(ψt)` and
+/// `q(ψp)` interpolators. Otherwise, the missing flux is calculated as in [`ArrayQfactor`].
+///
+/// Should be created with an [`NcQfactorBuilder`].
+pub struct NcQfactor {
+    /// Path to the netCDF file.
+    path: PathBuf,
+    /// netCDF's [`semver::Version`].
+    netcdf_version: semver::Version,
+    /// The wrapped [`ArrayQfactor`] that implements all functionality.
+    array_qfactor: ArrayQfactor,
+}
+
+/// Creation.
+impl NcQfactor {
+    /// Constructs an `NcQfactor` from an [`NcQfactorBuilder`].
+    fn build(builder: NcQfactorBuilder) -> Result<Self, MachineError> {
+        use crate::extract;
+        use crate::extract::netcdf_fields::NC_Q;
+        use FluxCoordinateState::*;
+
+        // Make path absolute for display purposes.
+        let path = std::path::absolute(builder.path)?;
+        let file = extract::open(&path)?;
+        let netcdf_version = extract::version(&file)?;
+
+        let psit = FluxCoordinateArray::toroidal(&file);
+        let psip = FluxCoordinateArray::poloidal(&file);
+        let q_values = extract::array_1d(&file, NC_Q)?.to_vec();
+
+        // Prefer `psit`
+        let defining_flux = if psit.state() == Good {
+            MagneticFluxKind::Toroidal
+        } else {
+            MagneticFluxKind::Poloidal
+        };
+
+        // Compute missing flux if needed
+        let array_qfactor = if psit.state() == Good && psip.state() == NoValues {
+            let flux_values = Array1::from(psit.uvalues().to_owned());
+            let flux_array = MagneticFluxArray::Toroidal(flux_values);
+            ArrayQfactor::build(&flux_array, &q_values, builder.interp_type)?
+        } else if psit.state() == NoValues && psip.state() == Good {
+            let flux_values = Array1::from(psip.uvalues().to_owned());
+            let flux_array = MagneticFluxArray::Poloidal(flux_values);
+            ArrayQfactor::build(&flux_array, &q_values, builder.interp_type)?
+        } else {
+            ArrayQfactor::from_existing_flux_coordinate_arrays(
+                psit,
+                psip,
+                q_values.into(),
+                builder.interp_type,
+                defining_flux,
+            )?
+        };
+
+        Ok(Self {
+            path,
+            netcdf_version,
+            array_qfactor,
+        })
+    }
+}
+
+impl MachineObject for NcQfactor {
+    fn machine_type(&self) -> MachineType {
+        MachineType::Numerical
+    }
+
+    fn psit_state(&self) -> FluxCoordinateState {
+        self.array_qfactor.psit_state()
+    }
+
+    fn psip_state(&self) -> FluxCoordinateState {
+        self.array_qfactor.psip_state()
+    }
+}
+
+impl Qfactor for NcQfactor {
+    fn psit_last(&self) -> MagneticFlux {
+        self.array_qfactor.psit_last()
+    }
+
+    fn psip_last(&self) -> MagneticFlux {
+        self.array_qfactor.psip_last()
+    }
+
+    fn qlast(&self) -> f64 {
+        self.array_qfactor.qlast()
+    }
+
+    fn qaxis(&self) -> f64 {
+        self.array_qfactor.qaxis()
+    }
+
+    fn eval_q(&self, flux: MagneticFlux, acc: &mut Accelerator) -> Result<f64, EvalError> {
+        self.array_qfactor.eval_q(flux, acc)
+    }
+
+    fn eval_q_deriv(&self, flux: MagneticFlux, acc: &mut Accelerator) -> Result<f64, EvalError> {
+        self.array_qfactor.eval_q_deriv(flux, acc)
+    }
+
+    fn eval_other(
+        &self,
+        flux: MagneticFlux,
+        acc: &mut Accelerator,
+    ) -> Result<MagneticFlux, EvalError> {
+        self.array_qfactor.eval_other(flux, acc)
+    }
+
+    fn eval_psit_of_q(&self, q: f64, acc: &mut Accelerator) -> Result<MagneticFlux, EvalError> {
+        self.array_qfactor.eval_psit_of_q(q, acc)
+    }
+
+    fn eval_psip_of_q(&self, q: f64, acc: &mut Accelerator) -> Result<MagneticFlux, EvalError> {
+        self.array_qfactor.eval_psip_of_q(q, acc)
+    }
+
+    fn eval_deriv_of_other(
+        &self,
+        flux: MagneticFlux,
+        acc: &mut Accelerator,
+    ) -> Result<f64, EvalError> {
+        self.array_qfactor.eval_deriv_of_other(flux, acc)
+    }
+
+    fn eval_deriv_wrt_other(
+        &self,
+        flux: MagneticFlux,
+        acc: &mut Accelerator,
+    ) -> Result<f64, EvalError> {
+        self.array_qfactor.eval_deriv_wrt_other(flux, acc)
+    }
+}
+
+/// Getters.
+impl NcQfactor {
+    /// Returns a reference to the toroidal flux's values.
+    #[must_use]
+    pub fn psit_values(&self) -> &[f64] {
+        self.array_qfactor.psit_values()
+    }
+
+    /// Returns a reference to the poloidal flux's values.
+    #[must_use]
+    pub fn psip_values(&self) -> &[f64] {
+        self.array_qfactor.psip_values()
+    }
+
+    /// Returns a reference to the `q` values.
+    #[must_use]
+    pub fn q_values(&self) -> &[f64] {
+        &self.array_qfactor.q_values
+    }
+
+    /// Returns the interpolation type.
+    #[must_use]
+    pub fn interp_type(&self) -> Interpolation1dType {
+        self.array_qfactor.interp_type
+    }
+
+    /// Returns a reference to the contained [`ArrayQfactor`].
+    #[must_use]
+    pub fn array_qfactor(&self) -> &ArrayQfactor {
+        &self.array_qfactor
+    }
+
+    /// Returns the kind of the flux w.r.t. which `self` was defined.
+    ///
+    /// This flux kind ensures consistent evaluations.
+    #[must_use]
+    pub fn defining_flux(&self) -> MagneticFluxKind {
+        self.array_qfactor.defining_flux()
+    }
+
     netcdf_path_getter_impl!();
     netcdf_version_getter_impl!();
-    interp_type_getter_impl!(1);
 }
 
 impl std::fmt::Debug for NcQfactor {
@@ -877,10 +1134,7 @@ impl std::fmt::Debug for NcQfactor {
             .field("netCDF path", &self.path())
             .field("netCDF version", &self.netcdf_version().to_string())
             .field("interpolation type", &self.interp_type())
-            .field("ψt", &self.psit)
-            .field("ψp", &self.psip)
-            .field("qaxis", &self.qaxis())
-            .field("qlast", &self.qlast())
+            .field("array_qfactor", &self.array_qfactor)
             .finish()
     }
 }
@@ -889,7 +1143,6 @@ impl std::fmt::Debug for NcQfactor {
 mod test_utils {
     use super::*;
     use approx::assert_relative_eq;
-    use ndarray::*;
 
     pub(super) fn create_nc_qfactor(path_str: &str) -> NcQfactor {
         let path = PathBuf::from(&path_str);
@@ -999,7 +1252,7 @@ mod test_unity_qfactor {
 
 #[cfg(test)]
 mod test_parabolic_qfactor {
-    use crate::{MagneticFluxKind, objects::qfactors::test_utils::test_eval_deriv_methods};
+    use crate::objects::qfactors::test_utils::test_eval_deriv_methods;
 
     use super::*;
     use approx::{assert_abs_diff_eq, assert_relative_eq};
@@ -1052,6 +1305,120 @@ mod test_parabolic_qfactor {
     fn eval_derivative_methods() {
         let qfactor = ParabolicQfactor::new(1.1, 3.9, Toroidal(0.45));
         test_eval_deriv_methods(&qfactor);
+    }
+}
+
+#[cfg(test)]
+mod test_array_qfactor {
+    use super::*;
+    use Interpolation1dType::Akima;
+    use approx::assert_relative_eq;
+    use ndarray::*;
+
+    #[test]
+    fn construction() {
+        assert!(
+            ArrayQfactor::build(
+                &MagneticFluxArray::Toroidal(array![0.0, 0.01, 0.02, 0.03, 0.04]),
+                &[1.1, 2.2, 2.5, 3.4, 3.8],
+                Akima
+            )
+            .is_ok()
+        );
+        assert!(matches!(
+            ArrayQfactor::build(
+                &MagneticFluxArray::Toroidal(array![0.0001, 0.01, 0.02, 0.03, 0.04]),
+                &[1.1, 2.5, 3.4, 3.8],
+                Akima
+            ),
+            Err(MachineError::DataError(..))
+        ));
+        assert!(matches!(
+            ArrayQfactor::build(
+                &MagneticFluxArray::Toroidal(array![0.0, 0.01, 0.02, 0.03, 0.04]),
+                &[1.1, 2.5, 3.4, 3.8],
+                Akima
+            ),
+            Err(MachineError::DataError(..))
+        ));
+        assert!(matches!(
+            ArrayQfactor::build(
+                &MagneticFluxArray::Toroidal(array![0.0, 100.0, 0.02, 0.03, 0.04]),
+                &[1.1, 2.2, 2.5, 3.4, 3.8],
+                Akima
+            ),
+            Err(MachineError::DataError(..))
+        ));
+        assert!(matches!(
+            ArrayQfactor::build(
+                &MagneticFluxArray::Toroidal(array![0.00, 0.04]),
+                &[1.1, 2.2],
+                Akima
+            ),
+            Err(MachineError::InterpolationError(..))
+        ));
+    }
+
+    #[test]
+    #[rustfmt::skip]
+    fn against_unity() {
+        let lcfs = Toroidal(0.05);
+        let psit_values = Array1::linspace(0.0, lcfs.value(), 100);
+        let psit_array = MagneticFluxArray::Toroidal(psit_values.clone());
+
+        let acc = &mut Accelerator::new();
+        let q_values = Array1::from_elem(psit_values.len(), 1.0);
+
+        let arrayq = ArrayQfactor::build(&psit_array, q_values.as_slice().unwrap(), Akima).unwrap();
+        assert_eq!(arrayq.psit_last(), lcfs);
+        assert_eq!(arrayq.qaxis(), 1.0);
+        assert_eq!(arrayq.qlast(), 1.0);
+
+        let epsilon = 1e-8;
+        for psit in psit_values.iter().skip(1) {
+            let psit = Toroidal(*psit);
+            assert_relative_eq!(arrayq.eval_q(psit, acc).unwrap(), 1.0, epsilon = epsilon,);
+            assert_relative_eq!(arrayq.eval_q_deriv(psit, acc).unwrap(), 0.0, epsilon = epsilon);
+            assert_relative_eq!(arrayq.eval_other(psit, acc).unwrap(), Poloidal(psit.value()), epsilon = epsilon);
+            assert_relative_eq!(arrayq.eval_iota(psit, acc).unwrap(), 1.0, epsilon = epsilon,);
+            assert_relative_eq!(arrayq.eval_iota_deriv(psit, acc).unwrap(), 0.0, epsilon = epsilon);
+        }
+    }
+
+    #[test]
+    fn against_parabolic() {
+        let lcfs = Toroidal(0.05);
+        let psit_values = Array1::linspace(0.0, lcfs.value(), 100);
+        let psit_array = MagneticFluxArray::Toroidal(psit_values.clone());
+
+        let parabolic = ParabolicQfactor::new(1.1, 3.0, lcfs);
+        let acc = &mut Accelerator::new();
+        let q_values = psit_values.mapv(|psit| parabolic.eval_q(Toroidal(psit), acc).unwrap());
+
+        let arrayq = ArrayQfactor::build(&psit_array, q_values.as_slice().unwrap(), Akima).unwrap();
+        assert_eq!(arrayq.psit_last(), lcfs);
+        assert_eq!(arrayq.qaxis(), 1.1);
+        assert_eq!(arrayq.qlast(), 3.0);
+
+        let epsilon = 1e-8;
+        for psit in psit_values.iter().skip(1) {
+            let psit = Toroidal(*psit);
+            assert_relative_eq!(
+                parabolic.eval_q(psit, acc).unwrap(),
+                arrayq.eval_q(psit, acc).unwrap(),
+                epsilon = epsilon,
+            );
+            assert_relative_eq!(
+                parabolic.eval_iota(psit, acc).unwrap(),
+                arrayq.eval_iota(psit, acc).unwrap(),
+                epsilon = epsilon,
+            );
+            assert_relative_eq!(
+                parabolic.eval_other(psit, acc).unwrap(),
+                arrayq.eval_other(psit, acc).unwrap(),
+                epsilon = epsilon,
+            );
+        }
     }
 }
 
@@ -1120,10 +1487,8 @@ mod test_toroidal_nc_evals {
 
         assert_eq!(qfactor.psit_state(), FluxCoordinateState::Good);
         assert_eq!(qfactor.psip_state(), FluxCoordinateState::Bad);
-        assert!(qfactor.q_of_psit_interp.is_some());
-        assert!(qfactor.q_of_psip_interp.is_none());
-        assert!(qfactor.psip_of_psit_interp.is_some());
-        assert!(qfactor.psit_of_psip_interp.is_none());
+        assert!(qfactor.array_qfactor.i_of_psit_interp.is_some());
+        assert!(qfactor.array_qfactor.q_of_psip_interp.is_none());
 
         let _ = qfactor.psit_values();
         let _ = qfactor.psip_values();
@@ -1143,11 +1508,11 @@ mod test_toroidal_nc_evals {
                 .value()
                 .is_finite()
         );
-        // Need "good" poloidal flux
         assert!(
             qfactor
                 .eval_deriv_of_other(Toroidal(0.01), &mut acc)
-                .is_err()
+                .unwrap()
+                .is_finite()
         );
         assert!(
             qfactor
@@ -1184,10 +1549,8 @@ mod test_poloidal_nc_evals {
 
         assert_eq!(qfactor.psit_state(), FluxCoordinateState::Bad);
         assert_eq!(qfactor.psip_state(), FluxCoordinateState::Good);
-        assert!(qfactor.q_of_psit_interp.is_none());
-        assert!(qfactor.q_of_psip_interp.is_some());
-        assert!(qfactor.psip_of_psit_interp.is_none());
-        assert!(qfactor.psit_of_psip_interp.is_some());
+        assert!(qfactor.array_qfactor.i_of_psit_interp.is_none());
+        assert!(qfactor.array_qfactor.q_of_psip_interp.is_some());
 
         let _ = qfactor.psit_values();
         let _ = qfactor.psip_values();
@@ -1207,7 +1570,6 @@ mod test_poloidal_nc_evals {
                 .value()
                 .is_finite()
         );
-        // Need "good" toroidal flux
         assert!(
             qfactor
                 .eval_deriv_of_other(Toroidal(0.01), &mut acc)
@@ -1216,7 +1578,8 @@ mod test_poloidal_nc_evals {
         assert!(
             qfactor
                 .eval_deriv_of_other(Poloidal(0.01), &mut acc)
-                .is_err()
+                .unwrap()
+                .is_finite()
         );
     }
 

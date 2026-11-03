@@ -51,6 +51,25 @@ impl MagneticFluxKind {
             Self::Poloidal => "ψp".into(),
         }
     }
+
+    /// Returns the *other* kind.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use dexter_machine::*;
+    /// assert_eq!(
+    ///     MagneticFluxKind::Toroidal.other(),
+    ///     MagneticFluxKind::Poloidal,
+    /// );
+    /// ```
+    #[must_use]
+    pub fn other(&self) -> Self {
+        match *self {
+            Self::Toroidal => Self::Poloidal,
+            Self::Poloidal => Self::Toroidal,
+        }
+    }
 }
 
 /// Representation of the magnetic flux and its kind.
@@ -261,6 +280,18 @@ mod test {
     use crate::{MagneticFlux::*, ParabolicQfactor};
     use approx::*;
     use ndarray::array;
+
+    #[test]
+    fn magnetic_flux_kind_to_other() {
+        assert_eq!(
+            MagneticFluxKind::Toroidal.other(),
+            MagneticFluxKind::Poloidal,
+        );
+        assert_eq!(
+            MagneticFluxKind::Poloidal.other(),
+            MagneticFluxKind::Toroidal,
+        );
+    }
 
     #[test]
     fn magnetic_flux_kind_to_magnetic_flux() {

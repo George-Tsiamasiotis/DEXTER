@@ -37,9 +37,42 @@ def test_parabolic():
     assert qfactor.qlast == 3.9
 
 
+def test_array_toroidal():
+    psit_values = np.linspace(0, 0.4, 5)
+    q_array = 2 + 25 * psit_values**2
+    qfactor = dex.ArrayQfactor(
+        flux_array=dex.MagneticFluxArray.Toroidal(psit_values),
+        q_array=q_array,
+        interp_type="Cubic",
+    )
+    _test_qfactor_base(qfactor)
+    assert qfactor.interp_type == "Cubic"
+    assert qfactor.defining_flux == "Toroidal"
+    assert isinstance(qfactor.psit_array, np.ndarray)
+    assert isinstance(qfactor.psip_array, np.ndarray)
+    assert isinstance(qfactor.q_array, np.ndarray)
+
+
+def test_array_poloidal():
+    psip_values = [0, 0.1, 0.2, 0.3, 0.4]
+    q_array = [0.9, 0.7, 0.5, 0.1, -0.2]
+    qfactor = dex.ArrayQfactor(
+        flux_array=dex.MagneticFluxArray.Poloidal(psip_values),
+        q_array=q_array,
+        interp_type="Cubic",
+    )
+    _test_qfactor_base(qfactor)
+    assert qfactor.interp_type == "Cubic"
+    assert qfactor.defining_flux == "Poloidal"
+    assert isinstance(qfactor.psit_array, np.ndarray)
+    assert isinstance(qfactor.psip_array, np.ndarray)
+    assert isinstance(qfactor.q_array, np.ndarray)
+
+
 def test_nc(nc_qfactor: dex.NcQfactor):
     _test_qfactor_base(nc_qfactor)
     assert nc_qfactor.interp_type == "Cubic"
+    assert nc_qfactor.defining_flux == "Toroidal"
     assert isinstance(nc_qfactor.path, str)
     assert isinstance(nc_qfactor.netcdf_version, Version)
     assert isinstance(nc_qfactor.psit_array, np.ndarray)

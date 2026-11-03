@@ -6,6 +6,7 @@ use std::path::PathBuf;
 
 use approx::{assert_abs_diff_eq, assert_relative_eq};
 use dexter_machine::{MagneticFlux::*, *};
+use ndarray::Array1;
 
 #[test]
 fn unity_qfactor() {
@@ -51,6 +52,106 @@ fn parabolic_qfactor() {
 
     let acc = &mut Accelerator::new();
     let q = 1.3;
+    let psit = Toroidal(0.01);
+    let psip = Poloidal(0.015);
+    assert!(qfactor.eval_q(psit, acc).unwrap().is_finite());
+    assert!(qfactor.eval_q(psip, acc).unwrap().is_finite());
+    assert!(qfactor.eval_q_deriv(psit, acc).unwrap().is_finite());
+    assert!(qfactor.eval_q_deriv(psip, acc).unwrap().is_finite());
+    assert!(qfactor.eval_iota(psit, acc).unwrap().is_finite());
+    assert!(qfactor.eval_iota(psip, acc).unwrap().is_finite());
+    assert!(qfactor.eval_iota_deriv(psit, acc).unwrap().is_finite());
+    assert!(qfactor.eval_iota_deriv(psip, acc).unwrap().is_finite());
+    assert!(qfactor.eval_other(psit, acc).unwrap().value().is_finite());
+    assert!(qfactor.eval_other(psip, acc).unwrap().value().is_finite());
+    assert!(qfactor.eval_deriv_of_other(psit, acc).unwrap().is_finite());
+    assert!(qfactor.eval_deriv_of_other(psip, acc).unwrap().is_finite());
+    assert!(qfactor.eval_deriv_wrt_other(psit, acc).unwrap().is_finite());
+    assert!(qfactor.eval_deriv_wrt_other(psip, acc).unwrap().is_finite());
+    assert!(qfactor.eval_psit_of_q(q, acc).unwrap().value().is_finite());
+    assert!(qfactor.eval_psip_of_q(q, acc).unwrap().value().is_finite());
+}
+
+#[test]
+fn array_qfactor_toroidal() {
+    let psit_array = MagneticFluxArray::Toroidal(Array1::linspace(0.0, 0.5, 50));
+    let q_values = 1.5 + &psit_array.values().powi(2) * 20.0;
+
+    let qfactor = ArrayQfactor::build(
+        &psit_array,
+        q_values.as_slice().unwrap(),
+        Interpolation1dType::Akima,
+    )
+    .unwrap();
+
+    assert_eq!(qfactor.psit_state(), FluxCoordinateState::Good);
+    assert_eq!(qfactor.psip_state(), FluxCoordinateState::Good);
+    assert_eq!(qfactor.interp_type(), Interpolation1dType::Akima);
+    assert_eq!(qfactor.defining_flux(), MagneticFluxKind::Toroidal);
+
+    let machine_type: MachineType = qfactor.machine_type();
+    let psit_state: FluxCoordinateState = qfactor.psit_state();
+    let psip_state: FluxCoordinateState = qfactor.psip_state();
+    let qaxis: f64 = qfactor.qaxis();
+    let qlast: f64 = qfactor.qlast();
+    let psi_last: MagneticFlux = qfactor.psit_last();
+    let psip_last: MagneticFlux = qfactor.psip_last();
+    let psi_array: &[f64] = qfactor.psit_values();
+    let psip_array: &[f64] = qfactor.psip_values();
+    let q_array: &[f64] = qfactor.q_values();
+
+    let acc = &mut Accelerator::new();
+    let q = 1.6;
+    let psit = Toroidal(0.01);
+    let psip = Poloidal(0.015);
+    assert!(qfactor.eval_q(psit, acc).unwrap().is_finite());
+    assert!(qfactor.eval_q(psip, acc).unwrap().is_finite());
+    assert!(qfactor.eval_q_deriv(psit, acc).unwrap().is_finite());
+    assert!(qfactor.eval_q_deriv(psip, acc).unwrap().is_finite());
+    assert!(qfactor.eval_iota(psit, acc).unwrap().is_finite());
+    assert!(qfactor.eval_iota(psip, acc).unwrap().is_finite());
+    assert!(qfactor.eval_iota_deriv(psit, acc).unwrap().is_finite());
+    assert!(qfactor.eval_iota_deriv(psip, acc).unwrap().is_finite());
+    assert!(qfactor.eval_other(psit, acc).unwrap().value().is_finite());
+    assert!(qfactor.eval_other(psip, acc).unwrap().value().is_finite());
+    assert!(qfactor.eval_deriv_of_other(psit, acc).unwrap().is_finite());
+    assert!(qfactor.eval_deriv_of_other(psip, acc).unwrap().is_finite());
+    assert!(qfactor.eval_deriv_wrt_other(psit, acc).unwrap().is_finite());
+    assert!(qfactor.eval_deriv_wrt_other(psip, acc).unwrap().is_finite());
+    assert!(qfactor.eval_psit_of_q(q, acc).unwrap().value().is_finite());
+    assert!(qfactor.eval_psip_of_q(q, acc).unwrap().value().is_finite());
+}
+
+#[test]
+fn array_qfactor_poloidal() {
+    let psit_array = MagneticFluxArray::Poloidal(Array1::linspace(0.0, 0.5, 50));
+    let q_values = 1.5 + &psit_array.values().powi(2) * 20.0;
+
+    let qfactor = ArrayQfactor::build(
+        &psit_array,
+        q_values.as_slice().unwrap(),
+        Interpolation1dType::Akima,
+    )
+    .unwrap();
+
+    assert_eq!(qfactor.psit_state(), FluxCoordinateState::Good);
+    assert_eq!(qfactor.psip_state(), FluxCoordinateState::Good);
+    assert_eq!(qfactor.interp_type(), Interpolation1dType::Akima);
+    assert_eq!(qfactor.defining_flux(), MagneticFluxKind::Poloidal);
+
+    let machine_type: MachineType = qfactor.machine_type();
+    let psit_state: FluxCoordinateState = qfactor.psit_state();
+    let psip_state: FluxCoordinateState = qfactor.psip_state();
+    let qaxis: f64 = qfactor.qaxis();
+    let qlast: f64 = qfactor.qlast();
+    let psi_last: MagneticFlux = qfactor.psit_last();
+    let psip_last: MagneticFlux = qfactor.psip_last();
+    let psi_array: &[f64] = qfactor.psit_values();
+    let psip_array: &[f64] = qfactor.psip_values();
+    let q_array: &[f64] = qfactor.q_values();
+
+    let acc = &mut Accelerator::new();
+    let q = 1.6;
     let psit = Toroidal(0.01);
     let psip = Poloidal(0.015);
     assert!(qfactor.eval_q(psit, acc).unwrap().is_finite());

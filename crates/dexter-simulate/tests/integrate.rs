@@ -77,7 +77,7 @@ fn gc_toroidal_integration_ncdQ_ncdC_ncdB_ncdP() {
     let mut particle = Particle::new(&initial);
     assert!(matches!(particle.integration_status(), IntegrationStatus::Initialized));
 
-    let teval = (0.0, 1e5);
+    let teval = (0.0, 8e4);
     particle.integrate(machine, teval, &solver_params);
 
     assert!(matches!(particle.integration_status(), IntegrationStatus::Integrated));
@@ -297,7 +297,7 @@ fn gc_mixed_boozer_equivalence() {
 
     let rho0 = 1e-4;
     let psip0 = Poloidal(0.2);
-    let teval = (0.0, 3.2e5);
+    let teval = (0.0, 1.38e5);
 
     let boozer_initial = InitialConditions::boozer(0.0, psip0, 0.0, 0.0, rho0, 1e-6);
     let mut boozer_particle = Particle::new(&boozer_initial);

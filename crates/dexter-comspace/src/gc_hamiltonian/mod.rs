@@ -82,6 +82,7 @@ impl GCHamiltonian {
         let acc = &mut Accelerator2d::new();
         let theta = theta.rem_euclid(TAU);
 
+        // FIXME: only use the 'good' flux to avoid inconsistencies
         let (b, g, phi, psip): (f64, f64, f64, MagneticFlux);
         match (machine.good_flux(), flux.kind()) {
             // Use the passed `flux` in the `b` and `g` calculations to avoid error propagation

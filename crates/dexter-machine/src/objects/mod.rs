@@ -1,7 +1,7 @@
 //! Machine representation objects.
 
+pub(crate) mod flux_coordinate_array;
 pub(crate) mod getters;
-pub(crate) mod nc_flux;
 
 pub(crate) mod bfields;
 pub(crate) mod currents;
@@ -11,6 +11,8 @@ pub(crate) mod geometries;
 pub(crate) mod nc_flute_mode;
 pub(crate) mod perturbation;
 pub(crate) mod qfactors;
+
+pub(crate) use flux_coordinate_array::{FluxCoordinateArray, FluxCoordinateState};
 
 /// Describes the type of machine.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -23,14 +25,6 @@ pub enum MachineType {
     ///
     /// Evaluations are calculated by simply evaluating the formulas.
     Analytical,
-}
-
-/// Debug-asserts that all values of the slice are finite.
-pub(crate) fn debug_assert_all_finite_values(values: &[f64]) {
-    debug_assert!(
-        values.iter().all(|element| element.is_finite()),
-        "Non-finite values encountered."
-    )
 }
 
 /// Debug-asserts that `r` is non-negative.

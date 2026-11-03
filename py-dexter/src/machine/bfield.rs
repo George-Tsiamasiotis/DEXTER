@@ -149,8 +149,8 @@ impl PyBfield {
 
 // ===============================================================================================
 
-#[pymethods] // Lar
-impl PyBfield {}
+// #[pymethods] // Lar
+// impl PyBfield {}
 
 #[pymethods] // Nc
 impl PyBfield {

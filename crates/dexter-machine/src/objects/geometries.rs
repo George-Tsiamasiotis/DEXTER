@@ -11,7 +11,7 @@ use rsl_interpolation::{Accelerator, Accelerator2d};
 use std::hint::cold_path;
 use std::path::{Path, PathBuf};
 
-use crate::objects::nc_flux::{FluxCoordinateState, NcFlux};
+use crate::objects::{FluxCoordinateArray, FluxCoordinateState};
 use crate::{EvalError, MachineError};
 use crate::{Geometry, MachineObject, MachineType};
 use crate::{Interpolation1dType, Interpolation2dType};
@@ -293,9 +293,9 @@ pub struct NcGeometry {
     /// The boozer toroidal angle `θ` in [rads].
     theta_values: Box<[f64]>,
     /// The toroidal flux coordinate.
-    psit: NcFlux,
+    psit: FluxCoordinateArray,
     /// The poloidal flux coordinate.
-    psip: NcFlux,
+    psip: FluxCoordinateArray,
 
     /// The radial coordinate r in [m].
     r_values: Box<[f64]>,
@@ -344,8 +344,8 @@ impl NcGeometry {
         let netcdf_version = extract::version(&file)?;
 
         let theta_values = extract::array_1d(&file, NC_THETA)?.to_vec();
-        let psit = NcFlux::toroidal(&file);
-        let psip = NcFlux::poloidal(&file);
+        let psit = FluxCoordinateArray::toroidal(&file);
+        let psip = FluxCoordinateArray::poloidal(&file);
 
         let baxis: f64 = extract::scalar(&file, NC_BAXIS)?;
         let raxis: f64 = extract::scalar(&file, NC_RAXIS)?;

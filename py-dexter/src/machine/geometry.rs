@@ -196,8 +196,8 @@ impl PyGeometry {
     }
 }
 
-#[pymethods] // Lar
-impl PyGeometry {}
+// #[pymethods] // Lar
+// impl PyGeometry {}
 
 #[pymethods] // Nc
 impl PyGeometry {

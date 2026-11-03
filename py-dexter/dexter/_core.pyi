@@ -131,6 +131,7 @@ class _PyQfactor:  # Trait and all possible getters
     path: str
     netcdf_version: str
     interp_type: Interpolation1dType
+    defining_flux: MagneticFluxKind
 
     @classmethod
     def build_unity(cls, lcfs: _PyMagneticFlux) -> _PyQfactor: ...
@@ -140,6 +141,13 @@ class _PyQfactor:  # Trait and all possible getters
         qaxis: float,
         qlast: float,
         lcfs: _PyMagneticFlux,
+    ) -> _PyQfactor: ...
+    @classmethod
+    def build_array(
+        cls,
+        flux_array: _PyMagneticFluxArray,
+        q_array: Array1,
+        interp_type: Interpolation1dType,
     ) -> _PyQfactor: ...
     @classmethod
     def build_nc(cls, path: str, interp_type: Interpolation1dType) -> _PyQfactor: ...
