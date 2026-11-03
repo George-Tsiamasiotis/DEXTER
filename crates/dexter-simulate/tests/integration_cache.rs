@@ -99,11 +99,13 @@ fn integration_cache_nc_eq_nc_flute_mode() {
     // after the first GCState evaluation we have:
     //  2 modes
     //     6 evaluations in rkf45
-    //          `other_flux`, `q`, `g`, `i`, `dg`, `di`, `b`, `db_dflux`, `db_dtheta`-> 0 misses 9 hits
+    //          `other_flux (x2)`, `q`, `g`, `i`, `dg`, `di`, `b`, `db_dflux`, `db_dtheta`-> 0 misses 9 hits
     //
-    // Also add 1 miss and 8+9 hits (2nd mode is a hit) to account for the state created on setup.
+    // (`other_flux` results in 2 cache hits due to the index lookup and the `eval_integ` call)
+    //
+    // Also add 1 miss and 9+10 hits (2nd mode is a hit) to account for the state created on setup.
     assert_eq!(particle.flux_cache_misses(), 1);
-    assert_eq!(particle.flux_cache_hits(), (8 + 9) + 2 * steps * 6 * 9);
+    assert_eq!(particle.flux_cache_hits(), (9 + 10) + 2 * steps * 6 * 10);
 
     // `θ` Accelerator
     //      2 modes

@@ -1,6 +1,7 @@
 allowed-idents-below-min-chars = [
     "r", # radial coordinate
     "t", # time
+    "x", # usually interpolator x-array element
     "m", "n", # mode numbers
     "q", # qfactor
     "s", # `ndarray::s!` macro

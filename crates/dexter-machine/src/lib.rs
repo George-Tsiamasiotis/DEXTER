@@ -16,6 +16,7 @@
 //! + Representations of the q-factor profile:
 //!     - [`UnityQfactor`]: q-factor profile of q = 1 and ψt=ψp.
 //!     - [`ParabolicQfactor`]: q-factor of parabolic q(ψt) profile.
+//!     - [`ArrayQfactor`]: q-factor constructed from pairs of `ψ` and `q` values.
 //!     - [`NcQfactor`]: q-factor from a netCDF file.
 //!
 //! + Representations of the plasma currents:
@@ -101,7 +102,7 @@ pub use error::{EvalError, MachineError, NcError};
 
 pub use objects::MachineType;
 
-pub use objects::nc_flux::FluxCoordinateState;
+pub use objects::flux_coordinate_array::FluxCoordinateState;
 
 pub use eval::ModeCache;
 pub use eval::{Bfield, Current, Efield, Geometry, MachineObject, Mode, Qfactor};
@@ -111,6 +112,7 @@ pub use objects::geometries::LarGeometry;
 pub use objects::geometries::NcGeometry;
 pub use objects::geometries::NcGeometryBuilder;
 
+pub use objects::qfactors::ArrayQfactor;
 pub use objects::qfactors::NcQfactor;
 pub use objects::qfactors::NcQfactorBuilder;
 pub use objects::qfactors::ParabolicQfactor;

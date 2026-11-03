@@ -131,7 +131,7 @@ impl PyCurrent {
 // ===============================================================================================
 
 // #[pymethods] // Lar
-impl PyCurrent {}
+// impl PyCurrent {}
 
 #[pymethods] // Nc
 impl PyCurrent {

@@ -8,9 +8,8 @@ use core::hint::cold_path;
 use rsl_interpolation::Accelerator;
 use std::path::{Path, PathBuf};
 
-use super::debug_assert_all_finite_values;
 use crate::Interpolation1dType;
-use crate::objects::nc_flux::{FluxCoordinateState, NcFlux};
+use crate::objects::{FluxCoordinateArray, FluxCoordinateState};
 use crate::{Current, MachineObject, MachineType};
 use crate::{EvalError, MachineError};
 use crate::{MagneticFlux, MagneticFlux::*};
@@ -147,9 +146,9 @@ pub struct NcCurrent {
     interp_type: Interpolation1dType,
 
     /// The toroidal flux coordinate.
-    psit: NcFlux,
+    psit: FluxCoordinateArray,
     /// The poloidal flux coordinate.
-    psip: NcFlux,
+    psip: FluxCoordinateArray,
 
     /// The `g` values.
     g_values: Box<[f64]>,
@@ -178,13 +177,11 @@ impl NcCurrent {
         let file = extract::open(&path)?;
         let netcdf_version = extract::version(&file)?;
 
-        let psit = NcFlux::toroidal(&file);
-        let psip = NcFlux::poloidal(&file);
+        let psit = FluxCoordinateArray::toroidal(&file);
+        let psip = FluxCoordinateArray::poloidal(&file);
+
         let g_values = extract::array_1d(&file, NC_G_NORM)?.to_vec();
         let i_values = extract::array_1d(&file, NC_I_NORM)?.to_vec();
-
-        debug_assert_all_finite_values(&g_values);
-        debug_assert_all_finite_values(&i_values);
 
         // Create interpolators, if possible
         use FluxCoordinateState::Good;

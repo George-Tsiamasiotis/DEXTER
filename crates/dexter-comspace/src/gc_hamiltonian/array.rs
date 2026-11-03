@@ -421,15 +421,15 @@ mod test {
 
         let pzeta = -0.4 * machine.psip_last().value();
         let mu = 8e-5;
-        let psip_array = MagneticFluxArray::Poloidal(array![0.27380535826052793, 0.29999997523064204]);
-        let theta_array = array![8.716612844125935, 25.13242757224653];
-        let expected = array![0.10155540604265717, 0.032902288079255174];
+        let psip_array = MagneticFluxArray::Poloidal(array![0.29966848976708177, 0.29999983281970255]);
+        let theta_array = array![6.455595873394714, 25.132729132920748];
+        let expected = array![0.1471131794676396, 0.1469008481486111];
 
         let theta_dot =
             GCHamiltonian::eval_theta_dot_array(machine, &theta_array, &psip_array, pzeta, mu)
                 .unwrap();
 
-        assert!(theta_dot.relative_eq(&expected, 1e-8, 1e-8))
+        assert!(theta_dot.relative_eq(&expected, 1e-12, 1e-12))
     }
 
     /// Data taken from a particle integration at two random, but far away points.

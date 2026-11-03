@@ -6,9 +6,8 @@ use rsl_interpolation::Accelerator;
 use std::f64::consts::TAU;
 use std::path::{Path, PathBuf};
 
-use super::debug_assert_all_finite_values;
 use crate::constants::NC_ANALYTICAL_THRESHOLD_INDEX;
-use crate::objects::nc_flux::{FluxCoordinateState, NcFlux};
+use crate::objects::{FluxCoordinateArray, FluxCoordinateState};
 use crate::{DynModeCache, Interpolation1dType, MachineObject, MachineType, Mode, ModeCache};
 use crate::{EvalError, MachineError};
 use crate::{MagneticFlux, MagneticFlux::*};
@@ -190,8 +189,8 @@ impl NcFluteMode {
         let file = extract::open(&path)?;
         let netcdf_version = extract::version(&file)?;
 
-        let psit = NcFlux::toroidal(&file);
-        let psip = NcFlux::poloidal(&file);
+        let psit = FluxCoordinateArray::toroidal(&file);
+        let psip = FluxCoordinateArray::poloidal(&file);
 
         let psit_single = SingleNcFluteMode::build(&file, &builder, psit)?;
         let psip_single = SingleNcFluteMode::build(&file, &builder, psip)?;
@@ -544,12 +543,13 @@ impl NcFluteMode {
 ///
 /// Splitting an [`NcFluteMode`] into two `SingleNcFluteModes` makes the code much clearer.
 ///
-/// Both modes end up identical, with the only difference being the corresponding [`NcFlux`].
+/// Both modes end up identical, with the only difference being the corresponding
+/// [`FluxCoordinateArray`].
 #[non_exhaustive]
 #[derive(Clone)]
 struct SingleNcFluteMode {
     /// The current flux coordinate.
-    flux: NcFlux,
+    flux: FluxCoordinateArray,
     /// The phase calculation method.
     phase_method: PhaseMethod,
     /// The phase values' average, if `phase_method` is `Average`.
@@ -575,23 +575,20 @@ struct SingleNcFluteMode {
 
 // Creation.
 impl SingleNcFluteMode {
-    /// Creates a `SingleNcFluteMode` from a [`NcFlux`].
+    /// Creates a `SingleNcFluteMode` from a [`FluxCoordinateArray`].
     ///
     /// The object always exists, even if the corresponding flux coordinate does not exist, so all
     /// logic and error handling is handle here.
     pub(crate) fn build(
         file: &netcdf::File,
         builder: &NcFluteModeBuilder,
-        flux: NcFlux,
+        flux: FluxCoordinateArray,
     ) -> Result<Self, MachineError> {
         use crate::extract;
 
         let (alpha_data, phase_data) = extract::mode_arrays(file, builder.m, builder.n)?;
         let alpha_values = alpha_data.to_vec().into_boxed_slice();
         let phase_values = phase_data.to_vec().into_boxed_slice();
-
-        debug_assert_all_finite_values(&alpha_values);
-        debug_assert_all_finite_values(&phase_values);
 
         // Create interpolators, if possible
         use FluxCoordinateState::Good;
@@ -852,7 +849,7 @@ impl SingleNcFluteMode {
 impl std::fmt::Debug for SingleNcFluteMode {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("SingleNcFluteMode")
-            .field("NcFlux", &self.flux)
+            .field("FluxCoordinateArray", &self.flux)
             .field("phase method", &self.phase_method)
             .field("phase average", &self.phase_average)
             .field(

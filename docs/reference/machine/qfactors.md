@@ -76,6 +76,13 @@ $^*$ Identity: $\dfrac{1}{\cos^2\theta} = 1 + \tan^2\theta$
 
 ---
 
+::: dexter.ArrayQfactor
+    options:
+        show_bases: true
+        inherited_members: false
+
+---
+
 ::: dexter.NcQfactor
     options:
         show_bases: true

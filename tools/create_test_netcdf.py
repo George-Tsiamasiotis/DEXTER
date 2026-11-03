@@ -12,8 +12,8 @@
 Flux coordinates behavior:
 
     1. -c = "both": equispaced ψt values, parabolic q.
-    2. -c = "toroidal": equispaced ψt values, ψp = sin(2πψt), and q(ψt) = dψp/dψt.
-    3. -c = "poloidal": equispaced ψp values, ψt = sin(2πψp), and q(ψp) = dψp/dψt = 1/(dψt/dψp).
+    2. -c = "toroidal": equispaced ψt values, ψp = 5-sin(2ψt), and q(ψt) = dψt/dψp.
+    3. -c = "poloidal": equispaced ψp values, ψt = 0.3sin(4ψp), and q(ψp) = dψp/dψt = 1/(dψt/dψp).
 
 """
 
@@ -89,20 +89,15 @@ match args.coord:
         psip_norm = coef * np.atan(atanarg)
         q = qaxis + (qlast - qaxis) * (psit_norm / flux_last_value_norm) ** 2
         coord_str = "psit_norm"
-    case "toroidal":  # equispaced ψ values, ψp = sin(2πψ), and q(ψ) = dψp/dψ.
+    case "toroidal":
         psit_norm = np.linspace(0, flux_last_value_norm, FLUX_SURFACES)
-        psip_norm = np.sin(
-            2 * np.pi * psit_norm
-        )  # no longer monotonic in [0, psi_last]
-        q = np.gradient(psip_norm, psit_norm)
-        assert not np.all(np.diff(psip_norm) > 0)
+        psip_norm = 5 - np.sin(2 * psit_norm)
+        q = 1 / np.gradient(psip_norm, psit_norm, edge_order=2)
         coord_str = "psit_norm"
-    case "poloidal":  # equispaced ψp values, ψ = sin(2πψp), and q(ψ) = 1/(dψp/dψ).
+    case "poloidal":
         psip_norm = np.linspace(0, flux_last_value_norm, FLUX_SURFACES)
-        psit_norm = 1.0 - np.sin(
-            2 * np.pi * psip_norm
-        )  # no longer monotonic in [0, psi_last]
-        q = np.gradient(psit_norm, psip_norm)  # inverse
+        psit_norm = 0.3 * np.sin(4 * psip_norm)
+        q = np.gradient(psit_norm, psip_norm, edge_order=2)
         assert not np.all(np.diff(psit_norm) > 0)
         coord_str = "psip_norm"
     case _:

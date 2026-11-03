@@ -14,7 +14,7 @@ use std::path::{Path, PathBuf};
 
 use crate::Interpolation2dType;
 use crate::constants::DEFAULT_THETA_PADDING_WIDTH;
-use crate::objects::nc_flux::{FluxCoordinateState, NcFlux};
+use crate::objects::{FluxCoordinateArray, FluxCoordinateState};
 use crate::{Bfield, MachineObject, MachineType};
 use crate::{EvalError, MachineError, NcError};
 use crate::{MagneticFlux, MagneticFlux::*};
@@ -270,9 +270,9 @@ pub struct NcBfield {
     /// The boozer toroidal angle `θ` in [rads], with the added padding.
     theta_values_padded: Box<[f64]>,
     /// The toroidal flux coordinate.
-    psit: NcFlux,
+    psit: FluxCoordinateArray,
     /// The poloidal flux coordinate.
-    psip: NcFlux,
+    psip: FluxCoordinateArray,
 
     /// The `B` array as extracted from the netCDF file.
     b_array: Array2<f64>,
@@ -296,8 +296,8 @@ impl NcBfield {
         let file = extract::open(&path)?;
         let netcdf_version = extract::version(&file)?;
 
-        let psit = NcFlux::toroidal(&file);
-        let psip = NcFlux::poloidal(&file);
+        let psit = FluxCoordinateArray::toroidal(&file);
+        let psip = FluxCoordinateArray::poloidal(&file);
 
         let theta_array = extract::array_1d(&file, NC_THETA)?;
         let b_array = extract::array_2d(&file, NC_B_NORM)?;

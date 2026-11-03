@@ -31,7 +31,7 @@ from dexter._utils import tex_unit
 from dexter.types import Array1, Array2, MagneticFluxKind
 from dexter.machine.machine import Machine
 from dexter.machine.base import MachineObject
-from dexter.machine.qfactors import NcQfactor
+from dexter.machine.qfactors import ArrayQfactor, NcQfactor, QfactorObject
 from dexter.machine.currents import NcCurrent
 from dexter.machine.modes import FluteMode, ModeObject
 from dexter.comspace.curve import StationaryCurve
@@ -41,11 +41,11 @@ PI = np.pi
 
 
 def plot_qfactor(
-    machine: Machine,
+    obj: Machine | QfactorObject,
     points: int = 1000,
     data: bool = False,
     show: bool = True,
-) -> tuple[Figure, tuple[Axes, Axes, Axes]]:
+) -> tuple[Figure, tuple[Axes, Axes, Axes, Axes]]:
     r"""Plots a [`QfactorObject`][dexter.QfactorObject]'s
     $q(\psi_t)$, $q(\psi_p)$, $q'(\psi_t)$, $q'(\psi_p)$, $\psi_p(\psi_t)$ and $\psi_t(\psi_p)$.
 
@@ -54,8 +54,8 @@ def plot_qfactor(
 
     Parameters
     ----------
-    machine
-        The machine containing the current object.
+    obj
+        The `qfactor` object or the machine containing it.
     points
         The number of points on which to evaluate the flux in each plot.
     data
@@ -78,7 +78,10 @@ def plot_qfactor(
     ```
 
     """
-    qfactor = machine.qfactor
+    if isinstance(obj, Machine):
+        qfactor = obj.qfactor
+    else:
+        qfactor = obj
 
     fig = plt.figure(figsize=(5.5, 4))
     axes = fig.subplots(2, 2)
@@ -97,9 +100,23 @@ def plot_qfactor(
 
     DATA_COLOR = "k"
     DATA_MARKER = "."
-    DATA_SIZE = 1
     DATA_LABEL = r"$data\ points$"
     DATA_ZORDER = 2
+
+    def data_marker_size(length: int) -> float:
+        return 5 if length < 10 else 2
+
+    def clip_psit(array: np.ndarray):
+        psit_min = 0.0
+        psit_max = qfactor.psit_last.value * 0.99999
+        if array[-1] > psit_max:
+            np.clip(array, psit_min, psit_max, out=array)
+
+    def clip_psip(array: np.ndarray):
+        psip_min = 0.0
+        psip_max = qfactor.psip_last.value * 0.99999
+        if array[-1] > psip_max:
+            np.clip(array, psip_min, psip_max, out=array)
 
     # ======================================================= q(ψt)
 
@@ -142,13 +159,14 @@ def plot_qfactor(
         )
         if qfactor.psip_state == "Good":
             psips = qfactor.eval_other(psit=psits)
+            clip_psip(psips)
             d_values = qfactor.eval_deriv_of_other(psip=psips)
             axqt.plot(
                 psits_norm,
                 d_values,
                 c=DERIV_COLOR,
                 linestyle=DERIV_STYLE,
-                label=rf"$d\psi/d\psi_p$",
+                label=rf"$d\psi_t/d\psi_p$",
             )
         if data and qfactor.machine_type == "Numerical":
             qfactor = cast(NcQfactor, qfactor)
@@ -161,11 +179,10 @@ def plot_qfactor(
                 c=DATA_COLOR,
                 linewidth=0,
                 marker=DATA_MARKER,
-                markersize=DATA_SIZE,
+                markersize=data_marker_size(len(psit_data)),
                 zorder=DATA_ZORDER,
                 label=DATA_LABEL,
             )
-        axqt.set_xticks([0.0, 0.25, 0.5, 0.75, 1.0])
         axqt.margins(*MARGINS)
         axqt.legend()
         axqt.grid()
@@ -216,6 +233,7 @@ def plot_qfactor(
         )
         if qfactor.psit_state == "Good":
             psits = qfactor.eval_other(psip=psips)
+            clip_psit(psits)
             d_values = 1 / qfactor.eval_deriv_of_other(psit=psits)
             axqp.plot(
                 psips_norm,
@@ -235,11 +253,10 @@ def plot_qfactor(
                 c=DATA_COLOR,
                 linewidth=0,
                 marker=DATA_MARKER,
-                markersize=DATA_SIZE,
+                markersize=data_marker_size(len(psip_data)),
                 zorder=DATA_ZORDER,
                 label=DATA_LABEL,
             )
-        axqp.set_xticks([0.0, 0.25, 0.5, 0.75, 1.0])
         axqp.margins(*MARGINS)
         axqp.legend()
         axqp.grid()
@@ -265,7 +282,7 @@ def plot_qfactor(
             label=rf"$\psi_p(\psi_t)$",
         )
         if data and qfactor.machine_type == "Numerical":
-            assert isinstance(qfactor, NcQfactor)
+            assert isinstance(qfactor, (ArrayQfactor, NcQfactor))
             psit_data = qfactor.psit_array
             psip_data = qfactor.psip_array
             psit_data_norm = psit_data / qfactor.psit_last.value
@@ -276,11 +293,10 @@ def plot_qfactor(
                 c=DATA_COLOR,
                 linewidth=0,
                 marker=DATA_MARKER,
-                markersize=DATA_SIZE,
+                markersize=data_marker_size(len(psip_data)),
                 zorder=DATA_ZORDER,
                 label=DATA_LABEL,
             )
-        axpt.set_xticks([0.0, 0.25, 0.5, 0.75, 1.0])
         axpt.margins(*MARGINS)
         axpt.legend()
         axpt.grid()
@@ -306,7 +322,7 @@ def plot_qfactor(
             label=rf"$\psi_t(\psi_p)$",
         )
         if data and qfactor.machine_type == "Numerical":
-            assert isinstance(qfactor, NcQfactor)
+            assert isinstance(qfactor, (ArrayQfactor, NcQfactor))
             psit_data = qfactor.psit_array
             psip_data = qfactor.psip_array
             psit_data_norm = psit_data / qfactor.psit_last.value
@@ -317,11 +333,10 @@ def plot_qfactor(
                 c=DATA_COLOR,
                 linewidth=0,
                 marker=DATA_MARKER,
-                markersize=DATA_SIZE,
+                markersize=data_marker_size(len(psip_data)),
                 zorder=DATA_ZORDER,
                 label=DATA_LABEL,
             )
-        axtp.set_xticks([0.0, 0.25, 0.5, 0.75, 1.0])
         axtp.margins(*MARGINS)
         axtp.legend()
         axtp.grid()
@@ -334,7 +349,7 @@ def plot_qfactor(
     if show:
         plt.show()
 
-    return fig, axes
+    return fig, (axqt, axqp, axtp, axpt)
 
 
 def plot_current(

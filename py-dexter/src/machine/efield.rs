@@ -121,7 +121,7 @@ impl PyEfield {
 // ===============================================================================================
 
 // #[pymethods] // NoEfield
-impl PyEfield {}
+// impl PyEfield {}
 
 #[pymethods] // GaussianEfield
 impl PyEfield {

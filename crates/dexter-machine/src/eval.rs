@@ -8,6 +8,7 @@ use std::fmt::Debug;
 use ndarray::Array1;
 use rsl_interpolation::{Accelerator, Accelerator2d};
 
+use crate::debug_assert_non_negative_flux;
 use crate::{EvalError, FluxCoordinateState, MachineType, MagneticFlux};
 
 /// Reference to a dynamically dispatched [`Mode`] object.
@@ -371,15 +372,11 @@ pub trait Qfactor: MachineObject + Debug + Send + Sync {
 
     /// Calculates the derivative of the **other** [`MagneticFlux`] with respect to `flux`.
     ///
-    /// + If a [`MagneticFlux::Toroidal`] is passed, then `dψp/dψt` is calculated.
-    /// + If a [`MagneticFlux::Poloidal`] is passed, then `dψt/dψp` is calculated.
+    /// + If a [`MagneticFlux::Toroidal`] is passed, then `dψp/dψt=ι(ψt)` is calculated.
+    /// + If a [`MagneticFlux::Poloidal`] is passed, then `dψt/dψp=q(ψp)` is calculated.
     ///
     /// In contrast to [`Qfactor::eval_deriv_wrt_other`], this method only requires one of the
     /// fluxes to be in a "good" state (the one corresponding to the passed `flux` argument).
-    ///
-    /// This method is useful for ensuring that `dψt/dψp = q` and `dψp/dψt = ι`. The corresponding
-    /// methods [`Qfactor::eval_q`] and [`Qfactor::eval_iota`] should be used in calculations as
-    /// they are faster and more accurate.
     ///
     /// # Errors
     ///
@@ -391,7 +388,6 @@ pub trait Qfactor: MachineObject + Debug + Send + Sync {
     /// # use dexter_machine::*;
     /// # use std::path::PathBuf;
     /// # use rsl_interpolation::Accelerator;
-    /// # use approx::assert_relative_eq;
     /// #
     /// # let lcfs = MagneticFlux::Toroidal(0.45);
     /// # let qfactor = ParabolicQfactor::new(1.1, 3.8, lcfs);
@@ -405,8 +401,8 @@ pub trait Qfactor: MachineObject + Debug + Send + Sync {
     ///
     /// let q = qfactor.eval_q(psip, acc)?;
     /// let i = qfactor.eval_iota(psit, acc)?;
-    /// assert_relative_eq!(dpsit_dpsip, q);
-    /// assert_relative_eq!(dpsip_dpsit, i);
+    /// assert_eq!(dpsit_dpsip, q);
+    /// assert_eq!(dpsip_dpsit, i);
     /// # Ok::<_, MachineError>(())
     /// ```
     fn eval_deriv_of_other(
@@ -423,9 +419,17 @@ pub trait Qfactor: MachineObject + Debug + Send + Sync {
     /// This method requires **both** fluxes to be in a "good" state. If this is not true,
     /// [`Qfactor::eval_deriv_of_other`] should be used.
     ///
-    /// This method is useful for ensuring that `dψt/dψp = q` and `dψp/dψt = ι`. The corresponding
-    /// methods [`Qfactor::eval_q`] and [`Qfactor::eval_iota`] should be used in calculations as
-    /// they are faster and more accurate.
+    /// # Note
+    ///
+    /// For numerically represented q-factor profiles, the condition `dψp/dψt = ι(ψt)` (and
+    /// similarly `dψt/dψp = q(ψp)`) does not hold exactly due to numerical inconsistencies arising
+    /// from the need to switch to the other magnetic flux.
+    ///
+    /// This method is still useful for ensuring that `dψt/dψp ≈ q` and `dψp/dψt ≈ ι`. The deviation
+    /// between the two quantities is a measure of the afformentioned inconsistency.
+    ///
+    /// The corresponding methods [`Qfactor::eval_q`] and [`Qfactor::eval_iota`] should be used in
+    /// calculations as they are faster and more accurate.
     ///
     /// # Errors
     ///
@@ -459,7 +463,11 @@ pub trait Qfactor: MachineObject + Debug + Send + Sync {
         &self,
         flux: MagneticFlux,
         acc: &mut Accelerator,
-    ) -> Result<f64, EvalError>;
+    ) -> Result<f64, EvalError> {
+        debug_assert_non_negative_flux!(flux);
+        let other = self.eval_other(flux, acc)?;
+        self.eval_deriv_of_other(other, &mut Accelerator::new())
+    }
 
     /// Calculates the rotational number `ι(ψ) = 1/q(ψ)`.
     ///
