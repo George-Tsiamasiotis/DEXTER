@@ -112,6 +112,7 @@ def test_queue_getters(lar_machine: dex.Machine):
     for p in queue:
         p.steps_stored
 
+    assert queue.pzeta_array is not None and queue.energy_array.shape == (num,)
     assert queue.energy_array is not None and queue.energy_array.shape == (num,)
     assert queue.energy_rsd_array is not None and queue.energy_rsd_array.shape == (num,)
     assert queue.omega_theta_array is not None and queue.omega_theta_array.shape == (

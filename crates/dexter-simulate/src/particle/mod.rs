@@ -390,7 +390,7 @@ impl Particle {
     /// # Note
     ///
     /// This method follows [`R. B. White`]'s rules for classifying orbits. it only works for
-    /// up-down symmetric equilibria with no electric field.
+    /// up-down symmetric equilibria with a radial electric field.
     ///
     /// See [`EnergyPzetaPlane`] diagram for the different orbit types.
     ///

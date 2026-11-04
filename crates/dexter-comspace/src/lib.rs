@@ -11,6 +11,7 @@
 //! + [`GCHamiltonian::eval_theta_dot`]: Evaluates `dot(θ)` in a `(θ, ψ; Pζ, μ)` point.
 //! + [`GCHamiltonian::eval_array`]: Evaluates the Hamiltonian in a `([θ], [ψ]; Pζ, μ)` 1D array.
 //! + [`GCHamiltonian::eval_grid`]: Evaluates the Hamiltonian in a `([θ], [ψ]; Pζ, μ)` 2D grid.
+//! + [`GCHamiltonian::eval_rho_array`]: Evaluates `ρ([θ], [ψ], E, μ)`.
 //! + [`GCHamiltonian::eval_theta_dot_array`]: Evaluates `dot(θ)` in a `([θ], [ψ]; Pζ, μ)` 1D array.
 //!
 //! #### Stationary Curve

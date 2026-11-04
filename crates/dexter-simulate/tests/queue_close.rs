@@ -64,6 +64,7 @@ fn queue_close_parQ_larC_larB_cosP() -> Result<(), SimulationError> {
     let steps_taken = queue.steps_taken_array();
     let steps_stored = queue.steps_stored_array();
     let energy_array = queue.energy_array();
+    let pzeta_array = queue.pzeta_array();
     let energy_rsd_array = queue.energy_rsd_array();
     let qkinetic_array = queue.qkinetic_array();
     let omega_theta_array = queue.omega_theta_array();

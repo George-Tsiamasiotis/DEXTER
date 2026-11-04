@@ -276,11 +276,11 @@ class EnergyPzetaPlane(_ReprStrImpl):
 
         if particles:
             zorder = 10
-            if len(self._particle_points) < 500:
-                point_size = 20
-                zorder = 1000
-            elif 500 <= len(self._particle_points) < 5000:
+            if len(self._particle_points) < 100:
                 point_size = 10
+                zorder = 1000
+            elif 100 <= len(self._particle_points) < 5000:
+                point_size = 3
             else:
                 point_size = 1
 

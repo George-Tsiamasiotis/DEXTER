@@ -361,7 +361,7 @@ class Particle(_ReprStrImpl, _RustTypeWrapper):
         !!! note
 
             This method follows [`R. B. White`](https://doi.org/10.1142/P440)'s rules for classifying
-            orbits. it only works for up-down symmetric equilibria with no electric field.
+            orbits. it only works for up-down symmetric equilibria with radial electric field.
 
             See the "$E-P_\zeta$ *Positions*" section on the ***Diagrams*** tab for explanation.
 

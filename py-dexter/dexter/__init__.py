@@ -65,6 +65,8 @@ from dexter.machine.plot import (
 from dexter.simulate.plot import (
     plot_evolution,
     plot_poloidal_drift,
+    plot_qkinetic_pzeta,
+    plot_qkinetic_energy,
     plot_pzeta_poincare,
     plot_rz_poincare,
 )
@@ -149,6 +151,8 @@ __all__ = [
     # Simulate (plot)
     "plot_evolution",
     "plot_poloidal_drift",
+    "plot_qkinetic_pzeta",
+    "plot_qkinetic_energy",
     "plot_pzeta_poincare",
     "plot_rz_poincare",
     # Comspace

@@ -4,7 +4,8 @@
 
 use ndarray::{Array1, Array2, ArrayRef1};
 use rsl_interpolation::Accelerator2d;
-use std::{f64::consts::TAU, mem::MaybeUninit};
+use std::f64::consts::{SQRT_2, TAU};
+use std::mem::MaybeUninit;
 
 use dexter_machine::{Machine, MagneticFluxArray, MagneticFluxKind};
 
@@ -212,6 +213,97 @@ impl GCHamiltonian {
 
         // SAFETY: The loop passes from all elements and initializes them
         Ok(unsafe { grid.assume_init() })
+    }
+
+    /// Calculates `ρ` from a given energy and μ value by solving the Hamiltonian w.r.t. `ρ`.
+    ///
+    /// This method is useful for instantiating particles in *Boozer* coordinates with equal energy.
+    ///
+    /// # Note
+    ///
+    /// The computed `ρ` values are always non-negative, as they are the result of a square root. To
+    /// instantiate Counter-Passing particles, the values must be negated manually.
+    ///
+    /// If no energetically allowed orbits exist for the given `ψ`, `θ` and `E`, the corresponding
+    /// array element is set to [`f64::NAN`].
+    ///
+    /// Perturbations are ignored.
+    ///
+    /// # Errors
+    ///
+    /// + Returns a [`COMError::BadFluxCoordinate`] if `flux_array.kind()` is not a [`Good`]
+    ///   coordinate of `machine`.
+    /// + Returns a [`COMError::ShapeMismatch`] if `theta_array` and `flux_array` do not have the
+    ///   same length.
+    /// + Returns a [`COMError::EvalError`] if `flux_array` contains any out-of-bounds values or
+    ///   if any evaluation fails.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use dexter_machine::*;
+    /// # use dexter_comspace::*;
+    /// # use ndarray::*;
+    /// # use std::f64::consts::TAU;
+    /// let lcfs = MagneticFlux::Toroidal(0.05);
+    /// let qfactor = ParabolicQfactor::new(1.1, 3.9, lcfs);
+    /// let current = LarCurrent;
+    /// let bfield = LarBfield;
+    /// let efield = GaussianEfield::new(5e-4, lcfs * 0.9, 0.02 * lcfs.value());
+    ///
+    /// let machine = MachineBuilder::new(&qfactor, &current, &bfield)
+    ///     .with_efield(&efield)
+    ///     .build();
+    ///
+    /// // ===========
+    ///
+    /// let energy = 1e-4; // Normalized units
+    /// let mu = 1e-5;
+    ///
+    /// let theta_array = Array1::linspace(0.0, TAU, 10);
+    /// let psit_array = MagneticFluxArray::Toroidal(
+    ///     Array1::linspace(1e-3, 1.0 - 1e-3, 10) * qfactor.psit_last().value(),
+    /// );
+    ///
+    /// let rho_array: Array1<f64> =
+    ///     GCHamiltonian::eval_rho_array(machine, &theta_array, &psit_array, energy, mu)?;
+    /// # Ok::<_, COMError>(())
+    /// ```
+    ///
+    /// [`Good`]: dexter_machine::FluxCoordinateState::Good
+    pub fn eval_rho_array(
+        machine: Machine,
+        theta_array: &ArrayRef1<f64>,
+        flux_array: &MagneticFluxArray,
+        energy: f64,
+        mu: f64,
+    ) -> Result<Array1<f64>, COMError> {
+        if !machine.is_good_flux(flux_array.kind()) {
+            return Err(COMError::BadFluxCoordinate);
+        }
+        if !(theta_array.len() == flux_array.len()) {
+            return Err(COMError::ShapeMismatch);
+        }
+
+        let acc = &mut Accelerator2d::new();
+        let mut array = Array1::<f64>::uninit(theta_array.len());
+
+        for index in 0..array.len() {
+            let theta = theta_array[index].rem_euclid(TAU);
+            let Some(flux) = flux_array.get(index) else {
+                unreachable!("index is in-bounds")
+            };
+
+            let b = machine.bfield().eval_b(flux, theta, acc)?;
+            let phi = machine.efield().eval_phi(flux)?;
+
+            let rho = SQRT_2 * (energy - mu * b - phi).sqrt() / b;
+
+            array[index] = MaybeUninit::new(rho)
+        }
+
+        // SAFETY: The loop passes from all elements and initializes them
+        Ok(unsafe { array.assume_init() })
     }
 
     /// Evaluates `dot(θ)` as given by the canonical equation of motion for a charged particle in an
@@ -461,6 +553,50 @@ mod test {
                 .unwrap();
 
         assert!(theta_dot.relative_eq(&expected, 1e-7, 1e-7))
+    }
+
+    /// Data from py-dexter with particles plotted on the E-Pζ plane
+    #[test]
+    fn eval_rho_array() {
+        let geometry = LarGeometry::new(1.0, 1.75, 0.5);
+        let qfactor = ParabolicQfactor::new(1.1, 3.5, geometry.psit_last());
+        let current = LarCurrent;
+        let bfield = LarBfield;
+        let lcfs = qfactor.psit_last();
+        let rmean = geometry.rlast() * 0.6;
+        let mean = geometry
+            .eval_psit_of_r(rmean, &mut Accelerator::new())
+            .unwrap();
+        let efield = GaussianEfield::new(1e-3, mean, 0.2 * lcfs.value()); // about 170 kV/m
+        let machine = MachineBuilder::new(&qfactor, &current, &bfield)
+            .with_efield(&efield)
+            .build();
+
+        let energy = 7e-5; // about 20.5 keV
+        let mu = 5e-5;
+
+        #[rustfmt::skip]
+        let psit_values = array![
+            0.0,
+            0.004535147392290249, 0.009070294784580497, 0.013605442176870746, 0.018140589569160995,
+            0.022675736961451243, 0.027210884353741492, 0.031746031746031744, 0.03628117913832199,
+            0.04081632653061224
+        ];
+        let psit_array = MagneticFluxArray::Toroidal(psit_values.clone());
+        let theta_array = Array1::zeros(psit_values.len());
+
+        let rho_array =
+            GCHamiltonian::eval_rho_array(machine, &theta_array, &psit_array, energy, mu).unwrap();
+
+        #[rustfmt::skip]
+        let expected_rhos = array![
+            0.006324555320337, 0.007547329072227, 0.007743237553148, 0.007543033237666,
+            0.007135019636106, 0.006789849389576, 0.006706017357177, 0.006881218831293,
+            0.007197109779325, 0.007558112099838
+        ];
+
+        dbg!(&rho_array - &expected_rhos);
+        assert!(rho_array.relative_eq(&expected_rhos, 1e-7, 1e-7))
     }
 
     #[test]

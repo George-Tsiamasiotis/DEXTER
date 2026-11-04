@@ -48,6 +48,23 @@ def test_gc_hamiltonian_eval_grid(nc_machine: dex.Machine):
     assert np.all(np.isclose(h_psit, h_psip))
 
 
+def test_gc_hamiltonian_eval_theta_rho_array(nc_machine: dex.Machine):
+    h = dex.GCHamiltonian()
+
+    theta_array = np.linspace(0, np.pi, 10)
+    psit_array = dex.MagneticFluxArray.Toroidal(np.linspace(0, 0.01, 10))
+
+    psip_array = dex.MagneticFluxArray.Poloidal(
+        [nc_machine.qfactor.eval_other(psit.value) for psit in psit_array]
+    )
+
+    rho_psit = h.eval_rho_array(nc_machine, theta_array, psit_array, 1e-5, 1e-6)
+    rho_psip = h.eval_rho_array(nc_machine, theta_array, psip_array, 1e-5, 1e-6)
+    assert np.all(np.isfinite(rho_psit))
+    assert np.all(np.isfinite(rho_psip))
+    assert np.all(np.isclose(rho_psit, rho_psip))
+
+
 def test_gc_hamiltonian_eval_theta_dot_array(nc_machine: dex.Machine):
     h = dex.GCHamiltonian()
 

@@ -47,7 +47,7 @@ initial_conditions = dex.QueueInitialConditions.Mixed(
     flux0=dex.MagneticFluxArray.Toroidal(psit0s),
     theta0=theta0s,
     zeta0=np.zeros(num),
-    pzeta0=np.full(num, -0.85 * machine.psip_last.value),
+    pzeta0=np.full(num, -0.9 * machine.psip_last.value),
     mu0=np.full(num, mu),
 )
 

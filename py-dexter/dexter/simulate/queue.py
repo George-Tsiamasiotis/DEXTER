@@ -292,7 +292,12 @@ class Queue(_ReprStrImpl):
         r"""Classifies the particles’ orbit using their position on the $(E, P_\zeta, \mu=const)$
         plane without integrating.
 
-        This routine only works for LAR-like equilibria.
+        !!! note
+
+            This method follows [`R. B. White`](https://doi.org/10.1142/P440)'s rules for classifying
+            orbits. it only works for up-down symmetric equilibria with radial electric field.
+
+            See the "$E-P_\zeta$ *Positions*" section on the ***Diagrams*** tab for explanation.
 
         Parameters
         ----------
@@ -333,6 +338,7 @@ class Queue(_ReprStrImpl):
             qfactor=machine.qfactor._r,
             current=machine.current._r,
             bfield=machine.bfield._r,
+            efield=machine.efield._r,
         )
 
     def particles(self) -> list[Particle]:
@@ -404,6 +410,10 @@ class Queue(_ReprStrImpl):
         return self._r.routines
 
     @property
+    def pzeta_array(self) -> Array1:
+        return self._r.get_array("pzeta_array")
+
+    @property
     def energy_array(self) -> Array1:
         return self._r.get_array("energy_array")
 
@@ -440,11 +450,34 @@ class Queue(_ReprStrImpl):
         """Returns the particle count."""
         return self._r.__len__()
 
+    def plot_qkinetic_pzeta(self, machine: Machine, **kwargs: Any):
+        """Wrapper around [`dexter.plot_qkinetic_pzeta`][dexter.plot_qkinetic_pzeta].
+
+        Parameters
+        ----------
+        machine
+            The machine in which the particle was integrated.
+        **kwargs
+            Extra arguments passed to [`dexter.plot_qkinetic_pzeta`][dexter.plot_qkinetic_pzeta].
+        """
+        plot.plot_qkinetic_pzeta(machine, self, **kwargs)
+
+    def plot_qkinetic_energy(self, machine: Machine, **kwargs: Any):
+        """Wrapper around [`dexter.plot_qkinetic_energy`][dexter.plot_qkinetic_energy].
+
+        Parameters
+        ----------
+        machine
+            The machine in which the particle was integrated.
+        **kwargs
+            Extra arguments passed to [`dexter.plot_qkinetic_energy`][dexter.plot_qkinetic_energy].
+        """
+        plot.plot_qkinetic_energy(machine, self, **kwargs)
+
     def plot_pzeta_poincare(
         self, machine: Machine, intersect_params: IntersectParams, **kwargs: Any
     ):
         """Wrapper around [`dexter.plot_pzeta_poincare`][dexter.plot_pzeta_poincare].
-
 
         Parameters
         ----------
@@ -461,7 +494,6 @@ class Queue(_ReprStrImpl):
         self, machine: Machine, intersect_params: IntersectParams, **kwargs: Any
     ):
         """Wrapper around [`dexter.plot_rz_poincare`][dexter.plot_rz_poincare].
-
 
         Parameters
         ----------

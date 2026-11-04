@@ -320,8 +320,10 @@ impl Queue {
     ///
     /// # Note
     ///
-    /// This method is experimental. It is exact for LAR equilibria and approximately correct for
-    /// tokamak equilibria, depending on how shaped they are.
+    /// This method follows [`R. B. White`]'s rules for classifying orbits. it only works for
+    /// up-down symmetric equilibria with a radial electric field.
+    ///
+    /// See [`EnergyPzetaPlane`] diagram for the different orbit types.
     ///
     /// # Example
     /// ```
@@ -537,6 +539,21 @@ impl Queue {
     #[must_use]
     pub fn particles(&self) -> &[Particle] {
         &self.particles
+    }
+
+    /// Returns an [`Array1`] with all the particles' calculated **initial** `Pζ`.
+    ///
+    /// Particles are visited in order of instantiation.
+    ///
+    /// For particles whose energies have not been calculated, the corresponding element is
+    /// replaced with NaN.
+    #[must_use]
+    pub fn pzeta_array(&self) -> Array1<f64> {
+        Array1::from_iter(
+            self.particles
+                .iter()
+                .map(|particle| particle.initial_conditions().pzeta0.unwrap_or(f64::NAN)),
+        )
     }
 
     /// Returns an [`Array1`] with all the particles' calculated **initial** energies.

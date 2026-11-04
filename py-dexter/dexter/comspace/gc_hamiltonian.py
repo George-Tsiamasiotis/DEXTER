@@ -250,6 +250,97 @@ class GCHamiltonian(_ReprStrImpl):
         )
 
     @classmethod
+    def eval_rho_array(
+        cls,
+        machine: Machine,
+        theta_array: Array1,
+        flux_array: MagneticFluxArray,
+        energy: float,
+        mu: float,
+    ) -> Array1:
+        r"""Calculates $\rho_{||}$ from a given energy and $\mu$ value by solving the Hamiltonian w.r.t. $\rho_{||}$.
+
+        This method is useful for instantiating particles in Boozer coordinates with equal energy.
+
+        !!! note
+
+            + The computed $\rho_{||}$ values are always non-negative, as they are the result of a square root.
+            To instantiate Counter-Passing particles, the values must be negated manually.
+
+            + If no energetically allowed orbits exist for the given $\psi$, $\theta$ and $E$, the corresponding
+            array element is set to `nan`.
+
+            + Perturbations are ignored.
+
+        Parameters
+        ----------
+        machine
+            The machine on which the Hamiltonian is defined.
+        theta_array
+            The $\theta$ values.
+        flux_array
+            The flux $\psi$ values.
+        energy
+            The target energy value.
+        mu
+            The $\mu$ constant of motion.
+
+        Example
+        -------
+
+        ``` py
+        >>> geometry = dex.LarGeometry(1, 1.75, 0.5)
+        >>> LCFS = geometry.psit_last
+        >>> machine = dex.Machine(
+        ... geometry=geometry,
+        ... qfactor=dex.ParabolicQfactor(qaxis=1.1, qlast=3.5, lcfs=LCFS),
+        ... current=dex.LarCurrent(),
+        ... bfield=dex.LarBfield(),
+        ... )
+        >>>
+        >>> num = 10
+        >>> psit0_values = np.linspace(1e-6, LCFS.value, num)
+        >>> psit0s = dex.MagneticFluxArray.Toroidal(psit0_values)
+        >>> theta0s = np.zeros(num)
+        >>>
+        >>> # ======================
+        >>>
+        >>> mu = 5e-5
+        >>> energy = machine.quantity(21, "keV").to("NormJoule").m
+        >>> rho0s = dex.GCHamiltonian.eval_rho_array(machine, theta0s, psit0s, energy, mu)
+        >>>
+        >>> initial_conditions = dex.QueueInitialConditions.Boozer(
+        ... t0=np.zeros(num),
+        ... flux0=psit0s,
+        ... theta0=theta0s,
+        ... zeta0=np.zeros(num),
+        ... rho0=rho0s,
+        ... mu0=np.full(num, mu),
+        ... )
+        >>>
+        >>> queue = dex.Queue(initial_conditions)
+        >>> queue.classify(machine)
+        >>>
+        >>> from math import isclose
+        >>> for particle in queue:
+        ...     energy = machine.quantity(particle.initial_energy, "NormJoule").to("keV")
+        ...     assert isclose(energy.magnitude, 21) # keV
+
+        ```
+
+        """
+        return _PyGCHamiltonian.eval_rho_array(
+            qfactor=machine.qfactor._r,
+            current=machine.current._r,
+            bfield=machine.bfield._r,
+            efield=machine.efield._r,
+            theta_array=_into_pyarray1f64(theta_array),
+            flux_array=flux_array._r,
+            energy=energy,
+            mu=mu,
+        )
+
+    @classmethod
     def eval_theta_dot_array(
         cls,
         machine: Machine,

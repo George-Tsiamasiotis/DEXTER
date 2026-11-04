@@ -82,6 +82,32 @@ impl PyGCHamiltonian {
     }
 
     #[classmethod]
+    pub fn eval_rho_array<'py>(
+        _: &Bound<'_, PyType>,
+        py: Python<'py>,
+        qfactor: &PyQfactor,
+        current: &PyCurrent,
+        bfield: &PyBfield,
+        efield: &PyEfield,
+        theta_array: PyReadonlyArray1<f64>,
+        flux_array: &PyMagneticFluxArray,
+        energy: f64,
+        mu: f64,
+    ) -> Result<Bound<'py, PyArray1<f64>>> {
+        let machine = MachineBuilder::new(qfactor.inner(), current.inner(), bfield.inner())
+            .with_efield(efield.inner())
+            .build();
+        let array = GCHamiltonian::eval_rho_array(
+            machine,
+            &theta_array.as_array(),
+            &flux_array.0,
+            energy,
+            mu,
+        )?;
+        Ok(array.into_pyarray(py))
+    }
+
+    #[classmethod]
     pub fn eval_theta_dot_array<'py>(
         _: &Bound<'_, PyType>,
         py: Python<'py>,

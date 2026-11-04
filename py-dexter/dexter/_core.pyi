@@ -697,12 +697,7 @@ class _PyQueue:
         qfactor: _PyQfactor,
         current: _PyCurrent,
         bfield: _PyBfield,
-    ) -> None: ...
-    def classify_common_mu(
-        self,
-        qfactor: _PyQfactor,
-        current: _PyCurrent,
-        bfield: _PyBfield,
+        efield: _PyEfield,
     ) -> None: ...
     def particles(self) -> list[_PyParticle]: ...
     def retain_pzeta(self, start: float, end: float) -> None: ...
@@ -715,7 +710,17 @@ class _PyQueue:
         self,
         orbit_types: list[OrbitType],
     ) -> None: ...
-    def get_array(self, name: str) -> Array1: ...
+    def get_array(
+        self,
+        name: Literal[
+            "energy_array",
+            "pzeta_array",
+            "energy_rsd_array",
+            "omega_theta_array",
+            "omega_zeta_array",
+            "qkinetic_array",
+        ],
+    ) -> Array1: ...
     def _initial_pzetas(self) -> Array1: ...
     def _initial_energies(self) -> Array1: ...
     def _orbit_types(self) -> list[OrbitType]: ...
@@ -766,6 +771,18 @@ class _PyGCHamiltonian:
         pzeta: float,
         mu: float,
     ) -> Array2: ...
+    @classmethod
+    def eval_rho_array(
+        cls,
+        qfactor: _PyQfactor,
+        current: _PyCurrent,
+        bfield: _PyBfield,
+        efield: _PyEfield,
+        theta_array: Array1,
+        flux_array: _PyMagneticFluxArray,
+        energy: float,
+        mu: float,
+    ) -> Array1: ...
     @classmethod
     def eval_theta_dot_array(
         cls,

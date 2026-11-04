@@ -6,6 +6,10 @@ plot_evolution
     Plots the time evolution of a particle's dynamical variables.
 plot_poloidal_drift
     Plots particles' drifts on the $R-Z$ plane.
+plot_qkinetic_pzeta
+    Plots a $q_{kin}-P_\zeta$ plot.
+plot_qkinetic_energy
+    Plots a $q_{kin}-E$ plot.
 plot_pzeta_poincare
     Plots a $P_\zeta-\theta$ or $P_\zeta-\zeta$ Poincare plot.
 plot_rz_poincare
@@ -396,6 +400,96 @@ def plot_poloidal_drift(
         ax.set_aspect("equal")
     ax.margins(*MARGINS)
     ax.grid(False)
+
+    if show:
+        plt.show()
+
+    return fig, ax
+
+
+def plot_qkinetic_pzeta(
+    machine: Machine,
+    queue: Queue,
+    show: bool = True,
+) -> tuple[Figure, Axes]:
+    r"""Plots a $q_{kin}-P_\zeta$ plot.
+
+    Parameters
+    ----------
+    machine
+        The machine in which the `queue` was integrated.
+    queue
+        The `Queue` containing the integrated particles.
+    show
+        Whether or not to call `plt.show()`.
+    """
+
+    fig = plt.figure(layout="constrained", figsize=(5, 3), dpi=140)
+    ax = fig.add_subplot()
+
+    qkinetics = queue.qkinetic_array
+    pzetas = queue.pzeta_array
+    orbit_types = queue._r._orbit_types()
+    colors = list(map(orbit_color, orbit_types))
+
+    ax.scatter(
+        pzetas / machine.psip_last.value,
+        qkinetics,
+        c=colors,
+        s=2,
+        zorder=10,
+    )
+
+    ax.margins(0, 0.01)
+    ax.grid()
+    ax.set_xlabel(r"$P_\zeta/\psi_{p, LCFS}$")
+    ax.set_ylabel(r"$q_{kin}(P_\zeta)$")
+
+    if show:
+        plt.show()
+
+    return fig, ax
+
+
+def plot_qkinetic_energy(
+    machine: Machine,
+    queue: Queue,
+    show: bool = True,
+) -> tuple[Figure, Axes]:
+    r"""Plots a $q_{kin}-E$ plot.
+
+    Parameters
+    ----------
+    machine
+        The machine in which the `queue` was integrated.
+    queue
+        The `Queue` containing the integrated particles.
+    show
+        Whether or not to call `plt.show()`.
+    """
+
+    fig = plt.figure(layout="constrained", figsize=(5, 3), dpi=140)
+    ax = fig.add_subplot()
+
+    qkinetics = queue.qkinetic_array
+    energies = queue.energy_array
+    orbit_types = queue._r._orbit_types()
+    colors = list(map(orbit_color, orbit_types))
+
+    energies = machine.quantity(energies, "NormJoule").to("keV").m
+
+    ax.scatter(
+        energies,
+        qkinetics,
+        c=colors,
+        s=2,
+        zorder=10,
+    )
+
+    ax.margins(0, 0.01)
+    ax.grid()
+    ax.set_xlabel(r"$E\ [keV]$")
+    ax.set_ylabel(r"$q_{kin}(E)$")
 
     if show:
         plt.show()

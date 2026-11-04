@@ -89,8 +89,16 @@ impl PyQueue {
             .close(machine, periods, discard_arrays, &solver_params.0);
     }
 
-    pub fn classify(&mut self, qfactor: &PyQfactor, current: &PyCurrent, bfield: &PyBfield) {
-        let machine = MachineBuilder::new(qfactor.inner(), current.inner(), bfield.inner()).build();
+    pub fn classify(
+        &mut self,
+        qfactor: &PyQfactor,
+        current: &PyCurrent,
+        bfield: &PyBfield,
+        efield: &PyEfield,
+    ) {
+        let machine = MachineBuilder::new(qfactor.inner(), current.inner(), bfield.inner())
+            .with_efield(efield.inner())
+            .build();
 
         let mu0 = self
             .0
@@ -243,6 +251,7 @@ impl PyQueue {
 
     pub fn get_array<'py>(&self, py: Python<'py>, name: &str) -> Result<Bound<'py, PyArray1<f64>>> {
         let array = match name {
+            "pzeta_array" => self.0.pzeta_array(),
             "energy_array" => self.0.energy_array(),
             "energy_rsd_array" => self.0.energy_rsd_array(),
             "omega_theta_array" => self.0.omega_theta_array(),
