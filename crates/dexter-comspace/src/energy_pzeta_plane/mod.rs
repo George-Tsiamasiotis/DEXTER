@@ -5,6 +5,8 @@
 mod orbit_type;
 mod tp_boundary;
 
+use std::time::{Duration, Instant};
+
 use dexter_machine::MagneticFlux::*;
 use ndarray::{ArrayRef1, ArrayView1};
 use parabola::Parabola;
@@ -47,6 +49,14 @@ pub struct EnergyPzetaPlane {
     critical_points: Box<[CriticalPoint]>,
     /// The calculated boundary extremum points.
     boundary_extrema: Box<[BoundaryExtremum]>,
+    /// The duration of the [`Self::calculate_critical_points`] subroutine.
+    critical_point_search_duration: Option<Duration>,
+    /// The duration of the [`Self::calculate_boundary_extrema`] subroutine.
+    boundary_extremum_search_duration: Option<Duration>,
+    /// The duration of the [`Self::classify_critical_points`] subroutine.
+    critical_point_classification_duration: Option<Duration>,
+    /// The duration of the [`Self::classify_boundary_extrema`] subroutine.
+    boundary_extremum_classification_duration: Option<Duration>,
 }
 
 impl EnergyPzetaPlane {
@@ -63,26 +73,69 @@ impl EnergyPzetaPlane {
             boundary: None,
             critical_points: Box::new([]),
             boundary_extrema: Box::new([]),
+            critical_point_search_duration: None,
+            boundary_extremum_search_duration: None,
+            critical_point_classification_duration: None,
+            boundary_extremum_classification_duration: None,
         }
     }
 }
 
 /// Bifurcation Analysis.
 impl EnergyPzetaPlane {
+    /// Performs a full Bifurcation Analysis on the `E-Pζ` plane.
+    ///
+    /// This is a convenience method that simply calls the following methods:
+    ///
+    /// + [`Self::calculate_critical_points`],
+    /// + [`Self::calculate_boundary_extrema`],
+    /// + [`Self::classify_critical_points`],
+    /// + [`Self::classify_boundary_extrema`].
+    pub fn bifurcation_analysis(&mut self, machine: Machine, pzeta_array: &ArrayRef1<f64>) {
+        self.calculate_critical_points(machine, pzeta_array);
+        self.calculate_boundary_extrema(machine, pzeta_array);
+        self.classify_critical_points(machine);
+        self.classify_boundary_extrema(machine);
+    }
+
     /// Calculates the [`critical points`][CriticalPoint] of the `(E, Pζ; μ)` slice over all values
     /// of `pzeta_array` and stores them.
     pub fn calculate_critical_points(&mut self, machine: Machine, pzeta_array: &ArrayRef1<f64>) {
+        let start = Instant::now();
         let mut curve = StationaryCurve::new(machine);
         self.critical_points = curve.calculate_critical_points(machine, pzeta_array, self.mu);
+        self.critical_point_search_duration = Some(start.elapsed());
         self.stationary_curve = Some(curve);
     }
 
     /// Calculates the [`boundary_extrema`][BoundaryExtremum] of the `(E, Pζ; μ)` slice over all
     /// values of `pzeta_array` and stores them.
     pub fn calculate_boundary_extrema(&mut self, machine: Machine, pzeta_array: &ArrayRef1<f64>) {
-        let mut boundary = Boundary::new(machine);
+        let start = Instant::now();
+        let boundary = Boundary::new(machine);
         self.boundary_extrema = boundary.calculate_boundary_extrema(machine, pzeta_array, self.mu);
-        self.boundary = Some(boundary)
+        self.boundary_extremum_search_duration = Some(start.elapsed());
+        self.boundary = Some(boundary);
+    }
+
+    /// Classifies the already calculated critical points into one of
+    /// [`CriticalPointKind`][crate::CriticalPointKind].
+    pub fn classify_critical_points(&mut self, machine: Machine) {
+        let start = Instant::now();
+        self.critical_points
+            .iter_mut()
+            .for_each(|point| point.classify(machine));
+        self.critical_point_classification_duration = Some(start.elapsed());
+    }
+
+    /// Classifies the already calculated boundary extrema into one of
+    /// [`BoundaryExtremumKind`][crate::BoundaryExtremumKind].
+    pub fn classify_boundary_extrema(&mut self, machine: Machine) {
+        let start = Instant::now();
+        self.boundary_extrema
+            .iter_mut()
+            .for_each(|point| point.classify(machine));
+        self.boundary_extremum_classification_duration = Some(start.elapsed());
     }
 }
 
@@ -324,6 +377,24 @@ impl EnergyPzetaPlane {
             .map(BoundaryExtremum::energy)
             .collect()
     }
+
+    /// Prints the durations of the Bifurcation analysis' subroutines.
+    pub fn print_durations(&self) {
+        println!("Critical points: {}", self.critical_points.len());
+        println!("Boundary extrema: {}", self.boundary_extrema.len());
+        if let Some(str) = self.critical_point_search_duration {
+            println!("Critical point search duration: {str:?}")
+        };
+        if let Some(str) = self.boundary_extremum_search_duration {
+            println!("Boundary extremum search duration: {str:?}")
+        };
+        if let Some(str) = self.critical_point_classification_duration {
+            println!("Critical point classification duration: {str:?}")
+        };
+        if let Some(str) = self.boundary_extremum_classification_duration {
+            println!("Boundary extremum classification duration: {str:?}")
+        };
+    }
 }
 
 impl std::fmt::Debug for EnergyPzetaPlane {
@@ -333,9 +404,7 @@ impl std::fmt::Debug for EnergyPzetaPlane {
             .field("axis_parabola", &self.axis_parabola)
             .field("left_wall_parabola", &self.left_wall_parabola)
             .field("right_wall_parabola", &self.right_wall_parabola)
-            .field("tp_boundary", &self.tp_boundary)
             .field("stationary_curve", &self.stationary_curve)
-            .field("boundary", &self.boundary)
             .field("critical_points", &self.critical_points.len())
             .field("boundary_extrema", &self.boundary_extrema.len())
             .finish()

@@ -2,7 +2,6 @@
 
 use std::f64::consts::TAU;
 use std::mem::MaybeUninit;
-use std::time::{Duration, Instant};
 
 use dexter_machine::{Accelerator, Accelerator2d, Machine};
 use ndarray::{Array1, ArrayRef1};
@@ -47,8 +46,6 @@ impl Convergency<f64> for BoundaryExtremumConvergency {
 pub struct Boundary {
     /// The (t, ψ, θ) parametrized segment.
     segment: ParametrizedSegment,
-    /// The duration of the [`Self::calculate_boundary_extrema`] routine.
-    duration: Option<Duration>,
 }
 
 impl Boundary {
@@ -63,22 +60,17 @@ impl Boundary {
         let flux_array = flux_last.kind().to_magnetic_flux_array(flux_values);
         let theta_array = Array1::linspace(0.0, TAU + 0.1, Self::LENGTH); // Include roots at 2π
         let segment = ParametrizedSegment::new(flux_array, theta_array);
-        Self {
-            segment,
-            duration: None,
-        }
+        Self { segment }
     }
 
     /// Calculates the boundary extrema of the `(E, Pζ; μ)` slice over all values of `pzeta_array` and
     /// stores them.
     pub(crate) fn calculate_boundary_extrema(
-        &mut self,
+        &self,
         machine: Machine,
         pzeta_array: &ArrayRef1<f64>,
         mu: f64,
     ) -> Box<[BoundaryExtremum]> {
-        let start = Instant::now();
-
         let db_dtheta_array = self.calculate_db_dtheta(machine);
         let root_indices = ParametrizedSegment::find_root_indices(&db_dtheta_array);
         let exact_roots = self.find_exact_roots(machine, &root_indices);
@@ -90,7 +82,6 @@ impl Boundary {
             .flatten()
             .collect();
 
-        self.duration = Some(start.elapsed());
         points.into_boxed_slice()
     }
 

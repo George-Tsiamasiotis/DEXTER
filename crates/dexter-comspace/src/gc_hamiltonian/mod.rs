@@ -9,10 +9,12 @@ mod boundary;
 mod boundary_extremum;
 mod critical_point;
 mod curve;
+mod hessian;
 mod segment;
 
 use std::f64::consts::TAU;
 
+pub(crate) use hessian::Hessian;
 pub(crate) use segment::ParametrizedSegment;
 
 pub use boundary::Boundary;

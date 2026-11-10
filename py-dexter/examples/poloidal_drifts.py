@@ -3,7 +3,7 @@
 import numpy as np
 import dexter as dex
 import matplotlib.pyplot as plt
-from dexter.simulate.plot import orbit_color
+from dexter.colors import orbit_color
 
 geometry = dex.LarGeometry(1, 1.75, 0.5)
 LCFS = geometry.psit_last

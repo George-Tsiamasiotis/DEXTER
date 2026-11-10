@@ -34,6 +34,8 @@ from dexter.types import (
     IntegrationStatus,
     EnergyPzetaPosition,
     OrbitType,
+    CriticalPointKind,
+    BoundaryExtremumKind,
 )
 
 from dexter.utils import get_max_threads, set_num_threads
@@ -106,6 +108,8 @@ __all__ = [
     "IntegrationStatus",
     "EnergyPzetaPosition",
     "OrbitType",
+    "CriticalPointKind",
+    "BoundaryExtremumKind",
     # Utilities
     "get_max_threads",
     "set_num_threads",

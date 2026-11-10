@@ -220,14 +220,17 @@ r"""A particle's orbit type, calculated through the [`dexter.Particle.close()`] 
     See the "$E-P_\zeta$ *Positions*" section on the ***Diagrams*** tab for explanation.
 """
 
-CriticalPointKind: TypeAlias = Literal["Unknown"]
+CriticalPointKind: TypeAlias = Literal["Unknown", "OpointMin", "OpointMax", "Xpoint"]
 r"""The kind of a [`CriticalPoint`][dexter.CriticalPoint]
 
 - `Unknown`: Unknown kind.
+- `OpointMin`: O-point and local minimum of the Hamiltonian.
+- `OpointMax`: O-point and local maximum of the Hamiltonian.
+- `Xpoint`: X-point of the Hamiltonian.
 """
 
 BoundaryExtremumKind: TypeAlias = Literal["Unknown", "Minimum", "Maximum"]
-r"""The kind of a [`CriticalPoint`][dexter.CriticalPoint]
+r"""The kind of a [`BoundaryExtremum`][dexter.BoundaryExtremum]
 
 - `Unknown`: Unknown kind.
 - `Minimum`: Extremum point of minimum energy.

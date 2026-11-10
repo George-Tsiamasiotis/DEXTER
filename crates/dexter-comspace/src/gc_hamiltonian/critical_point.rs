@@ -2,14 +2,21 @@
 
 use dexter_machine::{Machine, MagneticFlux};
 
+use crate::gc_hamiltonian::Hessian;
 use crate::{COMError, GCHamiltonian};
 
-/// The kind of critical point.
+/// The kind of a [`CriticalPoint`].
 #[derive(Debug, Clone, Copy)]
 #[non_exhaustive]
 pub enum CriticalPointKind {
     /// Unknown kind.
     Unknown,
+    /// O-point and local minimum of the Hamiltonian.
+    OpointMin,
+    /// O-point and local maximum of the Hamiltonian.
+    OpointMax,
+    /// X-point of the Hamiltonian.
+    Xpoint,
 }
 
 /// Representation of a Critical Point of the Hamiltonian.
@@ -40,7 +47,7 @@ impl CriticalPoint {
     ///
     /// This method returns an [`EvalError`][dexter_machine::EvalError] if the calculation of its
     /// energy fails.
-    pub fn new(
+    pub(crate) fn new(
         machine: Machine,
         theta: f64,
         flux: MagneticFlux,
@@ -58,13 +65,25 @@ impl CriticalPoint {
         })
     }
 
-    /// Classifies the critical point.
-    ///
-    /// # Panics
-    ///
-    /// This method panics as it is not yet implemented.
-    pub fn classify(&mut self) {
-        unimplemented!()
+    /// Calculates the point's [`CriticalPointKind`] by evaluating the Hessian's determinant and
+    /// sign of `𝜕²H/𝜕θ²`.
+    pub fn classify(&mut self, machine: Machine) {
+        let hessian = match Hessian::eval(machine, self.theta, self.flux, self.pzeta, self.mu) {
+            Ok(hessian) => hessian,
+            Err(err) => {
+                unreachable!("Hessian::eval cannot fail as all critical points are valid ({err})")
+            }
+        };
+
+        self.kind = if hessian.det().is_sign_positive() {
+            if hessian.dtheta2().is_sign_positive() {
+                CriticalPointKind::OpointMin
+            } else {
+                CriticalPointKind::OpointMax
+            }
+        } else {
+            CriticalPointKind::Xpoint
+        }
     }
 }
 

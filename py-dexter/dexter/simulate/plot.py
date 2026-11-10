@@ -27,10 +27,9 @@ import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 from matplotlib.axes import Axes
 from matplotlib.ticker import LogLocator, MaxNLocator
-from cycler import cycler
 from math import floor, log10
-from itertools import cycle
 
+from dexter.colors import particle_color, orbit_color
 from dexter.machine.flux import MagneticFluxArray
 from dexter.machine.machine import Machine
 from dexter.machine.geometries import GeometryObject
@@ -40,7 +39,7 @@ from dexter.simulate.queue import Queue
 from dexter.comspace.gc_hamiltonian import GCHamiltonian
 from dexter._utils import tex_unit
 from dexter.machine.plot import _resolve_magnetic_flux_kind
-from dexter.types import ArrayShape, Locator, Array1, OrbitType
+from dexter.types import ArrayShape, Locator, Array1
 
 TAU = 2 * np.pi
 PI = np.pi
@@ -251,8 +250,7 @@ def plot_poloidal_drift(
     LAST_COLOR = "k"
     MARGINS = (0.001, 0.001)
 
-    cycler = cycle("cbrmk")
-    for particle in particles:
+    for i, particle in enumerate(particles):
         if len(particles) == 1:
             init = particle.initial_conditions
             init_eval_arg = {
@@ -277,22 +275,15 @@ def plot_poloidal_drift(
             case "Orbit":
                 c = orbit_color(particle.orbit_type)
             case "Cycle":
-                c = next(cycler)
+                c = particle_color(i)
             case _:
                 c = colors
 
         prlab = geometry.eval_rlab(**particle_eval_arg)
         pzlab = geometry.eval_zlab(**particle_eval_arg)
         markersize = 4 if len(particles) == 1 else 1.6
-        if "ClosedPeriods" in particle.integration_status:  # continuous line
-            ax.plot(
-                prlab,
-                pzlab,
-                c=c,
-                linewidth=1.2,
-                zorder=10,
-            )
-        else:
+        scatter_orbits = ["Intersected", "IntersectedTimedOut"]
+        if particle.integration_status in scatter_orbits:  # scatter points
             ax.plot(
                 prlab,
                 pzlab,
@@ -301,6 +292,14 @@ def plot_poloidal_drift(
                 marker=".",
                 markeredgewidth=0,
                 markersize=markersize,
+                zorder=10,
+            )
+        else:  # continuous line
+            ax.plot(
+                prlab,
+                pzlab,
+                c=c,
+                linewidth=1.2,
                 zorder=10,
             )
 
@@ -529,11 +528,6 @@ def plot_pzeta_poincare(
     fig = plt.figure(layout="constrained", figsize=(5, 3))
     ax = fig.add_subplot()
 
-    if color:
-        ax.set_prop_cycle(cycler(color="brcmk"))
-    else:
-        ax.set_prop_cycle(cycler(color=["blue"]))
-
     if intersect_params.intersection == "ConstTheta":
         xlabel = r"$\zeta\ [rads]$"
         array_name = "zeta_array"
@@ -541,7 +535,7 @@ def plot_pzeta_poincare(
         xlabel = r"$\theta\ [rads]$"
         array_name = "theta_array"
 
-    for p in queue.particles():
+    for i, p in enumerate(queue.particles()):
         if p.steps_stored == 0:
             continue
         angle_array = _pi_mod(p._r.get_array(array_name))
@@ -549,6 +543,7 @@ def plot_pzeta_poincare(
         ax.plot(
             angle_array,
             pzeta_array,
+            c=particle_color(i),
             linewidth=0,
             marker=".",
             markersize=1.5,
@@ -621,12 +616,7 @@ def plot_rz_poincare(
     fig = plt.figure(layout="constrained", figsize=(3.5, 3))
     ax = fig.add_subplot()
 
-    if color:
-        ax.set_prop_cycle(cycler(color="brcmk"))
-    else:
-        ax.set_prop_cycle(cycler(color=["blue"]))
-
-    for p in queue.particles():
+    for i, p in enumerate(queue.particles()):
         if p.steps_stored == 0:
             continue
         theta_array = p.theta_array % TAU
@@ -639,6 +629,7 @@ def plot_rz_poincare(
         ax.plot(
             rlab_array,
             zlab_array,
+            c=particle_color(i),
             linewidth=0,
             marker=".",
             markersize=1.3,
@@ -671,37 +662,6 @@ def plot_rz_poincare(
         plt.show()
 
     return fig, ax
-
-
-def orbit_color(orbit_type: OrbitType) -> str:
-    r"""Returns an orbit type's color string.
-
-    Helps with being consistent with the coloring on different plots.
-    """
-    # In general, Confined = 'bright', Lost = 'deep'
-    match orbit_type:
-        case "Undefined":
-            return "xkcd:coral"
-        case "TrappedConfined":
-            return "xkcd:bright red"
-        case "TrappedLost":
-            return "xkcd:deep red"
-        case "CoPassingConfined":
-            return "xkcd:bright blue"
-        case "CoPassingLost":
-            return "xkcd:deep blue"
-        case "CuPassingConfined":
-            return "xkcd:bright green"
-        case "CuPassingLost":
-            return "xkcd:deep green"
-        case "Potato":
-            return "xkcd:tan"
-        case "Stagnated":
-            return "xkcd:sky"
-        case "Unclassified":
-            return "xkcd:azure"
-        case _:
-            return "xkcd:indigo"
 
 
 def _pi_mod(arr: Array1) -> Array1:

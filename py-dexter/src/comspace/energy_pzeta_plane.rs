@@ -60,6 +60,21 @@ impl PyEnergyPzetaPlane {
         Self(EnergyPzetaPlane::from_mu(machine, mu))
     }
 
+    pub fn bifurcation_analysis(
+        &mut self,
+        qfactor: &PyQfactor,
+        current: &PyCurrent,
+        bfield: &PyBfield,
+        efield: &PyEfield,
+        pzeta_array: PyReadonlyArray1<f64>,
+    ) {
+        let machine = MachineBuilder::new(qfactor.inner(), current.inner(), bfield.inner())
+            .with_efield(efield.inner())
+            .build();
+        self.0
+            .bifurcation_analysis(machine, &pzeta_array.as_array());
+    }
+
     pub fn calculate_critical_points(
         &mut self,
         qfactor: &PyQfactor,
@@ -88,6 +103,32 @@ impl PyEnergyPzetaPlane {
             .build();
         self.0
             .calculate_boundary_extrema(machine, &pzeta_array.as_array());
+    }
+
+    pub fn classify_critical_points(
+        &mut self,
+        qfactor: &PyQfactor,
+        current: &PyCurrent,
+        bfield: &PyBfield,
+        efield: &PyEfield,
+    ) {
+        let machine = MachineBuilder::new(qfactor.inner(), current.inner(), bfield.inner())
+            .with_efield(efield.inner())
+            .build();
+        self.0.classify_critical_points(machine);
+    }
+
+    pub fn classify_boundary_extrema(
+        &mut self,
+        qfactor: &PyQfactor,
+        current: &PyCurrent,
+        bfield: &PyBfield,
+        efield: &PyEfield,
+    ) {
+        let machine = MachineBuilder::new(qfactor.inner(), current.inner(), bfield.inner())
+            .with_efield(efield.inner())
+            .build();
+        self.0.classify_boundary_extrema(machine);
     }
 
     #[getter]
@@ -159,6 +200,10 @@ impl PyEnergyPzetaPlane {
 
     pub fn boundary_extrema_energies<'py>(&self, py: Python<'py>) -> Bound<'py, PyArray1<f64>> {
         Array1::from_vec(self.0.boundary_extrema_energies().to_vec()).into_pyarray(py)
+    }
+
+    pub fn print_durations(&self) {
+        self.0.print_durations();
     }
 }
 

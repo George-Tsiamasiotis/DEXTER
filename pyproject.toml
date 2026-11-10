@@ -1,12 +1,12 @@
 [project]
 name = "dexter"
-version = "0.2.5"
+version = "0.2.6"
 description = "Calculations and simulations in analytical and reconstructed configurations of toroidal fusion devices."
 readme = "README.md"
 authors = [
     { name = "George-Tsiamasiotis", email = "gt.develop@protonmail.com" }
 ]
-requires-python = ">=3.12"
+requires-python = ">=3.14"
 dependencies = [
     "matplotlib>=3.11.2",
     "maturin>=1.15.0",
@@ -26,7 +26,7 @@ profile = "release"
 editable-profile = "release"
 
 [build-system]
-requires = ["maturin>=1.0,<2.0"]
+requires = ["maturin>=1.8,<2.0"]
 build-backend = "maturin"
 
 [dependency-groups]
@@ -43,7 +43,7 @@ test = [
 ]
 docs = [
     "mkdocstrings-python>=2.0.9",
-    "zensical==0.0.74",
+    "zensical>=0.1.1",
 ]
 
 [tool.pytest.ini_options]

@@ -58,15 +58,13 @@ queue.close(machine, discard_arrays=False)
 dex.plot_poloidal_drift(machine, queue, colors="Cycle", show=False)
 
 plane = dex.EnergyPzetaPlane(machine, mu)
-pzeta_array = np.linspace(-2.2, 0.8, 1000) * machine.psip_last.value
-plane.calculate_critical_points(pzeta_array)
-plane.calculate_boundary_extrema(pzeta_array)
+pzeta_array = np.linspace(-2.2, 0.8, 3000) * machine.psip_last.value
+plane.bifurcation_analysis(pzeta_array)
 plane.add_particles(queue)
 fig, ax = plane.show(
     xlim=(-2.2, 0.8), ylim=(0.6, 1.8), colors="Cycle", curves=True, show=False
 )
 fig.set_figheight(4)
 fig.set_figwidth(6)
-ax.legend().remove()
 
 plt.show()

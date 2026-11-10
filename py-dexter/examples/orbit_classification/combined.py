@@ -9,7 +9,7 @@ from math import sqrt, pi
 import matplotlib.pyplot as plt
 from matplotlib import patheffects
 
-from dexter.simulate.plot import orbit_color
+from dexter.colors import orbit_color
 
 LCFS = dex.MagneticFlux.Toroidal(0.03)
 raxis = 1.75

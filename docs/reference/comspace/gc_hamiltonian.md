@@ -3,3 +3,5 @@
 ::: dexter.GCHamiltonian
 
 ::: dexter.CriticalPoint
+
+::: dexter.BoundaryExtremum

@@ -1,6 +1,8 @@
 //! Definition of a Boundary Extremum of the Hamiltonian.
 
-use dexter_machine::{Machine, MagneticFlux};
+use std::f64::consts::TAU;
+
+use dexter_machine::{Accelerator2d, EvalError, Machine, MagneticFlux};
 
 use crate::{COMError, GCHamiltonian};
 
@@ -62,13 +64,55 @@ impl BoundaryExtremum {
         })
     }
 
-    /// Classifies the extremum point.
+    /// Classifies the extremum point by evaluating the Hamiltonian's second derivative with respect
+    /// to `θ`.
+    pub fn classify(&mut self, machine: Machine) {
+        match self._classify(machine) {
+            Ok(_) => (),
+            Err(err) => {
+                unreachable!("Classification cannot fail as all boundary extrema are valid ({err})")
+            }
+        };
+    }
+
+    /// Does the classification.
     ///
-    /// # Panics
-    ///
-    /// This method panics as it is not yet implemented.
-    pub fn classify(&mut self) {
-        unimplemented!()
+    /// The [`Self::classify`] method is called internally after a valid computation of a boundary
+    /// extremum, which by construction is infallible, therefore it can never err. However we return
+    /// a Result to keep the code clearer.
+    fn _classify(&mut self, machine: Machine) -> Result<(), EvalError> {
+        use dexter_machine::MagneticFluxKind::*;
+
+        // Follow the same methodology as in the Hessian's evaluation. This case is much simpler as
+        // no derivatives of `ρ` appear.
+
+        let theta = self.theta;
+        let flux = self.flux;
+        let acc = &mut Accelerator2d::new();
+        let theta = theta.rem_euclid(TAU);
+        let psip = match flux.kind() {
+            Toroidal => machine.qfactor().eval_other(flux, acc.xacc())?,
+            Poloidal => flux,
+        };
+
+        let g = machine.current().eval_g(flux, acc.xacc())?;
+        let rho = (self.pzeta + psip.value()) / g;
+
+        let b = machine.bfield().eval_b(flux, theta, acc)?;
+        let db_dtheta = machine.bfield().eval_deriv_theta(flux, theta, acc)?;
+        let db_dtheta2 = machine.bfield().eval_deriv_theta2(flux, theta, acc)?;
+
+        let rb = rho * b;
+        let mu_par = self.mu + rho * rb;
+
+        let dtheta2 = mu_par * db_dtheta2 + (rho * db_dtheta).powi(2);
+
+        self.kind = if dtheta2.is_sign_positive() {
+            BoundaryExtremumKind::Minimum
+        } else {
+            BoundaryExtremumKind::Maximum
+        };
+        Ok(())
     }
 }
 

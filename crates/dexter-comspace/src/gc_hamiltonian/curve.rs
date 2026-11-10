@@ -3,7 +3,6 @@
 use std::f64::consts::TAU;
 use std::mem::MaybeUninit;
 use std::ops::Range;
-use std::time::{Duration, Instant};
 
 use contour::ContourBuilder;
 use dexter_machine::{Accelerator2d, Machine, MagneticFluxArray, MagneticFluxKind};
@@ -91,8 +90,6 @@ impl Convergency<f64> for FixedPointConvergency {
 pub struct StationaryCurve {
     /// The separated segments comprising the `StationaryCurve`.
     segments: Box<[StationaryCurveSegment]>,
-    /// The duration of the [`Self::calculate_critical_points`] routine.
-    duration: Option<Duration>,
 }
 
 impl StationaryCurve {
@@ -131,12 +128,6 @@ impl StationaryCurve {
         self.segments.len() == 0
     }
 
-    /// Returns the duration of the [`Self::calculate_critical_points`] routine.
-    #[must_use]
-    pub fn duration(&self) -> Option<Duration> {
-        self.duration
-    }
-
     /// Calculates the critical points of the `(E, Pζ; μ)` slice over all values of `pzeta_array` and
     /// stores them.
     pub fn calculate_critical_points(
@@ -145,8 +136,6 @@ impl StationaryCurve {
         pzeta_array: &ArrayRef1<f64>,
         mu: f64,
     ) -> Box<[CriticalPoint]> {
-        let start = Instant::now();
-
         let slice = pzeta_array.as_slice().unwrap_or(&[]); // do nothing
         let points: Vec<CriticalPoint> = slice
             .into_par_iter()
@@ -159,8 +148,6 @@ impl StationaryCurve {
             })
             .flatten()
             .collect();
-
-        self.duration = Some(start.elapsed());
 
         points.into_boxed_slice()
     }
@@ -207,10 +194,7 @@ impl StationaryCurve {
             .iter_mut()
             .for_each(|segment| segment.calculate_rss(machine));
 
-        Self {
-            segments,
-            duration: None,
-        }
+        Self { segments }
     }
 }
 
@@ -604,9 +588,6 @@ impl StationaryCurveSegment {
 
 impl std::fmt::Debug for StationaryCurve {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let duration_str: String = self
-            .duration
-            .map_or_else(|| "None".to_owned(), |d| format!("{d:?}"));
         f.debug_struct("StationaryCurve")
             .field(
                 "flux_kind",
@@ -614,7 +595,6 @@ impl std::fmt::Debug for StationaryCurve {
             )
             .field("number of segments", &self.segments.len())
             .field("segments", &self.segments)
-            .field("duration", &duration_str)
             .finish()
     }
 }

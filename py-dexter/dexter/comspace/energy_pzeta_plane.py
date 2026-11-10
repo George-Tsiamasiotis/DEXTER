@@ -6,13 +6,17 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 from matplotlib.axes import Axes
-from itertools import cycle
 
+from dexter.colors import (
+    boundary_extremum_color,
+    critical_point_color,
+    orbit_color,
+    particle_color,
+)
 from dexter.machine.machine import Machine
 from dexter.comspace.gc_hamiltonian import CriticalPoint, BoundaryExtremum
 from dexter.simulate.particle import Particle
 from dexter.simulate.queue import Queue
-from dexter.simulate.plot import orbit_color
 from dexter.types import Array1
 
 from dexter._core import _PyEnergyPzetaPlane
@@ -114,6 +118,31 @@ class EnergyPzetaPlane(_ReprStrImpl):
         self.machine = machine  # handy reference
         self._particle_points = _ParticlePoints()
 
+    def bifurcation_analysis(self, pzeta_array: Array1):
+        r"""Performs a full Bifurcation Analysis on the $E-P_\zeta$ plane.
+
+        This is a convenivenve method that simply calls the following methods:
+
+        + [calculate_critical_points][dexter.EnergyPzetaPlane.calculate_critical_points]
+        + [calculate_boundary_extrema][dexter.EnergyPzetaPlane.calculate_boundary_extrema]
+        + [classify_critical_points][dexter.EnergyPzetaPlane.classify_critical_points]
+        + [classify_boundary_extrema][dexter.EnergyPzetaPlane.classify_boundary_extrema]
+
+        Parameters
+        ----------
+        pzeta_array
+            The $P_\zeta$ values, *in Normalized Units* in which to search for critical points and
+            boundary extrema. It usually makes more sense to normalize `pzeta_array` with respect
+            to $\psi_{p, LCFS}$.
+        """
+        self._r.bifurcation_analysis(
+            qfactor=self.machine.qfactor._r,
+            current=self.machine.current._r,
+            bfield=self.machine.bfield._r,
+            efield=self.machine.efield._r,
+            pzeta_array=_into_pyarray1f64(pzeta_array),
+        )
+
     def calculate_critical_points(self, pzeta_array: Array1):
         r"""Calculates the Hamiltonian's critical points over the `pzeta_array`.
 
@@ -152,6 +181,26 @@ class EnergyPzetaPlane(_ReprStrImpl):
             bfield=self.machine.bfield._r,
             efield=self.machine.efield._r,
             pzeta_array=_into_pyarray1f64(pzeta_array),
+        )
+
+    def classify_critical_points(self):
+        r"""Classifies the already calculated critical points into one of
+        [`CriticalPointKind`][dexter.CriticalPointKind]."""
+        self._r.classify_critical_points(
+            qfactor=self.machine.qfactor._r,
+            current=self.machine.current._r,
+            bfield=self.machine.bfield._r,
+            efield=self.machine.efield._r,
+        )
+
+    def classify_boundary_extrema(self):
+        r"""Classifies the already calculated boundary extrema into one of
+        [`BoundaryExtremumKind`][dexter.BoundaryExtremumKind]."""
+        self._r.classify_critical_points(
+            qfactor=self.machine.qfactor._r,
+            current=self.machine.current._r,
+            bfield=self.machine.bfield._r,
+            efield=self.machine.efield._r,
         )
 
     @property
@@ -209,6 +258,10 @@ class EnergyPzetaPlane(_ReprStrImpl):
     def clear_particles(self):
         r"""Clears all stored particles."""
         self._particle_points = _ParticlePoints()
+
+    def print_durations(self):
+        r"""Prints the durations of the Bifurcation analysis' subroutines."""
+        self._r.print_durations()
 
     def show(
         self,
@@ -274,6 +327,7 @@ class EnergyPzetaPlane(_ReprStrImpl):
             si_ax.set_ybound(min_energy_si, max_energy_si)
             si_ax.set_ylabel(r"$E\ [keV]$")
 
+        ax.autoscale(False)
         if particles:
             zorder = 10
             if len(self._particle_points) < 100:
@@ -288,8 +342,7 @@ class EnergyPzetaPlane(_ReprStrImpl):
                 case "Orbit":
                     c = self._particle_points.orbit_colors
                 case "Cycle":
-                    cycler = cycle("cbrmk")
-                    c = [next(cycler) for _ in range(self._particle_points.__len__())]
+                    c = [particle_color(i) for i in range(len(self._particle_points))]
 
             ax.scatter(
                 self._particle_points.pzetas / psip_last,
@@ -304,36 +357,27 @@ class EnergyPzetaPlane(_ReprStrImpl):
         if critical_points:
             pzetas = self._critical_points_pzetas() / psip_last
             energies = self._critical_points_energies() / mu
+            c = [critical_point_color(p.kind) for p in self.critical_points]
             if len(pzetas) > 0:
                 _had_points = True
-                ax.plot(
-                    pzetas,
-                    energies,
-                    c="xkcd:purple blue",
-                    linewidth=0,
-                    marker=".",
-                    markeredgewidth=0,
-                    markersize=4,
-                    zorder=20,
-                    label=r"$Critical\ Points$",
-                )
+                # fmt: off
+                ax.scatter(pzetas, energies, c=c, s=3, zorder=20)
+                ax.scatter([], [], c=critical_point_color("OpointMin"), s=4, label=r"$\mathcal{O}-point\ (min)$")
+                ax.scatter([], [], c=critical_point_color("OpointMax"), s=4, label=r"$\mathcal{O}-point\ (max)$")
+                ax.scatter([], [], c=critical_point_color("Xpoint"), s=4, label=r"$\mathcal{X}-point$")
+                # fmt: on
 
         if boundary_extrema:
             pzetas = self._boundary_extrema_pzetas() / psip_last
             energies = self._boundary_extrema_energies() / mu
+            c = [boundary_extremum_color(p.kind) for p in self.boundary_extrema]
             if len(pzetas) > 0:
                 _had_points = True
-                ax.plot(
-                    pzetas,
-                    energies,
-                    c="xkcd:coral",
-                    linewidth=0,
-                    marker=".",
-                    markeredgewidth=0,
-                    markersize=4,
-                    zorder=19,
-                    label=r"$Boundary\ Extrema$",
-                )
+                # fmt: off
+                ax.scatter(pzetas, energies, c=c, s=2, zorder=19)
+                ax.scatter([], [], c=boundary_extremum_color("Minimum"), s=4, label=r"$Boundary\ (min)$")
+                ax.scatter([], [], c=boundary_extremum_color("Maximum"), s=4, label=r"$Boundary\ (max)$")
+                # fmt: on
 
         if curves:
             PARABOLA_XAXIS_DENSITY = 1000
@@ -400,6 +444,7 @@ class EnergyPzetaPlane(_ReprStrImpl):
                 alpha=CURVES_ALPHA,
             )
 
+        ax.autoscale(True)
         ax.grid(True)
         ax.set_ylim(ymin, ymax)
         if xlim is None:
@@ -408,7 +453,7 @@ class EnergyPzetaPlane(_ReprStrImpl):
             ax.set_xlim(*xlim)
         ax.set_xlabel(r"$P_\zeta/\psi_{p, LCFS}$")
         ax.set_ylabel(r"$E/\mu$")
-        ax.legend(loc="lower right", fontsize=8)
+        ax.legend(loc="lower right", fontsize=8).set_zorder(1e10)
 
         if show:
             plt.show()

@@ -15,7 +15,6 @@ mu = 8e-5
 plane = dex.EnergyPzetaPlane(machine, mu)
 
 pzeta = np.linspace(-1.9, 0.6, 1000) * machine.psip_last.value
-plane.calculate_critical_points(pzeta)
-plane.calculate_boundary_extrema(pzeta)
+plane.bifurcation_analysis(pzeta)
 print(plane)
 plane.show(xlim=(-1.9, 0.6), ylim=(0.4, 1.8), curves=True)

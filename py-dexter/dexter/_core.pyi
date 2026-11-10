@@ -884,6 +884,14 @@ class _PyEnergyPzetaPlane:
         efield: _PyEfield,
         mu: float,
     ) -> None: ...
+    def bifurcation_analysis(
+        self,
+        qfactor: _PyQfactor,
+        current: _PyCurrent,
+        bfield: _PyBfield,
+        efield: _PyEfield,
+        pzeta_array: Array1,
+    ) -> None: ...
     def calculate_critical_points(
         self,
         qfactor: _PyQfactor,
@@ -900,10 +908,25 @@ class _PyEnergyPzetaPlane:
         efield: _PyEfield,
         pzeta_array: Array1,
     ) -> None: ...
+    def classify_critical_points(
+        self,
+        qfactor: _PyQfactor,
+        current: _PyCurrent,
+        bfield: _PyBfield,
+        efield: _PyEfield,
+    ) -> None: ...
+    def classify_boundary_extrema(
+        self,
+        qfactor: _PyQfactor,
+        current: _PyCurrent,
+        bfield: _PyBfield,
+        efield: _PyEfield,
+    ) -> None: ...
     def critical_points_pzetas(self) -> Array1: ...
     def critical_points_energies(self) -> Array1: ...
     def boundary_extrema_pzetas(self) -> Array1: ...
     def boundary_extrema_energies(self) -> Array1: ...
+    def print_durations(self) -> None: ...
     @override
     def __repr__(self) -> str: ...
     @override

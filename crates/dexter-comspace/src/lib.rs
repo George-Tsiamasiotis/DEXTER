@@ -31,6 +31,8 @@
 //!       critical points over a given `Pζ` span.
 //!     - [`EnergyPzetaPlane::calculate_boundary_extrema`]: Calculation of the Hamiltonian's
 //!       extrema appearing in the device's boundary (Last Closed Flux Surface).
+//!     - [`EnergyPzetaPlane::classify_critical_points`]: Classification of critical points
+//!       into O- and X-points.
 //!   + Classification parabolas and Trapped-Passing Boundary:
 //!     - [`EnergyPzetaPlane::axis_parabola`]: Magnetic Axis Parabola (MA).
 //!     - [`EnergyPzetaPlane::left_wall_parabola`]: Left Wall Parabola (LW).
