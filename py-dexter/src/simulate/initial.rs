@@ -44,6 +44,11 @@ impl PyInitialConditions {
     }
 
     #[getter]
+    pub fn status(&self) -> String {
+        format!("{:?}", self.0.status())
+    }
+
+    #[getter]
     pub fn t0(&self) -> f64 {
         self.0.t0()
     }
@@ -76,6 +81,16 @@ impl PyInitialConditions {
     #[getter]
     pub fn mu0(&self) -> f64 {
         self.0.mu0()
+    }
+
+    #[getter]
+    pub fn theta_dot0(&self) -> Option<f64> {
+        self.0.theta_dot0()
+    }
+
+    #[getter]
+    pub fn energy(&self) -> Option<f64> {
+        self.0.energy()
     }
 
     #[getter]

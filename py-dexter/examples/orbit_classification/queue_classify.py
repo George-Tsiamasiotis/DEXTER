@@ -20,7 +20,7 @@ machine = dex.Machine(
 mu = 7e-6
 
 # Initial Conditions setup
-num = 50000
+num = 100000
 psit0s = dex.MagneticFluxArray.Toroidal(RNG.random(num) * LCFS.value)
 
 initial_conditions = dex.QueueInitialConditions.Mixed(
@@ -28,7 +28,7 @@ initial_conditions = dex.QueueInitialConditions.Mixed(
     flux0=psit0s,
     theta0=2 * PI * RNG.random(num),
     zeta0=np.zeros(num),
-    pzeta0=np.linspace(-1.4, 0.2, num) * machine.psip_last.value,
+    pzeta0=np.linspace(-1.4, 0.25, num) * machine.psip_last.value,
     mu0=np.full(num, mu),
 )
 

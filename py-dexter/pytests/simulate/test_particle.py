@@ -8,7 +8,9 @@ def test_integrate_analytical(lar_machine_perturbed: dex.Machine):
     flux0 = dex.MagneticFlux.Toroidal(0.01)
     initial = dex.InitialConditions.Boozer(0, flux0, 1, 2, 1e-4, 1e-6)
     particle = dex.Particle(initial)
+    particle.finalize_initial_conditions(lar_machine_perturbed)
     particle.integrate(lar_machine_perturbed, (0, 1e3))
+    particle.finalize_initial_conditions(lar_machine_perturbed)
     assert 10 < particle.steps_taken < 1000
 
 
@@ -26,6 +28,40 @@ def test_close_analytical(lar_machine: dex.Machine):
     initial = dex.InitialConditions.Boozer(0, flux0, 1, 2, 1e-4, 1e-6)
     particle = dex.Particle(initial)
     particle.close(lar_machine)
+    assert 10 < particle.steps_taken < 10000
+
+
+def test_classify_numerical(nc_machine: dex.Machine):
+    flux0 = dex.MagneticFlux.Toroidal(0.01)
+    initial = dex.InitialConditions.Boozer(0, flux0, 1, 2, 1e-4, 1e-6)
+    particle = dex.Particle(initial)
+    particle.classify(nc_machine)
+
+
+def test_integrate_numerical(nc_machine_perturbed: dex.Machine):
+    flux0 = nc_machine_perturbed.psit_last * 0.5
+    initial = dex.InitialConditions.Boozer(0, flux0, 1, 2, 1e-4, 1e-6)
+    particle = dex.Particle(initial)
+    particle.finalize_initial_conditions(nc_machine_perturbed)
+    particle.integrate(nc_machine_perturbed, (0, 1e3))
+    particle.finalize_initial_conditions(nc_machine_perturbed)
+    assert 10 < particle.steps_taken < 1000
+
+
+def test_intersect_numerical(nc_machine: dex.Machine):
+    flux0 = nc_machine.psit_last * 0.9
+    initial = dex.InitialConditions.Boozer(0, flux0, 3.1415, 2, 1e-5, 1e-7)
+    particle = dex.Particle(initial)
+    intersect_params = dex.IntersectParams("ConstTheta", 0, 2)
+    particle.intersect(nc_machine, intersect_params)
+    assert 10 < particle.steps_taken < 10000
+
+
+def test_close_numerical(nc_machine: dex.Machine):
+    flux0 = dex.MagneticFlux.Toroidal(0.01)
+    initial = dex.InitialConditions.Boozer(0, flux0, 1, 2, 1e-4, 1e-6)
+    particle = dex.Particle(initial)
+    particle.close(nc_machine)
     assert 10 < particle.steps_taken < 10000
 
 

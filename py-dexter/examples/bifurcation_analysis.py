@@ -10,7 +10,9 @@ machine = dex.Machine(
     bfield=dex.LarBfield(),
 )
 
-strength = machine.quantity(500, "kiloVolt / meter").to("NormVolt / NormMeter").m
+strength = (
+    machine.quantity(500, "kiloVolt / meter").to("NormPotential / NormDistance").m
+)
 rmean = 0.7 * geometry.rlast
 mean = dex.MagneticFlux.Toroidal(float(geometry.eval_psit_of_r(rmean)))
 waist = LCFS.value * 0.1
@@ -64,7 +66,7 @@ plane.bifurcation_analysis(pzeta_array)
 plane.add_particles(queue)
 plane.print_durations()
 fig, ax = plane.show(
-    xlim=pzeta_lim, ylim=(0.0, 5), colors="Cycle", curves=True, show=False
+    xlim=pzeta_lim, ylim=(0.0, 5), colors="Cycle", curves=False, show=False
 )
 fig.set_figheight(4)
 fig.set_figwidth(6)

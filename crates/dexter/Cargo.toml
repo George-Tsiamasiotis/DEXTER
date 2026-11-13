@@ -5,7 +5,6 @@ authors.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
-homepage.workspace = true
 repository.workspace = true
 documentation.workspace = true
 description = "Collection of all crates needed to build 'py-dexter'"
@@ -20,3 +19,6 @@ default = []
 netcdf-static = ["dexter-machine/netcdf-static"]
 openblas-static = ["dexter-machine/openblas-static"]
 doc-images = ["dexter-comspace/doc-images"]
+
+[lints]
+workspace = true

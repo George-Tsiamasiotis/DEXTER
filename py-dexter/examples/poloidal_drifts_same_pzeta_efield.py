@@ -11,7 +11,9 @@ machine = dex.Machine(
     bfield=dex.LarBfield(),
 )
 
-strength = machine.quantity(750, "kiloVolt / meter").to("NormVolt / NormMeter").m
+strength = (
+    machine.quantity(750, "kiloVolt / meter").to("NormPotential / NormDistance").m
+)
 rmean = 0.7 * geometry.rlast
 mean = dex.MagneticFlux.Toroidal(float(geometry.eval_psit_of_r(rmean)))
 waist = LCFS.value * 0.1

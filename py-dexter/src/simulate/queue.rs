@@ -35,6 +35,21 @@ impl PyQueue {
 
 #[pymethods] // Routines
 impl PyQueue {
+    pub fn finalize_initial_conditions(
+        &mut self,
+        qfactor: &PyQfactor,
+        current: &PyCurrent,
+        bfield: &PyBfield,
+        efield: &PyEfield,
+        perturbation: &PyPerturbation,
+    ) {
+        let machine = MachineBuilder::new(qfactor.inner(), current.inner(), bfield.inner())
+            .with_efield(efield.inner())
+            .with_perturbation(perturbation.inner())
+            .build();
+        self.0.finalize_initial_conditions(machine);
+    }
+
     pub fn integrate(
         &mut self,
         qfactor: &PyQfactor,
@@ -131,26 +146,14 @@ impl PyQueue {
         self.0.retain_energy(start..end);
     }
 
+    pub fn retain_closed<'py>(&mut self) {
+        self.0.retain_closed();
+    }
+
     pub fn retain_energy_pzeta_positions(&mut self, positions: Vec<String>) {
         let positions: Vec<EnergyPzetaPosition> = positions
             .iter()
-            .map(|pos| match pos.as_str() {
-                "Alpha" => EnergyPzetaPosition::Alpha,
-                "Beta" => EnergyPzetaPosition::Beta,
-                "Gamma" => EnergyPzetaPosition::Gamma,
-                "Delta" => EnergyPzetaPosition::Delta,
-                "Epsilon" => EnergyPzetaPosition::Epsilon,
-                "Zeta" => EnergyPzetaPosition::Zeta,
-                "Eta" => EnergyPzetaPosition::Eta,
-                "Theta" => EnergyPzetaPosition::Theta,
-                "Iota" => EnergyPzetaPosition::Iota,
-                "Kappa" => EnergyPzetaPosition::Kappa,
-                "Lambda" => EnergyPzetaPosition::Lambda,
-                "Mu" => EnergyPzetaPosition::Mu,
-                "Undefined" => EnergyPzetaPosition::Undefined,
-                "Forbidden" => EnergyPzetaPosition::Forbidden,
-                _ => panic!("'positions' must be valid 'EnergyPzetaPosition' variants"),
-            })
+            .map(|pos| str_to_energy_pzeta_position(pos))
             .collect();
 
         self.0.retain_energy_pzeta_positions(&positions);
@@ -159,22 +162,32 @@ impl PyQueue {
     pub fn retain_orbit_types(&mut self, orbit_types: Vec<String>) {
         let orbit_types: Vec<OrbitType> = orbit_types
             .iter()
-            .map(|typ| match typ.as_str() {
-                "Unclassified" => OrbitType::Unclassified,
-                "TrappedLost" => OrbitType::TrappedLost,
-                "TrappedConfined" => OrbitType::TrappedConfined,
-                "CoPassingLost" => OrbitType::CoPassingLost,
-                "CoPassingConfined" => OrbitType::CoPassingConfined,
-                "CuPassingLost" => OrbitType::CuPassingLost,
-                "CuPassingConfined" => OrbitType::CuPassingConfined,
-                "Potato" => OrbitType::Potato,
-                "Stagnated" => OrbitType::Stagnated,
-                "Undefined" => OrbitType::Undefined,
-                _ => panic!("'orbit_types' must be valid 'OrbitType' variants"),
-            })
+            .map(|typ| str_to_orbit_type(typ))
             .collect();
 
         self.0.retain_orbit_types(&orbit_types);
+    }
+
+    pub fn discard_energy_pzeta_positions(&mut self, positions: Vec<String>) {
+        let positions: Vec<EnergyPzetaPosition> = positions
+            .iter()
+            .map(|pos| str_to_energy_pzeta_position(pos))
+            .collect();
+
+        self.0.discard_energy_pzeta_positions(&positions);
+    }
+
+    pub fn discard_orbit_types(&mut self, orbit_types: Vec<String>) {
+        let orbit_types: Vec<OrbitType> = orbit_types
+            .iter()
+            .map(|typ| str_to_orbit_type(typ))
+            .collect();
+
+        self.0.discard_orbit_types(&orbit_types);
+    }
+
+    pub fn discard_lost(&mut self) {
+        self.0.discard_lost();
     }
 }
 
@@ -276,6 +289,42 @@ impl PyQueue {
             .particles()
             .get(index)
             .map(|particle| PyParticle(particle.clone()))
+    }
+}
+
+fn str_to_energy_pzeta_position(string: &str) -> EnergyPzetaPosition {
+    match string {
+        "Alpha" => EnergyPzetaPosition::Alpha,
+        "Beta" => EnergyPzetaPosition::Beta,
+        "Gamma" => EnergyPzetaPosition::Gamma,
+        "Delta" => EnergyPzetaPosition::Delta,
+        "Epsilon" => EnergyPzetaPosition::Epsilon,
+        "Zeta" => EnergyPzetaPosition::Zeta,
+        "Eta" => EnergyPzetaPosition::Eta,
+        "Theta" => EnergyPzetaPosition::Theta,
+        "Iota" => EnergyPzetaPosition::Iota,
+        "Kappa" => EnergyPzetaPosition::Kappa,
+        "Lambda" => EnergyPzetaPosition::Lambda,
+        "Mu" => EnergyPzetaPosition::Mu,
+        "Undefined" => EnergyPzetaPosition::Undefined,
+        "Forbidden" => EnergyPzetaPosition::Forbidden,
+        _ => panic!("'positions' must be valid 'EnergyPzetaPosition' variants"),
+    }
+}
+
+fn str_to_orbit_type(string: &str) -> OrbitType {
+    match string {
+        "Unclassified" => OrbitType::Unclassified,
+        "TrappedLost" => OrbitType::TrappedLost,
+        "TrappedConfined" => OrbitType::TrappedConfined,
+        "CoPassingLost" => OrbitType::CoPassingLost,
+        "CoPassingConfined" => OrbitType::CoPassingConfined,
+        "CuPassingLost" => OrbitType::CuPassingLost,
+        "CuPassingConfined" => OrbitType::CuPassingConfined,
+        "Potato" => OrbitType::Potato,
+        "Stagnated" => OrbitType::Stagnated,
+        "Undefined" => OrbitType::Undefined,
+        _ => panic!("'orbit_types' must be valid 'OrbitType' variants"),
     }
 }
 

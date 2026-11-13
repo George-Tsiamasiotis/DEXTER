@@ -9,6 +9,7 @@ from dexter import (
     plot_mode,
 )
 
+mode_args = get_default_args(NcFluteMode.__init__)
 plot_mode_args = get_default_args(plot_mode)
 
 parser = argparse.ArgumentParser(description=__doc__)
@@ -34,6 +35,13 @@ parser.add_argument(
     choices=Interpolation1dType.__args__,
     type=str,
     default="Cubic",
+)
+parser.add_argument(
+    "-t",
+    "--threshold-index",
+    help=f"The analytical threshold index. Defaults to '{mode_args["analytical_threshold_index"]}'",
+    type=int,
+    default=mode_args["analytical_threshold_index"],
 )
 parser.add_argument(
     "-f",
@@ -65,9 +73,10 @@ mode = NcFluteMode(
     m=args.m,
     n=args.n,
     phase_method="Interpolation",
+    analytical_threshold_index=args.threshold_index,
 )
 
-plot_mode(mode, flux=args.flux, points=args.points, data=args.d, show=True)
 print(mode)
+plot_mode(mode, flux=args.flux, points=args.points, data=args.d, show=True)
 
 raise SystemExit

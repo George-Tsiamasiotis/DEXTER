@@ -11,10 +11,6 @@ pub enum SimulationError {
     #[error("{0}")]
     MachineError(#[from] dexter_machine::MachineError),
 
-    /// NaN encountered in initial conditions.
-    #[error("NaN encountered in initial conditions")]
-    NanInitialConditions,
-
     /// Queue initial conditions arrays must have a length of at least 1.
     #[error("Queue initial conditions arrays must have a length of at least 1")]
     QueueInitialConditionsEmptyInput,

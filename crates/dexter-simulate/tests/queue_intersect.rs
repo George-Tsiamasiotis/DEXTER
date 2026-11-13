@@ -44,7 +44,8 @@ fn queue_intersect_const_theta_parQ_larC_larB_cosP() -> Result<(), SimulationErr
         queue
             .particles()
             .iter()
-            .filter(|particle| particle.integration_status() == IntegrationStatus::Initialized)
+            .filter(|particle| particle.initial_conditions().status()
+                == InitialConditionsStatus::Instantiated)
             .count(),
         particle_count
     );
@@ -99,7 +100,7 @@ fn queue_poloidal_intersect_const_zeta_ncdQ_ncdC_ncdB_ncdP() -> Result<(), Simul
         &vec![0.0; particle_count],
         &vec![0.0; particle_count],
         &vec![1e-6; particle_count],
-        &vec![2e-6; particle_count],
+        &vec![2e-9; particle_count],
     )?;
 
     let mut queue = Queue::new(&initial_conditions);
@@ -110,7 +111,8 @@ fn queue_poloidal_intersect_const_zeta_ncdQ_ncdC_ncdB_ncdP() -> Result<(), Simul
         queue
             .particles()
             .iter()
-            .filter(|particle| particle.integration_status() == IntegrationStatus::Initialized)
+            .filter(|particle| particle.initial_conditions().status()
+                == InitialConditionsStatus::Instantiated)
             .count(),
         particle_count
     );

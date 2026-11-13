@@ -38,12 +38,12 @@ ParticleSpecies: TypeAlias = Literal[
 
 Unit: TypeAlias = (
     Literal[
-        "NormMeter",
-        "NormTesla",
-        "NormSecond",
-        "NormHertz",
-        "NormJoule",
-        "NormVolt",
+        "NormDistance",
+        "NormBfield",
+        "NormTime",
+        "NormFrequency",
+        "NormEnergy",
+        "NormPotential",
     ]
     | str
 )
@@ -52,8 +52,11 @@ Unit: TypeAlias = (
 Locator: TypeAlias = Literal["Log", "MaxN"]
 """Tick locator for contour plots.
 
-  - `Log`: Uses `matplotlib.ticker.LogLocator`.
-  - `MaxN`: Uses `matplotlib.ticker.MaxNLocator`.
+# Log
+Uses `matplotlib.ticker.LogLocator`.
+
+# MaxN
+Uses `matplotlib.ticker.MaxNLocator`.
 
 When the contour levels span is large, a LogLocator helps in better displaying the levels.
 """
@@ -194,26 +197,45 @@ OrbitType: TypeAlias = Literal[
 ]
 r"""A particle's orbit type, calculated through the [`dexter.Particle.close()`] routine.
 
-- `Unclassified`: Particle has not been classified.
-- `TrappedLost`: A Trapped-Lost particle. A particle is called trapped if there exists a
-    mirror point where $\rho=0$.
-- `TrappedConfined`: A Trapped-Confined particle. A particle is called trapped if there
-    exists a mirror point where $\rho=0$.
-- `CoPassingLost`: A CoPassing-Lost particle. A particle is called co-passing if it is not
-    trapped and it holds that $\dot\theta>0$.
-- `CoPassingConfined`: A CoPassing-Confined particle. A particle is called co-passing if it
-    is not trapped and it holds that $\dot\theta>0$.
-- `CuPassingLost`: A CounterPassing-Lost particle. A particle is called counter-passing if it is
-    not trapped and it holds that $\dot\theta<0$.
-- `CuPassingConfined`: A CounterPassing-Confined particle. A particle is called counter-passing
-    if it is not trapped and it holds that $\dot\theta<0$.
-- `Potato`: A Potato particle. A particle’s orbit is called a potato orbit if it is trapped
-    but still circles the magnetic axis due to its drift. In the $(E, P_\zeta)$ plane, those
-    lie inside the intersection of the trapped-passing boundary and the magnetic axis parabola.
-- `Stagnated`: A Stagnated particle. A particle is called stagnated if it always has positive
-    parallel velocity but does not circle the magnetic axis. In the $(E, P_\zeta)$ plane,
-    those lie to the right of the trapped-passing boundary and above the magnetic axis parabola.
-- `Undefined`: Not falling under any of the other categories.
+# Unclassified
+Particle has not been classified.
+
+# TrappedLost
+A Trapped-Lost particle. A particle is called trapped if there exists a mirror point where
+$\rho=0$.
+
+# TrappedConfined
+A Trapped-Confined particle. A particle is called trapped if there exists a mirror point where
+$\rho=0$.
+
+# CoPassingLost
+A CoPassing-Lost particle. A particle is called co-passing if it is not trapped and it holds that
+$\dot\theta>0$.
+
+# CoPassingConfined
+A CoPassing-Confined particle. A particle is called co-passing if it is not trapped and it holds
+that $\dot\theta>0$.
+
+# CuPassingLost
+A CounterPassing-Lost particle. A particle is called counter-passing if it is not trapped and it
+holds that $\dot\theta<0$.
+
+# CuPassingConfined
+A CounterPassing-Confined particle. A particle is called counter-passing if it is not trapped and
+it holds that $\dot\theta<0$.
+
+# Potato
+A Potato particle. A particle’s orbit is called a potato orbit if it is trapped but still circles
+the magnetic axis due to its drift. In the $(E, P_\zeta)$ plane, those lie inside the intersection
+of the trapped-passing boundary and the magnetic axis parabola.
+
+# Stagnated
+A Stagnated particle. A particle is called stagnated if it always has positive parallel velocity
+but does not circle the magnetic axis. In the $(E, P_\zeta)$ plane, those lie to the right of the
+trapped-passing boundary and above the magnetic axis parabola.
+
+# Undefined
+Not falling under any of the other categories.
 
 !!! hint
 
@@ -223,21 +245,64 @@ r"""A particle's orbit type, calculated through the [`dexter.Particle.close()`] 
 CriticalPointKind: TypeAlias = Literal["Unknown", "OpointMin", "OpointMax", "Xpoint"]
 r"""The kind of a [`CriticalPoint`][dexter.CriticalPoint]
 
-- `Unknown`: Unknown kind.
-- `OpointMin`: O-point and local minimum of the Hamiltonian.
-- `OpointMax`: O-point and local maximum of the Hamiltonian.
-- `Xpoint`: X-point of the Hamiltonian.
+# Unknown
+Unknown kind.
+
+# OpointMin
+O-point and local minimum of the Hamiltonian.
+
+# OpointMax
+O-point and local maximum of the Hamiltonian.
+
+# Xpoint
+X-point of the Hamiltonian.
 """
 
 BoundaryExtremumKind: TypeAlias = Literal["Unknown", "Minimum", "Maximum"]
 r"""The kind of a [`BoundaryExtremum`][dexter.BoundaryExtremum]
 
-- `Unknown`: Unknown kind.
-- `Minimum`: Extremum point of minimum energy.
-- `Maximum`: Extremum point of maximum energy.
+# Unknown
+Unknown kind.
+
+# Minimum
+Extremum point of minimum energy.
+
+# Maximum
+Extremum point of maximum energy.
 """
 
 # =================== Simulate
+
+InitialConditionsStatus: TypeAlias = Literal[
+    "Instantiated",
+    "Finalized",
+    "NanInitialConditions",
+    "BadMagneticFlux",
+    "OutOfBoundsInitialization",
+]
+r"""The status of an [`InitialConditions`][dexter.InitialConditions] set.
+
+# Instantiated
+[`InitialConditions`][dexter.InitialConditions] have been instantiated through the
+[`Boozer`][dexter.InitialConditions.Boozer] or [`mixed`][dexter.InitialConditions.Mixed]
+constructors.
+
+# Finalized
+All guiding center quantities have been evaluated and the Particle can run any routine.
+
+This is the status of a particle if any routine has run or if
+[`Particle::finalize_initial_conditions`][dexter.Particle.finalize_initial_conditions] has been
+called explicitly.
+
+# NanInitialConditions
+Encountered `NaN` when finalizing the initial conditions.
+
+# BadMagneticFlux
+Particle initialized with a ‘bad’ initial magnetic flux.
+
+# OutOfBoundsInitialization
+InitialConditions were out of bounds or $\psi=0$.
+"""
 
 CoordinateSet: TypeAlias = Literal[
     "BoozerToroidal",
@@ -247,36 +312,49 @@ CoordinateSet: TypeAlias = Literal[
 ]
 r""" The kind of InitialConditions set.
 
-    - `BoozerToroidal`: Initial conditions set in the $(t, \psi_t, \theta, \zeta, \rho, \mu)$ space.
-    - `BoozerPoloidal`: Initial conditions set in the $(t, \psi_p, \theta, \zeta, \rho, \mu)$ space.
-    - `MixedToroidal`: Initial conditions set in the $(t, P_\zeta, \psi_t, \theta, \zeta, \mu)$ space.
-    - `MixedPoloidal`: Initial conditions set in the $(t, P_\zeta, \psi_p, \theta, \zeta, \mu)$ space.
+# BoozerToroidal
+Initial conditions set in the $(t, \psi_t, \theta, \zeta, \rho, \mu)$ space.
+
+# BoozerPoloidal
+Initial conditions set in the $(t, \psi_p, \theta, \zeta, \rho, \mu)$ space.
+
+# MixedToroidal
+Initial conditions set in the $(t, \psi_t, \theta, \zeta, P_\zeta, \mu)$ space.
+
+# MixedPoloidal
+Initial conditions set in the $(t, \psi_p, \theta, \zeta, P_\zeta, \mu)$ space.
 """
 
 Intersection: TypeAlias = Literal["ConstZeta", "ConstTheta"]
 r""" Defines the surface of the Poincare section.
 
-- `ConstTheta`: Defines a surface of $\theta = const$.
-- `ConstZeta`: Defines a surface of $\zeta = const$.
+# ConstTheta
+Defines a surface of $\theta = const$.
+
+# ConstZeta
+Defines a surface of $\zeta = const$.
 """
 
 Directionality: TypeAlias = Literal["Initial", "Both", "DotPositive", "DotNegative"]
 r"""Defines the method with which Poincare intersections are recorded by taking into consideration
 the direction of the corresponding angle.
 
-- `Initial`: Only intersections with a direction equal to the direction of the initial point are
-  recorded ($\dot\theta=\dot\theta_0$ or $\dot\zeta=\dot\zeta_0$).
-- `Both`: All intersections are recorded, regardless of the direction.
-- `DotPositive`: Only intersections with $\dot\theta>0$ or $\dot\zeta>0$ are recorded.
-- `DotNegative`: Only intersections with $\dot\theta<0$ or $\dot\zeta<0$ are recorded.
+# Initial
+Only intersections with a direction equal to the direction of the initial point are recorded
+($\dot\theta=\dot\theta_0$ or $\dot\zeta=\dot\zeta_0$).
+
+# Both
+All intersections are recorded, regardless of the direction.
+
+# DotPositive
+Only intersections with $\dot\theta>0$ or $\dot\zeta>0$ are recorded.
+
+# DotNegative
+Only intersections with $\dot\theta<0$ or $\dot\zeta<0$ are recorded.
 """
 
 IntegrationStatus: TypeAlias = Literal[
-    "Initialized",
-    "PartiallyInitialized",
-    "NanInitialConditions",
-    "BadMagneticFlux",
-    "OutOfBoundsInitialization",
+    "None",
     "Integrated",
     "Intersected",
     "ClosedPeriods(..)",
@@ -289,21 +367,45 @@ IntegrationStatus: TypeAlias = Literal[
 ]
 r"""The integration status of a Particle.
 
-- `Initialized`: Initialized by InitialConditions, not integrated.
-- `PartiallyInitialized`: InitialConditions have not been fully calculated yet.
-- `NanInitialConditions`: Encountered `NaN` when finalizing the initial conditions.
-- `BadMagneticFlux`: Particle initialized with a 'bad' initial magnetic flux.
-- `OutOfBoundsInitialization`: InitialConditions where out of bounds.
-- `Integrated`: Reached the end of the integration successfully.
-- `Intersected`: Intersections calculation successful.
-- `ClosedPeriods(..)`: Integrated for a certain amount of θ-ψ periods.
-- `Escaped`: Escaped the last closed flux surface (LCFS).
-- `ModStateEscaped`: Escaped when performing a step on the modified system. This indicates that
-    something is wrong in Hénon’s trick implementation.
-- `IntersectedTimedOut`: Calculated some intersections correctly but also timed out.
-- `InvalidIntersections`: Calculated invalid intersections.
-- `TimedOut(...)`: Timed out after a maximum number of steps.
-- `Failed(...)`: Simulation failed for unknown reasons.
+# None
+No routines have run.
+
+# Integrated
+Reached the end of the integration successfully.
+
+This status is set when the particle successfully runs the
+[`integrate`][dexter.Particle.integrate] routine.
+
+# Intersected
+All intersections were calculated successfully.
+
+This status is set when the particle successfully runs the
+[`intersect`][dexter.Particle.intersect] routine.
+
+# ClosedPeriods(..)
+Integrated successfully for a certain amount of $\theta-\psi$ periods.
+
+This status is set when the particle successfully runs the
+[`close`][dexter.Particle.close] routine.
+
+# Escaped
+Escaped the last closed flux surface (LCFS).
+
+# ModStateEscaped
+Escaped when performing a step on the modified system. This indicates that something is wrong
+in Hénon’s trick implementation.
+
+# IntersectedTimedOut
+Calculated some intersections correctly but also timed out.
+
+# InvalidIntersections
+Calculated invalid intersections.
+
+# TimedOut(...)
+Timed out after a maximum number of steps.
+
+# Failed(...)
+Simulation failed for unknown reasons.
 """
 
 Routine: TypeAlias = Literal["Integrate", "Intersect", "Close", "Classify"]

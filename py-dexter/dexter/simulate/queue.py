@@ -80,6 +80,25 @@ class Queue(_ReprStrImpl):
         obj._r = _PyQueue.from_particles(_particles)
         return obj
 
+    def finalize_initial_conditions(self, machine: Machine):
+        r"""Finalizes the initial conditions of all contained particles
+        (See [`Particle::finalize_initial_conditions`][dexter.Particle.finalize_initial_conditions]).
+
+        TODO: filter example
+
+        Parameters
+        ----------
+        machine
+            The machine in which to finalize the initial conditions.
+        """
+        self._r.finalize_initial_conditions(
+            qfactor=machine.qfactor._r,
+            current=machine.current._r,
+            bfield=machine.bfield._r,
+            efield=machine.efield._r,
+            perturbation=machine.perturbation._r,
+        )
+
     def integrate(
         self,
         machine: Machine,
@@ -192,7 +211,7 @@ class Queue(_ReprStrImpl):
         >>>
         >>> # Initial conditions and Intersection Parameters setup
         >>> num = 10
-        >>> psit0s = dex.MagneticFluxArray.Toroidal(np.linspace(0, machine.psit_last.value, num))
+        >>> psit0s = dex.MagneticFluxArray.Toroidal(np.linspace(0.01, machine.psit_last.value, num))
         >>> initial_conditions = dex.QueueInitialConditions.Boozer(
         ...     t0=np.zeros(num),
         ...     flux0=psit0s,
@@ -256,7 +275,7 @@ class Queue(_ReprStrImpl):
         >>>
         >>> # Initial conditions and Intersection Parameters setup
         >>> num = 10
-        >>> psit0s = dex.MagneticFluxArray.Toroidal(np.linspace(0, machine.psit_last.value, num))
+        >>> psit0s = dex.MagneticFluxArray.Toroidal(np.linspace(0.01, machine.psit_last.value, num))
         >>> initial_conditions = dex.QueueInitialConditions.Boozer(
         ...     t0=np.zeros(num),
         ...     flux0=psit0s,
@@ -379,6 +398,14 @@ class Queue(_ReprStrImpl):
         """
         self._r.retain_energy(start, end)
 
+    def retain_closed(self) -> None:
+        r"""Iterates through `self`’s particles, keeping only the ones that have successfully
+        completed the [`close`][dexter.Particle.close] routine
+        (`#!python particle.integration_status == "ClosedPeriods(..)`).
+        The number of the closed periods is ignored.
+        """
+        self._r.retain_closed()
+
     def retain_energy_pzeta_positions(self, positions: Iterable[EnergyPzetaPosition]):
         r"""Iterates through `self`’s particles, keeping only the ones with an
         [`EnergyPzetaPosition`][dexter.EnergyPzetaPosition] that matches an element of `positions`.
@@ -400,6 +427,34 @@ class Queue(_ReprStrImpl):
             The orbit types.
         """
         self._r.retain_orbit_types(list(orbit_types))
+
+    def discard_energy_pzeta_positions(self, positions: Iterable[EnergyPzetaPosition]):
+        r"""Iterates through `self`’s particles, discarding the ones with an
+        [`EnergyPzetaPosition`][dexter.EnergyPzetaPosition] that matches an element of `positions`.
+
+        Parameters
+        ----------
+        positions
+            The $E-P_\zeta$ positions.
+        """
+        self._r.discard_energy_pzeta_positions(list(positions))
+
+    def discard_orbit_types(self, orbit_types: Iterable[OrbitType]):
+        r"""Iterates through `self`’s particles, discarding the ones with an
+        [`OrbitType`][dexter.OrbitType] that matches an element of `orbit_types`.
+
+        Parameters
+        ----------
+        orbit_types
+            The orbit types.
+        """
+        self._r.discard_orbit_types(list(orbit_types))
+
+    def discard_lost(self):
+        r"""Iterates through self‘s’ particles, discarding the ones [`classified`][dexter.Queue.classify]
+        as `CoPassingLost`, `CuPassingLost` or `TrappedLost`.
+        """
+        self._r.discard_lost()
 
     @property
     def initial_conditions(self) -> QueueInitialConditions:

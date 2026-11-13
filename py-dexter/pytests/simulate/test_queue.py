@@ -15,7 +15,7 @@ def test_queue_from_particles(lar_machine: dex.Machine):
     assert isinstance(particles[0], dex.Particle)
     assert isinstance(particles[1], dex.Particle)
     assert "Closed" in particles[0].integration_status
-    assert particles[1].integration_status == "Initialized"
+    assert particles[1].integration_status == "None"
 
 
 def test_queue_routines_analytical(lar_machine: dex.Machine):
@@ -33,7 +33,9 @@ def test_queue_routines_analytical(lar_machine: dex.Machine):
     )
     queue = dex.Queue(initial)
 
+    queue.finalize_initial_conditions(lar_machine)
     queue.integrate(lar_machine, (0, 100))
+    queue.finalize_initial_conditions(lar_machine)
     intersect_params = dex.IntersectParams("ConstZeta", 0, 4)
     queue.intersect(lar_machine, intersect_params)
     queue.close(lar_machine)
@@ -55,7 +57,9 @@ def test_queue_routines_numerical(nc_machine: dex.Machine):
     )
     queue = dex.Queue(initial)
 
+    queue.finalize_initial_conditions(nc_machine)
     queue.integrate(nc_machine, (0, 100))
+    queue.finalize_initial_conditions(nc_machine)
     intersect_params = dex.IntersectParams("ConstZeta", 0, 4)
     queue.intersect(nc_machine, intersect_params)
     queue.close(nc_machine)

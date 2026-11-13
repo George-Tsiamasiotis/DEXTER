@@ -43,9 +43,9 @@ fn integration_cache_analytical_eq_flute_mode() {
     //     6 evaluations in rkf45
     //          `h`, `dh_dflux` `dh_dtheta`, `dh_dzeta` -> 1 miss, 3 hits
     //
-    // Also add 1 miss and 3 hits to account for the state created on setup.
-    assert_eq!(particle.mode_cache_misses(), 7 * (steps * 6 * 1 + 1));
-    assert_eq!(particle.mode_cache_hits(), 7 * (steps * 6 * 3 + 3));
+    // The 1 miss from the very first step is already accounted for.
+    assert_eq!(particle.mode_cache_misses(), 7 * steps * 6 * 1);
+    assert_eq!(particle.mode_cache_hits(), 7 * steps * 6 * 3);
     //
     // Each flute mode results in 2 hits and 1 miss for each evaluation
     assert_eq!(particle.mode_cache_hits(), 3 * particle.mode_cache_misses());
@@ -103,9 +103,9 @@ fn integration_cache_nc_eq_nc_flute_mode() {
     //
     // (`other_flux` results in 2 cache hits due to the index lookup and the `eval_integ` call)
     //
-    // Also add 1 miss and 9+10 hits (2nd mode is a hit) to account for the state created on setup.
+    // Also remove 1 hit and add 1 miss to account for the very first step.
     assert_eq!(particle.flux_cache_misses(), 1);
-    assert_eq!(particle.flux_cache_hits(), (9 + 10) + 2 * steps * 6 * 10);
+    assert_eq!(particle.flux_cache_hits(), 2 * steps * 6 * 10 - 1);
 
     // `θ` Accelerator
     //      2 modes
@@ -114,21 +114,17 @@ fn integration_cache_nc_eq_nc_flute_mode() {
     //
     // We cannot now how many hits and misses, however their sum must be equal to the total
     // amount of evaluations
-    //
-    // Also add 6 evaluations to account for the state created on setup.
-    //
     assert_eq!(
         particle.theta_cache_hits() + particle.theta_cache_misses(),
-        6 + 2 * steps * 6 * 3
+        2 * steps * 6 * 3
     );
 
     // Per mode:
     //     6 evaluations in rkf45
     //          `h`, `dh_dflux`, `dh_dtheta`, `dh_dzeta` -> 1 miss, 3 hits
     //
-    // Also add 1 miss and 3 hits to account for the state created on setup.
-
-    assert_eq!(particle.mode_cache_misses(), 2 * (steps * 6 * 1 + 1));
-    assert_eq!(particle.mode_cache_hits(), 2 * (steps * 6 * 3 + 3));
+    // The 1 miss from the very first step is already accounted for.
+    assert_eq!(particle.mode_cache_misses(), 2 * steps * 6 * 1);
+    assert_eq!(particle.mode_cache_hits(), 2 * steps * 6 * 3);
     assert_eq!(particle.mode_cache_hits(), 3 * particle.mode_cache_misses());
 }

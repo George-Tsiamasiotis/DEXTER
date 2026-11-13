@@ -643,7 +643,7 @@ def plot_bfield(
     bb = bfield.eval_b(**bfield_eval_args)
     bf = bfield.eval_deriv_flux(**bfield_eval_args)
     bt = bfield.eval_deriv_theta(**bfield_eval_args)
-    bb = cast(Array2, machine.quantity(bb, "NormTesla").to("Tesla").m)
+    bb = cast(Array2, machine.quantity(bb, "NormBfield").to("Tesla").m)
 
     CMAP = "plasma"
     LEVEL_LINE_WIDTH = 0.5
@@ -998,8 +998,10 @@ def plot_efield(
     _phi_values = efield.eval_phi(**eval_arg)
     _dphi_values = efield.eval_phi_deriv(**eval_arg)
     _dphi2_values = efield.eval_phi_deriv2(**eval_arg)
-    e_values = machine.quantity(_e_values, "NormVolt/NormMeter").to("kiloVolt/meter")
-    phi_values = machine.quantity(_phi_values, "NormVolt").to("Volt")
+    e_values = machine.quantity(_e_values, "NormPotential/NormDistance").to(
+        "kiloVolt/meter"
+    )
+    phi_values = machine.quantity(_phi_values, "NormPotential").to("Volt")
 
     E_COLOR = "r"
     PHI_COLOR = "b"
@@ -1055,10 +1057,10 @@ def plot_efield(
 
     # Set twin ax' units to normalized
     elim = machine.quantity(np.asarray(axe.get_ylim()), "kiloVolt / meter")
-    elim_nu = tuple(elim.to("NormVolt / NormMeter").m)
+    elim_nu = tuple(elim.to("NormPotential / NormDistance").m)
     twe.set_ylim(elim_nu)
     philim = machine.quantity(np.asarray(axp.get_ylim()), "Volt")
-    philim_nu = tuple(philim.to("NormVolt").m)
+    philim_nu = tuple(philim.to("NormPotential").m)
     twp.set_ylim(philim_nu)
 
     axe.grid()

@@ -150,7 +150,7 @@ def plot_evolution(
         # Possible divide by zero at t=0 during conversion
         with warnings.catch_warnings(action="ignore"):
             # FIXME: this does not rescale the time units as expected
-            tu = machine.quantity(t, "NormSecond").to("second").to_compact()
+            tu = machine.quantity(t, "NormTime").to("second").to_compact()
             t = tu.m
         tunits = tex_unit(tu)
         axrho.set_xlabel(rf"$t\ [{tunits}]$")
@@ -229,9 +229,6 @@ def plot_poloidal_drift(
         particles = [obj]
     else:
         particles = obj.particles()
-
-    if len(particles) == 0:
-        raise RuntimeError("Empty queue")
 
     geometry: GeometryObject = getattr(machine, "geometry")
 
@@ -341,7 +338,7 @@ def plot_poloidal_drift(
                     pzetas[0],
                     mus[0],
                 ),
-                "NormJoule",
+                "NormEnergy",
             )
             .to("keV")
             .m
@@ -374,7 +371,7 @@ def plot_poloidal_drift(
         # Add an extra contour line on the particle's energy
         if isinstance(obj, Particle):
             particle_energy = (
-                machine.quantity(obj.initial_energy, "NormJoule").to("keV").m
+                machine.quantity(obj.initial_energy, "NormEnergy").to("keV").m
             )
             ax.contour(
                 contourf,
@@ -475,7 +472,7 @@ def plot_qkinetic_energy(
     orbit_types = queue._r._orbit_types()
     colors = list(map(orbit_color, orbit_types))
 
-    energies = machine.quantity(energies, "NormJoule").to("keV").m
+    energies = machine.quantity(energies, "NormEnergy").to("keV").m
 
     ax.scatter(
         energies,

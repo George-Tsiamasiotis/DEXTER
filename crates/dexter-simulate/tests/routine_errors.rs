@@ -6,7 +6,7 @@ use dexter_simulate::*;
 
 #[test]
 fn time_out() {
-    let qfactor = UnityQfactor::new(MagneticFlux::Toroidal(0.5));
+    let qfactor = UnityQfactor::new(MagneticFlux::Toroidal(0.4));
     let current = LarCurrent;
     let bfield = LarBfield;
     let machine = MachineBuilder::new(&qfactor, &current, &bfield).build();
@@ -17,7 +17,7 @@ fn time_out() {
         ..Default::default()
     };
 
-    // Particle integration
+    // Integrate
     let mut particle = Particle::new(&initial);
     particle.integrate(machine, (0.0, 1e5), &solver_params);
     assert!(matches!(
@@ -25,7 +25,7 @@ fn time_out() {
         IntegrationStatus::TimedOut(..)
     ));
 
-    // Particle intersection
+    // Intersect
     let mut particle = Particle::new(&initial);
     let intersect_params =
         IntersectParams::new(Intersection::ConstTheta, 1.0, 10, Directionality::default());
@@ -34,58 +34,129 @@ fn time_out() {
         particle.integration_status(),
         IntegrationStatus::TimedOut(..)
     ));
+
+    // Close
+    let mut particle = Particle::new(&initial);
+    particle.close(machine, 1, &solver_params);
+    assert!(matches!(
+        particle.integration_status(),
+        IntegrationStatus::TimedOut(..)
+    ));
 }
 
 #[test]
 fn out_of_bounds_initialization() {
-    use IntegrationStatus::OutOfBoundsInitialization;
-    let qfactor = UnityQfactor::new(MagneticFlux::Toroidal(0.5));
+    let qfactor = UnityQfactor::new(MagneticFlux::Toroidal(0.4));
     let current = LarCurrent;
     let bfield = LarBfield;
     let machine = MachineBuilder::new(&qfactor, &current, &bfield).build();
 
     let initial = InitialConditions::boozer(0.0, MagneticFlux::Toroidal(1.0), 0.0, 0.0, 1e-4, 1e-6);
 
-    // Particle integration
+    // Integrate
     let mut particle = Particle::new(&initial);
     particle.integrate(machine, (0.0, 1e5), &SolverParams::default());
-    assert!(matches!(
+    assert_eq!(
         particle.integration_status(),
-        OutOfBoundsInitialization
-    ));
+        IntegrationStatus::Failed("OutOfBoundsInitialization".into())
+    );
+    assert_eq!(
+        particle.initial_conditions().status(),
+        InitialConditionsStatus::OutOfBoundsInitialization
+    );
 
-    // Particle intersection
+    // Intersect
     let mut particle = Particle::new(&initial);
     let intersect_params =
         IntersectParams::new(Intersection::ConstTheta, 0.0, 10, Directionality::default());
     particle.intersect(machine, &intersect_params, &SolverParams::default());
-    assert!(matches!(
+    assert_eq!(
         particle.integration_status(),
-        OutOfBoundsInitialization
-    ));
+        IntegrationStatus::Failed("OutOfBoundsInitialization".into())
+    );
+    assert_eq!(
+        particle.initial_conditions().status(),
+        InitialConditionsStatus::OutOfBoundsInitialization
+    );
+
+    // Close
+    let mut particle = Particle::new(&initial);
+    particle.close(machine, 1, &SolverParams::default());
+    assert_eq!(
+        particle.integration_status(),
+        IntegrationStatus::Failed("OutOfBoundsInitialization".into())
+    );
+    assert_eq!(
+        particle.initial_conditions().status(),
+        InitialConditionsStatus::OutOfBoundsInitialization
+    );
+
+    // Classify
+    let mut particle = Particle::new(&initial);
+    particle.classify(machine);
+    assert_eq!(particle.integration_status(), IntegrationStatus::None);
+    assert_eq!(
+        particle.initial_conditions().status(),
+        InitialConditionsStatus::OutOfBoundsInitialization
+    );
 }
 
 #[test]
 fn bad_magnetic_flux_initialization() {
-    use IntegrationStatus::BadMagneticFlux;
-    let qfactor = UnityQfactor::new(MagneticFlux::Toroidal(0.5));
+    let qfactor = UnityQfactor::new(MagneticFlux::Toroidal(0.4));
     let current = LarCurrent;
     let bfield = LarBfield;
     let machine = MachineBuilder::new(&qfactor, &current, &bfield).build();
 
-    let initial = InitialConditions::boozer(0.0, MagneticFlux::Poloidal(1.0), 0.0, 0.0, 1e-4, 1e-6);
+    let initial =
+        InitialConditions::boozer(0.0, MagneticFlux::Poloidal(0.02), 0.0, 0.0, 1e-4, 1e-6);
 
-    // Particle integration
+    // Integrate
     let mut particle = Particle::new(&initial);
     particle.integrate(machine, (0.0, 1e5), &SolverParams::default());
-    assert!(matches!(particle.integration_status(), BadMagneticFlux));
+    assert_eq!(
+        particle.integration_status(),
+        IntegrationStatus::Failed("BadMagneticFlux".into())
+    );
+    assert_eq!(
+        particle.initial_conditions().status(),
+        InitialConditionsStatus::BadMagneticFlux
+    );
 
-    // Particle intersection
+    // Intersect
     let mut particle = Particle::new(&initial);
     let intersect_params =
         IntersectParams::new(Intersection::ConstTheta, 0.0, 10, Directionality::default());
     particle.intersect(machine, &intersect_params, &SolverParams::default());
-    assert!(matches!(particle.integration_status(), BadMagneticFlux));
+    assert_eq!(
+        particle.integration_status(),
+        IntegrationStatus::Failed("BadMagneticFlux".into())
+    );
+    assert_eq!(
+        particle.initial_conditions().status(),
+        InitialConditionsStatus::BadMagneticFlux
+    );
+
+    // Close
+    let mut particle = Particle::new(&initial);
+    particle.close(machine, 1, &SolverParams::default());
+    assert_eq!(
+        particle.integration_status(),
+        IntegrationStatus::Failed("BadMagneticFlux".into())
+    );
+    assert_eq!(
+        particle.initial_conditions().status(),
+        InitialConditionsStatus::BadMagneticFlux
+    );
+
+    // Classify
+    let mut particle = Particle::new(&initial);
+    particle.classify(machine);
+    assert_eq!(particle.integration_status(), IntegrationStatus::None);
+    assert_eq!(
+        particle.initial_conditions().status(),
+        InitialConditionsStatus::BadMagneticFlux
+    );
 }
 
 #[test]
@@ -101,7 +172,6 @@ fn intersected_time_out() {
         ..Default::default()
     };
 
-    // Particle intersection
     let mut particle = Particle::new(&initial);
     let intersect_params = IntersectParams::new(
         Intersection::ConstTheta,
@@ -110,7 +180,6 @@ fn intersected_time_out() {
         Directionality::default(),
     );
     particle.intersect(machine, &intersect_params, &solver_params);
-    dbg!(&particle);
     assert!(matches!(
         particle.integration_status(),
         IntegrationStatus::IntersectedTimedOut

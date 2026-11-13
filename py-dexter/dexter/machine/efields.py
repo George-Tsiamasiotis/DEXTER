@@ -108,7 +108,7 @@ class GaussianEfield(MachineObject, Efield):
         width: float,
     ) -> None:
         if isinstance(strength, PlainQuantity):
-            strength = strength.to("NormVolt / NormMeter").m
+            strength = strength.to("NormPotential / NormDistance").m
         self._r = _PyEfield.build_gaussian_efield(
             strength=strength,
             mean=mean._r,

@@ -9,7 +9,9 @@ def test_no_efield():
 
 def test_gaussian_efield(lar_machine: dex.Machine):
     strength = (
-        lar_machine.quantity(750, "kiloVolt / meter").to("NormVolt / NormMeter").m
+        lar_machine.quantity(750, "kiloVolt / meter")
+        .to("NormPotential / NormDistance")
+        .m
     )
     mean = lar_machine.psit_last / 2
     width = lar_machine.psit_last.value / 50

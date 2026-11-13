@@ -4,11 +4,10 @@
 
 use std::f64::consts::TAU;
 
-use dexter_machine::{EvalError, Machine};
+use dexter_machine::{EvalError, Machine, MagneticFluxKind};
 
 use crate::particle::IntegrationCaches;
-use crate::solve::IntegrationCoordinate;
-use crate::{InitialConditions, MagneticFlux, MagneticFlux::*, SimulationError};
+use crate::{MagneticFlux, MagneticFlux::*, SimulationError};
 
 /// State of the Guiding Center at each step.
 ///
@@ -21,7 +20,11 @@ use crate::{InitialConditions, MagneticFlux, MagneticFlux::*, SimulationError};
 #[expect(clippy::min_ident_chars, reason = "symbols in the Hamiltonian")]
 pub(crate) struct GCState {
     /// Keeps track of the coordinate with which the integration is performed.
-    pub(crate) coordinate: IntegrationCoordinate,
+    ///
+    /// It is `None` for the interval where the state is partially initialized, which occurs inside
+    /// the solver and when creating initial conditions. It is preferable than setting a default
+    /// value for the `MagneticFluxKind`.
+    pub(crate) coordinate: Option<MagneticFluxKind>,
     pub(crate) t: f64,
 
     // Dynamic variables
@@ -93,40 +96,78 @@ pub(crate) struct GCState {
 
 /// Creation and evaluation.
 impl GCState {
-    /// Creates a new `GCState` from a set of [`InitialConditions`] and evaluates it.
-    pub(crate) fn new(
-        initial: &InitialConditions,
-        machine: Machine,
-        caches: &mut IntegrationCaches,
-    ) -> Result<Self, SimulationError> {
+    /// Creates a new `GCState` from a set of boozer initial conditions.
+    ///
+    /// The rest of the fields are left at their default values.
+    pub(crate) fn from_boozer_uninit(
+        t: f64,
+        flux: MagneticFlux,
+        theta: f64,
+        zeta: f64,
+        rho: f64,
+        mu: f64,
+    ) -> Self {
         let (psit, psip): (MagneticFlux, MagneticFlux);
-        let coordinate = match initial.flux0 {
+        let coordinate = match flux {
             Toroidal(_) => {
-                psit = initial.flux0;
+                psit = flux;
                 psip = Poloidal(f64::NAN);
-                IntegrationCoordinate::Toroidal
+                Some(MagneticFluxKind::Toroidal)
             }
             Poloidal(_) => {
                 psit = Toroidal(f64::NAN);
-                psip = initial.flux0;
-                IntegrationCoordinate::Poloidal
+                psip = flux;
+                Some(MagneticFluxKind::Poloidal)
             }
         };
-        let Some(rho) = initial.rho0 else {
-            unreachable!("rho0 must be initialized at this point")
-        };
         Self {
-            t: initial.t0,
+            coordinate,
+            t,
             psit,
             psip,
+            theta,
+            zeta,
             rho,
-            theta: initial.theta0,
-            zeta: initial.zeta0,
-            mu: initial.mu0,
-            coordinate,
+            mu,
             ..Default::default()
         }
-        .into_evaluated(machine, caches)
+    }
+
+    /// Creates a new `GCState` from a set of mixed initial conditions.
+    ///
+    /// The rest of the fields are left at their default values.
+    pub(crate) fn from_mixed_uninit(
+        t: f64,
+        flux: MagneticFlux,
+        theta: f64,
+        zeta: f64,
+        pzeta: f64,
+        mu: f64,
+    ) -> Self {
+        let (psit, psip): (MagneticFlux, MagneticFlux);
+        let coordinate = match flux {
+            Toroidal(_) => {
+                psit = flux;
+                psip = Poloidal(f64::NAN);
+                Some(MagneticFluxKind::Toroidal)
+            }
+            Poloidal(_) => {
+                psit = Toroidal(f64::NAN);
+                psip = flux;
+                Some(MagneticFluxKind::Poloidal)
+            }
+        };
+        Self {
+            coordinate,
+            t,
+            psit,
+            psip,
+            theta,
+            zeta,
+            mu,
+            pzeta,
+            ..Default::default()
+        }
     }
 
     /// Performs all evaluations and calculation of intermediate quantities and final time derivatives.
@@ -176,12 +217,20 @@ impl GCState {
         Ok(self)
     }
 
+    /// Returns the kind of the flux coordinate.
+    pub(crate) fn coordinate(&self) -> MagneticFluxKind {
+        match self.coordinate {
+            Some(coordinate) => coordinate,
+            None => unreachable!("flux coordinate is decided at this point"),
+        }
+    }
+
     /// Returns a reference to the [`MagneticFlux`] with respect to which the integration is
     /// performed.
-    fn flux(&self) -> &MagneticFlux {
-        match self.coordinate {
-            IntegrationCoordinate::Toroidal => &self.psit,
-            IntegrationCoordinate::Poloidal => &self.psip,
+    pub(crate) fn flux(&self) -> &MagneticFlux {
+        match self.coordinate() {
+            MagneticFluxKind::Toroidal => &self.psit,
+            MagneticFluxKind::Poloidal => &self.psip,
         }
     }
 
@@ -193,18 +242,18 @@ impl GCState {
     /// Returns a mutable reference to the value of the [`MagneticFlux`] with respect to which
     /// the integration is performed.
     pub(crate) fn flux_value_mut(&mut self) -> &mut f64 {
-        match self.coordinate {
-            IntegrationCoordinate::Toroidal => self.psit.value_mut(),
-            IntegrationCoordinate::Poloidal => self.psip.value_mut(),
+        match self.coordinate() {
+            MagneticFluxKind::Toroidal => self.psit.value_mut(),
+            MagneticFluxKind::Poloidal => self.psip.value_mut(),
         }
     }
 
     /// Returns a reference to the **other** [`MagneticFlux`], e.g. **not** the one with respect to
     /// which the integration is performed.
     fn other(&mut self) -> &mut MagneticFlux {
-        match self.coordinate {
-            IntegrationCoordinate::Toroidal => &mut self.psip,
-            IntegrationCoordinate::Poloidal => &mut self.psit,
+        match self.coordinate() {
+            MagneticFluxKind::Toroidal => &mut self.psip,
+            MagneticFluxKind::Poloidal => &mut self.psit,
         }
     }
 }
@@ -313,7 +362,7 @@ impl GCState {
     /// Therefore, using the chain rule, we must also multiply the final `flux_dot` with `q` to
     /// obtain `psit_dot`.
     fn adjust_for_flux(&mut self) {
-        if self.coordinate == IntegrationCoordinate::Toroidal {
+        if self.coordinate() == MagneticFluxKind::Toroidal {
             self.dg_dflux *= self.q;
             self.di_dflux *= self.q;
             self.dp_dflux *= self.q;
@@ -323,6 +372,8 @@ impl GCState {
     }
 
     fn calculate_canonical_momenta(&mut self) {
+        // WARN: Not sure if the perturbation should be included here. If so, also update
+        // the InitialConditions method
         self.ptheta = self.psit.value() + self.rho * self.i;
         self.pzeta = self.rho * self.g - self.psip.value();
     }
@@ -419,9 +470,9 @@ impl GCState {
     /// Returns the array with the final time derivatives.
     pub(crate) fn dots(&self) -> [f64; 5] {
         [
-            match self.coordinate {
-                IntegrationCoordinate::Toroidal => self.psit_dot,
-                IntegrationCoordinate::Poloidal => self.psip_dot,
+            match self.coordinate() {
+                MagneticFluxKind::Toroidal => self.psit_dot,
+                MagneticFluxKind::Poloidal => self.psip_dot,
             },
             self.theta_dot,
             self.zeta_dot,
@@ -437,7 +488,7 @@ impl Default for GCState {
     /// If NaNs manage to propagate, it means there's something wrong.
     fn default() -> Self {
         Self {
-            coordinate: Default::default(),
+            coordinate: None,
             t: f64::NAN,
             psit: Toroidal(f64::NAN),
             psip: Poloidal(f64::NAN),

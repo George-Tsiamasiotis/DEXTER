@@ -3,12 +3,12 @@ import dexter as dex
 import pytest
 
 
-from dexter.utils import get_max_threads
+from dexter.utils import get_max_threads, set_num_threads
 from math import isclose
 
 
 def test_threads():
-    dex.set_num_threads(get_max_threads())
+    set_num_threads(get_max_threads())
 
 
 def test_magnetic_flux():

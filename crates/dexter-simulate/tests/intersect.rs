@@ -29,7 +29,7 @@ fn gc_toroidal_intersect_uniQ_larC_larB_noP() {
     let intersect_params = IntersectParams::new(Intersection::ConstZeta, 3.14, 10, Directionality::Initial);
 
     let mut particle = Particle::new(&initial);
-    assert!(matches!(particle.integration_status(), IntegrationStatus::Initialized));
+    assert_eq!(particle.initial_conditions().status(), InitialConditionsStatus::Instantiated);
 
     particle.intersect(machine, &intersect_params, &solver_params);
 
@@ -45,7 +45,7 @@ fn gc_toroidal_intersect_uniQ_larC_larB_noP() {
     let intersect_params = IntersectParams::new(Intersection::ConstTheta, 3.14, 10, Directionality::Initial);
 
     let mut particle = Particle::new(&initial);
-    assert!(matches!(particle.integration_status(), IntegrationStatus::Initialized));
+    assert_eq!(particle.initial_conditions().status(), InitialConditionsStatus::Instantiated);
 
     particle.intersect(machine, &intersect_params, &solver_params);
 
@@ -75,7 +75,7 @@ fn gc_poloidal_intersect_ncdQ_ncdC_ncdB_noP() {
     let intersect_params = IntersectParams::new(Intersection::ConstZeta, 3.14, 3,Directionality::Initial);
 
     let mut particle = Particle::new(&initial);
-    assert!(matches!(particle.integration_status(), IntegrationStatus::Initialized));
+    assert_eq!(particle.initial_conditions().status(), InitialConditionsStatus::Instantiated);
 
     particle.intersect(machine, &intersect_params, &solver_params);
     dbg!(&particle);
@@ -92,7 +92,7 @@ fn gc_poloidal_intersect_ncdQ_ncdC_ncdB_noP() {
     let intersect_params = IntersectParams::new(Intersection::ConstTheta, 3.14, 3, Directionality::Initial);
 
     let mut particle = Particle::new(&initial);
-    assert!(matches!(particle.integration_status(), IntegrationStatus::Initialized));
+    assert_eq!(particle.initial_conditions().status(), InitialConditionsStatus::Instantiated);
 
     particle.intersect(machine, &intersect_params, &solver_params);
     dbg!(&particle);
@@ -130,8 +130,8 @@ fn gc_toroidal_poloidal_equivalence_const_theta() {
 
     let mut tor_particle = Particle::new(&tor_initial);
     let mut pol_particle = Particle::new(&pol_initial);
-    assert!(matches!(tor_particle.integration_status(), IntegrationStatus::Initialized));
-    assert!(matches!(pol_particle.integration_status(), IntegrationStatus::Initialized));
+    assert_eq!(tor_particle.initial_conditions().status(), InitialConditionsStatus::Instantiated);
+    assert_eq!(pol_particle.initial_conditions().status(), InitialConditionsStatus::Instantiated);
 
 
     let intersect_params = IntersectParams::new(Intersection::ConstTheta, 1.0, 10, Directionality::Initial);
@@ -188,8 +188,8 @@ fn gc_toroidal_poloidal_equivalence_const_zeta() {
 
     let mut tor_particle = Particle::new(&tor_initial);
     let mut pol_particle = Particle::new(&pol_initial);
-    assert!(matches!(tor_particle.integration_status(), IntegrationStatus::Initialized));
-    assert!(matches!(pol_particle.integration_status(), IntegrationStatus::Initialized));
+    assert_eq!(tor_particle.initial_conditions().status(), InitialConditionsStatus::Instantiated);
+    assert_eq!(pol_particle.initial_conditions().status(), InitialConditionsStatus::Instantiated);
 
 
     let intersect_params = IntersectParams::new(Intersection::ConstZeta, 1.0, 10, Directionality::Initial);

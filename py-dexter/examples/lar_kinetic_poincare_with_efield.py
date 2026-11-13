@@ -17,7 +17,9 @@ machine = dex.Machine(
     ),
 )
 
-strength = machine.quantity(750, "kiloVolt / meter").to("NormVolt / NormMeter").m
+strength = (
+    machine.quantity(750, "kiloVolt / meter").to("NormPotential / NormDistance").m
+)
 rmean = 0.6 * geometry.rlast
 mean = dex.MagneticFlux.Toroidal(float(geometry.eval_psit_of_r(rmean)))
 waist = LCFS.value * 0.2
@@ -30,7 +32,7 @@ mu = 9e-6
 
 num = 30
 
-energy = cast(float, machine.quantity(30, "keV").to("NormJoule").m)
+energy = cast(float, machine.quantity(30, "keV").to("NormEnergy").m)
 
 rs = np.linspace(0.03, geometry.rlast * 0.999, num)
 psits = (rs / geometry.raxis) ** 2 / 2

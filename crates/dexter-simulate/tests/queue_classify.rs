@@ -42,7 +42,8 @@ fn queue_classify_parQ_larC_larB_cosP() -> Result<(), SimulationError> {
         queue
             .particles()
             .iter()
-            .filter(|particle| particle.integration_status() == IntegrationStatus::Initialized)
+            .filter(|particle| particle.initial_conditions().status()
+                == InitialConditionsStatus::Instantiated)
             .count(),
         particle_count
     );
@@ -54,7 +55,7 @@ fn queue_classify_parQ_larC_larB_cosP() -> Result<(), SimulationError> {
         queue
             .particles()
             .iter()
-            .filter(|particle| particle.integration_status() == IntegrationStatus::Initialized)
+            .filter(|particle| particle.integration_status() == IntegrationStatus::None)
             .count(),
         particle_count
     );

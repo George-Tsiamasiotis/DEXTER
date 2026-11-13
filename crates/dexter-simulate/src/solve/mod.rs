@@ -66,13 +66,3 @@ impl Default for SolverParams {
         }
     }
 }
-
-/// Defines the coordinate with respect to which the integration is performed.
-#[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) enum IntegrationCoordinate {
-    /// Use the toroidal flux `ψt` as the dynamic variable.
-    #[default]
-    Toroidal,
-    /// Use the toroidal flux `ψp` as the dynamic variable.
-    Poloidal,
-}

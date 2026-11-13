@@ -77,7 +77,6 @@ pub(crate) struct IntegratePbar {
     pbar: ProgressBar,
     length: usize,
     // Live statistics
-    out_of_bounds: Arc<AtomicUsize>,
     integrated: Arc<AtomicUsize>,
     escaped: Arc<AtomicUsize>,
     timed_out: Arc<AtomicUsize>,
@@ -96,7 +95,6 @@ impl IntegratePbar {
         Self {
             pbar,
             length: queue.particles.len(),
-            out_of_bounds: Arc::default(),
             integrated: Arc::default(),
             escaped: Arc::default(),
             timed_out: Arc::default(),
@@ -119,7 +117,6 @@ impl IntegratePbar {
     pub(crate) fn inc(&self, status: &IntegrationStatus) {
         self.pbar.inc(1);
         let _: usize = match *status {
-            IntegrationStatus::OutOfBoundsInitialization => self.out_of_bounds.fetch_add(1, SeqCst),
             IntegrationStatus::Integrated => self.integrated.fetch_add(1, SeqCst),
             IntegrationStatus::Escaped => self.escaped.fetch_add(1, SeqCst),
             IntegrationStatus::TimedOut(..) => self.timed_out.fetch_add(1, SeqCst),
@@ -133,14 +130,12 @@ impl IntegratePbar {
             concat!(
                 "===== 📊 Stats =====\n",
                 "✅ {}  = {}\n",
-                "🧱 OutOfBounds = {}\n",
                 "🏃 Escaped     = {}\n",
                 "⌛ Timed-out   = {}\n",
                 "🥀 Failed      = {}",
             ),
             self.green,
             self.integrated.load(SeqCst),
-            self.out_of_bounds.load(SeqCst),
             self.escaped.load(SeqCst),
             self.timed_out.load(SeqCst),
             self.failed.load(SeqCst),
@@ -162,7 +157,6 @@ pub(crate) struct IntersectPbar {
     length: usize,
     intersect_params: IntersectParams,
     // Live statistics
-    out_of_bounds: Arc<AtomicUsize>,
     intersected: Arc<AtomicUsize>,
     intersected_timed_out: Arc<AtomicUsize>,
     escaped: Arc<AtomicUsize>,
@@ -184,7 +178,6 @@ impl IntersectPbar {
             pbar,
             length: queue.particles.len(),
             intersect_params: intersect_params.clone(),
-            out_of_bounds: Arc::default(),
             intersected: Arc::default(),
             intersected_timed_out: Arc::default(),
             escaped: Arc::default(),
@@ -215,7 +208,6 @@ impl IntersectPbar {
         self.pbar.inc(1);
         #[rustfmt::skip]
         let _: usize = match *status {
-            IntegrationStatus::OutOfBoundsInitialization => self.out_of_bounds.fetch_add(1, SeqCst),
             IntegrationStatus::Intersected => self.intersected.fetch_add(1, SeqCst),
             IntegrationStatus::IntersectedTimedOut => self.intersected_timed_out.fetch_add(1, SeqCst),
             IntegrationStatus::Escaped => self.escaped.fetch_add(1, SeqCst),
@@ -231,7 +223,6 @@ impl IntersectPbar {
             concat!(
                 "========= 📊 Stats =========\n",
                 "✅ {}         = {}\n",
-                "🧱 OutOfBounds         = {}\n",
                 "⌛ IntersectedTimedOut = {}\n",
                 "🏃 Escaped             = {}\n",
                 "⌛ Timed-out           = {}\n",
@@ -240,7 +231,6 @@ impl IntersectPbar {
             ),
             self.green,
             self.intersected.load(SeqCst),
-            self.out_of_bounds.load(SeqCst),
             self.intersected_timed_out.load(SeqCst),
             self.escaped.load(SeqCst),
             self.timed_out.load(SeqCst),
@@ -264,7 +254,6 @@ pub(crate) struct ClosePbar {
     pbar: ProgressBar,
     length: usize,
     // Live statistics
-    out_of_bounds: Arc<AtomicUsize>,
     closed_periods: Arc<AtomicUsize>,
     escaped: Arc<AtomicUsize>,
     timed_out: Arc<AtomicUsize>,
@@ -282,7 +271,6 @@ impl ClosePbar {
         Self {
             pbar,
             length: queue.particles.len(),
-            out_of_bounds: Arc::default(),
             closed_periods: Arc::default(),
             escaped: Arc::default(),
             timed_out: Arc::default(),
@@ -305,7 +293,6 @@ impl ClosePbar {
     pub(crate) fn inc(&self, status: &IntegrationStatus) {
         self.pbar.inc(1);
         let _: usize = match *status {
-            IntegrationStatus::OutOfBoundsInitialization => self.out_of_bounds.fetch_add(1, SeqCst),
             IntegrationStatus::ClosedPeriods(..) => self.closed_periods.fetch_add(1, SeqCst),
             IntegrationStatus::Escaped => self.escaped.fetch_add(1, SeqCst),
             IntegrationStatus::TimedOut(..) => self.timed_out.fetch_add(1, SeqCst),
@@ -319,14 +306,12 @@ impl ClosePbar {
             concat!(
                 "====== 📊 Stats =====\n",
                 "✅ {}      = {}\n",
-                "🧱 OutOfBounds = {}\n",
                 "🏃 Escaped     = {}\n",
                 "⌛ Timed-out   = {}\n",
                 "🥀 Failed      = {}",
             ),
             self.green,
             self.closed_periods.load(SeqCst),
-            self.out_of_bounds.load(SeqCst),
             self.escaped.load(SeqCst),
             self.timed_out.load(SeqCst),
             self.failed.load(SeqCst),

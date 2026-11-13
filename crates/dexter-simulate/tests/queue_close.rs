@@ -42,7 +42,8 @@ fn queue_close_parQ_larC_larB_cosP() -> Result<(), SimulationError> {
         queue
             .particles()
             .iter()
-            .filter(|particle| particle.integration_status() == IntegrationStatus::Initialized)
+            .filter(|particle| particle.initial_conditions().status()
+                == InitialConditionsStatus::Instantiated)
             .count(),
         particle_count
     );
@@ -58,6 +59,9 @@ fn queue_close_parQ_larC_larB_cosP() -> Result<(), SimulationError> {
             .count(),
         particle_count
     );
+
+    queue.retain_closed();
+    assert_eq!(queue.particle_count(), 10);
 
     println!("{queue:#?}");
 

@@ -37,7 +37,7 @@ fn gc_toroidal_integration_uniQ_larC_larB_cosP() {
     let initial = InitialConditions::boozer(0.0, Toroidal(0.3), 0.0, 0.0, 1e-4, 1e-6);
 
     let mut particle = Particle::new(&initial);
-    assert!(matches!(particle.integration_status(), IntegrationStatus::Initialized));
+    assert_eq!(particle.initial_conditions().status(), InitialConditionsStatus::Instantiated);
 
     let teval = (0.0, 1e5);
     particle.integrate(machine, teval, &solver_params);
@@ -75,7 +75,7 @@ fn gc_toroidal_integration_ncdQ_ncdC_ncdB_ncdP() {
     let initial = InitialConditions::boozer(0.0, Toroidal(0.2), 0.0, 0.0, 1e-4, 1e-6);
 
     let mut particle = Particle::new(&initial);
-    assert!(matches!(particle.integration_status(), IntegrationStatus::Initialized));
+    assert_eq!(particle.initial_conditions().status(), InitialConditionsStatus::Instantiated);
 
     let teval = (0.0, 8e4);
     particle.integrate(machine, teval, &solver_params);
@@ -113,7 +113,7 @@ fn gc_poloidal_integration_ncdQ_ncdC_ncdB_ncdP() {
     let initial = InitialConditions::boozer(0.0, Poloidal(0.2), 0.0, 0.0, 1e-4, 1e-6);
 
     let mut particle = Particle::new(&initial);
-    assert!(matches!(particle.integration_status(), IntegrationStatus::Initialized));
+    assert_eq!(particle.initial_conditions().status(), InitialConditionsStatus::Instantiated);
 
     let teval = (0.0, 1e5);
     particle.integrate(machine, teval, &solver_params);
@@ -145,10 +145,10 @@ fn gc_toroidal_integration_gcmotion_check_uniQ_larC_larB_cosP() {
     let initial = InitialConditions::boozer(0.0, psit0, 0.0, 0.0, -0.006634527089072539, 1e-6);
 
     let mut particle = Particle::new(&initial);
-    assert!(matches!(
-        particle.integration_status(),
-        IntegrationStatus::Initialized
-    ));
+    assert_eq!(
+        particle.initial_conditions().status(),
+        InitialConditionsStatus::Instantiated
+    );
 
     let teval = (0.0, 3e3);
     particle.integrate(machine, teval, &solver_params);
@@ -207,8 +207,8 @@ fn gc_toroidal_poloidal_equivalence() {
 
     let mut tor_particle = Particle::new(&tor_initial);
     let mut pol_particle = Particle::new(&pol_initial);
-    assert!(matches!(tor_particle.integration_status(), IntegrationStatus::Initialized));
-    assert!(matches!(pol_particle.integration_status(), IntegrationStatus::Initialized));
+    assert_eq!(tor_particle.initial_conditions().status(), InitialConditionsStatus::Instantiated);
+    assert_eq!(pol_particle.initial_conditions().status(), InitialConditionsStatus::Instantiated);
 
     let teval = (0.0, 2.56e5);
     tor_particle.integrate(machine, teval, &solver_params);
@@ -301,7 +301,7 @@ fn gc_mixed_boozer_equivalence() {
 
     let boozer_initial = InitialConditions::boozer(0.0, psip0, 0.0, 0.0, rho0, 1e-6);
     let mut boozer_particle = Particle::new(&boozer_initial);
-    assert!(matches!(boozer_particle.integration_status(), IntegrationStatus::Initialized));
+    assert_eq!(boozer_particle.initial_conditions().status(), InitialConditionsStatus::Instantiated);
     boozer_particle.integrate(machine, teval, &solver_params);
     dbg!(&boozer_particle);
 
@@ -310,7 +310,7 @@ fn gc_mixed_boozer_equivalence() {
 
     let mixed_initial = InitialConditions::mixed(0.0, psip0, 0.0, 0.0, pzeta, 1e-6);
     let mut mixed_particle = Particle::new(&mixed_initial);
-    assert!(matches!(mixed_particle.integration_status(), IntegrationStatus::PartiallyInitialized));
+    assert_eq!(mixed_particle.initial_conditions().status(), InitialConditionsStatus::Instantiated);
     mixed_particle.integrate(machine, teval, &solver_params);
     dbg!(&mixed_particle);
 
@@ -388,7 +388,7 @@ fn gc_const_pzeta_toroidal_integration_uniQ_larC_larB_cosP() {
     let initial = InitialConditions::mixed(0.0, Toroidal(0.03), 0.0, 0.0, -0.03, 1e-6);
 
     let mut particle = Particle::new(&initial);
-    assert!(matches!(particle.integration_status(), IntegrationStatus::PartiallyInitialized));
+    assert_eq!(particle.initial_conditions().status(), InitialConditionsStatus::Instantiated);
 
     let teval = (0.0, 6e5);
     particle.integrate(machine, teval, &solver_params);

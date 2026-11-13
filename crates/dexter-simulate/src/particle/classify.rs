@@ -1,10 +1,9 @@
 //! Classification of a particle's orbit by projection on the `(E, Pζ, μ)` space.
 
-use dexter_comspace::{EnergyPzetaPlane, EnergyPzetaPosition, OrbitType, Point};
+use dexter_comspace::{EnergyPzetaPlane, EnergyPzetaPosition, OrbitType};
 use dexter_machine::Machine;
 
-use crate::particle::{IntegrationCaches, Particle};
-use crate::state::GCState;
+use crate::particle::Particle;
 
 /// We dont want this function to return an error; Instead, we want to set a corresponding
 /// [`OrbitType`] variant for each valid orbit calculation (including "erroneous" orbits),
@@ -20,21 +19,11 @@ pub(super) fn classify(
     // =============== Particle Setup
 
     // Do not alter the `evolution` or `integration_status`
-    let mut caches = IntegrationCaches {
-        mode_caches: machine.perturbation().generate_caches(),
-        ..Default::default()
-    };
-
-    let Ok(initial_state) = GCState::new(&particle.initial_conditions, machine, &mut caches) else {
-        unreachable!("Particle::finalize_initial_conditions checks bounds");
-    };
-
-    particle.initial_energy = Some(initial_state.energy);
     particle.orbit_type = OrbitType::Undefined; // Fallback
 
     // =============== Energy-Pζ plane Setup
 
-    let mu = particle.initial_conditions.mu0;
+    let mu = particle.initial_conditions.mu0();
     let plane = match _plane {
         Some(plane) => {
             #[expect(clippy::float_cmp, reason = "we need bit-to-bit equivalence")]
@@ -48,22 +37,19 @@ pub(super) fn classify(
 
     check_parabola_alphas(plane);
 
-    let pzeta = particle
-        .initial_conditions
-        .pzeta0
-        .expect("Initial conditions have been finalized");
-    let energy = particle
-        .initial_energy
-        .expect("initial energy has been calculated");
-    let point = Point {
-        x: pzeta,
-        y: energy,
+    // If any of the two failed to evaluate
+    let (Some(point), Some(theta_dot)) = (
+        particle.initial_conditions.energy_pzeta_point(),
+        particle.initial_conditions.theta_dot0(),
+    ) else {
+        particle.energy_pzeta_position = EnergyPzetaPosition::Unclassified;
+        particle.orbit_type = particle.energy_pzeta_position.orbit_type();
+        return;
     };
 
     // =============== Routine
 
-    particle.energy_pzeta_position =
-        EnergyPzetaPosition::new(point, plane, initial_state.theta_dot);
+    particle.energy_pzeta_position = EnergyPzetaPosition::new(point, plane, theta_dot);
     particle.orbit_type = particle.energy_pzeta_position.orbit_type();
 }
 

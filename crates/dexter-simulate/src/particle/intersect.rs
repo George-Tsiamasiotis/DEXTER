@@ -10,7 +10,7 @@ use crate::constants::ANGLE_INTERSECTION_THRESHOLD;
 use crate::particle::{Evolution, IntegrationCaches, Particle};
 use crate::solve::{SolverParams, Stepper};
 use crate::state::GCState;
-use crate::{IntegrationStatus, SimulationError};
+use crate::{InitialConditionsStatus, IntegrationStatus, SimulationError};
 
 /// Defines the surface of the Poincare section.
 #[derive(Debug, Clone, Copy)]
@@ -78,6 +78,12 @@ pub(super) fn intersect(
     intersect_params: &IntersectParams,
     solver_params: &SolverParams,
 ) {
+    if particle.initial_conditions.status() != InitialConditionsStatus::Finalized {
+        let status_str = format!("{:?}", particle.initial_conditions.status()).into();
+        particle.integration_status = IntegrationStatus::Failed(status_str);
+        return;
+    }
+
     // =============== Setup
 
     let start = Instant::now();
@@ -93,11 +99,7 @@ pub(super) fn intersect(
         ..Default::default()
     };
 
-    let Ok(mut state1) = GCState::new(&particle.initial_conditions, machine, &mut caches) else {
-        unreachable!("Particle::finalize_initial_conditions checks bounds");
-    };
-
-    particle.initial_energy = Some(state1.energy);
+    let mut state1 = particle.initial_conditions.state.clone();
     let mut state2: GCState;
     let mut dt = solver_params.first_step;
 
@@ -195,7 +197,6 @@ pub(super) fn intersect(
     // =============== Finalize
 
     particle.evolution.duration = start.elapsed();
-    particle.final_energy = Some(state1.energy);
     particle.evolution.finish();
     particle.store_caches(caches);
 

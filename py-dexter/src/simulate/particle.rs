@@ -27,6 +27,21 @@ impl PyParticle {
         Self(Particle::from_critical_point(&point.0))
     }
 
+    pub fn finalize_initial_conditions(
+        &mut self,
+        qfactor: &PyQfactor,
+        current: &PyCurrent,
+        bfield: &PyBfield,
+        efield: &PyEfield,
+        perturbation: &PyPerturbation,
+    ) {
+        let machine = MachineBuilder::new(qfactor.inner(), current.inner(), bfield.inner())
+            .with_efield(efield.inner())
+            .with_perturbation(perturbation.inner())
+            .build();
+        self.0.finalize_initial_conditions(machine);
+    }
+
     pub fn integrate(
         &mut self,
         qfactor: &PyQfactor,

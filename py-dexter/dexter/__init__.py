@@ -1,3 +1,4 @@
+import shutil
 import matplotlib
 import matplotlib.pyplot as plt
 
@@ -6,10 +7,8 @@ try:
 except:
     pass
 
-try:
-    plt.rcParams["text.usetex"] = True
-except:
-    pass
+# If latex is not installed on the system, use matplotlib's built-in engine.
+matplotlib.rcParams["text.usetex"] = True if shutil.which("latex") else False
 
 plt.rcParams["figure.dpi"] = 180
 plt.rcParams["savefig.dpi"] = 300
@@ -37,8 +36,6 @@ from dexter.types import (
     CriticalPointKind,
     BoundaryExtremumKind,
 )
-
-from dexter.utils import get_max_threads, set_num_threads
 
 from dexter.machine.flux import MagneticFlux, MagneticFluxArray
 from dexter.machine.geometries import GeometryObject, LarGeometry, NcGeometry
@@ -110,9 +107,6 @@ __all__ = [
     "OrbitType",
     "CriticalPointKind",
     "BoundaryExtremumKind",
-    # Utilities
-    "get_max_threads",
-    "set_num_threads",
     # Machine
     "GeometryObject",
     "QfactorObject",

@@ -19,15 +19,18 @@ class _Registry(UnitRegistry[float | np.ndarray]):
         M = get_mass_number(species)
         Z = get_charge(species)
 
-        onaxis_gyrofrequency = (Z / M) * PROTON_CHARGE / PROTON_MASS * baxis  # s^-1
-        energy_unit = PROTON_MASS * onaxis_gyrofrequency**2 * raxis**2  # Joule
+        CHARGE = Z * PROTON_CHARGE
+        MASS = M * PROTON_MASS
 
-        self.define(f"NormSecond    = {1/onaxis_gyrofrequency} second")
-        self.define(f"NormHertz     = {onaxis_gyrofrequency} Hz")
-        self.define(f"NormTesla     = {baxis} tesla")
-        self.define(f"NormJoule     = {energy_unit/PROTON_CHARGE} electron_volt")
-        self.define(f"NormMeter     = {raxis} meter")
-        self.define(f"NormVolt      = NormJoule / ({PROTON_CHARGE} coulomb)")
+        onaxis_gyrofrequency = CHARGE / MASS * baxis  # s^-1
+        energy_unit = MASS * onaxis_gyrofrequency**2 * raxis**2  # Joule
+
+        self.define(f"NormTime       = {1/onaxis_gyrofrequency} second")
+        self.define(f"NormFrequency  = {onaxis_gyrofrequency} Hz")
+        self.define(f"NormBfield     = {baxis} tesla")
+        self.define(f"NormEnergy     = {energy_unit/PROTON_CHARGE} electron_volt")
+        self.define(f"NormDistance   = {raxis} meter")
+        self.define(f"NormPotential  = NormEnergy / ({PROTON_CHARGE} coulomb)")
 
 
 def get_mass_number(species: ParticleSpecies) -> float:

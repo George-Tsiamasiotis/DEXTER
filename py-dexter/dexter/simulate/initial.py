@@ -3,7 +3,7 @@
 from warnings import warn
 
 from dexter.machine.flux import MagneticFlux, MagneticFluxArray
-from dexter.types import Array1, CoordinateSet
+from dexter.types import Array1, CoordinateSet, InitialConditionsStatus
 
 from dexter._utils import _ReprStrImpl, _RustTypeWrapper, _into_pyarray1f64
 from dexter._core import (
@@ -18,8 +18,26 @@ class InitialConditions(_ReprStrImpl, _RustTypeWrapper):
     This type is instantiated through the [`Boozer`][dexter.InitialConditions.Boozer] and
     [`Mixed`][dexter.InitialConditions.Mixed] class methods.
 
+    The set can be created from one the following combinations:
+
+    + Boozer-Toroidal: Initial conditions set in the $(t, \psi_t, \theta, \zeta, \rho, \mu)$ space.
+    + Boozer-Poloidal: Initial conditions set in the $(t, \psi_p, \theta, \zeta, \rho, \mu)$ space.
+    + Mixed-Toroidal: Initial conditions set in the $(t, \psi_t, \theta, \zeta, P_\zeta, \mu)$ space.
+    + Mixed-Poloidal: Initial conditions set in the $(t, \psi_p, \theta, \zeta, P_\zeta, \mu)$ space.
+
+
+    !!! note
+
+        All getters of derived quantities are guarded behind an
+        `#!python particle.initial_conditions.status == Finalized` check. If any other variant is
+        encountered, an `AttributeError` is raised.
+
     Attributes
     ----------
+    status
+        The status of the initial conditions set
+    coordinate_set
+        The kind of initial conditions set.
     t0
         The initial time $t_0$.
     flux0
@@ -34,8 +52,6 @@ class InitialConditions(_ReprStrImpl, _RustTypeWrapper):
     pzeta0
         The initial $P_{\zeta,0}$. If the set was initialized from [`Boozer`][dexter.InitialConditions.Boozer]
         and no particle routines have run, raises `AttributeError`.
-    coordinate_set
-        The kind of initial conditions set.
     """
 
     _r: _PyInitialConditions
@@ -153,6 +169,14 @@ class InitialConditions(_ReprStrImpl, _RustTypeWrapper):
         return obj
 
     @property
+    def status(self) -> InitialConditionsStatus:
+        return self._r.status
+
+    @property
+    def coordinate_set(self) -> CoordinateSet:
+        return self._r.coordinate_set
+
+    @property
     def t0(self) -> float:
         return self._r.t0
 
@@ -187,8 +211,18 @@ class InitialConditions(_ReprStrImpl, _RustTypeWrapper):
             return self._r.pzeta0
 
     @property
-    def coordinate_set(self) -> CoordinateSet:
-        return self._r.coordinate_set
+    def theta_dot0(self) -> float:
+        if self._r.theta_dot0 is None:
+            raise AttributeError("'theta_dot0' has not been defined")
+        else:
+            return self._r.theta_dot0
+
+    @property
+    def energy(self) -> float:
+        if self._r.energy is None:
+            raise AttributeError("'energy' has not been defined")
+        else:
+            return self._r.energy
 
 
 class QueueInitialConditions(_ReprStrImpl, _RustTypeWrapper):

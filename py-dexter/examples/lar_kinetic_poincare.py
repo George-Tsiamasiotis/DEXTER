@@ -19,7 +19,7 @@ machine = dex.Machine(
 
 num = 30
 mu = 3e-5
-energy = cast(float, machine.quantity(20, "keV").to("NormJoule").m)
+energy = cast(float, machine.quantity(20, "keV").to("NormEnergy").m)
 
 rs = np.linspace(0.03, geometry.rlast * 0.999, num)
 psits = (rs / geometry.raxis) ** 2 / 2

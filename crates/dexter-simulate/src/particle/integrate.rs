@@ -4,10 +4,10 @@ use std::time::Instant;
 
 use dexter_machine::Machine;
 
-use crate::IntegrationStatus;
 use crate::particle::{IntegrationCaches, Particle};
 use crate::solve::{SolverParams, Stepper};
 use crate::state::GCState;
+use crate::{InitialConditionsStatus, IntegrationStatus};
 
 // ===============================================================================================
 
@@ -19,6 +19,12 @@ pub(super) fn integrate(
     teval: (f64, f64),
     solver_params: &SolverParams,
 ) {
+    if particle.initial_conditions.status() != InitialConditionsStatus::Finalized {
+        let status_str = format!("{:?}", particle.initial_conditions.status()).into();
+        particle.integration_status = IntegrationStatus::Failed(status_str);
+        return;
+    }
+
     // =============== Setup
 
     let start = Instant::now();
@@ -28,11 +34,8 @@ pub(super) fn integrate(
         mode_caches: machine.perturbation().generate_caches(),
         ..Default::default()
     };
-    let Ok(mut state1) = GCState::new(&particle.initial_conditions, machine, &mut caches) else {
-        unreachable!("Particle::finalize_initial_conditions checks bounds");
-    };
 
-    particle.initial_energy = Some(state1.energy);
+    let mut state1 = particle.initial_conditions.state.clone();
     let mut state2: GCState;
     let mut dt = solver_params.first_step;
 
@@ -71,7 +74,6 @@ pub(super) fn integrate(
     // =============== Finalize
 
     particle.evolution.duration = start.elapsed();
-    particle.final_energy = Some(state1.energy);
     particle.evolution.finish();
     particle.store_caches(caches);
 }

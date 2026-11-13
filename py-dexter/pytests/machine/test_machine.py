@@ -75,9 +75,9 @@ def test_normalizations():
         species="Deuterium",
     )
 
-    raxis_norm = machine.quantity(1, "NormMeter").to("meter").m
+    raxis_norm = machine.quantity(1, "NormDistance").to("meter").m
     assert isclose(raxis_norm, machine.raxis)
-    baxis_norm = machine.quantity(1, "NormTesla").to("tesla").m
+    baxis_norm = machine.quantity(1, "NormBfield").to("tesla").m
     assert isclose(baxis_norm, machine.baxis)
 
 
@@ -93,12 +93,12 @@ def test_gcmotion_units():
     )
 
     Q = machine.quantity
-    assert isclose(Q(1, "NormHertz").to("Hz").m, 167629580.2981652)
-    assert isclose(Q(1e-5, "NormJoule").to("keV").m, 8.983897819104792)
-    assert isclose(Q(1, "NormJoule").to("Joule").m, 1.4393791168013255e-10)
-    assert isclose(Q(0.003, "NormHertz").to("kilohertz").m, 502.88874089449564)
+    assert isclose(Q(1, "NormFrequency").to("Hz").m, 167629580.2981652)
+    assert isclose(Q(1e-5, "NormEnergy").to("keV").m, 17.967795638209584)
+    assert isclose(Q(1, "NormEnergy").to("Joule").m, 2.878758233602651e-10)
+    assert isclose(Q(0.003, "NormFrequency").to("kilohertz").m, 502.88874089449564)
 
-    assert isclose(Q(geometry.baxis, "Tesla").to("NormTesla").m, 1)
-    assert isclose(Q(1, "NormTesla").to("Tesla").m, geometry.baxis)
-    assert isclose(Q(geometry.raxis, "Meter").to("NormMeter").m, 1)
-    assert isclose(Q(1, "NormMeter").to("Meter").m, geometry.raxis)
+    assert isclose(Q(geometry.baxis, "Tesla").to("NormBfield").m, 1)
+    assert isclose(Q(1, "NormBfield").to("Tesla").m, geometry.baxis)
+    assert isclose(Q(geometry.raxis, "Meter").to("NormDistance").m, 1)
+    assert isclose(Q(1, "NormDistance").to("Meter").m, geometry.raxis)

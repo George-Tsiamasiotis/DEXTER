@@ -7,7 +7,7 @@ mod initial;
 mod integrate;
 mod intersect;
 
-pub use initial::{CoordinateSet, InitialConditions};
+pub use initial::{CoordinateSet, InitialConditions, InitialConditionsStatus};
 pub use intersect::{Directionality, IntersectParams, Intersection};
 
 // ===============================================================================================
@@ -20,7 +20,7 @@ use dexter_common::f64_slice_getter;
 use dexter_comspace::{CriticalPoint, EnergyPzetaPlane, EnergyPzetaPosition, OrbitType};
 use dexter_machine::{DynModeCaches, Machine, MachineBuilder};
 
-use crate::{SimulationError, SolverParams};
+use crate::SolverParams;
 use evolution::Evolution;
 
 // ===============================================================================================
@@ -56,22 +56,24 @@ impl IntegrationCaches {
 
 /// A [`Particle`]'s integration status.
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum IntegrationStatus {
-    /// Initialized by [`InitialConditions`], not integrated.
-    Initialized,
-    /// [`InitialConditions`] have not been fully calculated yet.
-    PartiallyInitialized,
-    /// Encountered `NaN` when finalizing the initial conditions.
-    NanInitialConditions,
-    /// Particle initialized with a 'bad' initial magnetic flux.
-    BadMagneticFlux,
-    /// [`InitialConditions`] were out of bounds.
-    OutOfBoundsInitialization,
+    /// No routines have run.
+    None,
     /// Reached the end of the integration successfully.
+    ///
+    /// This status is set when the particle successfully runs the
+    /// [`integrate`][Particle::integrate] routine.
     Integrated,
-    /// Intersections calculation successful.
+    /// All intersections were calculated successfully.
+    ///
+    /// This status is set when the particle successfully runs the
+    /// [`intersect`][Particle::intersect] routine.
     Intersected,
-    /// Integrated for a certain amount of `θ-ψ` periods.
+    /// Integrated successfully for a certain amount of `θ-ψ` periods.
+    ///
+    /// This status is set when the particle successfully runs the
+    /// [`close`][Particle::close] routine.
     ClosedPeriods(usize),
     /// Escaped the last closed flux surface (LCFS).
     Escaped,
@@ -124,17 +126,16 @@ pub struct Particle {
     orbit_type: OrbitType,
     /// The particle's calculated `ωθ`, `ωζ` and `qkinetic`.
     frequencies: Frequencies,
-    /// The particle's initial Energy in Normalized Units. The Energy depends both on the initial
-    /// conditions and the machine.
-    initial_energy: Option<f64>,
-    /// The particle's energy after the integration.
-    final_energy: Option<f64>,
-    /// Indicates whether the initial conditions are valid and ready to run a routine.
-    _routine_ready: bool,
 }
 
 impl Particle {
     /// Creates a new [`Particle`] from a set of [`InitialConditions`].
+    ///
+    /// # Note
+    ///
+    /// All particle routines are guarded behind an `initial_conditions.status == Finalized` check.
+    /// If any other variant is encountered, the routine returns early and the corresponding
+    /// [`integration_status`][crate::IntegrationStatus] field is set.
     ///
     /// # Example
     ///
@@ -148,22 +149,14 @@ impl Particle {
     /// ```
     #[must_use]
     pub fn new(initial_conditions: &InitialConditions) -> Self {
-        use CoordinateSet::*;
-        let integration_status = match initial_conditions.coordinate_set() {
-            BoozerToroidal | BoozerPoloidal => IntegrationStatus::Initialized, // Always succeeds
-            MixedToroidal | MixedPoloidal => IntegrationStatus::PartiallyInitialized, // Needs `finalize()`
-        };
         Self {
             initial_conditions: initial_conditions.to_owned(),
-            integration_status,
+            integration_status: IntegrationStatus::None,
             evolution: Evolution::default(),
             caches: IntegrationCaches::default(),
             energy_pzeta_position: EnergyPzetaPosition::default(),
             orbit_type: OrbitType::default(),
             frequencies: Frequencies::default(),
-            initial_energy: None,
-            final_energy: None,
-            _routine_ready: false,
         }
     }
 
@@ -190,32 +183,31 @@ impl Particle {
 
 // Routines
 impl Particle {
-    /// Finalizes the particle's initial conditions and sets the `integration_status` in case of an
-    /// error.
+    /// Finalizes the particle's initial conditions:
     ///
-    /// This method should be called at the beginning of every routine to account for changes in
-    /// `Machine` after the particle initialization.
-    pub(crate) fn finalize_initial_conditions(&mut self, machine: Machine) {
-        use SimulationError::*;
-        use dexter_machine::EvalError::*;
-        match self.initial_conditions.finalize(machine) {
-            Ok(_) => self._routine_ready = true,
-            Err(EvalError(Domain1dError(..)))
-            | Err(EvalError(Domain2dError(..)))
-            | Err(EvalError(AnalyticalDomainError)) => {
-                // Magnetic flux ψ0 is out of bounds
-                self.integration_status = IntegrationStatus::OutOfBoundsInitialization
-            }
-            Err(EvalError(UndefinedEvaluation(..))) | Err(EvalError(InvalidMagneticFlux)) => {
-                // Instantiated with 'bad' magnetic flux
-                self.integration_status = IntegrationStatus::BadMagneticFlux
-            }
-            Err(NanInitialConditions) => {
-                // NaN encountered
-                self.integration_status = IntegrationStatus::NanInitialConditions
-            }
-            Err(_) => unreachable!(),
-        }
+    /// + If the initial conditions are in [`Mixed`][InitialConditions::mixed] coordinates, then
+    ///   `ρ(Pζ, ψ)` is computed.
+    /// + If the initial conditions are in [`Boozer`][InitialConditions::boozer] coordinates, then
+    ///   `Pζ(ρ, ψ)` is computed.
+    ///
+    /// Finally, all guiding center quantities are evaluated, including the configuration's values (e.g.
+    /// `g`, `q`, `B`), the time derivatives and the energy.
+    ///
+    /// The `machine's` [`Perturbation`][dexter_machine::Perturbation] is also taken into account in
+    /// the computation.
+    ///
+    /// This method is internally called at the beginning of every routine, and does *not* have to
+    /// be called explicitly. However, it can be useful when one requires to *filter* a particle
+    /// right after its instantiation without having to run a routine first. See
+    /// [`Queue::finalize_initial_conditions`][crate::Queue::finalize_initial_conditions] for an
+    /// example.
+    ///
+    /// # Note
+    ///
+    /// In the case that the calculation fails, this method sets the particle's
+    /// [`integration_status`][Self::integration_status] accordingly.
+    pub fn finalize_initial_conditions(&mut self, machine: Machine) {
+        self.initial_conditions.finalize(machine);
     }
 
     /// Integrates the particle for a certain time interval.
@@ -254,10 +246,7 @@ impl Particle {
     ///
     /// ```
     pub fn integrate(&mut self, machine: Machine, teval: (f64, f64), solver_params: &SolverParams) {
-        self.finalize_initial_conditions(machine);
-        if !self._routine_ready {
-            return;
-        }
+        self.initial_conditions.ensure_finalized(machine);
         integrate::integrate(self, machine, teval, solver_params);
     }
 
@@ -319,10 +308,7 @@ impl Particle {
         intersect_params: &IntersectParams,
         solver_params: &SolverParams,
     ) {
-        self.finalize_initial_conditions(machine);
-        if !self._routine_ready {
-            return;
-        }
+        self.initial_conditions.ensure_finalized(machine);
         intersect::intersect(self, machine, intersect_params, solver_params);
     }
 
@@ -374,10 +360,7 @@ impl Particle {
     ///
     /// ```
     pub fn close(&mut self, machine: Machine, periods: usize, solver_params: &SolverParams) {
-        self.finalize_initial_conditions(machine);
-        if !self._routine_ready {
-            return;
-        }
+        self.initial_conditions.ensure_finalized(machine);
         // ignore perturbation
         let machine = MachineBuilder::new(machine.qfactor(), machine.current(), machine.bfield())
             .with_efield(machine.efield())
@@ -421,10 +404,7 @@ impl Particle {
     ///
     /// [`R. B. White`]: https://doi.org/10.1142/P440
     pub fn classify(&mut self, machine: Machine) {
-        self.finalize_initial_conditions(machine);
-        if !self._routine_ready {
-            return;
-        }
+        self.initial_conditions.ensure_finalized(machine);
         self._classify(machine, None);
     }
 
@@ -434,10 +414,7 @@ impl Particle {
     /// generate the [`EnergyPzetaPlane`] only once and use it for all particles. This method should
     /// only be called by [`crate::Queue::classify_common_mu`].
     pub(crate) fn _classify(&mut self, machine: Machine, _plane: Option<&EnergyPzetaPlane>) {
-        self.finalize_initial_conditions(machine);
-        if !self._routine_ready {
-            return;
-        }
+        self.initial_conditions.ensure_finalized(machine);
         classify::classify(self, machine, _plane)
     }
 }
@@ -479,13 +456,13 @@ impl Particle {
     /// Returns the particle's initial energy.
     #[must_use]
     pub fn initial_energy(&self) -> Option<f64> {
-        self.initial_energy
+        self.initial_conditions.energy()
     }
 
-    /// Returns the particle's final energy.
+    /// Returns the particle's final energy, i.e. the last value of the energy's time array.
     #[must_use]
     pub fn final_energy(&self) -> Option<f64> {
-        self.final_energy
+        self.evolution.energy.last().copied()
     }
 
     /// Calculates the relative standard deviation of the energy array.
@@ -653,8 +630,8 @@ impl std::fmt::Debug for Particle {
             .field("E-Pζ position", &self.energy_pzeta_position)
             .field("orbit_type", &self.orbit_type)
             .field("frequencies", &self.frequencies)
-            .field("initial energy", &self.initial_energy.unwrap_or(f64::NAN))
-            .field("final energy  ", &self.final_energy.unwrap_or(f64::NAN))
+            .field("initial_energy  ", &format!("{:?}", self.initial_energy()))
+            .field("final_energy  ", &format!("{:?}", self.final_energy()))
             .field("energy rsd", &self.energy_rsd())
             .finish()
     }

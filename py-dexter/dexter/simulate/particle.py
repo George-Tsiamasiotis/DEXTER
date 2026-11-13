@@ -32,6 +32,12 @@ class Particle(_ReprStrImpl, _RustTypeWrapper):
     By taking $\mu = 0$ and $\rho \rightarrow 0$, the particle traces magnetic field
     lines.
 
+    !!! note
+
+        All particle routines are guarded behind a `#!python particle.initial_conditions.status == "Finalized"`
+        check. If any other variant is encountered, the routine returns early and the corresponding
+        `integration_status` field is set.
+
     Parameters
     ----------
     initial_conditions
@@ -80,7 +86,7 @@ class Particle(_ReprStrImpl, _RustTypeWrapper):
     initial_energy
         The Particle's initial energy in Normalized Units.
     final_energy
-        The Particle's final energy in Normalized Units.
+        The Particle's final energy in Normalized Units, i.e. the last value of the energy's time array.
     energy_rsd
         The relative standard deviation of the particles `energy_array`. It is defined as
         $\sigma/\mu$, where $\sigma$ the standard deviation and $\mu$ the mean energy value.
@@ -145,6 +151,42 @@ class Particle(_ReprStrImpl, _RustTypeWrapper):
             The particle's $t_0$ and $\zeta_0$ are set to $0$.
         """
         return Particle._wrap(_PyParticle.from_critical_point(point._r))
+
+    def finalize_initial_conditions(self, machine: Machine):
+        r"""Finalizes the particle’s initial conditions:
+
+        + If the initial conditions are in [`Mixed`][dexter.InitialConditions.Mixed] coordinates, then
+          $\rho(P_\zeta, \psi)$ is computed.
+        + If the initial conditions are in [`Boozer`][dexter.InitialConditions.Boozer] coordinates, then
+          $P_\zeta(\rho, \psi)$ is computed.
+
+        Finally, all guiding center quantities are evaluated, including the configuration's values (e.g.
+        $g$, $q$, $B$), the time derivatives and the energy.
+
+        The machine's [`Perturbation`][dexter.Perturbation] is also taken into account in the computation.
+
+        This method is internally called at the beginning of every routine, and does not have to be
+        called explicitly. However, it can be useful when one requires to filter a particle right after
+        its instantiation without having to run a routine first. See
+        [`Queue.finalize_initial_conditions`][dexter.Queue.finalize_initial_conditions] for an example.
+
+        !!! note
+
+            In the case that the calculation fails, this method sets the particle’s `integration_status`
+            accordingly.
+
+        Parameters
+        ----------
+        machine
+            The machine in which to finalize the initial conditions.
+        """
+        self._r.finalize_initial_conditions(
+            qfactor=machine.qfactor._r,
+            current=machine.current._r,
+            bfield=machine.bfield._r,
+            efield=machine.efield._r,
+            perturbation=machine.perturbation._r,
+        )
 
     def integrate(
         self,

@@ -60,11 +60,13 @@ pzeta_array = np.linspace(-0.4, 0.1, 500) * machine.psip_last.value
 plane.calculate_critical_points(pzeta_array)
 plane.classify_critical_points()
 plane.add_particles(queue)
-fig, ax = plane.show(xlim=(-0.4, 0.1), ylim=(0.8, 1.4), curves=True, show=False)
+fig, ax = plane.show(
+    xlim=(-0.4, 0.1), ylim=(0.8, 1.4), colors="Orbit", curves=True, show=False
+)
 fig.set_figheight(4)
 fig.set_figwidth(3)
 ax.legend().remove()
 
 
 queue.close(machine, discard_arrays=False)
-dex.plot_poloidal_drift(machine, queue)
+dex.plot_poloidal_drift(machine, queue, colors="Orbit")

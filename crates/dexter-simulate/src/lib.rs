@@ -68,8 +68,8 @@ pub use error::SimulationError;
 pub use solve::{SolverParams, SteppingMethod};
 
 pub use particle::{
-    CoordinateSet, Directionality, Frequencies, InitialConditions, IntegrationStatus,
-    IntersectParams, Intersection, Particle,
+    CoordinateSet, Directionality, Frequencies, InitialConditions, InitialConditionsStatus,
+    IntegrationStatus, IntersectParams, Intersection, Particle,
 };
 
 pub use queue::{Queue, QueueInitialConditions, Routine};

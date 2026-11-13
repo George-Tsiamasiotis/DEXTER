@@ -22,7 +22,9 @@ def test_plot_efield_both_fluxes(lar_machine: dex.Machine):
     machine = copy(lar_machine)
     machine.geometry = dex.LarGeometry(1, 2.5, 0.5)
 
-    strength = machine.quantity(75, "kiloVolt / meter").to("NormVolt / NormMeter")
+    strength = machine.quantity(75, "kiloVolt / meter").to(
+        "NormPotential / NormDistance"
+    )
     rmean = 0.96 * machine.geometry.rlast
     width = machine.geometry.psit_last.value * 0.02
 

@@ -31,13 +31,11 @@ dexter-simulate = { path = "crates/dexter-simulate" }
 [workspace.package]
 authors = ["George Tsiamasiotis"]
 edition = "2024"
-version = "0.2.6"
-rust-version = "1.97.1"
+version = "0.2.7-pre.2"
+rust-version = "1.100.0"
 license = "GPL-3.0-only"
-homepage = "https://github.com/George-Tsiamasiotis/DEXTER"
 repository = "https://github.com/George-Tsiamasiotis/DEXTER"
 documentation = "https://github.com/George-Tsiamasiotis/DEXTER"
-description = "Calculations and simulations in reconstructed configurations of toroidal fusion devices."
 keywords = ["dexter", "physics", "plasma", "fusion"]
 categories = ["science", "simulation", "visualization"]
 

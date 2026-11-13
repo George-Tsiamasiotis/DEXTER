@@ -306,7 +306,7 @@ class GCHamiltonian(_ReprStrImpl):
         >>> # ======================
         >>>
         >>> mu = 5e-5
-        >>> energy = machine.quantity(21, "keV").to("NormJoule").m
+        >>> energy = machine.quantity(21, "keV").to("NormEnergy").m
         >>> rho0s = dex.GCHamiltonian.eval_rho_array(machine, theta0s, psit0s, energy, mu)
         >>>
         >>> initial_conditions = dex.QueueInitialConditions.Boozer(
@@ -323,7 +323,7 @@ class GCHamiltonian(_ReprStrImpl):
         >>>
         >>> from math import isclose
         >>> for particle in queue:
-        ...     energy = machine.quantity(particle.initial_energy, "NormJoule").to("keV")
+        ...     energy = machine.quantity(particle.initial_energy, "NormEnergy").to("keV")
         ...     assert isclose(energy.magnitude, 21) # keV
 
         ```

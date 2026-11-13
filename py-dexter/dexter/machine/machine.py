@@ -144,6 +144,7 @@ class Machine:
         path: str,
         interp1d_type: Interpolation1dType,
         interp2d_type: Interpolation2dType,
+        species: ParticleSpecies = "Proton",
     ) -> Machine:
         r"""Constructs a `Machine` from a netCDF file with no perturbations and default settings.
 
@@ -155,6 +156,8 @@ class Machine:
             The 1D interpolation type for the 1D quantities.
         interp2d_type
             The 2D interpolation type for the 2D quantities.
+        species
+            The particle species under study. This only affects unit conversions to SI.
 
         Example
         -------
@@ -170,6 +173,7 @@ class Machine:
             qfactor=NcQfactor(path, interp1d_type),
             current=NcCurrent(path, interp1d_type),
             bfield=NcBfield(path, interp2d_type),
+            species=species,
         )
 
     def quantity[T: float | np.ndarray](
@@ -209,13 +213,13 @@ class Machine:
         >>>
         >>> machine.quantity(geometry.raxis, "meter")
         Quantity(2.75, "meter")
-        >>> machine.quantity(geometry.raxis, "meter").to("NormMeter").magnitude
+        >>> machine.quantity(geometry.raxis, "meter").to("NormDistance").magnitude
         1.0
         >>>
         >>> # Electric field strength in normalized units
         >>> efield_strength = machine.quantity(50, "kiloVolt / meter")
-        >>> efield_strength.to("NormVolt / NormMeter")
-        Quantity(4.7453113229756864e-05, "NormVolt / NormMeter")
+        >>> efield_strength.to("NormPotential / NormDistance")
+        Quantity(4.7453113229756864e-05, "NormPotential / NormDistance")
 
         ```
         """

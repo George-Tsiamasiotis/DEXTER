@@ -165,17 +165,17 @@ impl QueueInitialConditions {
 
         for particle in particles {
             let initial = particle.initial_conditions();
-            t0.push(initial.t0);
-            flux0.push(initial.flux0.value());
-            theta0.push(initial.theta0);
-            zeta0.push(initial.zeta0);
-            mu0.push(initial.mu0);
+            t0.push(initial.t0());
+            flux0.push(initial.flux0().value());
+            theta0.push(initial.theta0());
+            zeta0.push(initial.zeta0());
+            mu0.push(initial.mu0());
             match initial.coordinate_set() {
                 CoordinateSet::BoozerToroidal | CoordinateSet::BoozerPoloidal => {
-                    rho0.push(initial.rho0.expect("always some in boozer"))
+                    rho0.push(initial.rho0().expect("always some in boozer"))
                 }
                 CoordinateSet::MixedToroidal | CoordinateSet::MixedPoloidal => {
-                    pzeta0.push(initial.pzeta0.expect("always some in mixed"))
+                    pzeta0.push(initial.pzeta0().expect("always some in mixed"))
                 }
             }
         }
@@ -451,10 +451,7 @@ mod test {
 
         let particles: Vec<Particle> = initial.to_particles();
         particles.iter().for_each(|particle| {
-            assert_eq!(
-                particle.integration_status(),
-                IntegrationStatus::Initialized
-            )
+            assert_eq!(particle.integration_status(), IntegrationStatus::None)
         });
         assert_eq!(particles.len(), initial.len());
     }
@@ -473,10 +470,7 @@ mod test {
 
         let particles: Vec<Particle> = initial.to_particles();
         particles.iter().for_each(|particle| {
-            assert_eq!(
-                particle.integration_status(),
-                IntegrationStatus::PartiallyInitialized
-            )
+            assert_eq!(particle.integration_status(), IntegrationStatus::None)
         });
         assert_eq!(particles.len(), initial.len());
     }
@@ -492,8 +486,8 @@ mod test {
         let initials = QueueInitialConditions::from_particles(&[particle1, particle2]);
         let queue = crate::Queue::new(&initials);
 
-        assert_eq!(initial1.theta0, queue[0].initial_conditions().theta0);
-        assert_eq!(initial2.theta0, queue[1].initial_conditions().theta0);
+        assert_eq!(initial1.theta0(), queue[0].initial_conditions().theta0());
+        assert_eq!(initial2.theta0(), queue[1].initial_conditions().theta0());
     }
 
     #[test]
@@ -507,8 +501,8 @@ mod test {
         let initials = QueueInitialConditions::from_particles(&[particle1, particle2]);
         let queue = crate::Queue::new(&initials);
 
-        assert_eq!(initial1.theta0, queue[0].initial_conditions().theta0);
-        assert_eq!(initial2.theta0, queue[1].initial_conditions().theta0);
+        assert_eq!(initial1.theta0(), queue[0].initial_conditions().theta0());
+        assert_eq!(initial2.theta0(), queue[1].initial_conditions().theta0());
     }
 
     #[test]
@@ -523,7 +517,7 @@ mod test {
         let initials = QueueInitialConditions::from_particles(&[particle1, particle2]);
         let queue = crate::Queue::new(&initials);
 
-        assert_eq!(initial1.theta0, queue[0].initial_conditions().theta0);
-        assert_eq!(initial2.theta0, queue[1].initial_conditions().theta0);
+        assert_eq!(initial1.theta0(), queue[0].initial_conditions().theta0());
+        assert_eq!(initial2.theta0(), queue[1].initial_conditions().theta0());
     }
 }

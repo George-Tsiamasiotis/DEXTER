@@ -14,7 +14,10 @@ use crate::particle::intersect::{
 use crate::particle::{IntegrationCaches, Particle};
 use crate::solve::{SolverParams, Stepper};
 use crate::state::GCState;
-use crate::{Directionality, Frequencies, IntegrationStatus, IntersectParams, Intersection};
+use crate::{
+    Directionality, Frequencies, InitialConditionsStatus, IntegrationStatus, IntersectParams,
+    Intersection,
+};
 
 // ===============================================================================================
 
@@ -26,6 +29,12 @@ pub(super) fn close(
     periods: usize,
     solver_params: &SolverParams,
 ) {
+    if particle.initial_conditions.status() != InitialConditionsStatus::Finalized {
+        let status_str = format!("{:?}", particle.initial_conditions.status()).into();
+        particle.integration_status = IntegrationStatus::Failed(status_str);
+        return;
+    }
+
     // =============== Setup
 
     let start = Instant::now();
@@ -40,14 +49,8 @@ pub(super) fn close(
         ..Default::default()
     };
 
-    let Ok(state0) = GCState::new(&particle.initial_conditions, machine, &mut caches) else {
-        unreachable!("Particle::finalize_initial_conditions checks bounds");
-    };
-
-    // `state0` has been evaluated on the initial point
-    particle.initial_energy = Some(state0.energy);
+    let state0 = particle.initial_conditions.state.clone();
     let mut state1 = state0.clone();
-
     let mut state2: GCState;
     let mut dt = solver_params.first_step;
     let mut closed_periods: usize = 0;
@@ -162,7 +165,6 @@ pub(super) fn close(
 
     calculate_frequencies(particle);
     particle.evolution.duration = start.elapsed();
-    particle.final_energy = Some(state1.energy);
     particle.evolution.finish();
     particle.store_caches(caches);
 }
