@@ -15,7 +15,7 @@ use std::time::Duration;
 use dexter_comspace::{EnergyPzetaPlane, EnergyPzetaPosition, OrbitType};
 use dexter_machine::Machine;
 
-use crate::{IntersectParams, Particle, SolverParams};
+use crate::{IntegrationStatus, IntersectParams, Particle, SolverParams};
 
 /// Available [`Queue`] routines.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -142,6 +142,47 @@ impl Queue {
         if !self.routines.contains(&routine) {
             self.routines.push(routine);
         }
+    }
+
+    /// Finalizes the initial conditions of all contained particles (See
+    /// [`Particle::finalize_initial_conditions`]).
+    ///
+    /// # Example
+    /// ```
+    /// # use dexter_machine::*;
+    /// # use dexter_simulate::*;
+    /// # use std::path::PathBuf;
+    /// # use ndarray::*;
+    /// #
+    /// # let lcfs = MagneticFlux::Toroidal(0.6);
+    /// # let qfactor = ParabolicQfactor::new(1.1, 4.2, lcfs);
+    /// # let current = LarCurrent;
+    /// # let bfield = LarBfield;
+    /// # let machine = MachineBuilder::new(&qfactor, &current, &bfield).build();
+    /// let particle_count = 1_000;
+    /// let psit0s_values =
+    ///     machine.qfactor().psit_last().value() * Array1::linspace(0.001, 0.5, particle_count);
+    ///
+    /// let initial_conditions = QueueInitialConditions::mixed(
+    ///     &Array1::zeros(particle_count).to_vec(),
+    ///     &MagneticFluxArray::Toroidal(psit0s_values),
+    ///     &Array1::ones(particle_count).to_vec(),
+    ///     &Array1::zeros(particle_count).to_vec(),
+    ///     &Array1::from_elem(particle_count, 0.5*machine.psip_last().value()).to_vec(),
+    ///     &Array1::from_elem(particle_count, 7e-6).to_vec(),
+    /// )?;
+    ///
+    /// let mut queue = Queue::new(&initial_conditions);
+    /// queue.finalize_initial_conditions(machine);
+    ///
+    /// // TODO: filter example
+    ///
+    /// # Ok::<_, SimulationError>(())
+    /// ```
+    pub fn finalize_initial_conditions(&mut self, machine: Machine) {
+        self.particles.iter_mut().for_each(|particle| {
+            particle.finalize_initial_conditions(machine);
+        });
     }
 
     /// Integrates all the contained particles for a specific time interval.
@@ -481,6 +522,18 @@ impl Queue {
             particle
                 .initial_energy()
                 .is_some_and(|energy| span.contains(&energy))
+        });
+    }
+
+    /// Iterates through `self`'s particles, keeping only the ones that have successfully completed
+    /// the [`close`][Particle::close] routine (particles with
+    /// [`IntegrationStatus::ClosedPeriods`]). The *number* of the closed periods is ignored.
+    pub fn retain_closed(&mut self) {
+        self.particles.retain(|particle| {
+            matches!(
+                particle.integration_status(),
+                IntegrationStatus::ClosedPeriods(..)
+            )
         });
     }
 

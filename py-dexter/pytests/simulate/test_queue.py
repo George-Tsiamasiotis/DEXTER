@@ -33,7 +33,9 @@ def test_queue_routines_analytical(lar_machine: dex.Machine):
     )
     queue = dex.Queue(initial)
 
+    queue.finalize_initial_conditions(lar_machine)
     queue.integrate(lar_machine, (0, 100))
+    queue.finalize_initial_conditions(lar_machine)
     intersect_params = dex.IntersectParams("ConstZeta", 0, 4)
     queue.intersect(lar_machine, intersect_params)
     queue.close(lar_machine)
@@ -55,7 +57,9 @@ def test_queue_routines_numerical(nc_machine: dex.Machine):
     )
     queue = dex.Queue(initial)
 
+    queue.finalize_initial_conditions(nc_machine)
     queue.integrate(nc_machine, (0, 100))
+    queue.finalize_initial_conditions(nc_machine)
     intersect_params = dex.IntersectParams("ConstZeta", 0, 4)
     queue.intersect(nc_machine, intersect_params)
     queue.close(nc_machine)

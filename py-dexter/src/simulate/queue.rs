@@ -35,6 +35,21 @@ impl PyQueue {
 
 #[pymethods] // Routines
 impl PyQueue {
+    pub fn finalize_initial_conditions(
+        &mut self,
+        qfactor: &PyQfactor,
+        current: &PyCurrent,
+        bfield: &PyBfield,
+        efield: &PyEfield,
+        perturbation: &PyPerturbation,
+    ) {
+        let machine = MachineBuilder::new(qfactor.inner(), current.inner(), bfield.inner())
+            .with_efield(efield.inner())
+            .with_perturbation(perturbation.inner())
+            .build();
+        self.0.finalize_initial_conditions(machine);
+    }
+
     pub fn integrate(
         &mut self,
         qfactor: &PyQfactor,
@@ -129,6 +144,10 @@ impl PyQueue {
 
     pub fn retain_energy<'py>(&mut self, start: f64, end: f64) {
         self.0.retain_energy(start..end);
+    }
+
+    pub fn retain_closed<'py>(&mut self) {
+        self.0.retain_closed();
     }
 
     pub fn retain_energy_pzeta_positions(&mut self, positions: Vec<String>) {

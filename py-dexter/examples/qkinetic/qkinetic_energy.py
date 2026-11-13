@@ -38,9 +38,9 @@ queue.retain_energy(0, machine.quantity(60, "keV").to("NormJoule").m)
 
 plane = dex.EnergyPzetaPlane(machine, mu)
 pzeta_array = np.linspace(-1.3, 0.3, 2000) * machine.psip_last.value
-plane.calculate_critical_points(pzeta_array)
+plane.bifurcation_analysis(pzeta_array)
 plane.add_particles(queue)
-fig, ax = plane.show(xlim=(-1.1, 0.3), ylim=(0.6, 2.8), curves=True, show=False)
 
 queue.close(machine)
-queue.plot_qkinetic_energy(machine)
+queue.plot_qkinetic_energy(machine, show=False)
+plane.show(xlim=(-1.1, 0.3), ylim=(0.6, 2.8), curves=False)

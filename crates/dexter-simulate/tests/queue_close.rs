@@ -59,6 +59,9 @@ fn queue_close_parQ_larC_larB_cosP() -> Result<(), SimulationError> {
         particle_count
     );
 
+    queue.retain_closed();
+    assert_eq!(queue.particle_count(), 10);
+
     println!("{queue:#?}");
 
     let steps_taken = queue.steps_taken_array();

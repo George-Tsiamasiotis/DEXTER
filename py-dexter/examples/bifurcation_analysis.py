@@ -64,7 +64,7 @@ plane.bifurcation_analysis(pzeta_array)
 plane.add_particles(queue)
 plane.print_durations()
 fig, ax = plane.show(
-    xlim=pzeta_lim, ylim=(0.0, 5), colors="Cycle", curves=True, show=False
+    xlim=pzeta_lim, ylim=(0.0, 5), colors="Cycle", curves=False, show=False
 )
 fig.set_figheight(4)
 fig.set_figwidth(6)

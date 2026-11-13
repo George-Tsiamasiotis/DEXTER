@@ -568,6 +568,14 @@ class _PyParticle:
     def __init__(self, initial: _PyInitialConditions) -> None: ...
     @classmethod
     def from_critical_point(cls, point: _PyCriticalPoint) -> _PyParticle: ...
+    def finalize_initial_conditions(
+        self,
+        qfactor: _PyQfactor,
+        current: _PyCurrent,
+        bfield: _PyBfield,
+        efield: _PyEfield,
+        perturbation: _PyPerturbation,
+    ) -> None: ...
     def integrate(
         self,
         qfactor: _PyQfactor,
@@ -661,6 +669,14 @@ class _PyQueue:
     def __init__(self, initial: _PyQueueInitialConditions) -> None: ...
     @classmethod
     def from_particles(cls, particles: list[_PyParticle]) -> _PyQueue: ...
+    def finalize_initial_conditions(
+        self,
+        qfactor: _PyQfactor,
+        current: _PyCurrent,
+        bfield: _PyBfield,
+        efield: _PyEfield,
+        perturbation: _PyPerturbation,
+    ) -> None: ...
     def integrate(
         self,
         qfactor: _PyQfactor,
@@ -702,6 +718,7 @@ class _PyQueue:
     def particles(self) -> list[_PyParticle]: ...
     def retain_pzeta(self, start: float, end: float) -> None: ...
     def retain_energy(self, start: float, end: float) -> None: ...
+    def retain_closed(self) -> None: ...
     def retain_energy_pzeta_positions(
         self,
         positions: list[EnergyPzetaPosition],

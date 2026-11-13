@@ -37,7 +37,7 @@ args = parser.parse_args()
 
 machine = Machine.FromNetcdf(args.nc_file, "Linear", args.interpolation_type)
 
-plot_bfield(machine, contour_points=args.contour_points, show=True)
 print(machine.bfield)
+plot_bfield(machine, contour_points=args.contour_points, show=True)
 
 raise SystemExit

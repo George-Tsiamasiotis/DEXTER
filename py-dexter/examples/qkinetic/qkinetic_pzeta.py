@@ -41,9 +41,9 @@ queue.classify(machine)
 
 plane = dex.EnergyPzetaPlane(machine, mu)
 pzeta_array = np.linspace(-1.3, 0.3, 2000) * machine.psip_last.value
-plane.calculate_critical_points(pzeta_array)
+plane.bifurcation_analysis(pzeta_array)
 plane.add_particles(queue)
-fig, ax = plane.show(xlim=(-1.1, 0.3), ylim=(0.6, 1.8), curves=True)
+fig, ax = plane.show(xlim=(-1.1, 0.3), ylim=(0.6, 1.8), curves=False)
 
 # Discard lost particles before integrating
 plane.clear_particles()
@@ -57,8 +57,8 @@ queue.retain_orbit_types(
         "Undefined",
     ]
 )
-plane.add_particles(queue)
-fig, ax = plane.show(xlim=(-1.1, 0.3), ylim=(0.6, 1.8), curves=True, show=False)
 
 queue.close(machine)
-dex.plot_qkinetic_pzeta(machine, queue)
+dex.plot_qkinetic_pzeta(machine, queue, show=False)
+plane.add_particles(queue)
+plane.show(xlim=(-1.1, 0.3), ylim=(0.6, 1.8), curves=True)

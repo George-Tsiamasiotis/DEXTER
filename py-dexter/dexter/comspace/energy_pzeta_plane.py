@@ -327,9 +327,14 @@ class EnergyPzetaPlane(_ReprStrImpl):
             si_ax.set_ybound(min_energy_si, max_energy_si)
             si_ax.set_ylabel(r"$E\ [keV]$")
 
+        PARTICLE_ZORDER = 10
+        CURVES_ZORDER = 15
+        BOUNDARY_EXTREMA_ZORDER = 20
+        CRITICAL_POINTS_ZORDER = 30
+
         ax.autoscale(False)
         if particles:
-            zorder = 10
+            zorder = PARTICLE_ZORDER
             if len(self._particle_points) < 100:
                 point_size = 10
                 zorder = 1000
@@ -361,7 +366,7 @@ class EnergyPzetaPlane(_ReprStrImpl):
             if len(pzetas) > 0:
                 _had_points = True
                 # fmt: off
-                ax.scatter(pzetas, energies, c=c, s=3, zorder=20)
+                ax.scatter(pzetas, energies, c=c, s=3, zorder=CRITICAL_POINTS_ZORDER)
                 ax.scatter([], [], c=critical_point_color("OpointMin"), s=4, label=r"$\mathcal{O}-point\ (min)$")
                 ax.scatter([], [], c=critical_point_color("OpointMax"), s=4, label=r"$\mathcal{O}-point\ (max)$")
                 ax.scatter([], [], c=critical_point_color("Xpoint"), s=4, label=r"$\mathcal{X}-point$")
@@ -374,9 +379,9 @@ class EnergyPzetaPlane(_ReprStrImpl):
             if len(pzetas) > 0:
                 _had_points = True
                 # fmt: off
-                ax.scatter(pzetas, energies, c=c, s=2, zorder=19)
-                ax.scatter([], [], c=boundary_extremum_color("Minimum"), s=4, label=r"$Boundary\ (min)$")
-                ax.scatter([], [], c=boundary_extremum_color("Maximum"), s=4, label=r"$Boundary\ (max)$")
+                ax.scatter(pzetas, energies, c=c, s=2, zorder=BOUNDARY_EXTREMA_ZORDER)
+                ax.scatter([], [], c=boundary_extremum_color("Minimum"), s=3, label=r"$Boundary\ (min)$")
+                ax.scatter([], [], c=boundary_extremum_color("Maximum"), s=3, label=r"$Boundary\ (max)$")
                 # fmt: on
 
         if curves:
@@ -399,8 +404,7 @@ class EnergyPzetaPlane(_ReprStrImpl):
             tp_lower = self._r.tp_lower_values / mu
             tp_upper = self._r.tp_upper_values / mu
 
-            LINEWIDTH = 3
-            ZORDER = 15
+            CURVES_LINEWIDTH = 3
             MA_COLOR = "xkcd:aqua"
             LW_COLOR = "xkcd:gold"
             RW_COLOR = "xkcd:jade green"
@@ -411,8 +415,8 @@ class EnergyPzetaPlane(_ReprStrImpl):
                 lw_span / psip_last,
                 lw,
                 c=LW_COLOR,
-                linewidth=LINEWIDTH,
-                zorder=ZORDER,
+                linewidth=CURVES_LINEWIDTH,
+                zorder=CURVES_ZORDER,
                 label=r"$Left\ Wall$",
                 alpha=CURVES_ALPHA,
             )
@@ -420,8 +424,8 @@ class EnergyPzetaPlane(_ReprStrImpl):
                 rw_span / psip_last,
                 rw,
                 c=RW_COLOR,
-                linewidth=LINEWIDTH,
-                zorder=ZORDER,
+                linewidth=CURVES_LINEWIDTH,
+                zorder=CURVES_ZORDER,
                 label=r"$Right\ Wall$",
                 alpha=CURVES_ALPHA,
             )
@@ -429,8 +433,8 @@ class EnergyPzetaPlane(_ReprStrImpl):
                 axis_span / psip_last,
                 axis,
                 c=MA_COLOR,
-                linewidth=LINEWIDTH,
-                zorder=ZORDER,
+                linewidth=CURVES_LINEWIDTH,
+                zorder=CURVES_ZORDER,
                 label=r"$Magnetic\ Axis$",
                 alpha=CURVES_ALPHA,
             )
@@ -438,8 +442,8 @@ class EnergyPzetaPlane(_ReprStrImpl):
                 np.concat((tp_pzeta, tp_pzeta[::-1], [-1])),
                 np.concat((tp_lower, tp_upper[::-1], [tp_lower[0]])),
                 c=TP_COLOR,
-                linewidth=LINEWIDTH,
-                zorder=ZORDER,
+                linewidth=CURVES_LINEWIDTH,
+                zorder=CURVES_ZORDER,
                 label=r"$Trapped-Passing\ Boundary$",
                 alpha=CURVES_ALPHA,
             )

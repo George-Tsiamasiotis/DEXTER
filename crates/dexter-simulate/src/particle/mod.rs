@@ -190,12 +190,27 @@ impl Particle {
 
 // Routines
 impl Particle {
-    /// Finalizes the particle's initial conditions and sets the `integration_status` in case of an
-    /// error.
+    /// Finalizes the particle's initial conditions:
     ///
-    /// This method should be called at the beginning of every routine to account for changes in
-    /// `Machine` after the particle initialization.
-    pub(crate) fn finalize_initial_conditions(&mut self, machine: Machine) {
+    /// + If the initial conditions are in [`Mixed`][InitialConditions::mixed] coordinates, then
+    ///   `ρ(Pζ, ψ)` is computed.
+    /// + If the initial conditions are in [`Boozer`][InitialConditions::boozer] coordinates, then
+    ///   `Pζ(ρ, ψ)` is computed.
+    ///
+    /// The `machine's` [`Perturbation`][dexter_machine::Perturbation] is also taken into account in
+    /// the computation.
+    ///
+    /// This method is internally called at the beginning of every routine, and does *not* have to
+    /// be called explicitly. However, it can be useful when one requires to *filter* a particle
+    /// right after its instantiation without having to run a routine first. See
+    /// [`Queue::finalize_initial_conditions`][crate::Queue::finalize_initial_conditions] for an
+    /// example.
+    ///
+    /// # Note
+    ///
+    /// In the case that the calculation fails, this method sets the particle's
+    /// [`integration_status`][Self::integration_status] accordingly.
+    pub fn finalize_initial_conditions(&mut self, machine: Machine) {
         use SimulationError::*;
         use dexter_machine::EvalError::*;
         match self.initial_conditions.finalize(machine) {

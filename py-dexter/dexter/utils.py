@@ -20,7 +20,7 @@ def set_num_threads(num: int):
     Example
     ------
     ```python title="Configure number of threads"
-    >>> dex.set_num_threads(4)
+    >>> dex.utils.set_num_threads(4)
 
     ```
     """

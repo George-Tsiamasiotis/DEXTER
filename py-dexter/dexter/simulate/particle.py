@@ -146,6 +146,39 @@ class Particle(_ReprStrImpl, _RustTypeWrapper):
         """
         return Particle._wrap(_PyParticle.from_critical_point(point._r))
 
+    def finalize_initial_conditions(self, machine: Machine):
+        r"""Finalizes the particle’s initial conditions:
+
+        + If the initial conditions are in [`Mixed`][dexter.InitialConditions.Mixed] coordinates, then
+          $\rho(P_\zeta, \psi)$ is computed.
+        + If the initial conditions are in [`Boozer`][dexter.InitialConditions.Boozer] coordinates, then
+          $P_\zeta(\rho, \psi)$ is computed.
+
+        The machine's [`Perturbation`][dexter.Perturbation] is also taken into account in the computation.
+
+        This method is internally called at the beginning of every routine, and does not have to be
+        called explicitly. However, it can be useful when one requires to filter a particle right after
+        its instantiation without having to run a routine first. See
+        [`Queue.finalize_initial_conditions`][dexter.Queue.finalize_initial_conditions] for an example.
+
+        !!! note
+
+            In the case that the calculation fails, this method sets the particle’s `integration_status`
+            accordingly.
+
+        Parameters
+        ----------
+        machine
+            The machine in which to finalize the initial conditions.
+        """
+        self._r.finalize_initial_conditions(
+            qfactor=machine.qfactor._r,
+            current=machine.current._r,
+            bfield=machine.bfield._r,
+            efield=machine.efield._r,
+            perturbation=machine.perturbation._r,
+        )
+
     def integrate(
         self,
         machine: Machine,

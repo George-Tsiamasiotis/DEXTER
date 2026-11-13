@@ -80,6 +80,25 @@ class Queue(_ReprStrImpl):
         obj._r = _PyQueue.from_particles(_particles)
         return obj
 
+    def finalize_initial_conditions(self, machine: Machine):
+        r"""Finalizes the initial conditions of all contained particles
+        (See [`Particle::finalize_initial_conditions`][dexter.Particle.finalize_initial_conditions]).
+
+        TODO: filter example
+
+        Parameters
+        ----------
+        machine
+            The machine in which to finalize the initial conditions.
+        """
+        self._r.finalize_initial_conditions(
+            qfactor=machine.qfactor._r,
+            current=machine.current._r,
+            bfield=machine.bfield._r,
+            efield=machine.efield._r,
+            perturbation=machine.perturbation._r,
+        )
+
     def integrate(
         self,
         machine: Machine,
@@ -378,6 +397,14 @@ class Queue(_ReprStrImpl):
             The energy ending value.
         """
         self._r.retain_energy(start, end)
+
+    def retain_closed(self) -> None:
+        r"""Iterates through `self`’s particles, keeping only the ones that have successfully
+        completed the [`close`][dexter.Particle.close] routine
+        (`#!python particle.integration_status == "ClosedPeriods(..)`).
+        The number of the closed periods is ignored.
+        """
+        self._r.retain_closed()
 
     def retain_energy_pzeta_positions(self, positions: Iterable[EnergyPzetaPosition]):
         r"""Iterates through `self`’s particles, keeping only the ones with an

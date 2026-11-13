@@ -38,7 +38,7 @@ class _RustTypeWrapper(Protocol):
         return obj
 
 
-def get_default_args(func: Callable[[Any], Any]):
+def get_default_args(func: Callable[..., Any]):
     """Returns a `Signature` with the optional parameters' names and default values.
 
     Useful in providing `argparse` the default values.

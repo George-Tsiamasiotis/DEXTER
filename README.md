@@ -10,14 +10,9 @@ A code for performing calculations and simulations of particles and magnetic fie
 Both are available in most Linux distributions. If compiled from source, both libraries can be linked statically with the `netcdf-static` and `openblas-static` features on the `dexter-python` crate.
 
 ## Documentation
+
 Documentation can be found [here](https://dexter.tsiamasiotis.gr).
 
-## Installation
+## Latex support
 
-With [`uv`](https://docs.astral.sh/uv/):
-
-``` sh
-uv init project
-cd project
-uv add dexter
-```
+To use Latex in matplotlib's plots, the packages `texlive-latexextra` and `texlive-fontsrecommended` must be installed. Otherwise, matplotlib's default engine is used.

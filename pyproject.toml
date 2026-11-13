@@ -1,6 +1,6 @@
 [project]
 name = "dexter"
-version = "0.2.6"
+version = "0.2.7-pre.1"
 description = "Calculations and simulations in analytical and reconstructed configurations of toroidal fusion devices."
 readme = "README.md"
 authors = [
@@ -52,6 +52,8 @@ testpaths = [ # Run from workspace root
     "./py-dexter/dexter/machine/*",
     "./py-dexter/dexter/comspace/*",
     "./py-dexter/dexter/simulate/*",
+    "./py-dexter/dexter/utils.py",
+    "./py-dexter/dexter/colors.py"
 ]
 addopts = """
     --durations 2
