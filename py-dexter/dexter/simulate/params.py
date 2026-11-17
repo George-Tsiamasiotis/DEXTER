@@ -120,6 +120,8 @@ class SolverParams(_ReprStrImpl):
         empirical.
     safety_factor
         The safety factor of the solver. Should be less than $1.0$.
+    store
+        Whether or not to store the time series arrays.
 
     Example
     -------
@@ -138,10 +140,12 @@ class SolverParams(_ReprStrImpl):
 
     def __init__(
         self,
+        *,
         method: SteppingMethod | None = None,
         max_steps: int = 1_000_000,
         first_step: float = 1e-1,
         safety_factor: float = 0.9,
+        store: bool = True,
     ) -> None:
         if method is None:
             method = SteppingMethod.EnergyAdaptiveStep()
@@ -150,6 +154,7 @@ class SolverParams(_ReprStrImpl):
             max_steps=max_steps,
             first_step=first_step,
             safety_factor=safety_factor,
+            store=store,
         )
 
 
@@ -172,8 +177,17 @@ class IntersectParams(_ReprStrImpl):
     -------
 
     ``` py
-    >>> intersect_params = dex.IntersectParams("ConstTheta", 0, 800)
-    >>> intersect_params = dex.IntersectParams("ConstZeta", np.pi, 1000)
+    >>> intersect_params = dex.IntersectParams(
+    ...     intersection="ConstTheta",
+    ...     angle=0,
+    ...     turns=800,
+    ... )
+    >>> intersect_params = dex.IntersectParams(
+    ...     intersection="ConstZeta",
+    ...     angle=np.pi,
+    ...     turns=1000,
+    ...     directionality="Both",
+    ... )
 
     ```
 
@@ -195,6 +209,7 @@ class IntersectParams(_ReprStrImpl):
 
     def __init__(
         self,
+        *,
         intersection: Intersection,
         angle: float,
         turns: int,

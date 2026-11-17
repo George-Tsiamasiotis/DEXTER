@@ -66,7 +66,9 @@ pub(super) fn integrate(
         };
 
         // Store and continue
-        particle.evolution.push_state(&state1);
+        if solver_params.store {
+            particle.evolution.push_state(&state1);
+        }
         particle.evolution.steps_taken += 1;
         state1 = state2;
     }

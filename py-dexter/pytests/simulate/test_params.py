@@ -12,16 +12,18 @@ def test_stepping_method():
 
 def test_solver_params():
     _default = dex.SolverParams()
-    _energy = dex.SolverParams(dex.SteppingMethod.EnergyAdaptiveStep(1e-2, 1e-3))
-    _error = dex.SolverParams(dex.SteppingMethod.ErrorAdaptiveStep(1e-2, 1e-3))
-    _fixed = dex.SolverParams(dex.SteppingMethod.FixedStep(1e-2))
+    _energy = dex.SolverParams(method=dex.SteppingMethod.EnergyAdaptiveStep(1e-2, 1e-3))
+    _error = dex.SolverParams(method=dex.SteppingMethod.ErrorAdaptiveStep(1e-2, 1e-3))
+    _fixed = dex.SolverParams(method=dex.SteppingMethod.FixedStep(1e-2))
 
     dex.SolverParams(max_steps=10)
     dex.SolverParams(safety_factor=0.8)
 
 
 def test_intersect_params():
-    dex.IntersectParams("ConstZeta", 2, 1000, "Initial")
-    dex.IntersectParams("ConstZeta", 2, 1000, "Both")
-    dex.IntersectParams("ConstTheta", 2, 1000, "DotNegative")
-    dex.IntersectParams("ConstTheta", 2, 1000, "DotPositive")
+    # fmt: off
+    dex.IntersectParams(intersection="ConstZeta", angle=2, turns=1000, directionality="Initial")
+    dex.IntersectParams(intersection="ConstZeta", angle=2, turns=1000, directionality="Both")
+    dex.IntersectParams(intersection="ConstTheta", angle=2, turns=1000, directionality="DotNegative")
+    dex.IntersectParams(intersection="ConstTheta", angle=2, turns=1000, directionality="DotPositive")
+    # fmt: on

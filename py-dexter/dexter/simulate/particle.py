@@ -310,7 +310,11 @@ class Particle(_ReprStrImpl, _RustTypeWrapper):
         >>> # Particle setup and intersection
         >>> particle = dex.Particle(initial_conditions)
         >>>
-        >>> intersect_params = dex.IntersectParams("ConstZeta", angle=3.1415, turns=5)
+        >>> intersect_params = dex.IntersectParams(
+        ...     intersection="ConstZeta",
+        ...     angle=3.1415,
+        ...     turns=5,
+        ... )
         >>> particle.intersect(machine, intersect_params)
 
         ```
@@ -343,7 +347,11 @@ class Particle(_ReprStrImpl, _RustTypeWrapper):
 
         This routine also yields the particle's $\omega_theta$, $\omega_\zeta$ and $q_{kin}$.
 
-        This routine only uses the axisymmetric system, ignoring the Perturbation.
+        !!! note
+
+            + This routine only uses the axisymmetric system, ignoring the Perturbation.
+            + If `#!python solver_params.store == False`, only the initial state and the last
+              step are stored.
 
         Parameters
         ----------
@@ -510,9 +518,11 @@ class Particle(_ReprStrImpl, _RustTypeWrapper):
         return self._r.qkinetic
 
     def print_caches(self):
+        r"""Prints info about the integration caches."""
         self._r.print_caches()
 
     def discard_arrays(self):
+        r"""Discards the time series arrays."""
         self._r.discard_arrays()
 
     @property

@@ -56,7 +56,7 @@ initial_conditions = dex.QueueInitialConditions.Mixed(
 queue = dex.Queue(initial_conditions)
 
 
-queue.close(machine, discard_arrays=False)
+queue.close(machine, store=True)
 dex.plot_poloidal_drift(machine, queue, colors="Cycle", show=False)
 
 plane = dex.EnergyPzetaPlane(machine, mu)

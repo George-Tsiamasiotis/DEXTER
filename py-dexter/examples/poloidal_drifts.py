@@ -44,7 +44,7 @@ initial_conditions = dex.QueueInitialConditions.Mixed(
 queue = dex.Queue(initial_conditions)
 
 queue.classify(machine)
-queue.close(machine, discard_arrays=False)
+queue.close(machine, store=True)
 
 
 # ======================

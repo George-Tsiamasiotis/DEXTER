@@ -106,13 +106,13 @@ pub mod constants {
 
     // ================== Orbit closing ==================
 
+    /// The default relative tolerance of the `ψ-ψ0` check in the
+    /// [`Particle::close`][crate::Particle::close] routine.
+    pub const FLUX_REL_TOL: f64 = 1e-5;
+
     /// The default relative tolerance of the short-circuit `flux-flux0` check in the
     /// [`Particle::close`][crate::Particle::close] routine.
     ///
-    /// This only affects performance, but should be smaller than [`FLUX_REL_TOL`].
-    pub const SHORT_CIRCUIT_FLUX_REL_TOL: f64 = 1e-4;
-
-    /// The default relative tolerance of the `ψ-ψ0` check in the
-    /// [`Particle::close`][crate::Particle::close] routine.
-    pub const FLUX_REL_TOL: f64 = 1e-6;
+    /// This only affects performance, but should be larger than [`FLUX_REL_TOL`].
+    pub const SHORT_CIRCUIT_FLUX_REL_TOL: f64 = FLUX_REL_TOL * 10.0;
 }

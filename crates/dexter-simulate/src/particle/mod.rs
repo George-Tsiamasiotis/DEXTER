@@ -262,6 +262,10 @@ impl Particle {
     /// guaranteed to be `2π +- ε` or `0 +- ε`, where ε a number smaller than the solver's
     /// relative tolerance.
     ///
+    /// # Note
+    ///
+    /// The [`SolverParams`]'s `store` field is ignored.
+    ///
     /// [`Hénon`]: https://www.sciencedirect.com/science/article/abs/pii/0167278982900343
     ///
     /// ```
@@ -325,7 +329,8 @@ impl Particle {
     ///
     /// # Note
     ///
-    /// This routine only uses the axisymmetric system, ignoring the Perturbation.
+    /// + This routine only uses the axisymmetric system, ignoring the Perturbation.
+    /// + If `solver_params.store == false`, only the initial state and the last step are stored.
     ///
     /// # Example
     ///

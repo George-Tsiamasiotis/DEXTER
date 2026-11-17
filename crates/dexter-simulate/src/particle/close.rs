@@ -39,6 +39,12 @@ pub(super) fn close(
 
     let start = Instant::now();
     particle.evolution.reset();
+    // First and last steps are always stored
+    if !solver_params.store {
+        particle
+            .evolution
+            .push_state(&particle.initial_conditions.state);
+    }
 
     let mut caches = IntegrationCaches {
         mode_caches: machine.perturbation().generate_caches(),
@@ -109,12 +115,13 @@ pub(super) fn close(
 
         if closed_periods == periods {
             particle.integration_status = IntegrationStatus::ClosedPeriods(periods);
-            particle.evolution.push_state(&state1);
             break;
         }
 
         // Store and continue
-        particle.evolution.push_state(&state1);
+        if solver_params.store {
+            particle.evolution.push_state(&state1);
+        }
         particle.evolution.steps_taken += 1;
         state1 = state2;
     }
@@ -252,11 +259,11 @@ fn calculate_frequencies(particle: &mut Particle) {
         _ => return,
     };
     // Use `NaN`for particles with invalid initial conditions or out of bounds initialization.
-    let t0 = particle.evolution.t.first().copied().unwrap_or(f64::NAN);
+    let t0 = particle.initial_conditions.t0();
     let tf = particle.evolution.t.last().copied().unwrap_or(f64::NAN);
     let theta_period = (tf - t0) / periodsf64; // period of 1 closed orbit
 
-    let zeta0 = particle.evolution.zeta.first().copied().unwrap_or(f64::NAN);
+    let zeta0 = particle.initial_conditions.zeta0();
     let zetaf = particle.evolution.zeta.last().copied().unwrap_or(f64::NAN);
     let dzeta = (zetaf - zeta0) / periodsf64; // average precession over 1 period
 

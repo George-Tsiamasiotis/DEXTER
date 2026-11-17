@@ -37,7 +37,7 @@ impl PySteppingMethod {
 }
 
 /// This type is only to be used internally when calling integration routines.
-#[pyclass(name = "_PySolverParams", frozen, immutable_type)]
+#[pyclass(name = "_PySolverParams")]
 pub struct PySolverParams(SolverParams);
 
 #[pymethods]
@@ -48,14 +48,20 @@ impl PySolverParams {
         max_steps: Option<usize>,
         first_step: Option<f64>,
         safety_factor: Option<f64>,
+        store: Option<bool>,
     ) -> PyResult<Self> {
         let mut solver_params = SolverParams::default();
         method.inspect(|v| solver_params.method = v.clone().0);
         max_steps.inspect(|v| solver_params.max_steps = *v);
         first_step.inspect(|v| solver_params.first_step = *v);
         safety_factor.inspect(|v| solver_params.safety_factor = *v);
+        store.inspect(|v| solver_params.store = *v);
 
         Ok(Self(solver_params))
+    }
+
+    pub fn _overwrite_store(&mut self, store: bool) {
+        self.0.store = store
     }
 }
 

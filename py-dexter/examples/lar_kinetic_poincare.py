@@ -40,9 +40,14 @@ initial_conditions = dex.QueueInitialConditions.Boozer(
 queue = dex.Queue(initial_conditions)
 
 
-intersect_params = dex.IntersectParams("ConstZeta", 0, 2000, "Initial")
+intersect_params = dex.IntersectParams(
+    intersection="ConstZeta",
+    angle=0,
+    turns=2000,
+    directionality="Initial",
+)
 solver_params = dex.SolverParams(
-    method=dex.SteppingMethod.EnergyAdaptiveStep(1e-8, 1e-10),
+    method=dex.SteppingMethod.EnergyAdaptiveStep(1e-7, 1e-10),
     max_steps=10_000_000,
 )
 queue.intersect(
@@ -55,5 +60,3 @@ print(f"Max energy variance: {np.nanmax(queue.energy_rsd_array)}")
 
 dex.plot_pzeta_poincare(machine, queue, intersect_params, initial=True)
 dex.plot_rz_poincare(machine, queue, intersect_params, initial=True)
-
-# =========================

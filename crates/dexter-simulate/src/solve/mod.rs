@@ -52,6 +52,8 @@ pub struct SolverParams {
     pub first_step: f64,
     /// The safety factor of the solver. Should be less than 1.0.
     pub safety_factor: f64,
+    /// Whether or not to store the time series.
+    pub store: bool,
 }
 
 impl Default for SolverParams {
@@ -63,6 +65,7 @@ impl Default for SolverParams {
             max_steps: DEFAULT_MAX_STEPS,
             first_step: DEFAULT_FIRST_STEP,
             safety_factor: DEFAULT_SAFETY_FACTOR,
+            store: true,
         }
     }
 }

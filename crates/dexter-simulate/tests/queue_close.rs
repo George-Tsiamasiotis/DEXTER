@@ -48,7 +48,7 @@ fn queue_close_parQ_larC_larB_cosP() -> Result<(), SimulationError> {
         particle_count
     );
 
-    queue.close(machine, 1, false, &SolverParams::default());
+    queue.close(machine, 1, &SolverParams::default());
 
     assert_eq!(queue.routines(), vec![Routine::Close]);
     assert_eq!(

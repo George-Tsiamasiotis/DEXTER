@@ -77,7 +77,7 @@ machine.perturbation = dex.Perturbation(
 )
 
 particle = dex.Particle(initial)
-intersect_params = dex.IntersectParams("ConstZeta", 0, 1000)
+intersect_params = dex.IntersectParams(intersection="ConstZeta", angle=0, turns=1000)
 solver_params = dex.SolverParams(
     method=dex.SteppingMethod.EnergyAdaptiveStep(1e-7, 1e-8),
     max_steps=10_000_000,

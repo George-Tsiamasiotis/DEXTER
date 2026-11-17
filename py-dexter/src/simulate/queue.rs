@@ -3,6 +3,7 @@
 use dexter::dexter_machine::*;
 use dexter::dexter_simulate::*;
 use numpy::{IntoPyArray, PyArray1};
+use pyo3::exceptions::PyValueError;
 use pyo3::types::{PyList, PyType};
 
 use crate::*;
@@ -76,13 +77,19 @@ impl PyQueue {
         perturbation: &PyPerturbation,
         intersect_params: &PyIntersectParams,
         solver_params: &PySolverParams,
-    ) {
+    ) -> PyResult<()> {
         let machine = MachineBuilder::new(qfactor.inner(), current.inner(), bfield.inner())
             .with_efield(efield.inner())
             .with_perturbation(perturbation.inner())
             .build();
+        if !solver_params.0.store {
+            return Err(PyValueError::new_err(
+                "'SolverParams's' 'store' parameter must be set to 'True' for the 'intersect' routine.",
+            ));
+        }
         self.0
             .intersect(machine, &intersect_params.0, &solver_params.0);
+        Ok(())
     }
 
     pub fn close(
@@ -93,15 +100,13 @@ impl PyQueue {
         efield: &PyEfield,
         perturbation: &PyPerturbation,
         periods: usize,
-        discard_arrays: bool,
         solver_params: &PySolverParams,
     ) {
         let machine = MachineBuilder::new(qfactor.inner(), current.inner(), bfield.inner())
             .with_efield(efield.inner())
             .with_perturbation(perturbation.inner())
             .build();
-        self.0
-            .close(machine, periods, discard_arrays, &solver_params.0);
+        self.0.close(machine, periods, &solver_params.0);
     }
 
     pub fn classify(

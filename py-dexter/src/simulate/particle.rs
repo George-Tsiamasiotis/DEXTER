@@ -6,6 +6,7 @@ use dexter::dexter_simulate::*;
 
 use ndarray::Array1;
 use numpy::{IntoPyArray, PyArray1};
+use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use pyo3::types::PyType;
 
@@ -68,13 +69,19 @@ impl PyParticle {
         perturbation: &PyPerturbation,
         intersect_params: &PyIntersectParams,
         solver_params: &PySolverParams,
-    ) {
+    ) -> PyResult<()> {
         let machine = MachineBuilder::new(qfactor.inner(), current.inner(), bfield.inner())
             .with_efield(efield.inner())
             .with_perturbation(perturbation.inner())
             .build();
+        if !solver_params.0.store {
+            return Err(PyValueError::new_err(
+                "'SolverParams's' 'store' parameter must be set to 'True' for the 'intersect' routine.",
+            ));
+        }
         self.0
             .intersect(machine, &intersect_params.0, &solver_params.0);
+        Ok(())
     }
 
     pub fn close(

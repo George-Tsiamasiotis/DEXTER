@@ -130,3 +130,45 @@ fn multiple_periods_frequencies_calculation() {
     ar!(omega_zetas, expected_omega_zetas, epsilon=eps);
     ar!(qkinetics, expected_qkinetics, epsilon=eps);
 }
+
+#[test]
+#[rustfmt::skip]
+fn close_stored_steps_and_qkinetic() {
+    let qfactor = UnityQfactor::new(MagneticFlux::Toroidal(0.1));
+    let current = LarCurrent;
+    let bfield = LarBfield;
+    let machine = MachineBuilder::new(&qfactor, &current, &bfield).build();
+
+    let initial = InitialConditions::boozer(0.0, MagneticFlux::Toroidal(0.02), 1.0, 0.0, 1e-6, 1e-6);
+
+    let solver_params = SolverParams{
+        store: true,
+        ..Default::default()
+    };
+    let mut store_particle = Particle::new(&initial);
+    store_particle.close(machine, 1, &solver_params);
+
+    assert!(store_particle.steps_taken() > 2);
+    assert_eq!(store_particle.steps_stored(), store_particle.steps_taken());
+    assert_eq!(store_particle.t_values()[0], 0.0);
+    assert!(store_particle.t_values()[store_particle.steps_stored() - 1] > 0.0);
+    assert!(store_particle.qkinetic().is_some());
+
+
+    let solver_params = SolverParams{
+        store: false,
+        ..Default::default()
+    };
+    let mut no_store_particle = Particle::new(&initial);
+    no_store_particle.close(machine, 1, &solver_params);
+
+    assert!(no_store_particle.steps_taken() > 2);
+    assert_eq!(no_store_particle.steps_stored(), 2);
+    assert_eq!(no_store_particle.t_values()[0], 0.0);
+    assert!(store_particle.t_values()[store_particle.steps_stored() - 1] > 0.0);
+    assert!(no_store_particle.qkinetic().is_some());
+
+    let q1 = store_particle.qkinetic().unwrap();
+    let q2 = no_store_particle.qkinetic().unwrap();
+    assert_eq!(q1, q2);
+}

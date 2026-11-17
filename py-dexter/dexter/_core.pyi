@@ -525,7 +525,9 @@ class _PySolverParams:
         max_steps: int | None,
         first_step: float | None,
         safety_factor: float | None,
+        store: bool | None,
     ) -> None: ...
+    def _overwrite_store(self, store: bool) -> None: ...
     @override
     def __repr__(self) -> str: ...
     @override
@@ -709,7 +711,6 @@ class _PyQueue:
         efield: _PyEfield,
         perturbation: _PyPerturbation,
         periods: int,
-        discard_arrays: bool,
         solver_params: _PySolverParams,
     ) -> None: ...
     def classify(

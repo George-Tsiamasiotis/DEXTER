@@ -243,6 +243,10 @@ impl Queue {
     ///
     /// The intersection surface, angle, and number of turns are configured with the helper struct [`IntersectParams`].
     ///
+    /// # Note
+    ///
+    /// The [`SolverParams`]'s `store` field is ignored.
+    ///
     /// # Example
     /// ```
     /// # use dexter_machine::*;
@@ -306,6 +310,11 @@ impl Queue {
     /// Integrates all the contained particles for a specific number of periods and calculates
     /// their frequencies.
     ///
+    /// # Note
+    ///
+    /// + This routine only uses the axisymmetric system, ignoring the Perturbation.
+    /// + If `solver_params.store == false`, only the initial state and the last step are stored.
+    ///
     /// # Example
     /// ```
     /// # use dexter_machine::*;
@@ -329,16 +338,10 @@ impl Queue {
     /// )?;
     /// let mut queue = Queue::new(&initial_conditions);
     /// dbg!(&queue);
-    /// queue.close(machine, 1, true, &SolverParams::default());
+    /// queue.close(machine, 1, &SolverParams::default());
     /// # Ok::<_, SimulationError>(())
     /// ```
-    pub fn close(
-        &mut self,
-        machine: Machine,
-        periods: usize,
-        discard_arrays: bool,
-        solver_params: &SolverParams,
-    ) {
+    pub fn close(&mut self, machine: Machine, periods: usize, solver_params: &SolverParams) {
         let pbar = ClosePbar::new(self);
         pbar.print_prelude();
         pbar.print_stats();
@@ -347,9 +350,6 @@ impl Queue {
             particle.close(machine, periods, solver_params);
             pbar.inc(particle.integration_status());
             pbar.print_stats();
-            if discard_arrays {
-                particle.discard_arrays();
-            }
         });
         pbar.finish();
 

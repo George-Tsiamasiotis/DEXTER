@@ -68,5 +68,5 @@ fig.set_figwidth(3)
 ax.legend().remove()
 
 
-queue.close(machine, discard_arrays=False)
+queue.close(machine, store=True)
 dex.plot_poloidal_drift(machine, queue, colors="Orbit")

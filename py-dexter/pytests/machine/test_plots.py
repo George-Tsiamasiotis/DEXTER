@@ -97,7 +97,12 @@ def test_plot_queue_analytical(lar_machine: dex.Machine):
         mu0=np.full(num, 1e-6),
     )
     queue = dex.Queue(initial)
-    intersect_params = dex.IntersectParams("ConstZeta", 0, 10, "Both")
+    intersect_params = dex.IntersectParams(
+        intersection="ConstZeta",
+        angle=0,
+        turns=10,
+        directionality="Both",
+    )
     queue.intersect(lar_machine, intersect_params)
 
     queue.plot_pzeta_poincare(lar_machine, intersect_params, initial=True)
@@ -106,6 +111,10 @@ def test_plot_queue_analytical(lar_machine: dex.Machine):
     dex.plot_poloidal_drift(
         lar_machine, queue, array_shape=(10, 10), colors="Orbit", show=False
     )
+
+    queue.close(lar_machine)
+    queue.plot_qkinetic_energy(lar_machine)
+    queue.plot_qkinetic_pzeta(lar_machine)
 
 
 def test_plot_queue_numerical(nc_machine: dex.Machine):
@@ -122,7 +131,12 @@ def test_plot_queue_numerical(nc_machine: dex.Machine):
         mu0=np.full(num, 1e-6),
     )
     queue = dex.Queue(initial)
-    intersect_params = dex.IntersectParams("ConstZeta", 0, 10, "Both")
+    intersect_params = dex.IntersectParams(
+        intersection="ConstZeta",
+        angle=0,
+        turns=10,
+        directionality="Both",
+    )
     queue.intersect(nc_machine, intersect_params)
 
     queue.plot_pzeta_poincare(nc_machine, intersect_params, initial=True)
@@ -131,3 +145,7 @@ def test_plot_queue_numerical(nc_machine: dex.Machine):
     dex.plot_poloidal_drift(
         nc_machine, queue, array_shape=(10, 10), colors="Orbit", show=False
     )
+
+    queue.close(nc_machine)
+    queue.plot_qkinetic_energy(nc_machine)
+    queue.plot_qkinetic_pzeta(nc_machine)

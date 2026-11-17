@@ -31,9 +31,9 @@ initial_conditions = dex.QueueInitialConditions.Boozer(
 )
 queue = dex.Queue(initial_conditions)
 
-intersect_params = dex.IntersectParams("ConstZeta", 0, 2000)
+intersect_params = dex.IntersectParams(intersection="ConstZeta", angle=0, turns=2000)
 solver_params = dex.SolverParams(
-    method=dex.SteppingMethod.EnergyAdaptiveStep(1e-7, 1e-8),
+    method=dex.SteppingMethod.ErrorAdaptiveStep(1e-19, 1e-22),
     max_steps=10_000_000,
 )
 queue.intersect(

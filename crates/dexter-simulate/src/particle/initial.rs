@@ -190,8 +190,14 @@ impl InitialConditions {
     /// set by the caller depending on the return value.
     #[expect(clippy::min_ident_chars, reason = "current, perturbation")]
     fn evaluate(&mut self, machine: Machine) -> Result<(), SimulationError> {
+        // Recomputing `pzeta` when calling `state.evaluate` leads to machine precision errors. This
+        // can be a problem when initializing multiple particles with the same pzeta, so we store
+        // the true value and replace it at the end.
+        let mut true_pzeta0: Option<f64> = None;
+
         // State needs `rho` to evaluate itself, which is uninitialized in the mixed case.
         if self.coordinate_set.is_mixed() {
+            true_pzeta0 = Some(self.state.pzeta);
             // WARN: Not sure if the perturbation should be included here. If so, also update
             // the GCState method.
             let acc = &mut Accelerator::new();
@@ -209,7 +215,11 @@ impl InitialConditions {
             ..Default::default()
         };
 
-        self.state.evaluate(machine, &mut caches)
+        self.state.evaluate(machine, &mut caches)?;
+        if let Some(true_pzeta0) = true_pzeta0 {
+            self.state.pzeta = true_pzeta0
+        }
+        Ok(())
     }
 }
 

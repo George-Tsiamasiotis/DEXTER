@@ -18,7 +18,7 @@ def test_intersect_analytical(lar_machine_perturbed: dex.Machine):
     flux0 = dex.MagneticFlux.Toroidal(0.025)
     initial = dex.InitialConditions.Boozer(0, flux0, 3, 2, 1e-6, 1e-7)
     particle = dex.Particle(initial)
-    intersect_params = dex.IntersectParams("ConstZeta", 0, 2)
+    intersect_params = dex.IntersectParams(intersection="ConstZeta", angle=0, turns=2)
     particle.intersect(lar_machine_perturbed, intersect_params)
     assert 10 < particle.steps_taken < 10000
 
@@ -52,7 +52,7 @@ def test_intersect_numerical(nc_machine: dex.Machine):
     flux0 = nc_machine.psit_last * 0.9
     initial = dex.InitialConditions.Boozer(0, flux0, 3.1415, 2, 1e-5, 1e-7)
     particle = dex.Particle(initial)
-    intersect_params = dex.IntersectParams("ConstTheta", 0, 2)
+    intersect_params = dex.IntersectParams(intersection="ConstTheta", angle=0, turns=2)
     particle.intersect(nc_machine, intersect_params)
     assert 10 < particle.steps_taken < 10000
 
@@ -85,7 +85,7 @@ def test_getters(lar_machine: dex.Machine):
     particle = cast(
         dex.Particle, particle
     )  # the above assertion confuses the type checker
-    assert particle.steps_taken == particle.steps_stored - 1
+    assert particle.steps_taken == particle.steps_stored
     assert isinstance(particle.duration, str)
     assert particle.initial_energy is not None and isfinite(particle.initial_energy)
     assert particle.final_energy is not None and isfinite(particle.final_energy)

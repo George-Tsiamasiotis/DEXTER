@@ -54,7 +54,7 @@ initial_conditions = dex.QueueInitialConditions.Mixed(
 
 queue = dex.Queue(initial_conditions)
 solver_params = dex.SolverParams(max_steps=100_000)
-queue.close(machine, solver_params=solver_params, discard_arrays=False)
+queue.close(machine, solver_params=solver_params, store=True)
 
 
 # ====================
