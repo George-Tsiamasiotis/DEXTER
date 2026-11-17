@@ -26,12 +26,29 @@ To get the number of threads available on your system, use [`get_max_threads`][d
       heading_level: 3
       show_source: true
 
+::: dexter.colors.confinement_color
+    options:
+      heading_level: 3
+      show_source: true
+
 ::: dexter.colors.critical_point_color
     options:
       heading_level: 3
       show_source: true
 
 ::: dexter.colors.boundary_extremum_color
+    options:
+      heading_level: 3
+      show_source: true
+
+## Contouring
+
+::: dexter.utils.prepare_contour_levels
+    options:
+      heading_level: 3
+      show_source: true
+
+::: dexter.utils.FractionFormatter
     options:
       heading_level: 3
       show_source: true

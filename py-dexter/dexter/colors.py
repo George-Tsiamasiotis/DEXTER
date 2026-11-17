@@ -81,6 +81,35 @@ def orbit_color(orbit_type: OrbitType) -> str:
             return "xkcd:indigo"
 
 
+def confinement_color(orbit_type: OrbitType) -> str:
+    """Returns one of three color strings depending on the `Lost/Confined` part of `orbit_type`.
+
+    Specifically, the three color groups are:
+
+    1. `TrappedConfined`, `CoPassingConfined`, `CuPassingConfined`, `Potato`, `Stagnated`,
+    2. `TrappedLost`, `CoPassingLost`, `CuPassingLost`,
+    3. otherwise
+
+    Parameters
+    ----------
+    orbit_type
+        The orbit type of the particle.
+    """
+    match orbit_type:
+        case (
+            "TrappedConfined"
+            | "CoPassingConfined"
+            | "CuPassingConfined"
+            | "Potato"
+            | "Stagnated"
+        ):
+            return "xkcd:saffron"
+        case "TrappedLost" | "CoPassingLost" | "CuPassingLost":
+            return "xkcd:burnt orange"
+        case _:
+            return "xkcd:indigo"
+
+
 def critical_point_color(kind: CriticalPointKind) -> str:
     r"""Returns a critical point type's color string.
 

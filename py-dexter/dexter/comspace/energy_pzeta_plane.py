@@ -12,12 +12,13 @@ from dexter.colors import (
     critical_point_color,
     orbit_color,
     particle_color,
+    confinement_color,
 )
 from dexter.machine.machine import Machine
 from dexter.comspace.gc_hamiltonian import CriticalPoint, BoundaryExtremum
 from dexter.simulate.particle import Particle
 from dexter.simulate.queue import Queue
-from dexter.types import Array1
+from dexter.types import Array1, ArrayLike, OrbitType
 
 from dexter._core import _PyEnergyPzetaPlane
 from dexter._utils import _ReprStrImpl, _into_pyarray1f64
@@ -34,22 +35,27 @@ class _ParticlePoints:
 
     pzetas: Array1
     energies: Array1
+    orbit_types: list[OrbitType]
     orbit_colors: list[str]
 
     def __init__(self, obj: Particle | Queue | None = None) -> None:
         if obj is None:  # Empty initialization
             self.pzetas = np.asarray([])
             self.energies = np.asarray([])
+            self.orbit_types = []
             self.orbit_colors = []
         elif isinstance(obj, Particle):  # Single point
             self.pzetas = np.atleast_1d(obj.initial_conditions.pzeta0)
             self.energies = np.atleast_1d(obj.initial_energy)
+            self.orbit_types = [obj.orbit_type]
             self.orbit_colors = [orbit_color(obj.orbit_type)]
         else:
             self.pzetas = obj._r._initial_pzetas()
             self.energies = obj._r._initial_energies()
-            orbit_types = obj._r._orbit_types()
-            self.orbit_colors = [orbit_color(orbit_type) for orbit_type in orbit_types]
+            self.orbit_types = obj._r._orbit_types()
+            self.orbit_colors = [
+                orbit_color(orbit_type) for orbit_type in self.orbit_types
+            ]
 
     def __len__(self) -> int:
         return len(self.pzetas)
@@ -118,7 +124,7 @@ class EnergyPzetaPlane(_ReprStrImpl):
         self.machine = machine  # handy reference
         self._particle_points = _ParticlePoints()
 
-    def bifurcation_analysis(self, pzeta_array: Array1):
+    def bifurcation_analysis(self, pzeta_array: ArrayLike):
         r"""Performs a full Bifurcation Analysis on the $E-P_\zeta$ plane.
 
         This is a convenivenve method that simply calls the following methods:
@@ -143,7 +149,7 @@ class EnergyPzetaPlane(_ReprStrImpl):
             pzeta_array=_into_pyarray1f64(pzeta_array),
         )
 
-    def calculate_critical_points(self, pzeta_array: Array1):
+    def calculate_critical_points(self, pzeta_array: ArrayLike):
         r"""Calculates the Hamiltonian's critical points over the `pzeta_array`.
 
         The critical points are stored in `#!python self` and can be accessed through
@@ -163,7 +169,7 @@ class EnergyPzetaPlane(_ReprStrImpl):
             pzeta_array=_into_pyarray1f64(pzeta_array),
         )
 
-    def calculate_boundary_extrema(self, pzeta_array: Array1):
+    def calculate_boundary_extrema(self, pzeta_array: ArrayLike):
         r"""Calculates the Hamiltonian's boundary extrema over the `pzeta_array`.
 
         The critical points are stored in `#!python self` and can be accessed through
@@ -270,7 +276,7 @@ class EnergyPzetaPlane(_ReprStrImpl):
         particles: bool = True,
         critical_points: bool = True,
         boundary_extrema: bool = True,
-        colors: Literal["Orbit", "Cycle"] = "Orbit",
+        colors: Literal["Orbit", "Cycle", "Confinement"] = "Orbit",
         curves: bool = False,
         show: bool = True,
     ) -> tuple[Figure, Axes]:
@@ -292,7 +298,8 @@ class EnergyPzetaPlane(_ReprStrImpl):
         colors
             The coloring method for each particle's $E-P_\zeta$ point. `'Orbit'` colors each point depending on
             its orbit type, as calculated from the [`classify`][dexter.Particle.classify] routine. `'Cycle'` cycles
-            through the colors `cbrmk`.
+            through the colors `cbrmk`. `Confinement` colors the orbits depending on whether they are confined
+            or lost.
         curves
             Whether or not to plot the analytical curves (parabolas and approximate
             trapped-passing boundary).
@@ -339,7 +346,7 @@ class EnergyPzetaPlane(_ReprStrImpl):
                 point_size = 10
                 zorder = 1000
             elif 100 <= len(self._particle_points) < 5000:
-                point_size = 3
+                point_size = 2
             else:
                 point_size = 1
 
@@ -348,6 +355,11 @@ class EnergyPzetaPlane(_ReprStrImpl):
                     c = self._particle_points.orbit_colors
                 case "Cycle":
                     c = [particle_color(i) for i in range(len(self._particle_points))]
+                case "Confinement":
+                    c = [
+                        confinement_color(self._particle_points.orbit_types[i])
+                        for i in range(len(self._particle_points))
+                    ]
 
             ax.scatter(
                 self._particle_points.pzetas / psip_last,

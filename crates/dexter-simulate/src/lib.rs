@@ -108,7 +108,7 @@ pub mod constants {
 
     /// The default relative tolerance of the `ψ-ψ0` check in the
     /// [`Particle::close`][crate::Particle::close] routine.
-    pub const FLUX_REL_TOL: f64 = 1e-5;
+    pub const FLUX_REL_TOL: f64 = 1e-4;
 
     /// The default relative tolerance of the short-circuit `flux-flux0` check in the
     /// [`Particle::close`][crate::Particle::close] routine.

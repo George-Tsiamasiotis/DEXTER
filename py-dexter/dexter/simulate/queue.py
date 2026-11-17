@@ -268,7 +268,8 @@ class Queue(_ReprStrImpl):
             The amount of periods to integrate.
         store
             Whether or not to store the integration timeseries after the routine is finished.
-            Quantities such as $q_{kin}$ are still calculated.
+            Quantities such as $q_{kin}$ are still calculated. This parameter overwrites the
+            `store` parameter of `solver_params`.
         solver_params
             The parameters passed to the solver.
 

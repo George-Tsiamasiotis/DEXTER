@@ -195,7 +195,7 @@ OrbitType: TypeAlias = Literal[
     "Stagnated",
     "Undefined",
 ]
-r"""A particle's orbit type, calculated through the [`dexter.Particle.close()`] routine.
+r"""A particle's orbit type, calculated through the [`Particle.close`][dexter.Particle.close] routine.
 
 # Unclassified
 Particle has not been classified.
