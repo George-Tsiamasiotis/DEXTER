@@ -46,7 +46,8 @@
 //! + [`Current`]: Evaluation of plasma current related quantities.
 //! + [`Bfield`]: Evaluation of magnetic field related quantities.
 //! + [`Efield`]: Evaluation of radial electric field related quantities.
-//! + [`Mode`]: Single perturbation mode related quantities computation.
+//! + [`Mode`]: Single perturbation mode (and induced perturbative parallel electric field) related
+//!   quantities computation.
 //!
 //! ## Caching
 //!

@@ -6,6 +6,17 @@ use dexter_machine::*;
 use std::f64::consts::PI;
 use std::path::PathBuf;
 
+#[rustfmt::skip]
+fn _test_potentials_of_time_independent_mode(mode: &dyn Mode, flux: MagneticFlux) {
+    let mut c = mode.generate_cache();
+    let (theta, zeta, t) = (1.0, 2.0, 3.0);
+    assert_eq!(mode.eval_phi(flux, theta, zeta, t,&mut c).unwrap(), 0.0);
+    assert_eq!(mode.eval_dphi_dflux(flux, theta, zeta, t,&mut c).unwrap(), 0.0);
+    assert_eq!(mode.eval_dphi_dtheta(flux, theta, zeta, t,&mut c).unwrap(), 0.0);
+    assert_eq!(mode.eval_dphi_dzeta(flux, theta, zeta, t,&mut c).unwrap(), 0.0);
+    assert_eq!(mode.eval_dphi_dt(flux, theta, zeta, t,&mut c).unwrap(), 0.0);
+}
+
 #[test]
 #[rustfmt::skip]
 fn flute_mode_toroidal_lcfs() {
@@ -29,19 +40,21 @@ fn flute_mode_toroidal_lcfs() {
     assert!(mode.eval_amplitude(psit, theta, zeta, t, &mut c).unwrap().is_finite());
     assert!(mode.eval_phase(psit, theta, zeta, t, &mut c).unwrap().is_finite());
     assert!(mode.eval_m(psit, theta, zeta, t, &mut c).unwrap().is_finite());
-    assert!(mode.eval_deriv_flux(psit, theta, zeta, t, &mut c).unwrap().is_finite());
-    assert!(mode.eval_deriv_theta(psit, theta, zeta, t, &mut c).unwrap().is_finite());
-    assert!(mode.eval_deriv_zeta(psit, theta, zeta, t, &mut c).unwrap().is_finite());
-    assert!(mode.eval_deriv_t(psit, theta, zeta, t, &mut c).unwrap().is_finite());
+    assert!(mode.eval_dm_dflux(psit, theta, zeta, t, &mut c).unwrap().is_finite());
+    assert!(mode.eval_dm_dtheta(psit, theta, zeta, t, &mut c).unwrap().is_finite());
+    assert!(mode.eval_dm_dzeta(psit, theta, zeta, t, &mut c).unwrap().is_finite());
+    assert!(mode.eval_dm_dt(psit, theta, zeta, t, &mut c).unwrap().is_finite());
+    _test_potentials_of_time_independent_mode(&mode, psit);
 
     let psip = MagneticFlux::Poloidal(0.01);
     assert!(mode.eval_amplitude(psip, theta, zeta, t, &mut c).is_err());
     assert!(mode.eval_phase(psip, theta, zeta, t, &mut c).is_ok()); // returns a constant
     assert!(mode.eval_m(psip, theta, zeta, t, &mut c).is_err());
-    assert!(mode.eval_deriv_flux(psip, theta, zeta, t, &mut c).is_err());
-    assert!(mode.eval_deriv_theta(psip, theta, zeta, t, &mut c).is_err());
-    assert!(mode.eval_deriv_zeta(psip, theta, zeta, t, &mut c).is_err());
-    assert!(mode.eval_deriv_t(psip, theta, zeta, t, &mut c).is_ok()); // returns zero
+    assert!(mode.eval_dm_dflux(psip, theta, zeta, t, &mut c).is_err());
+    assert!(mode.eval_dm_dtheta(psip, theta, zeta, t, &mut c).is_err());
+    assert!(mode.eval_dm_dzeta(psip, theta, zeta, t, &mut c).is_err());
+    assert!(mode.eval_dm_dt(psip, theta, zeta, t, &mut c).is_ok()); // returns zero
+    _test_potentials_of_time_independent_mode(&mode, psip);
 
     assert_eq!(c.misses(), 1);
     assert_eq!(c.hits(), 4);
@@ -70,19 +83,21 @@ fn flute_mode_poloidal_lcfs() {
     assert!(mode.eval_amplitude(psip, theta, zeta, t, &mut c).unwrap().is_finite());
     assert!(mode.eval_phase(psip, theta, zeta, t, &mut c).unwrap().is_finite());
     assert!(mode.eval_m(psip, theta, zeta, t, &mut c).unwrap().is_finite());
-    assert!(mode.eval_deriv_flux(psip, theta, zeta, t, &mut c).unwrap().is_finite());
-    assert!(mode.eval_deriv_theta(psip, theta, zeta, t, &mut c).unwrap().is_finite());
-    assert!(mode.eval_deriv_zeta(psip, theta, zeta, t, &mut c).unwrap().is_finite());
-    assert!(mode.eval_deriv_t(psip, theta, zeta, t, &mut c).unwrap().is_finite());
+    assert!(mode.eval_dm_dflux(psip, theta, zeta, t, &mut c).unwrap().is_finite());
+    assert!(mode.eval_dm_dtheta(psip, theta, zeta, t, &mut c).unwrap().is_finite());
+    assert!(mode.eval_dm_dzeta(psip, theta, zeta, t, &mut c).unwrap().is_finite());
+    assert!(mode.eval_dm_dt(psip, theta, zeta, t, &mut c).unwrap().is_finite());
+    _test_potentials_of_time_independent_mode(&mode, psip);
 
     let psit = MagneticFlux::Toroidal(0.01);
     assert!(mode.eval_amplitude(psit, theta, zeta, t, &mut c).is_err());
     assert!(mode.eval_phase(psit, theta, zeta, t, &mut c).is_ok()); // returns a constant
     assert!(mode.eval_m(psit, theta, zeta, t, &mut c).is_err());
-    assert!(mode.eval_deriv_flux(psit, theta, zeta, t, &mut c).is_err());
-    assert!(mode.eval_deriv_theta(psit, theta, zeta, t, &mut c).is_err());
-    assert!(mode.eval_deriv_zeta(psit, theta, zeta, t, &mut c).is_err());
-    assert!(mode.eval_deriv_t(psit, theta, zeta, t, &mut c).is_ok()); // returns zero
+    assert!(mode.eval_dm_dflux(psit, theta, zeta, t, &mut c).is_err());
+    assert!(mode.eval_dm_dtheta(psit, theta, zeta, t, &mut c).is_err());
+    assert!(mode.eval_dm_dzeta(psit, theta, zeta, t, &mut c).is_err());
+    assert!(mode.eval_dm_dt(psit, theta, zeta, t, &mut c).is_ok()); // returns zero
+    _test_potentials_of_time_independent_mode(&mode, psit);
 
     assert_eq!(c.misses(), 1);
     assert_eq!(c.hits(), 4);
@@ -130,10 +145,12 @@ fn nc_flute_mode() {
     assert!(mode.eval_phase(psip, theta, zeta, t, &mut c).unwrap().is_finite());
     assert!(mode.eval_m(psit, theta, zeta, t, &mut c).unwrap().is_finite());
     assert!(mode.eval_m(psip, theta, zeta, t, &mut c).unwrap().is_finite());
-    assert!(mode.eval_deriv_theta(psit, theta, zeta, t, &mut c).unwrap().is_finite());
-    assert!(mode.eval_deriv_theta(psip, theta, zeta, t, &mut c).unwrap().is_finite());
-    assert!(mode.eval_deriv_zeta(psit, theta, zeta, t, &mut c).unwrap().is_finite());
-    assert!(mode.eval_deriv_zeta(psip, theta, zeta, t, &mut c).unwrap().is_finite());
-    assert_eq!(mode.eval_deriv_t(psit, theta, zeta, t, &mut c).unwrap(), 0.0);
-    assert_eq!(mode.eval_deriv_t(psit, theta, zeta, t, &mut c).unwrap(), 0.0);
+    assert!(mode.eval_dm_dtheta(psit, theta, zeta, t, &mut c).unwrap().is_finite());
+    assert!(mode.eval_dm_dtheta(psip, theta, zeta, t, &mut c).unwrap().is_finite());
+    assert!(mode.eval_dm_dzeta(psit, theta, zeta, t, &mut c).unwrap().is_finite());
+    assert!(mode.eval_dm_dzeta(psip, theta, zeta, t, &mut c).unwrap().is_finite());
+    assert_eq!(mode.eval_dm_dt(psit, theta, zeta, t, &mut c).unwrap(), 0.0);
+    assert_eq!(mode.eval_dm_dt(psit, theta, zeta, t, &mut c).unwrap(), 0.0);
+    _test_potentials_of_time_independent_mode(&mode, psit);
+    _test_potentials_of_time_independent_mode(&mode, psip);
 }

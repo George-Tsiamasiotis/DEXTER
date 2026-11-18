@@ -9,6 +9,25 @@ use dexter_machine::{EvalError, Machine, MagneticFluxKind};
 use crate::particle::IntegrationCaches;
 use crate::{MagneticFlux, MagneticFlux::*, SimulationError};
 
+/// Helper container type to store all Perturbation related values, including the value of the modes
+/// and the induced perturbative electric potentials.
+///
+/// This is necessary to avoid confusing the perturbative potential with the potential of the
+/// integrable system.
+#[derive(Clone, Copy, Debug)]
+struct PerturbationTerms {
+    ms: f64,
+    dms_dflux: f64,
+    dms_dtheta: f64,
+    dms_dzeta: f64,
+    dms_dt: f64,
+    phis: f64,
+    dphis_dflux: f64,
+    dphis_dtheta: f64,
+    dphis_dzeta: f64,
+    dphis_dt: f64,
+}
+
 /// State of the Guiding Center at each step.
 ///
 /// Stores all the intermediate values needed for the calculation of the final time derivatives.
@@ -55,18 +74,19 @@ pub(crate) struct GCState {
     q: f64,
     g: f64,
     i: f64,
-    p: f64,
     phi: f64,
     db_dflux: f64,
     db_dtheta: f64,
     db_dzeta: f64,
     dg_dflux: f64,
     di_dflux: f64,
-    dp_dflux: f64,
-    dp_dtheta: f64,
-    dp_dzeta: f64,
-    dp_dt: f64,
+    // Electric field potential of the integrable system
     dphi_dflux: f64,
+    dphi_dtheta: f64,
+    dphi_dzeta: f64,
+    dphi_dt: f64,
+
+    pt: PerturbationTerms,
 
     delta: f64,
     ddelta_dtheta: f64,
@@ -183,8 +203,11 @@ impl GCState {
         self.calculate_qfactor_quantities(machine, caches)?;
         self.calculate_current_quantities(machine, caches)?;
         self.calculate_bfield_quantities(machine, caches)?;
-        self.calculate_efield_quantities(machine, caches)?;
         self.calculate_perturbation_quantities(machine, caches)?;
+        self.calculate_efield_quantities(machine, caches)?;
+
+        // Add the integrable and perturbative components of the total electric potential
+        self.sum_electric_potentials();
 
         // Multiply with `q` where needed, depending on the `FluxCoordinate`
         self.adjust_for_flux();
@@ -318,18 +341,6 @@ impl GCState {
         Ok(())
     }
 
-    fn calculate_efield_quantities(
-        &mut self,
-        machine: Machine,
-        _caches: &mut IntegrationCaches,
-    ) -> Result<(), SimulationError> {
-        let efield = machine.efield();
-        let flux = *self.flux();
-        self.phi = efield.eval_phi(flux)?;
-        self.dphi_dflux = efield.eval_phi_deriv(flux)?;
-        Ok(())
-    }
-
     #[rustfmt::skip]
     fn calculate_perturbation_quantities(
         &mut self,
@@ -341,12 +352,44 @@ impl GCState {
         let flux = *self.flux();
         let theta = self.mod_theta;
         let zeta = self.mod_zeta;
-        self.p         = perturbation.eval_p          (flux, theta, zeta, self.t, caches)?;
-        self.dp_dflux  = perturbation.eval_deriv_flux (flux, theta, zeta, self.t, caches)?;
-        self.dp_dtheta = perturbation.eval_deriv_theta(flux, theta, zeta, self.t, caches)?;
-        self.dp_dzeta  = perturbation.eval_deriv_zeta (flux, theta, zeta, self.t, caches)?;
-        self.dp_dt     = perturbation.eval_deriv_t    (flux, theta, zeta, self.t, caches)?;
+        let t = self.t;
+        self.pt.ms           = perturbation.eval_ms          (flux, theta, zeta, t, caches)?;
+        self.pt.dms_dflux    = perturbation.eval_dms_dflux   (flux, theta, zeta, t, caches)?;
+        self.pt.dms_dtheta   = perturbation.eval_dms_dtheta  (flux, theta, zeta, t, caches)?;
+        self.pt.dms_dzeta    = perturbation.eval_dms_dzeta   (flux, theta, zeta, t, caches)?;
+        self.pt.dms_dt       = perturbation.eval_dms_dt      (flux, theta, zeta, t, caches)?;
+        self.pt.phis         = perturbation.eval_phis        (flux, theta, zeta, t, caches)?;
+        self.pt.dphis_dflux  = perturbation.eval_dphis_dflux (flux, theta, zeta, t, caches)?;
+        self.pt.dphis_dtheta = perturbation.eval_dphis_dtheta(flux, theta, zeta, t, caches)?;
+        self.pt.dphis_dzeta  = perturbation.eval_dphis_dzeta (flux, theta, zeta, t, caches)?;
+        self.pt.dphis_dt     = perturbation.eval_dphis_dt    (flux, theta, zeta, t, caches)?;
         Ok(())
+    }
+
+    /// Only calculates the values of the integrable component of the total electric field.
+    fn calculate_efield_quantities(
+        &mut self,
+        machine: Machine,
+        _caches: &mut IntegrationCaches,
+    ) -> Result<(), SimulationError> {
+        let efield = machine.efield();
+        let flux = *self.flux();
+        self.phi = efield.eval_phi(flux)?;
+        self.dphi_dflux = efield.eval_phi_deriv(flux)?;
+        // Radial electric field for now
+        self.dphi_dtheta = 0.0;
+        self.dphi_dzeta = 0.0;
+        self.dphi_dt = 0.0;
+        Ok(())
+    }
+
+    /// Add the perturbative potential to the total potential.
+    fn sum_electric_potentials(&mut self) {
+        self.phi += self.pt.phis;
+        self.dphi_dflux += self.pt.dphis_dflux;
+        self.dphi_dtheta += self.pt.dphis_dtheta;
+        self.dphi_dzeta += self.pt.dphis_dzeta;
+        self.dphi_dt += self.pt.dphis_dt;
     }
 
     /// Since we are solving the equations of motion as expressed through (ψp, θ, ζ, ρ),
@@ -365,9 +408,10 @@ impl GCState {
         if self.coordinate() == MagneticFluxKind::Toroidal {
             self.dg_dflux *= self.q;
             self.di_dflux *= self.q;
-            self.dp_dflux *= self.q;
             self.db_dflux *= self.q;
             self.dphi_dflux *= self.q;
+            self.pt.dms_dflux *= self.q;
+            self.pt.dphis_dflux *= self.q;
         };
     }
 
@@ -390,13 +434,13 @@ impl GCState {
     /// If `ψt` is the coordinate, we must apply the chainrule in all g, I, p derivatives (with
     /// respect to `ψp`), which results in multiplying them with q.
     fn calculate_capitals(&mut self) {
-        self.fterm = self.q + (self.rho + self.p) * self.di_dflux + self.i * self.dp_dflux;
+        self.fterm = self.q + (self.rho + self.pt.ms) * self.di_dflux + self.i * self.pt.dms_dflux;
         self.fterm -= self.q * self.rho * self.ddelta_dtheta;
 
-        self.cterm = -1.0 + (self.rho + self.p) * self.dg_dflux + self.g * self.dp_dflux;
+        self.cterm = -1.0 + (self.rho + self.pt.ms) * self.dg_dflux + self.g * self.pt.dms_dflux;
         self.cterm -= self.q * self.rho * self.ddelta_dzeta;
 
-        self.kterm = self.g * self.dp_dtheta - self.i * self.dp_dzeta; // same without δ
+        self.kterm = self.g * self.pt.dms_dtheta - self.i * self.pt.dms_dzeta; // same without δ
 
         self.dterm = self.g * self.fterm - self.i * self.cterm;
         self.dterm += self.delta * self.q * self.kterm;
@@ -415,8 +459,8 @@ impl GCState {
     /// Depending on the flux coordinate, it multiplies by q-factor where needed.
     fn calculate_braces(&mut self) {
         self.dflux_brace = self.mu_par * self.db_dflux + self.dphi_dflux;
-        self.dtheta_brace = self.mu_par * self.db_dtheta;
-        self.dzeta_brace = self.mu_par * self.db_dzeta;
+        self.dtheta_brace = self.mu_par * self.db_dtheta + self.dphi_dtheta;
+        self.dzeta_brace = self.mu_par * self.db_dzeta + self.dphi_dzeta;
     }
 
     /// Calculates intermediate values that appear many times in the time derivatives.
@@ -444,19 +488,19 @@ impl GCState {
 
     fn calculate_theta_dot(&mut self) {
         self.theta_dot = -self.cterm * self.rho_bsquared_d + self.g_over_d * self.dflux_brace;
-        self.theta_dot += -self.delta * self.q / self.dterm * self.dp_dt;
+        self.theta_dot += -self.delta * self.q / self.dterm * self.pt.dms_dt;
     }
 
     fn calculate_zeta_dot(&mut self) {
         self.zeta_dot = self.fterm * self.rho_bsquared_d - self.i_over_d * self.dflux_brace;
-        self.zeta_dot += self.delta * self.q / self.dterm * (self.dtheta_brace + self.dp_dt);
+        self.zeta_dot += self.delta * self.q / self.dterm * (self.dtheta_brace + self.pt.dms_dt);
     }
 
     fn calculate_rho_dot(&mut self) {
         self.rho_dot = self.cterm / self.dterm * self.dtheta_brace
             - self.kterm / self.dterm * self.dflux_brace
             - self.fterm / self.dterm * self.dzeta_brace
-            - self.dp_dt;
+            - self.pt.dms_dt;
     }
 
     fn calculate_mu_dot(&mut self) {
@@ -482,10 +526,28 @@ impl GCState {
     }
 }
 
+// Set all derived quantities to NaN and use the corresponding methods to set them up.
+//
+// If NaNs manage to propagate, it means there's something wrong.
+
+impl Default for PerturbationTerms {
+    fn default() -> Self {
+        Self {
+            ms: f64::NAN,
+            dms_dflux: f64::NAN,
+            dms_dtheta: f64::NAN,
+            dms_dzeta: f64::NAN,
+            dms_dt: f64::NAN,
+            phis: f64::NAN,
+            dphis_dflux: f64::NAN,
+            dphis_dtheta: f64::NAN,
+            dphis_dzeta: f64::NAN,
+            dphis_dt: f64::NAN,
+        }
+    }
+}
+
 impl Default for GCState {
-    /// Set all derived quantities to NaN and use the corresponding methods to set them up.
-    ///
-    /// If NaNs manage to propagate, it means there's something wrong.
     fn default() -> Self {
         Self {
             coordinate: None,
@@ -511,18 +573,17 @@ impl Default for GCState {
             q: f64::NAN,
             g: f64::NAN,
             i: f64::NAN,
-            p: f64::NAN,
             phi: f64::NAN,
             dg_dflux: f64::NAN,
             di_dflux: f64::NAN,
             db_dflux: f64::NAN,
             db_dtheta: f64::NAN,
             db_dzeta: f64::NAN,
-            dp_dflux: f64::NAN,
-            dp_dtheta: f64::NAN,
-            dp_dzeta: f64::NAN,
-            dp_dt: f64::NAN,
             dphi_dflux: f64::NAN,
+            dphi_dtheta: f64::NAN,
+            dphi_dzeta: f64::NAN,
+            dphi_dt: f64::NAN,
+            pt: PerturbationTerms::default(),
             delta: f64::NAN,
             ddelta_dtheta: f64::NAN,
             ddelta_dzeta: f64::NAN,

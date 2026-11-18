@@ -104,12 +104,12 @@ def test_flux_eval_wrappers(nc_machine_perturbed: dex.Machine):
         bfield.eval_b(theta=theta)
 
     # `_flux_eval_wrap4d`
-    perturbation.eval_p(psit=flux, theta=theta, zeta=zeta, t=t)
-    perturbation.eval_p(psip=flux, theta=theta, zeta=zeta, t=t)
+    perturbation.eval_ms(psit=flux, theta=theta, zeta=zeta, t=t)
+    perturbation.eval_ms(psip=flux, theta=theta, zeta=zeta, t=t)
     with pytest.raises(TypeError):
-        perturbation.eval_p(psit=flux, psip=flux, theta=theta, zeta=zeta, t=t)
+        perturbation.eval_ms(psit=flux, psip=flux, theta=theta, zeta=zeta, t=t)
     with pytest.raises(TypeError):
-        perturbation.eval_p(theta=theta, zeta=zeta, t=t)
+        perturbation.eval_ms(theta=theta, zeta=zeta, t=t)
 
 
 def test_magnetic_flux_array():

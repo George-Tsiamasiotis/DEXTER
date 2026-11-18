@@ -62,25 +62,50 @@ def _test_mode_base(mode: dex.ModeObject):
         mode.eval_m(psip=flux, theta=theta, zeta=zeta, t=t)
         mode.eval_m(psip=fluxes, theta=thetas, zeta=zetas, t=ts)
 
-        mode.eval_deriv_flux(psit=flux, theta=theta, zeta=zeta, t=t)
-        mode.eval_deriv_flux(psit=fluxes, theta=thetas, zeta=zetas, t=ts)
-        mode.eval_deriv_flux(psip=flux, theta=theta, zeta=zeta, t=t)
-        mode.eval_deriv_flux(psip=fluxes, theta=thetas, zeta=zetas, t=ts)
+        mode.eval_dm_dflux(psit=flux, theta=theta, zeta=zeta, t=t)
+        mode.eval_dm_dflux(psit=fluxes, theta=thetas, zeta=zetas, t=ts)
+        mode.eval_dm_dflux(psip=flux, theta=theta, zeta=zeta, t=t)
+        mode.eval_dm_dflux(psip=fluxes, theta=thetas, zeta=zetas, t=ts)
 
-        mode.eval_deriv_theta(psit=flux, theta=theta, zeta=zeta, t=t)
-        mode.eval_deriv_theta(psit=fluxes, theta=thetas, zeta=zetas, t=ts)
-        mode.eval_deriv_theta(psip=flux, theta=theta, zeta=zeta, t=t)
-        mode.eval_deriv_theta(psip=fluxes, theta=thetas, zeta=zetas, t=ts)
+        mode.eval_dm_dtheta(psit=flux, theta=theta, zeta=zeta, t=t)
+        mode.eval_dm_dtheta(psit=fluxes, theta=thetas, zeta=zetas, t=ts)
+        mode.eval_dm_dtheta(psip=flux, theta=theta, zeta=zeta, t=t)
+        mode.eval_dm_dtheta(psip=fluxes, theta=thetas, zeta=zetas, t=ts)
 
-        mode.eval_deriv_zeta(psit=flux, theta=theta, zeta=zeta, t=t)
-        mode.eval_deriv_zeta(psit=fluxes, theta=thetas, zeta=zetas, t=ts)
-        mode.eval_deriv_zeta(psip=flux, theta=theta, zeta=zeta, t=t)
-        mode.eval_deriv_zeta(psip=fluxes, theta=thetas, zeta=zetas, t=ts)
+        mode.eval_dm_dzeta(psit=flux, theta=theta, zeta=zeta, t=t)
+        mode.eval_dm_dzeta(psit=fluxes, theta=thetas, zeta=zetas, t=ts)
+        mode.eval_dm_dzeta(psip=flux, theta=theta, zeta=zeta, t=t)
+        mode.eval_dm_dzeta(psip=fluxes, theta=thetas, zeta=zetas, t=ts)
 
-        mode.eval_deriv_t(psit=flux, theta=theta, zeta=zeta, t=t)
-        mode.eval_deriv_t(psit=fluxes, theta=thetas, zeta=zetas, t=ts)
-        mode.eval_deriv_t(psip=flux, theta=theta, zeta=zeta, t=t)
-        mode.eval_deriv_t(psip=fluxes, theta=thetas, zeta=zetas, t=ts)
+        mode.eval_dm_dt(psit=flux, theta=theta, zeta=zeta, t=t)
+        mode.eval_dm_dt(psit=fluxes, theta=thetas, zeta=zetas, t=ts)
+        mode.eval_dm_dt(psip=flux, theta=theta, zeta=zeta, t=t)
+        mode.eval_dm_dt(psip=fluxes, theta=thetas, zeta=zetas, t=ts)
+
+        mode.eval_phi(psit=flux, theta=theta, zeta=zeta, t=t)
+        mode.eval_phi(psit=fluxes, theta=thetas, zeta=zetas, t=ts)
+        mode.eval_phi(psip=flux, theta=theta, zeta=zeta, t=t)
+        mode.eval_phi(psip=fluxes, theta=thetas, zeta=zetas, t=ts)
+
+        mode.eval_dphi_dflux(psit=flux, theta=theta, zeta=zeta, t=t)
+        mode.eval_dphi_dflux(psit=fluxes, theta=thetas, zeta=zetas, t=ts)
+        mode.eval_dphi_dflux(psip=flux, theta=theta, zeta=zeta, t=t)
+        mode.eval_dphi_dflux(psip=fluxes, theta=thetas, zeta=zetas, t=ts)
+
+        mode.eval_dphi_dtheta(psit=flux, theta=theta, zeta=zeta, t=t)
+        mode.eval_dphi_dtheta(psit=fluxes, theta=thetas, zeta=zetas, t=ts)
+        mode.eval_dphi_dtheta(psip=flux, theta=theta, zeta=zeta, t=t)
+        mode.eval_dphi_dtheta(psip=fluxes, theta=thetas, zeta=zetas, t=ts)
+
+        mode.eval_dphi_dzeta(psit=flux, theta=theta, zeta=zeta, t=t)
+        mode.eval_dphi_dzeta(psit=fluxes, theta=thetas, zeta=zetas, t=ts)
+        mode.eval_dphi_dzeta(psip=flux, theta=theta, zeta=zeta, t=t)
+        mode.eval_dphi_dzeta(psip=fluxes, theta=thetas, zeta=zetas, t=ts)
+
+        mode.eval_dphi_dt(psit=flux, theta=theta, zeta=zeta, t=t)
+        mode.eval_dphi_dt(psit=fluxes, theta=thetas, zeta=zetas, t=ts)
+        mode.eval_dphi_dt(psip=flux, theta=theta, zeta=zeta, t=t)
+        mode.eval_dphi_dt(psip=fluxes, theta=thetas, zeta=zetas, t=ts)
 
     except Exception as e:
         if not "[D] EvalError" in str(e):

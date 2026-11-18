@@ -537,10 +537,15 @@ class Mode(_ReprStrImpl):
         self._eval_amplitude = _flux_eval_wrap4d(self._r.eval_amplitude)
         self._eval_phase = _flux_eval_wrap4d(self._r.eval_phase)
         self._eval_m = _flux_eval_wrap4d(self._r.eval_m)
-        self._eval_deriv_flux = _flux_eval_wrap4d(self._r.eval_deriv_flux)
-        self._eval_deriv_theta = _flux_eval_wrap4d(self._r.eval_deriv_theta)
-        self._eval_deriv_zeta = _flux_eval_wrap4d(self._r.eval_deriv_zeta)
-        self._eval_deriv_t = _flux_eval_wrap4d(self._r.eval_deriv_t)
+        self._eval_dm_dflux = _flux_eval_wrap4d(self._r.eval_dm_dflux)
+        self._eval_dm_dtheta = _flux_eval_wrap4d(self._r.eval_dm_dtheta)
+        self._eval_dm_dzeta = _flux_eval_wrap4d(self._r.eval_dm_dzeta)
+        self._eval_dm_dt = _flux_eval_wrap4d(self._r.eval_dm_dt)
+        self._eval_phi = _flux_eval_wrap4d(self._r.eval_phi)
+        self._eval_dphi_dflux = _flux_eval_wrap4d(self._r.eval_dphi_dflux)
+        self._eval_dphi_dtheta = _flux_eval_wrap4d(self._r.eval_dphi_dtheta)
+        self._eval_dphi_dzeta = _flux_eval_wrap4d(self._r.eval_dphi_dzeta)
+        self._eval_dphi_dt = _flux_eval_wrap4d(self._r.eval_dphi_dt)
 
     def eval_amplitude(
         self,
@@ -550,7 +555,7 @@ class Mode(_ReprStrImpl):
         psit: ArrayLike | None = None,
         psip: ArrayLike | None = None,
     ) -> Array:
-        r"""Calculates **the amplitude** $\alpha_{m,n}(\psi, \theta, \zeta, t)$, in Normalized Units."""
+        r"""Calculates **the amplitude** $\alpha_{m,n}(\psi, \theta, \zeta, t)$."""
         return self._eval_amplitude(theta, zeta, t, psit=psit, psip=psip)[()]
 
     def eval_phase(
@@ -572,10 +577,10 @@ class Mode(_ReprStrImpl):
         psit: ArrayLike | None = None,
         psip: ArrayLike | None = None,
     ) -> Array:
-        r"""Calculates the mode's value $m(\psi, \theta, \zeta, t)$, in Normalized Units."""
+        r"""Calculates the mode's value $m(\psi, \theta, \zeta, t)$."""
         return self._eval_m(theta, zeta, t, psit=psit, psip=psip)[()]
 
-    def eval_deriv_flux(
+    def eval_dm_dflux(
         self,
         theta: ArrayLike,
         zeta: ArrayLike,
@@ -583,10 +588,10 @@ class Mode(_ReprStrImpl):
         psit: ArrayLike | None = None,
         psip: ArrayLike | None = None,
     ) -> Array:
-        r"""Calculates the mode's derivative $dm(\psi, \theta, \zeta, t)/d\psi$, in Normalized Units."""
-        return self._eval_deriv_flux(theta, zeta, t, psit=psit, psip=psip)[()]
+        r"""Calculates the mode's derivative $dm(\psi, \theta, \zeta, t)/d\psi$."""
+        return self._eval_dm_dflux(theta, zeta, t, psit=psit, psip=psip)[()]
 
-    def eval_deriv_theta(
+    def eval_dm_dtheta(
         self,
         theta: ArrayLike,
         zeta: ArrayLike,
@@ -594,10 +599,10 @@ class Mode(_ReprStrImpl):
         psit: ArrayLike | None = None,
         psip: ArrayLike | None = None,
     ) -> Array:
-        r"""Calculates the mode's derivative $dm(\psi, \theta, \zeta, t)/d\theta$, in Normalized Units."""
-        return self._eval_deriv_theta(theta, zeta, t, psit=psit, psip=psip)[()]
+        r"""Calculates the mode's derivative $dm(\psi, \theta, \zeta, t)/d\theta$."""
+        return self._eval_dm_dtheta(theta, zeta, t, psit=psit, psip=psip)[()]
 
-    def eval_deriv_zeta(
+    def eval_dm_dzeta(
         self,
         theta: ArrayLike,
         zeta: ArrayLike,
@@ -605,10 +610,10 @@ class Mode(_ReprStrImpl):
         psit: ArrayLike | None = None,
         psip: ArrayLike | None = None,
     ) -> Array:
-        r"""Calculates the mode's derivative $dm(\psi, \theta, \zeta, t)/d\zeta$, in Normalized Units."""
-        return self._eval_deriv_zeta(theta, zeta, t, psit=psit, psip=psip)[()]
+        r"""Calculates the mode's derivative $dm(\psi, \theta, \zeta, t)/d\zeta$."""
+        return self._eval_dm_dzeta(theta, zeta, t, psit=psit, psip=psip)[()]
 
-    def eval_deriv_t(
+    def eval_dm_dt(
         self,
         theta: ArrayLike,
         zeta: ArrayLike,
@@ -616,5 +621,60 @@ class Mode(_ReprStrImpl):
         psit: ArrayLike | None = None,
         psip: ArrayLike | None = None,
     ) -> Array:
-        r"""Calculates the mode's derivative $dm(\psi, \theta, \zeta, t)/dt$, in Normalized Units."""
-        return self._eval_deriv_t(theta, zeta, t, psit=psit, psip=psip)[()]
+        r"""Calculates the mode's derivative $dm(\psi, \theta, \zeta, t)/dt$."""
+        return self._eval_dm_dt(theta, zeta, t, psit=psit, psip=psip)[()]
+
+    def eval_phi(
+        self,
+        theta: ArrayLike,
+        zeta: ArrayLike,
+        t: ArrayLike,
+        psit: ArrayLike | None = None,
+        psip: ArrayLike | None = None,
+    ) -> Array:
+        r"""Calculates the value of the induced electric potential, $\phi(\psi, \theta, \zeta, t)$."""
+        return self._eval_phi(theta, zeta, t, psit=psit, psip=psip)[()]
+
+    def eval_dphi_dflux(
+        self,
+        theta: ArrayLike,
+        zeta: ArrayLike,
+        t: ArrayLike,
+        psit: ArrayLike | None = None,
+        psip: ArrayLike | None = None,
+    ) -> Array:
+        r"""Calculates the derivative of the induced electric potential $\phi$ with respect to $\psi$."""
+        return self._eval_dphi_dflux(theta, zeta, t, psit=psit, psip=psip)[()]
+
+    def eval_dphi_dtheta(
+        self,
+        theta: ArrayLike,
+        zeta: ArrayLike,
+        t: ArrayLike,
+        psit: ArrayLike | None = None,
+        psip: ArrayLike | None = None,
+    ) -> Array:
+        r"""Calculates the derivative of the induced electric potential $\phi$ with respect to $\theta$."""
+        return self._eval_dphi_dtheta(theta, zeta, t, psit=psit, psip=psip)[()]
+
+    def eval_dphi_dzeta(
+        self,
+        theta: ArrayLike,
+        zeta: ArrayLike,
+        t: ArrayLike,
+        psit: ArrayLike | None = None,
+        psip: ArrayLike | None = None,
+    ) -> Array:
+        r"""Calculates the derivative of the induced electric potential $\phi$ with respect to $\zeta$."""
+        return self._eval_dphi_dzeta(theta, zeta, t, psit=psit, psip=psip)[()]
+
+    def eval_dphi_dt(
+        self,
+        theta: ArrayLike,
+        zeta: ArrayLike,
+        t: ArrayLike,
+        psit: ArrayLike | None = None,
+        psip: ArrayLike | None = None,
+    ) -> Array:
+        r"""Calculates the derivative of the induced electric potential $\phi$ with respect to $t$."""
+        return self._eval_dphi_dt(theta, zeta, t, psit=psit, psip=psip)[()]

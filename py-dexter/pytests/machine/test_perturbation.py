@@ -39,30 +39,55 @@ def _test_evals(per: dex.Perturbation):
 
     try:
 
-        per.eval_p(psit=flux, theta=theta, zeta=zeta, t=t)
-        per.eval_p(psit=fluxes, theta=thetas, zeta=zetas, t=ts)
-        per.eval_p(psip=flux, theta=theta, zeta=zeta, t=t)
-        per.eval_p(psip=fluxes, theta=thetas, zeta=zetas, t=ts)
+        per.eval_ms(psit=flux, theta=theta, zeta=zeta, t=t)
+        per.eval_ms(psit=fluxes, theta=thetas, zeta=zetas, t=ts)
+        per.eval_ms(psip=flux, theta=theta, zeta=zeta, t=t)
+        per.eval_ms(psip=fluxes, theta=thetas, zeta=zetas, t=ts)
 
-        per.eval_deriv_flux(psit=flux, theta=theta, zeta=zeta, t=t)
-        per.eval_deriv_flux(psit=fluxes, theta=thetas, zeta=zetas, t=ts)
-        per.eval_deriv_flux(psip=flux, theta=theta, zeta=zeta, t=t)
-        per.eval_deriv_flux(psip=fluxes, theta=thetas, zeta=zetas, t=ts)
+        per.eval_dms_dflux(psit=flux, theta=theta, zeta=zeta, t=t)
+        per.eval_dms_dflux(psit=fluxes, theta=thetas, zeta=zetas, t=ts)
+        per.eval_dms_dflux(psip=flux, theta=theta, zeta=zeta, t=t)
+        per.eval_dms_dflux(psip=fluxes, theta=thetas, zeta=zetas, t=ts)
 
-        per.eval_deriv_theta(psit=flux, theta=theta, zeta=zeta, t=t)
-        per.eval_deriv_theta(psit=fluxes, theta=thetas, zeta=zetas, t=ts)
-        per.eval_deriv_theta(psip=flux, theta=theta, zeta=zeta, t=t)
-        per.eval_deriv_theta(psip=fluxes, theta=thetas, zeta=zetas, t=ts)
+        per.eval_dms_dtheta(psit=flux, theta=theta, zeta=zeta, t=t)
+        per.eval_dms_dtheta(psit=fluxes, theta=thetas, zeta=zetas, t=ts)
+        per.eval_dms_dtheta(psip=flux, theta=theta, zeta=zeta, t=t)
+        per.eval_dms_dtheta(psip=fluxes, theta=thetas, zeta=zetas, t=ts)
 
-        per.eval_deriv_zeta(psit=flux, theta=theta, zeta=zeta, t=t)
-        per.eval_deriv_zeta(psit=fluxes, theta=thetas, zeta=zetas, t=ts)
-        per.eval_deriv_zeta(psip=flux, theta=theta, zeta=zeta, t=t)
-        per.eval_deriv_zeta(psip=fluxes, theta=thetas, zeta=zetas, t=ts)
+        per.eval_dms_dzeta(psit=flux, theta=theta, zeta=zeta, t=t)
+        per.eval_dms_dzeta(psit=fluxes, theta=thetas, zeta=zetas, t=ts)
+        per.eval_dms_dzeta(psip=flux, theta=theta, zeta=zeta, t=t)
+        per.eval_dms_dzeta(psip=fluxes, theta=thetas, zeta=zetas, t=ts)
 
-        per.eval_deriv_t(psit=flux, theta=theta, zeta=zeta, t=t)
-        per.eval_deriv_t(psit=fluxes, theta=thetas, zeta=zetas, t=ts)
-        per.eval_deriv_t(psip=flux, theta=theta, zeta=zeta, t=t)
-        per.eval_deriv_t(psip=fluxes, theta=thetas, zeta=zetas, t=ts)
+        per.eval_dms_dt(psit=flux, theta=theta, zeta=zeta, t=t)
+        per.eval_dms_dt(psit=fluxes, theta=thetas, zeta=zetas, t=ts)
+        per.eval_dms_dt(psip=flux, theta=theta, zeta=zeta, t=t)
+        per.eval_dms_dt(psip=fluxes, theta=thetas, zeta=zetas, t=ts)
+
+        per.eval_phis(psit=flux, theta=theta, zeta=zeta, t=t)
+        per.eval_phis(psit=fluxes, theta=thetas, zeta=zetas, t=ts)
+        per.eval_phis(psip=flux, theta=theta, zeta=zeta, t=t)
+        per.eval_phis(psip=fluxes, theta=thetas, zeta=zetas, t=ts)
+
+        per.eval_dphis_dflux(psit=flux, theta=theta, zeta=zeta, t=t)
+        per.eval_dphis_dflux(psit=fluxes, theta=thetas, zeta=zetas, t=ts)
+        per.eval_dphis_dflux(psip=flux, theta=theta, zeta=zeta, t=t)
+        per.eval_dphis_dflux(psip=fluxes, theta=thetas, zeta=zetas, t=ts)
+
+        per.eval_dphis_dtheta(psit=flux, theta=theta, zeta=zeta, t=t)
+        per.eval_dphis_dtheta(psit=fluxes, theta=thetas, zeta=zetas, t=ts)
+        per.eval_dphis_dtheta(psip=flux, theta=theta, zeta=zeta, t=t)
+        per.eval_dphis_dtheta(psip=fluxes, theta=thetas, zeta=zetas, t=ts)
+
+        per.eval_dphis_dzeta(psit=flux, theta=theta, zeta=zeta, t=t)
+        per.eval_dphis_dzeta(psit=fluxes, theta=thetas, zeta=zetas, t=ts)
+        per.eval_dphis_dzeta(psip=flux, theta=theta, zeta=zeta, t=t)
+        per.eval_dphis_dzeta(psip=fluxes, theta=thetas, zeta=zetas, t=ts)
+
+        per.eval_dphis_dt(psit=flux, theta=theta, zeta=zeta, t=t)
+        per.eval_dphis_dt(psit=fluxes, theta=thetas, zeta=zetas, t=ts)
+        per.eval_dphis_dt(psip=flux, theta=theta, zeta=zeta, t=t)
+        per.eval_dphis_dt(psip=fluxes, theta=thetas, zeta=zetas, t=ts)
 
     except Exception as e:
         if not "[D] EvalError" in str(e):

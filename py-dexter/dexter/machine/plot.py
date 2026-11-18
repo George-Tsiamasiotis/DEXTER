@@ -795,7 +795,7 @@ def plot_mode(
     eval_args = {flux_arg_name: fluxes, "theta": 0, "zeta": 0, "t": 0}
     alpha = mode.eval_amplitude(**eval_args)
     phase = mode.eval_phase(**eval_args)
-    dalpha = mode.eval_deriv_flux(**eval_args)
+    dalpha = mode.eval_dm_dflux(**eval_args)
     dphase = np.gradient(phase)
 
     ALPHA_COLOR = "r"

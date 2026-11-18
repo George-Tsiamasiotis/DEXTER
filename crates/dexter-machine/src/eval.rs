@@ -996,6 +996,10 @@ pub trait ModeCache: DynModeCacheClone + Debug {
 }
 
 /// Single perturbation mode related quantities computation.
+///
+/// Provides methods for the evaluation of the mode `m` itself as well as the perturbative parallel
+/// electric field `φ` it may induce. Time-independent implementors must always return 0.0 for all
+/// `φ` related methods.
 #[expect(
     private_bounds,
     reason = "only used internally for creating Perturbation"
@@ -1120,10 +1124,10 @@ pub trait Mode: MachineObject + DynModeClone + Debug + Send + Sync {
     /// let mut cache = mode.generate_cache();
     /// let psit = MagneticFlux::Toroidal(0.01);
     ///
-    /// let dm_dpsit = mode.eval_deriv_flux(psit, 0.2, 0.3, 0.0, &mut cache)?;
+    /// let dm_dpsit = mode.eval_dm_dflux(psit, 0.2, 0.3, 0.0, &mut cache)?;
     /// # Ok::<_, MachineError>(())
     /// ```
-    fn eval_deriv_flux(
+    fn eval_dm_dflux(
         &self,
         flux: MagneticFlux,
         theta: f64,
@@ -1148,10 +1152,10 @@ pub trait Mode: MachineObject + DynModeClone + Debug + Send + Sync {
     /// let mut cache = mode.generate_cache();
     /// let psit = MagneticFlux::Toroidal(0.01);
     ///
-    /// let dm_dtheta = mode.eval_deriv_theta(psit, 0.2, 0.3, 0.0, &mut cache)?;
+    /// let dm_dtheta = mode.eval_dm_dtheta(psit, 0.2, 0.3, 0.0, &mut cache)?;
     /// # Ok::<_, MachineError>(())
     /// ```
-    fn eval_deriv_theta(
+    fn eval_dm_dtheta(
         &self,
         flux: MagneticFlux,
         theta: f64,
@@ -1176,10 +1180,10 @@ pub trait Mode: MachineObject + DynModeClone + Debug + Send + Sync {
     /// let mut cache = mode.generate_cache();
     /// let psip = MagneticFlux::Poloidal(0.01);
     ///
-    /// let dm_dzeta = mode.eval_deriv_zeta(psip, 0.2, 0.3, 0.0, &mut cache)?;
+    /// let dm_dzeta = mode.eval_dm_dzeta(psip, 0.2, 0.3, 0.0, &mut cache)?;
     /// # Ok::<_, MachineError>(())
     /// ```
-    fn eval_deriv_zeta(
+    fn eval_dm_dzeta(
         &self,
         flux: MagneticFlux,
         theta: f64,
@@ -1204,10 +1208,154 @@ pub trait Mode: MachineObject + DynModeClone + Debug + Send + Sync {
     /// let mut cache = mode.generate_cache();
     /// let psip = MagneticFlux::Poloidal(0.01);
     ///
-    /// let dm_dt = mode.eval_deriv_t(psip, 0.2, 0.3, 0.0, &mut cache)?;
+    /// let dm_dt = mode.eval_dm_dt(psip, 0.2, 0.3, 0.0, &mut cache)?;
     /// # Ok::<_, MachineError>(())
     /// ```
-    fn eval_deriv_t(
+    fn eval_dm_dt(
+        &self,
+        flux: MagneticFlux,
+        theta: f64,
+        zeta: f64,
+        t: f64,
+        cache: &mut DynModeCache,
+    ) -> Result<f64, EvalError>;
+
+    /// Calculates the value of the induced electric potential, `φ(ψ, θ, ζ, t)`.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use dexter_machine::*;
+    /// let lcfs = MagneticFlux::Poloidal(0.45);
+    /// let mode = FluteMode::new(1e-3, lcfs, 3, 2, 0.0);
+    ///
+    /// let mut cache = mode.generate_cache();
+    /// let psit = MagneticFlux::Toroidal(0.01);
+    ///
+    /// let phi_of_psit = mode.eval_phi(psit, 0.2, 0.3, 0.0, &mut cache)?;
+    /// # Ok::<_, MachineError>(())
+    /// ```
+    fn eval_phi(
+        &self,
+        flux: MagneticFlux,
+        theta: f64,
+        zeta: f64,
+        t: f64,
+        cache: &mut DynModeCache,
+    ) -> Result<f64, EvalError>;
+
+    /// Calculates the derivative of the induced electric potential `φ` with respect to `ψ`,
+    /// `dφ(ψ, θ, ζ, t)/dψ`.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use dexter_machine::*;
+    /// let lcfs = MagneticFlux::Poloidal(0.45);
+    /// let mode = FluteMode::new(1e-3, lcfs, 3, 2, 0.0);
+    ///
+    /// let mut cache = mode.generate_cache();
+    /// let psip = MagneticFlux::Poloidal(0.01);
+    ///
+    /// let dphi_dpsip = mode.eval_dphi_dflux(psip, 0.2, 0.3, 0.0, &mut cache)?;
+    /// # Ok::<_, MachineError>(())
+    /// ```
+    fn eval_dphi_dflux(
+        &self,
+        flux: MagneticFlux,
+        theta: f64,
+        zeta: f64,
+        t: f64,
+        cache: &mut DynModeCache,
+    ) -> Result<f64, EvalError>;
+
+    /// Calculates the derivative of the induced electric potential `φ` with respect to `θ`,
+    /// `dφ(ψ, θ, ζ, t)/dθ`.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use dexter_machine::*;
+    /// let lcfs = MagneticFlux::Poloidal(0.45);
+    /// let mode = FluteMode::new(1e-3, lcfs, 3, 2, 0.0);
+    ///
+    /// let mut cache = mode.generate_cache();
+    /// let psit = MagneticFlux::Toroidal(0.01);
+    ///
+    /// let dphi_dtheta = mode.eval_dphi_dtheta(psit, 0.2, 0.3, 0.0, &mut cache)?;
+    /// # Ok::<_, MachineError>(())
+    /// ```
+    fn eval_dphi_dtheta(
+        &self,
+        flux: MagneticFlux,
+        theta: f64,
+        zeta: f64,
+        t: f64,
+        cache: &mut DynModeCache,
+    ) -> Result<f64, EvalError>;
+
+    /// Calculates the derivative of the induced electric potential `φ` with respect to `ζ`,
+    /// `dφ(ψ, θ, ζ, t)/dζ`.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use dexter_machine::*;
+    /// let lcfs = MagneticFlux::Poloidal(0.45);
+    /// let mode = FluteMode::new(1e-3, lcfs, 3, 2, 0.0);
+    ///
+    /// let mut cache = mode.generate_cache();
+    /// let psip = MagneticFlux::Poloidal(0.01);
+    ///
+    /// let dphi_dzeta = mode.eval_dphi_dzeta(psip, 0.2, 0.3, 0.0, &mut cache)?;
+    /// # Ok::<_, MachineError>(())
+    /// ```
+    fn eval_dphi_dzeta(
+        &self,
+        flux: MagneticFlux,
+        theta: f64,
+        zeta: f64,
+        t: f64,
+        cache: &mut DynModeCache,
+    ) -> Result<f64, EvalError>;
+
+    /// Calculates the derivative of the induced electric potential `φ` with respect to `t`,
+    /// `dφ(ψ, θ, ζ, t)/dt`.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if the evaluation fails for any reason.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use dexter_machine::*;
+    /// let lcfs = MagneticFlux::Poloidal(0.45);
+    /// let mode = FluteMode::new(1e-3, lcfs, 3, 2, 0.0);
+    ///
+    /// let mut cache = mode.generate_cache();
+    /// let psit = MagneticFlux::Toroidal(0.01);
+    ///
+    /// let dphi_dt = mode.eval_dphi_dt(psit, 0.2, 0.3, 0.0, &mut cache)?;
+    /// # Ok::<_, MachineError>(())
+    /// ```
+    fn eval_dphi_dt(
         &self,
         flux: MagneticFlux,
         theta: f64,

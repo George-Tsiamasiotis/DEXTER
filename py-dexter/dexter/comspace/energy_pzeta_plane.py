@@ -469,7 +469,7 @@ class EnergyPzetaPlane(_ReprStrImpl):
             ax.set_xlim(*xlim)
         ax.set_xlabel(r"$P_\zeta/\psi_{p, LCFS}$")
         ax.set_ylabel(r"$E/\mu$")
-        ax.legend(loc="lower right", fontsize=8).set_zorder(1e10)
+        ax.legend(loc="upper right", fontsize=8).set_zorder(1e10)
 
         if show:
             plt.show()

@@ -92,7 +92,7 @@ impl Perturbation {
     /// assert_eq!(perturbation.count(), caches.len());
     ///
     /// let psit = MagneticFlux::Toroidal(0.01);
-    /// let p_of_psit = perturbation.eval_p(psit, 3.14, 3.14, 0.0, &mut caches)?;
+    /// let p_of_psit = perturbation.eval_ms(psit, 3.14, 3.14, 0.0, &mut caches)?;
     /// # Ok::<_, MachineError>(())
     /// ```
     #[must_use]
@@ -120,10 +120,10 @@ impl Perturbation {
     /// let mut caches = perturbation.generate_caches();
     /// let psit = MagneticFlux::Toroidal(0.01);
     ///
-    /// let p_of_psit = perturbation.eval_p(psit, 3.14, 3.14, 0.0, &mut caches)?;
+    /// let ms_of_psit = perturbation.eval_ms(psit, 3.14, 3.14, 0.0, &mut caches)?;
     /// # Ok::<_, MachineError>(())
     /// ```
-    pub fn eval_p(
+    pub fn eval_ms(
         &self,
         flux: MagneticFlux,
         theta: f64,
@@ -141,7 +141,7 @@ impl Perturbation {
             })
     }
 
-    /// Calculates the Perturbation's derivative with respect to `ψ`, as a function of `(ψ, θ, ζ, t)`.
+    /// Calculates the Perturbation's derivative with respect to `ψ`.
     ///
     /// # Errors
     ///
@@ -158,10 +158,10 @@ impl Perturbation {
     /// let mut caches = perturbation.generate_caches();
     /// let psip = MagneticFlux::Poloidal(0.01);
     ///
-    /// let dp_dpsip = perturbation.eval_deriv_flux(psip, 3.14, 3.14, 0.0, &mut caches)?;
+    /// let dms_dpsip = perturbation.eval_dms_dflux(psip, 3.14, 3.14, 0.0, &mut caches)?;
     /// # Ok::<_, MachineError>(())
     /// ```
-    pub fn eval_deriv_flux(
+    pub fn eval_dms_dflux(
         &self,
         flux: MagneticFlux,
         theta: f64,
@@ -174,12 +174,12 @@ impl Perturbation {
             .enumerate()
             .try_fold(0.0, |accumulator, tuple| {
                 let (index, mode) = tuple;
-                mode.eval_deriv_flux(flux, theta, zeta, t, &mut caches[index])
+                mode.eval_dm_dflux(flux, theta, zeta, t, &mut caches[index])
                     .map(|val| accumulator + val)
             })
     }
 
-    /// Calculates the Perturbation's derivative with respect to `θ`, as a function of `(ψ, θ, ζ, t)`.
+    /// Calculates the Perturbation's derivative with respect to `θ`.
     ///
     /// # Errors
     ///
@@ -196,10 +196,10 @@ impl Perturbation {
     /// let mut caches = perturbation.generate_caches();
     /// let psip = MagneticFlux::Poloidal(0.01);
     ///
-    /// let dp_theta = perturbation.eval_deriv_theta(psip, 3.14, 3.14, 0.0, &mut caches)?;
+    /// let dms_theta = perturbation.eval_dms_dtheta(psip, 3.14, 3.14, 0.0, &mut caches)?;
     /// # Ok::<_, MachineError>(())
     /// ```
-    pub fn eval_deriv_theta(
+    pub fn eval_dms_dtheta(
         &self,
         flux: MagneticFlux,
         theta: f64,
@@ -212,12 +212,12 @@ impl Perturbation {
             .enumerate()
             .try_fold(0.0, |accumulator, tuple| {
                 let (index, mode) = tuple;
-                mode.eval_deriv_theta(flux, theta, zeta, t, &mut caches[index])
+                mode.eval_dm_dtheta(flux, theta, zeta, t, &mut caches[index])
                     .map(|val| accumulator + val)
             })
     }
 
-    /// Calculates the Perturbation's derivative with respect to `ζ`, as a function of `(ψ, θ, ζ, t)`.
+    /// Calculates the Perturbation's derivative with respect to `ζ`.
     ///
     /// # Errors
     ///
@@ -234,10 +234,10 @@ impl Perturbation {
     /// let mut caches = perturbation.generate_caches();
     /// let psit = MagneticFlux::Toroidal(0.01);
     ///
-    /// let dp_dzeta = perturbation.eval_deriv_zeta(psit, 3.14, 3.14, 0.0, &mut caches)?;
+    /// let dms_dzeta = perturbation.eval_dms_dzeta(psit, 3.14, 3.14, 0.0, &mut caches)?;
     /// # Ok::<_, MachineError>(())
     /// ```
-    pub fn eval_deriv_zeta(
+    pub fn eval_dms_dzeta(
         &self,
         flux: MagneticFlux,
         theta: f64,
@@ -250,12 +250,12 @@ impl Perturbation {
             .enumerate()
             .try_fold(0.0, |accumulator, tuple| {
                 let (index, mode) = tuple;
-                mode.eval_deriv_zeta(flux, theta, zeta, t, &mut caches[index])
+                mode.eval_dm_dzeta(flux, theta, zeta, t, &mut caches[index])
                     .map(|val| accumulator + val)
             })
     }
 
-    /// Calculates the Perturbation's derivative with respect to `t`, as a function of `(ψ, θ, ζ, t)`.
+    /// Calculates the Perturbation's derivative with respect to `t`.
     ///
     /// # Errors
     ///
@@ -272,10 +272,10 @@ impl Perturbation {
     /// let mut caches = perturbation.generate_caches();
     /// let psip = MagneticFlux::Poloidal(0.01);
     ///
-    /// let dp_dt = perturbation.eval_deriv_t(psip, 3.14, 3.14, 0.0, &mut caches)?;
+    /// let dms_dt = perturbation.eval_dms_dt(psip, 3.14, 3.14, 0.0, &mut caches)?;
     /// # Ok::<_, MachineError>(())
     /// ```
-    pub fn eval_deriv_t(
+    pub fn eval_dms_dt(
         &self,
         flux: MagneticFlux,
         theta: f64,
@@ -289,7 +289,202 @@ impl Perturbation {
             .try_fold(0.0, |accumulator, tuple| {
                 let (index, modes) = tuple;
                 modes
-                    .eval_deriv_t(flux, theta, zeta, t, &mut caches[index])
+                    .eval_dm_dt(flux, theta, zeta, t, &mut caches[index])
+                    .map(|val| accumulator + val)
+            })
+    }
+
+    /// Calculates the value of the Perturbation's induced electric potential.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if any of the evaluations fail for any reason.
+    ///
+    /// # Example
+    /// ```
+    /// # use dexter_machine::*;
+    /// let lcfs = MagneticFlux::Toroidal(0.45);
+    /// let perturbation = Perturbation::new(vec![
+    ///     Box::new(FluteMode::new(1e-3, lcfs, 1, 2, 0.0)),
+    ///     Box::new(FluteMode::new(1e-3, lcfs, 1, 3, 0.0)),
+    /// ]);
+    /// let mut caches = perturbation.generate_caches();
+    /// let psit = MagneticFlux::Toroidal(0.01);
+    ///
+    /// let phis_of_psit = perturbation.eval_phis(psit, 3.14, 3.14, 0.0, &mut caches)?;
+    /// # Ok::<_, MachineError>(())
+    /// ```
+    pub fn eval_phis(
+        &self,
+        flux: MagneticFlux,
+        theta: f64,
+        zeta: f64,
+        t: f64,
+        caches: &mut DynModeCaches,
+    ) -> Result<f64, EvalError> {
+        self.0
+            .iter()
+            .enumerate()
+            .try_fold(0.0, |accumulator, tuple| {
+                let (index, modes) = tuple;
+                modes
+                    .eval_phi(flux, theta, zeta, t, &mut caches[index])
+                    .map(|val| accumulator + val)
+            })
+    }
+
+    /// Calculates the derivative of the Perturbation's induced electric potential with respect to `ψ`.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if any of the evaluations fail for any reason.
+    ///
+    /// # Example
+    /// ```
+    /// # use dexter_machine::*;
+    /// let lcfs = MagneticFlux::Toroidal(0.45);
+    /// let perturbation = Perturbation::new(vec![
+    ///     Box::new(FluteMode::new(1e-3, lcfs, 1, 2, 0.0)),
+    ///     Box::new(FluteMode::new(1e-3, lcfs, 1, 3, 0.0)),
+    /// ]);
+    /// let mut caches = perturbation.generate_caches();
+    /// let psip = MagneticFlux::Poloidal(0.01);
+    ///
+    /// let dphis_dflux = perturbation.eval_dphis_dflux(psip, 3.14, 3.14, 0.0, &mut caches)?;
+    /// # Ok::<_, MachineError>(())
+    /// ```
+    pub fn eval_dphis_dflux(
+        &self,
+        flux: MagneticFlux,
+        theta: f64,
+        zeta: f64,
+        t: f64,
+        caches: &mut DynModeCaches,
+    ) -> Result<f64, EvalError> {
+        self.0
+            .iter()
+            .enumerate()
+            .try_fold(0.0, |accumulator, tuple| {
+                let (index, modes) = tuple;
+                modes
+                    .eval_dphi_dflux(flux, theta, zeta, t, &mut caches[index])
+                    .map(|val| accumulator + val)
+            })
+    }
+
+    /// Calculates the derivative of the Perturbation's induced electric potential with respect to `θ`.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if any of the evaluations fail for any reason.
+    ///
+    /// # Example
+    /// ```
+    /// # use dexter_machine::*;
+    /// let lcfs = MagneticFlux::Toroidal(0.45);
+    /// let perturbation = Perturbation::new(vec![
+    ///     Box::new(FluteMode::new(1e-3, lcfs, 1, 2, 0.0)),
+    ///     Box::new(FluteMode::new(1e-3, lcfs, 1, 3, 0.0)),
+    /// ]);
+    /// let mut caches = perturbation.generate_caches();
+    /// let psit = MagneticFlux::Toroidal(0.01);
+    ///
+    /// let dphis_dtheta = perturbation.eval_dphis_dtheta(psit, 3.14, 3.14, 0.0, &mut caches)?;
+    /// # Ok::<_, MachineError>(())
+    /// ```
+    pub fn eval_dphis_dtheta(
+        &self,
+        flux: MagneticFlux,
+        theta: f64,
+        zeta: f64,
+        t: f64,
+        caches: &mut DynModeCaches,
+    ) -> Result<f64, EvalError> {
+        self.0
+            .iter()
+            .enumerate()
+            .try_fold(0.0, |accumulator, tuple| {
+                let (index, modes) = tuple;
+                modes
+                    .eval_dphi_dtheta(flux, theta, zeta, t, &mut caches[index])
+                    .map(|val| accumulator + val)
+            })
+    }
+
+    /// Calculates the derivative of the Perturbation's induced electric potential with respect to `ζ`.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if any of the evaluations fail for any reason.
+    ///
+    /// # Example
+    /// ```
+    /// # use dexter_machine::*;
+    /// let lcfs = MagneticFlux::Toroidal(0.45);
+    /// let perturbation = Perturbation::new(vec![
+    ///     Box::new(FluteMode::new(1e-3, lcfs, 1, 2, 0.0)),
+    ///     Box::new(FluteMode::new(1e-3, lcfs, 1, 3, 0.0)),
+    /// ]);
+    /// let mut caches = perturbation.generate_caches();
+    /// let psip = MagneticFlux::Poloidal(0.01);
+    ///
+    /// let dphis_dzeta = perturbation.eval_dphis_dzeta(psip, 3.14, 3.14, 0.0, &mut caches)?;
+    /// # Ok::<_, MachineError>(())
+    /// ```
+    pub fn eval_dphis_dzeta(
+        &self,
+        flux: MagneticFlux,
+        theta: f64,
+        zeta: f64,
+        t: f64,
+        caches: &mut DynModeCaches,
+    ) -> Result<f64, EvalError> {
+        self.0
+            .iter()
+            .enumerate()
+            .try_fold(0.0, |accumulator, tuple| {
+                let (index, modes) = tuple;
+                modes
+                    .eval_dphi_dzeta(flux, theta, zeta, t, &mut caches[index])
+                    .map(|val| accumulator + val)
+            })
+    }
+
+    /// Calculates the derivative of the Perturbation's induced electric potential with respect to `t`.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`EvalError`] if any of the evaluations fail for any reason.
+    ///
+    /// # Example
+    /// ```
+    /// # use dexter_machine::*;
+    /// let lcfs = MagneticFlux::Toroidal(0.45);
+    /// let perturbation = Perturbation::new(vec![
+    ///     Box::new(FluteMode::new(1e-3, lcfs, 1, 2, 0.0)),
+    ///     Box::new(FluteMode::new(1e-3, lcfs, 1, 3, 0.0)),
+    /// ]);
+    /// let mut caches = perturbation.generate_caches();
+    /// let psit = MagneticFlux::Toroidal(0.01);
+    ///
+    /// let dphis_dt = perturbation.eval_dphis_dt(psit, 3.14, 3.14, 0.0, &mut caches)?;
+    /// # Ok::<_, MachineError>(())
+    /// ```
+    pub fn eval_dphis_dt(
+        &self,
+        flux: MagneticFlux,
+        theta: f64,
+        zeta: f64,
+        t: f64,
+        caches: &mut DynModeCaches,
+    ) -> Result<f64, EvalError> {
+        self.0
+            .iter()
+            .enumerate()
+            .try_fold(0.0, |accumulator, tuple| {
+                let (index, modes) = tuple;
+                modes
+                    .eval_dphi_dt(flux, theta, zeta, t, &mut caches[index])
                     .map(|val| accumulator + val)
             })
     }
@@ -325,6 +520,17 @@ mod perturbation_evals {
 
     use super::*;
 
+    #[rustfmt::skip]
+    fn _test_time_dependent_terms(per: &Perturbation, flux: MagneticFlux) {
+        let mut c = per.generate_caches();
+        let (theta, zeta, t) = (1.0, 2.0, 3.0);
+        assert_eq!(per.eval_phis(flux, theta, zeta, t,&mut c).unwrap(), 0.0);
+        assert_eq!(per.eval_dphis_dflux(flux, theta, zeta, t,&mut c).unwrap(), 0.0);
+        assert_eq!(per.eval_dphis_dtheta(flux, theta, zeta, t,&mut c).unwrap(), 0.0);
+        assert_eq!(per.eval_dphis_dzeta(flux, theta, zeta, t,&mut c).unwrap(), 0.0);
+        assert_eq!(per.eval_dphis_dt(flux, theta, zeta, t,&mut c).unwrap(), 0.0);
+    }
+
     fn create_flute_mode_perturbation() -> Perturbation {
         let lcfs = Toroidal(0.45);
         Perturbation::new(vec![
@@ -350,11 +556,12 @@ mod perturbation_evals {
         let per = Perturbation::zero();
         let c = &mut per.generate_caches();
         let (p, t) = (Toroidal(0.01), 0.0); // Not used
-        assert_eq!(per.eval_p(p, 10.0, 20.0, t, c).unwrap(), 0.0);
-        assert_eq!(per.eval_deriv_flux(p, 10.0, 20.0, t, c).unwrap(), 0.0);
-        assert_eq!(per.eval_deriv_theta(p, 10.0, 20.0, t, c).unwrap(), 0.0);
-        assert_eq!(per.eval_deriv_zeta(p, 10.0, 20.0, t, c).unwrap(), 0.0);
-        assert_eq!(per.eval_deriv_t(p, 10.0, 20.0, t, c).unwrap(), 0.0);
+        assert_eq!(per.eval_ms(p, 10.0, 20.0, t, c).unwrap(), 0.0);
+        assert_eq!(per.eval_dms_dflux(p, 10.0, 20.0, t, c).unwrap(), 0.0);
+        assert_eq!(per.eval_dms_dtheta(p, 10.0, 20.0, t, c).unwrap(), 0.0);
+        assert_eq!(per.eval_dms_dzeta(p, 10.0, 20.0, t, c).unwrap(), 0.0);
+        assert_eq!(per.eval_dms_dt(p, 10.0, 20.0, t, c).unwrap(), 0.0);
+        _test_time_dependent_terms(&per, p);
     }
 
     #[test]
@@ -364,10 +571,11 @@ mod perturbation_evals {
         let c = &mut per.generate_caches();
         let (p, theta, zeta, t) = (Toroidal(0.1), 0.2, 0.3, 0.0); // Not used
         let eps = 1e-10;
-        assert_relative_eq!(per.eval_p(p, theta, zeta, t, c).unwrap(), -2.46342903902, epsilon = eps);
-        assert_relative_eq!(per.eval_deriv_flux(p, theta, zeta, t, c).unwrap(), -12.3171451951, epsilon = eps);
-        assert_relative_eq!(per.eval_deriv_theta(p, theta, zeta, t, c).unwrap(), -12.1655445266, epsilon = eps);
-        assert_relative_eq!(per.eval_deriv_zeta(p, theta, zeta, t, c).unwrap(), 15.9054673268, epsilon = eps);
+        assert_relative_eq!(per.eval_ms(p, theta, zeta, t, c).unwrap(), -2.46342903902, epsilon = eps);
+        assert_relative_eq!(per.eval_dms_dflux(p, theta, zeta, t, c).unwrap(), -12.3171451951, epsilon = eps);
+        assert_relative_eq!(per.eval_dms_dtheta(p, theta, zeta, t, c).unwrap(), -12.1655445266, epsilon = eps);
+        assert_relative_eq!(per.eval_dms_dzeta(p, theta, zeta, t, c).unwrap(), 15.9054673268, epsilon = eps);
+        _test_time_dependent_terms(&per, p);
     }
 
     #[test]
@@ -376,11 +584,12 @@ mod perturbation_evals {
         let per = create_nc_flute_mode_perturbation();
         let c = &mut per.generate_caches();
         let (p, t) = (Toroidal(0.01), 0.0); // Not used
-        assert!(per.eval_p(p, 10.0, 20.0, t, c).unwrap().is_finite());
-        assert!(per.eval_deriv_flux(p, 10.0, 20.0, t, c).unwrap().is_finite());
-        assert!(per.eval_deriv_theta(p, 10.0, 20.0, t, c).unwrap().is_finite());
-        assert!(per.eval_deriv_zeta(p, 10.0, 20.0, t, c).unwrap().is_finite());
-        assert!(per.eval_deriv_t(p, 10.0, 20.0, t, c).unwrap().is_finite());
+        assert!(per.eval_ms(p, 10.0, 20.0, t, c).unwrap().is_finite());
+        assert!(per.eval_dms_dflux(p, 10.0, 20.0, t, c).unwrap().is_finite());
+        assert!(per.eval_dms_dtheta(p, 10.0, 20.0, t, c).unwrap().is_finite());
+        assert!(per.eval_dms_dzeta(p, 10.0, 20.0, t, c).unwrap().is_finite());
+        assert!(per.eval_dms_dt(p, 10.0, 20.0, t, c).unwrap().is_finite());
+        _test_time_dependent_terms(&per, p);
     }
 
     #[test]
@@ -395,24 +604,24 @@ mod perturbation_evals {
             assert_eq!(cache.misses(), 0);
         });
 
-        per.eval_p(p, 10.0, 20.0, t, &mut c).unwrap();
+        per.eval_ms(p, 10.0, 20.0, t, &mut c).unwrap();
 
         c.iter().for_each(|cache| {
             assert_eq!(cache.hits(), 0);
             assert_eq!(cache.misses(), 1);
         });
 
-        per.eval_p(p, 10.0, 20.0, t, &mut c).unwrap();
+        per.eval_ms(p, 10.0, 20.0, t, &mut c).unwrap();
 
         c.iter().for_each(|cache| {
             assert_eq!(cache.hits(), 1);
             assert_eq!(cache.misses(), 1);
         });
 
-        per.eval_deriv_theta(p, 10.0, 20.0, t, &mut c).unwrap();
-        per.eval_deriv_theta(p, 10.0, 20.0, t, &mut c).unwrap();
-        per.eval_deriv_zeta(p, 10.0, 20.0, t, &mut c).unwrap();
-        per.eval_deriv_zeta(p, 10.0, 20.0, t, &mut c).unwrap();
+        per.eval_dms_dtheta(p, 10.0, 20.0, t, &mut c).unwrap();
+        per.eval_dms_dtheta(p, 10.0, 20.0, t, &mut c).unwrap();
+        per.eval_dms_dzeta(p, 10.0, 20.0, t, &mut c).unwrap();
+        per.eval_dms_dzeta(p, 10.0, 20.0, t, &mut c).unwrap();
 
         c.iter().for_each(|cache| {
             assert_eq!(cache.hits(), 5);

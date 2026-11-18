@@ -19,12 +19,13 @@ from dexter.types import (
 class FluteMode(MachineObject, Mode):
     r"""A simple analytical flute mode.
 
-
     A flute mode is defined as:
 
     $$
     m(\psi, \theta, \zeta) = \epsilon\sqrt{\dfrac{\psi}{\psi_{LCFS}}}\cos(m\theta-n\zeta+\phi)
     $$
+
+    Since the mode is time-independent, the induced electric potential is zero.
 
     Parameters
     ----------
@@ -87,6 +88,8 @@ class NcFluteMode(MachineObject, Mode):
     $$
     m(\psi, \theta, \zeta) = \sum_{m,n} \alpha_{m,n}(\psi, \theta, \zeta)\cos\big(m\theta-n\zeta+\phi(\psi)\big)
     $$
+
+    Since the mode is time-independent, the induced electric potential is zero.
 
     Parameters
     ----------

@@ -73,13 +73,18 @@ class Perturbation(_ReprStrImpl):
         else:
             _modes = []
         self._r = _PyPerturbation(_modes)
-        self._eval_p = _flux_eval_wrap4d(self._r.eval_p)
-        self._eval_deriv_flux = _flux_eval_wrap4d(self._r.eval_deriv_flux)
-        self._eval_deriv_theta = _flux_eval_wrap4d(self._r.eval_deriv_theta)
-        self._eval_deriv_zeta = _flux_eval_wrap4d(self._r.eval_deriv_zeta)
-        self._eval_deriv_t = _flux_eval_wrap4d(self._r.eval_deriv_t)
+        self._eval_ms = _flux_eval_wrap4d(self._r.eval_ms)
+        self._eval_dms_dflux = _flux_eval_wrap4d(self._r.eval_dms_dflux)
+        self._eval_dms_dtheta = _flux_eval_wrap4d(self._r.eval_dms_dtheta)
+        self._eval_dms_dzeta = _flux_eval_wrap4d(self._r.eval_dms_dzeta)
+        self._eval_dms_dt = _flux_eval_wrap4d(self._r.eval_dms_dt)
+        self._eval_phis = _flux_eval_wrap4d(self._r.eval_phis)
+        self._eval_dphis_dflux = _flux_eval_wrap4d(self._r.eval_dphis_dflux)
+        self._eval_dphis_dtheta = _flux_eval_wrap4d(self._r.eval_dphis_dtheta)
+        self._eval_dphis_dzeta = _flux_eval_wrap4d(self._r.eval_dphis_dzeta)
+        self._eval_dphis_dt = _flux_eval_wrap4d(self._r.eval_dphis_dt)
 
-    def eval_p(
+    def eval_ms(
         self,
         theta: ArrayLike,
         zeta: ArrayLike,
@@ -87,10 +92,10 @@ class Perturbation(_ReprStrImpl):
         psit: ArrayLike | None = None,
         psip: ArrayLike | None = None,
     ) -> Array:
-        r"""Calculates the perturbation's value $p(\psi, \theta, \zeta, t)$, in Normalized Units."""
-        return self._eval_p(theta, zeta, t, psit=psit, psip=psip)[()]
+        r"""Calculates the perturbation's value as a function of $(\psi, \theta, \zeta, t)$."""
+        return self._eval_ms(theta, zeta, t, psit=psit, psip=psip)[()]
 
-    def eval_deriv_flux(
+    def eval_dms_dflux(
         self,
         theta: ArrayLike,
         zeta: ArrayLike,
@@ -98,10 +103,10 @@ class Perturbation(_ReprStrImpl):
         psit: ArrayLike | None = None,
         psip: ArrayLike | None = None,
     ) -> Array:
-        r"""Calculates the perturbation's derivative $dp(\psi, \theta, \zeta, t)/d\psi$, in Normalized Units."""
-        return self._eval_deriv_flux(theta, zeta, t, psit=psit, psip=psip)[()]
+        r"""Calculates the perturbation's derivative with respect to $\psi$."""
+        return self._eval_dms_dflux(theta, zeta, t, psit=psit, psip=psip)[()]
 
-    def eval_deriv_theta(
+    def eval_dms_dtheta(
         self,
         theta: ArrayLike,
         zeta: ArrayLike,
@@ -109,10 +114,10 @@ class Perturbation(_ReprStrImpl):
         psit: ArrayLike | None = None,
         psip: ArrayLike | None = None,
     ) -> Array:
-        r"""Calculates the perturbation's derivative $dp(\psi, \theta, \zeta, t)/d\theta$, in Normalized Units."""
-        return self._eval_deriv_theta(theta, zeta, t, psit=psit, psip=psip)[()]
+        r"""Calculates the perturbation's derivative with respect to $\theta$."""
+        return self._eval_dms_dtheta(theta, zeta, t, psit=psit, psip=psip)[()]
 
-    def eval_deriv_zeta(
+    def eval_dms_dzeta(
         self,
         theta: ArrayLike,
         zeta: ArrayLike,
@@ -120,10 +125,10 @@ class Perturbation(_ReprStrImpl):
         psit: ArrayLike | None = None,
         psip: ArrayLike | None = None,
     ) -> Array:
-        r"""Calculates the perturbation's derivative $dp(\psi, \theta, \zeta, t)/d\zeta$, in Normalized Units."""
-        return self._eval_deriv_zeta(theta, zeta, t, psit=psit, psip=psip)[()]
+        r"""Calculates the perturbation's derivative with respect to $\zeta$."""
+        return self._eval_dms_dzeta(theta, zeta, t, psit=psit, psip=psip)[()]
 
-    def eval_deriv_t(
+    def eval_dms_dt(
         self,
         theta: ArrayLike,
         zeta: ArrayLike,
@@ -131,8 +136,63 @@ class Perturbation(_ReprStrImpl):
         psit: ArrayLike | None = None,
         psip: ArrayLike | None = None,
     ) -> Array:
-        r"""Calculates the perturbation's derivative $dp(\psi, \theta, \zeta, t)/dt$, in Normalized Units."""
-        return self._eval_deriv_t(theta, zeta, t, psit=psit, psip=psip)[()]
+        r"""Calculates the perturbation's derivative with respect to $t$."""
+        return self._eval_dms_dt(theta, zeta, t, psit=psit, psip=psip)[()]
+
+    def eval_phis(
+        self,
+        theta: ArrayLike,
+        zeta: ArrayLike,
+        t: ArrayLike,
+        psit: ArrayLike | None = None,
+        psip: ArrayLike | None = None,
+    ) -> Array:
+        r"""Calculates the value of the Perturbation’s induced electric potential."""
+        return self._eval_phis(theta, zeta, t, psit=psit, psip=psip)[()]
+
+    def eval_dphis_dflux(
+        self,
+        theta: ArrayLike,
+        zeta: ArrayLike,
+        t: ArrayLike,
+        psit: ArrayLike | None = None,
+        psip: ArrayLike | None = None,
+    ) -> Array:
+        r"""Calculates the derivative of the Perturbation’s induced electric potential with respect to $\psi$."""
+        return self._eval_dphis_dflux(theta, zeta, t, psit=psit, psip=psip)[()]
+
+    def eval_dphis_dtheta(
+        self,
+        theta: ArrayLike,
+        zeta: ArrayLike,
+        t: ArrayLike,
+        psit: ArrayLike | None = None,
+        psip: ArrayLike | None = None,
+    ) -> Array:
+        r"""Calculates the derivative of the Perturbation’s induced electric potential with respect to $\theta$."""
+        return self._eval_dphis_dtheta(theta, zeta, t, psit=psit, psip=psip)[()]
+
+    def eval_dphis_dzeta(
+        self,
+        theta: ArrayLike,
+        zeta: ArrayLike,
+        t: ArrayLike,
+        psit: ArrayLike | None = None,
+        psip: ArrayLike | None = None,
+    ) -> Array:
+        r"""Calculates the derivative of the Perturbation’s induced electric potential with respect to $\zeta$."""
+        return self._eval_dphis_dzeta(theta, zeta, t, psit=psit, psip=psip)[()]
+
+    def eval_dphis_dt(
+        self,
+        theta: ArrayLike,
+        zeta: ArrayLike,
+        t: ArrayLike,
+        psit: ArrayLike | None = None,
+        psip: ArrayLike | None = None,
+    ) -> Array:
+        r"""Calculates the derivative of the Perturbation’s induced electric potential with respect to $t$."""
+        return self._eval_dphis_dt(theta, zeta, t, psit=psit, psip=psip)[()]
 
     def __len__(self) -> int:
         """Returns the total number of modes."""

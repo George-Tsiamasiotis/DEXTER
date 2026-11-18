@@ -72,7 +72,7 @@ fn mode_evals(c: &mut Criterion) {
         |b, &(psit, theta, zeta, t)| {
             b.iter(|| {
                 flute_mode
-                    .eval_deriv_flux(
+                    .eval_dm_dflux(
                         black_box(psit),
                         black_box(theta),
                         black_box(zeta),
@@ -89,7 +89,7 @@ fn mode_evals(c: &mut Criterion) {
         |b, &(psit, theta, zeta, t)| {
             b.iter(|| {
                 nc_flute_mode
-                    .eval_deriv_flux(
+                    .eval_dm_dflux(
                         black_box(psit),
                         black_box(theta),
                         black_box(zeta),
@@ -112,7 +112,7 @@ fn mode_evals(c: &mut Criterion) {
         |b, &(psit, theta, zeta, t)| {
             b.iter(|| {
                 flute_mode
-                    .eval_deriv_theta(
+                    .eval_dm_dtheta(
                         black_box(psit),
                         black_box(theta),
                         black_box(zeta),
@@ -129,7 +129,7 @@ fn mode_evals(c: &mut Criterion) {
         |b, &(psit, theta, zeta, t)| {
             b.iter(|| {
                 nc_flute_mode
-                    .eval_deriv_theta(
+                    .eval_dm_dtheta(
                         black_box(psit),
                         black_box(theta),
                         black_box(zeta),
@@ -152,7 +152,7 @@ fn mode_evals(c: &mut Criterion) {
         |b, &(psit, theta, zeta, t)| {
             b.iter(|| {
                 flute_mode
-                    .eval_deriv_zeta(
+                    .eval_dm_dzeta(
                         black_box(psit),
                         black_box(theta),
                         black_box(zeta),
@@ -169,7 +169,7 @@ fn mode_evals(c: &mut Criterion) {
         |b, &(psit, theta, zeta, t)| {
             b.iter(|| {
                 nc_flute_mode
-                    .eval_deriv_zeta(
+                    .eval_dm_dzeta(
                         black_box(psit),
                         black_box(theta),
                         black_box(zeta),

@@ -156,6 +156,8 @@ impl NcFluteModeBuilder {
 ///
 /// `φ` calculation can be further configured with the [`PhaseMethod`] helper struct.
 ///
+/// Since the mode is time-independent, the induced electric potential is zero.
+///
 /// Should be created with an [`NcFluteModeBuilder`].
 #[non_exhaustive]
 #[derive(Clone)]
@@ -408,7 +410,7 @@ impl Mode for NcFluteMode {
         }
     }
 
-    fn eval_deriv_flux(
+    fn eval_dm_dflux(
         &self,
         flux: MagneticFlux,
         theta: f64,
@@ -429,7 +431,7 @@ impl Mode for NcFluteMode {
         }
     }
 
-    fn eval_deriv_theta(
+    fn eval_dm_dtheta(
         &self,
         flux: MagneticFlux,
         theta: f64,
@@ -450,7 +452,7 @@ impl Mode for NcFluteMode {
         }
     }
 
-    fn eval_deriv_zeta(
+    fn eval_dm_dzeta(
         &self,
         flux: MagneticFlux,
         theta: f64,
@@ -471,7 +473,67 @@ impl Mode for NcFluteMode {
         }
     }
 
-    fn eval_deriv_t(
+    fn eval_dm_dt(
+        &self,
+        flux: MagneticFlux,
+        _: f64,
+        _: f64,
+        _: f64,
+        _: &mut DynModeCache,
+    ) -> Result<f64, EvalError> {
+        debug_assert_non_negative_flux!(flux);
+        Ok(0.0)
+    }
+
+    fn eval_phi(
+        &self,
+        flux: MagneticFlux,
+        _: f64,
+        _: f64,
+        _: f64,
+        _: &mut DynModeCache,
+    ) -> Result<f64, EvalError> {
+        debug_assert_non_negative_flux!(flux);
+        Ok(0.0)
+    }
+
+    fn eval_dphi_dflux(
+        &self,
+        flux: MagneticFlux,
+        _: f64,
+        _: f64,
+        _: f64,
+        _: &mut DynModeCache,
+    ) -> Result<f64, EvalError> {
+        debug_assert_non_negative_flux!(flux);
+        Ok(0.0)
+    }
+
+    fn eval_dphi_dtheta(
+        &self,
+        flux: MagneticFlux,
+        _: f64,
+        _: f64,
+        _: f64,
+        _: &mut DynModeCache,
+    ) -> Result<f64, EvalError> {
+        debug_assert_non_negative_flux!(flux);
+        Ok(0.0)
+    }
+
+    fn eval_dphi_dzeta(
+        &self,
+        flux: MagneticFlux,
+        _: f64,
+        _: f64,
+        _: f64,
+        _: &mut DynModeCache,
+    ) -> Result<f64, EvalError> {
+        debug_assert_non_negative_flux!(flux);
+        Ok(0.0)
+    }
+
+    fn eval_dphi_dt(
         &self,
         flux: MagneticFlux,
         _: f64,
@@ -1016,10 +1078,10 @@ mod test_toroidal_nc_evals {
         assert!(mode.eval_amplitude(flux, 0.1, 0.1, 0.1, c).unwrap().is_finite());
         assert!(mode.eval_phase(flux, 0.1, 0.1, 0.1, c).unwrap().is_finite());
         assert!(mode.eval_m(flux, 0.1, 0.1, 0.1, c).unwrap().is_finite());
-        assert!(mode.eval_deriv_flux(flux, 0.1, 0.1, 0.1, c).unwrap().is_finite());
-        assert!(mode.eval_deriv_theta(flux, 0.1, 0.1, 0.1, c).unwrap().is_finite());
-        assert!(mode.eval_deriv_zeta(flux, 0.1, 0.1, 0.1, c).unwrap().is_finite());
-        assert!(mode.eval_deriv_t(flux, 0.1, 0.1, 0.1, c).unwrap().is_finite());
+        assert!(mode.eval_dm_dflux(flux, 0.1, 0.1, 0.1, c).unwrap().is_finite());
+        assert!(mode.eval_dm_dtheta(flux, 0.1, 0.1, 0.1, c).unwrap().is_finite());
+        assert!(mode.eval_dm_dzeta(flux, 0.1, 0.1, 0.1, c).unwrap().is_finite());
+        assert!(mode.eval_dm_dt(flux, 0.1, 0.1, 0.1, c).unwrap().is_finite());
     }
 
     #[test]
@@ -1033,10 +1095,10 @@ mod test_toroidal_nc_evals {
         assert!(matches!(mode.eval_amplitude(flux, 0.1, 0.1, 0.1, c), Err(err(..))));
         assert!(matches!(mode.eval_phase(flux, 0.1, 0.1, 0.1, c), Err(err(..))));
         assert!(matches!(mode.eval_m(flux, 0.1, 0.1, 0.1, c), Err(err(..))));
-        assert!(matches!(mode.eval_deriv_flux(flux, 0.1, 0.1, 0.1, c), Err(err(..))));
-        assert!(matches!(mode.eval_deriv_theta(flux, 0.1, 0.1, 0.1, c), Err(err(..))));
-        assert!(matches!(mode.eval_deriv_zeta(flux, 0.1, 0.1, 0.1, c), Err(err(..))));
-        assert!(matches!(mode.eval_deriv_t(flux, 0.1, 0.1, 0.1, c), Ok(0.0)));
+        assert!(matches!(mode.eval_dm_dflux(flux, 0.1, 0.1, 0.1, c), Err(err(..))));
+        assert!(matches!(mode.eval_dm_dtheta(flux, 0.1, 0.1, 0.1, c), Err(err(..))));
+        assert!(matches!(mode.eval_dm_dzeta(flux, 0.1, 0.1, 0.1, c), Err(err(..))));
+        assert!(matches!(mode.eval_dm_dt(flux, 0.1, 0.1, 0.1, c), Ok(0.0)));
     }
 }
 
@@ -1070,10 +1132,10 @@ mod test_poloidal_nc_evals {
         assert!(mode.eval_amplitude(flux, 0.1, 0.1, 0.1, c).unwrap().is_finite());
         assert!(mode.eval_phase(flux, 0.1, 0.1, 0.1, c).unwrap().is_finite());
         assert!(mode.eval_m(flux, 0.1, 0.1, 0.1, c).unwrap().is_finite());
-        assert!(mode.eval_deriv_flux(flux, 0.1, 0.1, 0.1, c).unwrap().is_finite());
-        assert!(mode.eval_deriv_theta(flux, 0.1, 0.1, 0.1, c).unwrap().is_finite());
-        assert!(mode.eval_deriv_zeta(flux, 0.1, 0.1, 0.1, c).unwrap().is_finite());
-        assert!(mode.eval_deriv_t(flux, 0.1, 0.1, 0.1, c).unwrap().is_finite());
+        assert!(mode.eval_dm_dflux(flux, 0.1, 0.1, 0.1, c).unwrap().is_finite());
+        assert!(mode.eval_dm_dtheta(flux, 0.1, 0.1, 0.1, c).unwrap().is_finite());
+        assert!(mode.eval_dm_dzeta(flux, 0.1, 0.1, 0.1, c).unwrap().is_finite());
+        assert!(mode.eval_dm_dt(flux, 0.1, 0.1, 0.1, c).unwrap().is_finite());
     }
 
     #[test]
@@ -1087,10 +1149,10 @@ mod test_poloidal_nc_evals {
         assert!(matches!(mode.eval_amplitude(flux, 0.1, 0.1, 0.1, c), Err(err(..))));
         assert!(matches!(mode.eval_phase(flux, 0.1, 0.1, 0.1, c), Err(err(..))));
         assert!(matches!(mode.eval_m(flux, 0.1, 0.1, 0.1, c), Err(err(..))));
-        assert!(matches!(mode.eval_deriv_flux(flux, 0.1, 0.1, 0.1, c), Err(err(..))));
-        assert!(matches!(mode.eval_deriv_theta(flux, 0.1, 0.1, 0.1, c), Err(err(..))));
-        assert!(matches!(mode.eval_deriv_zeta(flux, 0.1, 0.1, 0.1, c), Err(err(..))));
-        assert!(matches!(mode.eval_deriv_t(flux, 0.1, 0.1, 0.1, c), Ok(0.0)));
+        assert!(matches!(mode.eval_dm_dflux(flux, 0.1, 0.1, 0.1, c), Err(err(..))));
+        assert!(matches!(mode.eval_dm_dtheta(flux, 0.1, 0.1, 0.1, c), Err(err(..))));
+        assert!(matches!(mode.eval_dm_dzeta(flux, 0.1, 0.1, 0.1, c), Err(err(..))));
+        assert!(matches!(mode.eval_dm_dt(flux, 0.1, 0.1, 0.1, c), Ok(0.0)));
     }
 }
 
@@ -1120,7 +1182,7 @@ mod nc_flute_mode_cache {
         assert_eq!(c.hits(), 0);
         assert_eq!(c.misses(), 1);
 
-        mode.eval_deriv_theta(psit, 0.1, 0.1, t, c).unwrap();
+        mode.eval_dm_dtheta(psit, 0.1, 0.1, t, c).unwrap();
         assert_eq!(c.hits(), 1);
         assert_eq!(c.misses(), 1);
 
@@ -1129,13 +1191,13 @@ mod nc_flute_mode_cache {
         mode.eval_amplitude(psit, theta, zeta, t, c).unwrap();
         mode.eval_phase(psit, theta, zeta, t, c).unwrap();
         mode.eval_m(psit, theta, zeta, t, c).unwrap();
-        mode.eval_deriv_flux(psit, theta, zeta, t, c).unwrap();
-        mode.eval_deriv_zeta(psit, theta, zeta, t, c).unwrap();
+        mode.eval_dm_dflux(psit, theta, zeta, t, c).unwrap();
+        mode.eval_dm_dzeta(psit, theta, zeta, t, c).unwrap();
 
         assert_eq!(c.hits(), 5);
         assert_eq!(c.misses(), 2);
 
-        mode.eval_deriv_flux(psit / 2.0, theta, zeta, t, c).unwrap();
+        mode.eval_dm_dflux(psit / 2.0, theta, zeta, t, c).unwrap();
 
         assert_eq!(c.hits(), 5);
         assert_eq!(c.misses(), 3);
@@ -1163,7 +1225,7 @@ mod nc_flute_mode_analytical_threshold {
         assert_eq!(mode.analytical_threshold_index(), 5);
         // set cos=1 and make sure it does go to infinity
         assert!(
-            dbg!(mode.eval_deriv_flux(Toroidal(1e-20), 0.0, 0.0, 0.0, &mut cache))
+            dbg!(mode.eval_dm_dflux(Toroidal(1e-20), 0.0, 0.0, 0.0, &mut cache))
                 .is_ok_and(|value| value.abs() > 1000.0)
         )
     }

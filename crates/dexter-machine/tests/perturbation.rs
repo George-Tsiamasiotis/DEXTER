@@ -7,6 +7,17 @@ use std::path::PathBuf;
 use dexter_machine::extract::TEST_NETCDF_PATH;
 use dexter_machine::*;
 
+#[rustfmt::skip]
+fn _test_potentials_of_time_dependent_perturbations(per: &Perturbation, flux: MagneticFlux) {
+    let mut c = per.generate_caches();
+    let (theta, zeta, t) = (1.0, 2.0, 3.0);
+    assert_eq!(per.eval_phis(flux, theta, zeta, t,&mut c).unwrap(), 0.0);
+    assert_eq!(per.eval_dphis_dflux(flux, theta, zeta, t,&mut c).unwrap(), 0.0);
+    assert_eq!(per.eval_dphis_dtheta(flux, theta, zeta, t,&mut c).unwrap(), 0.0);
+    assert_eq!(per.eval_dphis_dzeta(flux, theta, zeta, t,&mut c).unwrap(), 0.0);
+    assert_eq!(per.eval_dphis_dt(flux, theta, zeta, t,&mut c).unwrap(), 0.0);
+}
+
 #[test]
 #[rustfmt::skip]
 fn empty_perturbation() {
@@ -15,11 +26,11 @@ fn empty_perturbation() {
     let mut caches: DynModeCaches = p.generate_caches();
 
     let (psit, theta, zeta, t) = (MagneticFlux::Toroidal(0.01), 1.0, 2.0, 0.0);
-    assert_eq!(p.eval_p(psit, theta, zeta, t, &mut caches).unwrap(), 0.0);
-    assert_eq!(p.eval_deriv_flux(psit, theta, zeta, t, &mut caches).unwrap(), 0.0);
-    assert_eq!(p.eval_deriv_theta(psit, theta, zeta, t, &mut caches).unwrap(), 0.0);
-    assert_eq!(p.eval_deriv_zeta(psit, theta, zeta, t, &mut caches).unwrap(), 0.0);
-    assert_eq!(p.eval_deriv_t(psit, theta, zeta, t, &mut caches).unwrap(), 0.0);
+    assert_eq!(p.eval_ms(psit, theta, zeta, t, &mut caches).unwrap(), 0.0);
+    assert_eq!(p.eval_dms_dflux(psit, theta, zeta, t, &mut caches).unwrap(), 0.0);
+    assert_eq!(p.eval_dms_dtheta(psit, theta, zeta, t, &mut caches).unwrap(), 0.0);
+    assert_eq!(p.eval_dms_dzeta(psit, theta, zeta, t, &mut caches).unwrap(), 0.0);
+    _test_potentials_of_time_dependent_perturbations(&p, psit);
 }
 
 #[test]
@@ -37,18 +48,20 @@ fn cos_toroidal_lcfs_perturbation() {
 
     let (psit, theta, zeta, t) = (MagneticFlux::Toroidal(0.01), 1.0, 2.0, 0.0);
 
-    assert!(per.eval_p(psit, theta, zeta, t, &mut c).unwrap().is_finite());
-    assert!(per.eval_deriv_flux(psit, theta, zeta, t, &mut c).unwrap().is_finite());
-    assert!(per.eval_deriv_theta(psit, theta, zeta, t, &mut c).unwrap().is_finite());
-    assert!(per.eval_deriv_zeta(psit, theta, zeta, t, &mut c).unwrap().is_finite());
-    assert!(per.eval_deriv_t(psit, theta, zeta, t, &mut c).unwrap().is_finite());
+    assert!(per.eval_ms(psit, theta, zeta, t, &mut c).unwrap().is_finite());
+    assert!(per.eval_dms_dflux(psit, theta, zeta, t, &mut c).unwrap().is_finite());
+    assert!(per.eval_dms_dtheta(psit, theta, zeta, t, &mut c).unwrap().is_finite());
+    assert!(per.eval_dms_dzeta(psit, theta, zeta, t, &mut c).unwrap().is_finite());
+    assert!(per.eval_dms_dt(psit, theta, zeta, t, &mut c).unwrap().is_finite());
+    _test_potentials_of_time_dependent_perturbations(&per, psit);
 
     let psip = MagneticFlux::Poloidal(0.015);
-    assert!(per.eval_p(psip, theta, zeta, t, &mut c).is_err());
-    assert!(per.eval_deriv_flux(psip, theta, zeta, t, &mut c).is_err());
-    assert!(per.eval_deriv_theta(psip, theta, zeta, t, &mut c).is_err());
-    assert!(per.eval_deriv_zeta(psip, theta, zeta, t, &mut c).is_err());
-    assert!(per.eval_deriv_t(psip, theta, zeta, t, &mut c).is_ok()); // returns zero
+    assert!(per.eval_ms(psip, theta, zeta, t, &mut c).is_err());
+    assert!(per.eval_dms_dflux(psip, theta, zeta, t, &mut c).is_err());
+    assert!(per.eval_dms_dtheta(psip, theta, zeta, t, &mut c).is_err());
+    assert!(per.eval_dms_dzeta(psip, theta, zeta, t, &mut c).is_err());
+    assert!(per.eval_dms_dt(psip, theta, zeta, t, &mut c).is_ok()); // returns zero
+    _test_potentials_of_time_dependent_perturbations(&per, psip);
 }
 
 #[test]
@@ -67,17 +80,19 @@ fn cos_poloidal_lcfs_perturbation() {
 
     let (psip, theta, zeta, t) = (MagneticFlux::Poloidal(0.01), 1.0, 2.0, 0.0);
 
-    assert!(per.eval_p(psip, theta, zeta, t, &mut c).unwrap().is_finite());
-    assert!(per.eval_deriv_flux(psip, theta, zeta, t, &mut c).unwrap().is_finite());
-    assert!(per.eval_deriv_theta(psip, theta, zeta, t, &mut c).unwrap().is_finite());
-    assert!(per.eval_deriv_zeta(psip, theta, zeta, t, &mut c).unwrap().is_finite());
-    assert!(per.eval_deriv_t(psip, theta, zeta, t, &mut c).unwrap().is_finite());
+    assert!(per.eval_ms(psip, theta, zeta, t, &mut c).unwrap().is_finite());
+    assert!(per.eval_dms_dflux(psip, theta, zeta, t, &mut c).unwrap().is_finite());
+    assert!(per.eval_dms_dtheta(psip, theta, zeta, t, &mut c).unwrap().is_finite());
+    assert!(per.eval_dms_dzeta(psip, theta, zeta, t, &mut c).unwrap().is_finite());
+    assert!(per.eval_dms_dt(psip, theta, zeta, t, &mut c).unwrap().is_finite());
+    _test_potentials_of_time_dependent_perturbations(&per, psip);
 
     let psit = MagneticFlux::Toroidal(0.01);
-    assert!(per.eval_p(psit, theta, zeta, t, &mut c).is_err());
-    assert!(per.eval_deriv_flux(psit, theta, zeta, t, &mut c).is_err());
-    assert!(per.eval_deriv_theta(psit, theta, zeta, t, &mut c).is_err());
-    assert!(per.eval_deriv_zeta(psit, theta, zeta, t, &mut c).is_err());
+    assert!(per.eval_ms(psit, theta, zeta, t, &mut c).is_err());
+    assert!(per.eval_dms_dflux(psit, theta, zeta, t, &mut c).is_err());
+    assert!(per.eval_dms_dtheta(psit, theta, zeta, t, &mut c).is_err());
+    assert!(per.eval_dms_dzeta(psit, theta, zeta, t, &mut c).is_err());
+    _test_potentials_of_time_dependent_perturbations(&per, psit);
 }
 
 #[test]
@@ -95,11 +110,12 @@ fn nc_perturbation() {
     let mut caches: DynModeCaches = per.generate_caches();
 
     let (psit, theta, zeta, t) = (MagneticFlux::Toroidal(0.01), 1.0, 2.0, 0.0);
-    assert!(per.eval_p(psit, theta, zeta, t, &mut caches).unwrap().is_finite());
-    assert!(per.eval_deriv_flux(psit, theta, zeta, t, &mut caches).unwrap().is_finite());
-    assert!(per.eval_deriv_theta(psit, theta, zeta, t, &mut caches).unwrap().is_finite());
-    assert!(per.eval_deriv_zeta(psit, theta, zeta, t, &mut caches).unwrap().is_finite());
-    assert!(per.eval_deriv_t(psit, theta, zeta, t, &mut caches).unwrap().is_finite());
+    assert!(per.eval_ms(psit, theta, zeta, t, &mut caches).unwrap().is_finite());
+    assert!(per.eval_dms_dflux(psit, theta, zeta, t, &mut caches).unwrap().is_finite());
+    assert!(per.eval_dms_dtheta(psit, theta, zeta, t, &mut caches).unwrap().is_finite());
+    assert!(per.eval_dms_dzeta(psit, theta, zeta, t, &mut caches).unwrap().is_finite());
+    assert!(per.eval_dms_dt(psit, theta, zeta, t, &mut caches).unwrap().is_finite());
+    _test_potentials_of_time_dependent_perturbations(&per, psit);
 }
 
 #[test]
@@ -117,9 +133,10 @@ fn mixed_perturbation() {
     let mut caches: DynModeCaches = per.generate_caches();
 
     let (psit, theta, zeta, t) = (MagneticFlux::Toroidal(0.01), 1.0, 2.0, 0.0);
-    assert!(per.eval_p(psit, theta, zeta, t, &mut caches).unwrap().is_finite());
-    assert!(per.eval_deriv_flux(psit, theta, zeta, t, &mut caches).unwrap().is_finite());
-    assert!(per.eval_deriv_theta(psit, theta, zeta, t, &mut caches).unwrap().is_finite());
-    assert!(per.eval_deriv_zeta(psit, theta, zeta, t, &mut caches).unwrap().is_finite());
-    assert!(per.eval_deriv_t(psit, theta, zeta, t, &mut caches).unwrap().is_finite());
+    assert!(per.eval_ms(psit, theta, zeta, t, &mut caches).unwrap().is_finite());
+    assert!(per.eval_dms_dflux(psit, theta, zeta, t, &mut caches).unwrap().is_finite());
+    assert!(per.eval_dms_dtheta(psit, theta, zeta, t, &mut caches).unwrap().is_finite());
+    assert!(per.eval_dms_dzeta(psit, theta, zeta, t, &mut caches).unwrap().is_finite());
+    assert!(per.eval_dms_dt(psit, theta, zeta, t, &mut caches).unwrap().is_finite());
+    _test_potentials_of_time_dependent_perturbations(&per, psit);
 }

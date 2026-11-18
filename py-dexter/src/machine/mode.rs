@@ -126,6 +126,7 @@ impl PyMode {
 }
 
 #[pymethods] // Mode Trait
+#[rustfmt::skip]
 impl PyMode {
     #[getter]
     pub fn m(&self) -> Result<i64> {
@@ -137,93 +138,64 @@ impl PyMode {
         Ok(self.inner().n())
     }
 
-    pub fn eval_amplitude(
-        &self,
-        theta: f64,
-        zeta: f64,
-        t: f64,
-        psit: f64,
-        psip: f64,
-    ) -> Result<f64> {
+    pub fn eval_amplitude(&self, theta: f64, zeta: f64, t: f64, psit: f64, psip: f64) -> Result<f64> {
         let flux = flux_from_params(psit, psip);
-        Ok(self
-            .inner()
-            .eval_amplitude(flux, theta, zeta, t, &mut self.inner().generate_cache())?)
+        Ok(self.inner().eval_amplitude(flux, theta, zeta, t, &mut self.inner().generate_cache())?)
     }
 
     pub fn eval_phase(&self, theta: f64, zeta: f64, t: f64, psit: f64, psip: f64) -> Result<f64> {
         let flux = flux_from_params(psit, psip);
-        Ok(self
-            .inner()
-            .eval_phase(flux, theta, zeta, t, &mut self.inner().generate_cache())?)
+        Ok(self.inner().eval_phase(flux, theta, zeta, t, &mut self.inner().generate_cache())?)
     }
 
     pub fn eval_m(&self, theta: f64, zeta: f64, t: f64, psit: f64, psip: f64) -> Result<f64> {
         let flux = flux_from_params(psit, psip);
-        Ok(self
-            .inner()
-            .eval_m(flux, theta, zeta, t, &mut self.inner().generate_cache())?)
+        Ok(self.inner().eval_m(flux, theta, zeta, t, &mut self.inner().generate_cache())?)
     }
 
-    pub fn eval_deriv_flux(
-        &self,
-        theta: f64,
-        zeta: f64,
-        t: f64,
-        psit: f64,
-        psip: f64,
-    ) -> Result<f64> {
+    pub fn eval_dm_dflux(&self, theta: f64, zeta: f64, t: f64, psit: f64, psip: f64) -> Result<f64> {
         let flux = flux_from_params(psit, psip);
-        Ok(self.inner().eval_deriv_flux(
-            flux,
-            theta,
-            zeta,
-            t,
-            &mut self.inner().generate_cache(),
-        )?)
+        Ok(self.inner().eval_dm_dflux(flux, theta, zeta, t, &mut self.inner().generate_cache())?)
     }
 
-    pub fn eval_deriv_theta(
-        &self,
-        theta: f64,
-        zeta: f64,
-        t: f64,
-        psit: f64,
-        psip: f64,
-    ) -> Result<f64> {
+    pub fn eval_dm_dtheta(&self, theta: f64, zeta: f64, t: f64, psit: f64, psip: f64) -> Result<f64> {
         let flux = flux_from_params(psit, psip);
-        Ok(self.inner().eval_deriv_theta(
-            flux,
-            theta,
-            zeta,
-            t,
-            &mut self.inner().generate_cache(),
-        )?)
+        Ok(self.inner().eval_dm_dtheta(flux, theta, zeta, t, &mut self.inner().generate_cache())?)
     }
 
-    pub fn eval_deriv_zeta(
-        &self,
-        theta: f64,
-        zeta: f64,
-        t: f64,
-        psit: f64,
-        psip: f64,
-    ) -> Result<f64> {
+    pub fn eval_dm_dzeta(&self, theta: f64, zeta: f64, t: f64, psit: f64, psip: f64) -> Result<f64> {
         let flux = flux_from_params(psit, psip);
-        Ok(self.inner().eval_deriv_zeta(
-            flux,
-            theta,
-            zeta,
-            t,
-            &mut self.inner().generate_cache(),
-        )?)
+        Ok(self.inner().eval_dm_dzeta(flux, theta, zeta, t, &mut self.inner().generate_cache())?)
     }
 
-    pub fn eval_deriv_t(&self, theta: f64, zeta: f64, t: f64, psit: f64, psip: f64) -> Result<f64> {
+    pub fn eval_dm_dt(&self, theta: f64, zeta: f64, t: f64, psit: f64, psip: f64) -> Result<f64> {
         let flux = flux_from_params(psit, psip);
-        Ok(self
-            .inner()
-            .eval_deriv_t(flux, theta, zeta, t, &mut self.inner().generate_cache())?)
+        Ok(self.inner().eval_dm_dt(flux, theta, zeta, t, &mut self.inner().generate_cache())?)
+    }
+
+    pub fn eval_phi(&self, theta: f64, zeta: f64, t: f64, psit: f64, psip: f64) -> Result<f64> {
+        let flux = flux_from_params(psit, psip);
+        Ok(self.inner().eval_phi(flux, theta, zeta, t, &mut self.inner().generate_cache())?)
+    }
+
+    pub fn eval_dphi_dflux(&self, theta: f64, zeta: f64, t: f64, psit: f64, psip: f64) -> Result<f64> {
+        let flux = flux_from_params(psit, psip);
+        Ok(self.inner().eval_dphi_dflux(flux, theta, zeta, t, &mut self.inner().generate_cache())?)
+    }
+
+    pub fn eval_dphi_dtheta(&self, theta: f64, zeta: f64, t: f64, psit: f64, psip: f64) -> Result<f64> {
+        let flux = flux_from_params(psit, psip);
+        Ok(self.inner().eval_dphi_dtheta(flux, theta, zeta, t, &mut self.inner().generate_cache())?)
+    }
+
+    pub fn eval_dphi_dzeta(&self, theta: f64, zeta: f64, t: f64, psit: f64, psip: f64,) -> Result<f64> {
+        let flux = flux_from_params(psit, psip);
+        Ok(self.inner().eval_dphi_dzeta(flux, theta, zeta, t, &mut self.inner().generate_cache())?)
+    }
+
+    pub fn eval_dphi_dt(&self, theta: f64, zeta: f64, t: f64, psit: f64, psip: f64) -> Result<f64> {
+        let flux = flux_from_params(psit, psip);
+        Ok(self.inner().eval_dphi_dt(flux, theta, zeta, t, &mut self.inner().generate_cache())?)
     }
 }
 

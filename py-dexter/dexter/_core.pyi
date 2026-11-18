@@ -342,62 +342,20 @@ class _PyMode:  # Trait and all possible getters
         phase_method: PhaseMethod,
         analytical_threshold_index: int,
     ) -> _PyMode: ...
-    def eval_amplitude(
-        self,
-        theta: float,
-        zeta: float,
-        t: float,
-        psit: float,
-        psip: float,
-    ) -> float: ...
-    def eval_phase(
-        self,
-        theta: float,
-        zeta: float,
-        t: float,
-        psit: float,
-        psip: float,
-    ) -> float: ...
-    def eval_m(
-        self,
-        theta: float,
-        zeta: float,
-        t: float,
-        psit: float,
-        psip: float,
-    ) -> float: ...
-    def eval_deriv_flux(
-        self,
-        theta: float,
-        zeta: float,
-        t: float,
-        psit: float,
-        psip: float,
-    ) -> float: ...
-    def eval_deriv_theta(
-        self,
-        theta: float,
-        zeta: float,
-        t: float,
-        psit: float,
-        psip: float,
-    ) -> float: ...
-    def eval_deriv_zeta(
-        self,
-        theta: float,
-        zeta: float,
-        t: float,
-        psit: float,
-        psip: float,
-    ) -> float: ...
-    def eval_deriv_t(
-        self,
-        theta: float,
-        zeta: float,
-        t: float,
-        psit: float,
-        psip: float,
-    ) -> float: ...
+    # fmt: off
+    def eval_amplitude  (self, theta: float, zeta: float, t: float, psit: float, psip: float) -> float: ...
+    def eval_phase      (self, theta: float, zeta: float, t: float, psit: float, psip: float) -> float: ...
+    def eval_m          (self, theta: float, zeta: float, t: float, psit: float, psip: float) -> float: ...
+    def eval_dm_dflux   (self, theta: float, zeta: float, t: float, psit: float, psip: float) -> float: ...
+    def eval_dm_dtheta  (self, theta: float, zeta: float, t: float, psit: float, psip: float) -> float: ...
+    def eval_dm_dzeta   (self, theta: float, zeta: float, t: float, psit: float, psip: float) -> float: ...
+    def eval_dm_dt      (self, theta: float, zeta: float, t: float, psit: float, psip: float) -> float: ...
+    def eval_phi        (self, theta: float, zeta: float, t: float, psit: float, psip: float) -> float: ...
+    def eval_dphi_dflux (self, theta: float, zeta: float, t: float, psit: float, psip: float) -> float: ...
+    def eval_dphi_dtheta(self, theta: float, zeta: float, t: float, psit: float, psip: float) -> float: ...
+    def eval_dphi_dzeta (self, theta: float, zeta: float, t: float, psit: float, psip: float) -> float: ...
+    def eval_dphi_dt    (self, theta: float, zeta: float, t: float, psit: float, psip: float) -> float: ...
+    # fmt: off
     def get_array(
         self,
         name: Literal["alpha_array", "phase_array", "psit_array", "psip_array"],
@@ -409,46 +367,18 @@ class _PyMode:  # Trait and all possible getters
 
 class _PyPerturbation:
     def __init__(self, modes: list[_PyMode]) -> None: ...
-    def eval_p(
-        self,
-        theta: float,
-        zeta: float,
-        t: float,
-        psit: float,
-        psip: float,
-    ) -> float: ...
-    def eval_deriv_flux(
-        self,
-        theta: float,
-        zeta: float,
-        t: float,
-        psit: float,
-        psip: float,
-    ) -> float: ...
-    def eval_deriv_theta(
-        self,
-        theta: float,
-        zeta: float,
-        t: float,
-        psit: float,
-        psip: float,
-    ) -> float: ...
-    def eval_deriv_zeta(
-        self,
-        theta: float,
-        zeta: float,
-        t: float,
-        psit: float,
-        psip: float,
-    ) -> float: ...
-    def eval_deriv_t(
-        self,
-        theta: float,
-        zeta: float,
-        t: float,
-        psit: float,
-        psip: float,
-    ) -> float: ...
+    # fmt: off
+    def eval_ms          (self, theta: float, zeta: float, t: float, psit: float, psip: float) -> float: ...
+    def eval_dms_dflux   (self, theta: float, zeta: float, t: float, psit: float, psip: float) -> float: ...
+    def eval_dms_dtheta  (self, theta: float, zeta: float, t: float, psit: float, psip: float) -> float: ...
+    def eval_dms_dzeta   (self, theta: float, zeta: float, t: float, psit: float, psip: float) -> float: ...
+    def eval_dms_dt      (self, theta: float, zeta: float, t: float, psit: float, psip: float) -> float: ...
+    def eval_phis        (self, theta: float, zeta: float, t: float, psit: float, psip: float) -> float: ...
+    def eval_dphis_dflux (self, theta: float, zeta: float, t: float, psit: float, psip: float) -> float: ...
+    def eval_dphis_dtheta(self, theta: float, zeta: float, t: float, psit: float, psip: float) -> float: ...
+    def eval_dphis_dzeta (self, theta: float, zeta: float, t: float, psit: float, psip: float) -> float: ...
+    def eval_dphis_dt    (self, theta: float, zeta: float, t: float, psit: float, psip: float) -> float: ...
+    # fmt: on
     def __len__(self) -> int: ...
     @override
     def __repr__(self) -> str: ...
